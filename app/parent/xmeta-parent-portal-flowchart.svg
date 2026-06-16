@@ -1,0 +1,222 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1450" viewBox="0 0 1900 1450" role="img" aria-labelledby="title desc">
+  <title id="title">XMETA Parent Portal comprehensive flowchart</title>
+  <desc id="desc">Flowchart derived from xmeta-parent-portal.html showing global navigation, enrollment, payments, receipt, history, and wallet top-up flows.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#374151"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#E64A19"/>
+    </marker>
+    <style>
+      .bg { fill: #f8f8f7; }
+      .title { font: 700 34px Arial, sans-serif; fill: #1a1a1a; }
+      .subtitle { font: 400 18px Arial, sans-serif; fill: #6b6b6b; }
+      .section-title { font: 700 18px Arial, sans-serif; fill: #1a1a1a; }
+      .node-title { font: 700 17px Arial, sans-serif; fill: #1a1a1a; }
+      .node-text { font: 400 14px Arial, sans-serif; fill: #4b5563; }
+      .node-small { font: 400 12px Arial, sans-serif; fill: #6b7280; }
+      .label { font: 700 12px Arial, sans-serif; fill: #374151; }
+      .box { fill: #ffffff; stroke: rgba(0,0,0,0.14); stroke-width: 1.5; rx: 14; }
+      .box-orange { fill: #fff7f3; stroke: #E64A19; stroke-width: 2; rx: 14; }
+      .box-blue { fill: #eff6ff; stroke: #1565C0; stroke-width: 1.8; rx: 14; }
+      .box-green { fill: #f0fdf4; stroke: #2E7D32; stroke-width: 1.8; rx: 14; }
+      .box-amber { fill: #fffbeb; stroke: #E65100; stroke-width: 1.8; rx: 14; }
+      .box-red { fill: #fff1f2; stroke: #C62828; stroke-width: 1.8; rx: 14; }
+      .box-muted { fill: #f3f4f6; stroke: #9ca3af; stroke-width: 1.4; rx: 14; }
+      .lane { fill: #ffffff; stroke: #e5e7eb; stroke-width: 1.3; rx: 20; }
+      .line { fill: none; stroke: #374151; stroke-width: 2.2; marker-end: url(#arrow); }
+      .line-soft { fill: none; stroke: #9ca3af; stroke-width: 1.8; stroke-dasharray: 8 7; marker-end: url(#arrow); }
+      .line-orange { fill: none; stroke: #E64A19; stroke-width: 2.8; marker-end: url(#arrow-orange); }
+      .note { fill: #ffffff; stroke: #d1d5db; stroke-width: 1.2; rx: 12; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1900" height="1450"/>
+  <text class="title" x="70" y="70">XMETA Pay Parent Portal Flowchart</text>
+  <text class="subtitle" x="70" y="102">Based on xmeta-parent-portal.html - Brentwood Academy parent/guardian portal</text>
+
+  <!-- Global shell -->
+  <rect class="lane" x="55" y="135" width="1790" height="215"/>
+  <text class="section-title" x="80" y="170">Global Shell and Navigation</text>
+
+  <rect class="box-orange" x="90" y="200" width="260" height="105"/>
+  <text class="node-title" x="115" y="232">Portal Shell</text>
+  <text class="node-text" x="115" y="258">Fixed sidebar + sticky topbar</text>
+  <text class="node-small" x="115" y="282">Parent: Maria Santos</text>
+
+  <rect class="box" x="420" y="185" width="300" height="135"/>
+  <text class="node-title" x="445" y="216">Sidebar Menu</text>
+  <text class="node-text" x="445" y="243">Dashboard</text>
+  <text class="node-text" x="445" y="267">Enroll a student / Student profile</text>
+  <text class="node-text" x="445" y="291">Fee summary / Pay tuition / History</text>
+  <text class="node-text" x="445" y="315">Wallet and top-up</text>
+
+  <rect class="box" x="790" y="185" width="300" height="135"/>
+  <text class="node-title" x="815" y="216">Topbar Shortcuts</text>
+  <text class="node-text" x="815" y="246">Enroll student</text>
+  <text class="node-text" x="815" y="273">Pay fees</text>
+  <text class="node-small" x="815" y="302">Updates page title/subtitle</text>
+
+  <rect class="box-muted" x="1160" y="185" width="300" height="135"/>
+  <text class="node-title" x="1185" y="216">nav(id, btn)</text>
+  <text class="node-text" x="1185" y="246">Hide all pages</text>
+  <text class="node-text" x="1185" y="270">Show #page-&lt;id&gt;</text>
+  <text class="node-text" x="1185" y="294">Set active nav item</text>
+
+  <rect class="box-muted" x="1530" y="185" width="260" height="135"/>
+  <text class="node-title" x="1555" y="216">Responsive Behavior</text>
+  <text class="node-text" x="1555" y="246">Mobile menu toggle</text>
+  <text class="node-text" x="1555" y="270">Auto-close sidebar</text>
+  <text class="node-small" x="1555" y="298">when width &lt; 900px</text>
+
+  <path class="line" d="M350 252 H420"/>
+  <path class="line" d="M720 252 H790"/>
+  <path class="line" d="M1090 252 H1160"/>
+  <path class="line-soft" d="M1460 252 H1530"/>
+
+  <!-- Dashboard -->
+  <rect class="lane" x="55" y="385" width="385" height="505"/>
+  <text class="section-title" x="80" y="420">Dashboard</text>
+
+  <rect class="box-orange" x="90" y="455" width="295" height="120"/>
+  <text class="node-title" x="115" y="488">Dashboard Overview</text>
+  <text class="node-text" x="115" y="516">Metrics: enrolled students,</text>
+  <text class="node-text" x="115" y="540">outstanding fees, wallet balance,</text>
+  <text class="node-text" x="115" y="564">last payment</text>
+
+  <rect class="box" x="90" y="620" width="295" height="105"/>
+  <text class="node-title" x="115" y="652">Dashboard Cards</text>
+  <text class="node-text" x="115" y="678">Student summary</text>
+  <text class="node-text" x="115" y="702">Upcoming dues</text>
+
+  <rect class="box" x="90" y="765" width="295" height="80"/>
+  <text class="node-title" x="115" y="797">Recent Activity</text>
+  <text class="node-text" x="115" y="823">View all opens history</text>
+
+  <path class="line-orange" d="M238 350 V455"/>
+  <path class="line" d="M238 575 V620"/>
+  <path class="line" d="M238 725 V765"/>
+
+  <!-- Enrollment -->
+  <rect class="lane" x="480" y="385" width="560" height="895"/>
+  <text class="section-title" x="505" y="420">Enrollment Flow</text>
+
+  <rect class="box-blue" x="530" y="455" width="410" height="120"/>
+  <text class="node-title" x="555" y="488">Step 1: Student Information</text>
+  <text class="node-text" x="555" y="516">Personal details, enrollment details,</text>
+  <text class="node-text" x="555" y="540">home address, health and emergency</text>
+  <text class="node-small" x="555" y="564">Cancel returns to Dashboard</text>
+
+  <rect class="box-blue" x="530" y="625" width="410" height="120"/>
+  <text class="node-title" x="555" y="658">Step 2: Family and Documents</text>
+  <text class="node-text" x="555" y="686">Father/mother details, portal email,</text>
+  <text class="node-text" x="555" y="710">student photo, required document uploads</text>
+  <text class="node-small" x="555" y="734">Back returns to Step 1</text>
+
+  <rect class="box-blue" x="530" y="795" width="410" height="135"/>
+  <text class="node-title" x="555" y="828">Step 3: Review and Submit</text>
+  <text class="node-text" x="555" y="856">Review student, guardian, documents</text>
+  <text class="node-text" x="555" y="880">Toggle consent/agreement checkboxes</text>
+  <text class="node-small" x="555" y="906">Edit buttons return to Step 1 or Step 2</text>
+
+  <rect class="box-green" x="530" y="985" width="410" height="105"/>
+  <text class="node-title" x="555" y="1018">Student Profile</text>
+  <text class="node-text" x="555" y="1046">Enrollment submitted</text>
+  <text class="node-text" x="555" y="1070">Displays student, guardian and status data</text>
+
+  <rect class="note" x="530" y="1140" width="410" height="95"/>
+  <text class="node-title" x="555" y="1172">Enrollment Actions</text>
+  <text class="node-small" x="555" y="1198">toggleCheck(box): consent checkbox state</text>
+  <text class="node-small" x="555" y="1220">Upload buttons are visual controls in this static mockup</text>
+
+  <path class="line-orange" d="M735 575 V625"/>
+  <path class="line-orange" d="M735 745 V795"/>
+  <path class="line-orange" d="M735 930 V985"/>
+  <path class="line-soft" d="M530 515 H430 V515 H385"/>
+  <text class="label" x="455" y="501">Cancel</text>
+  <path class="line-soft" d="M940 858 H990 V685 H940"/>
+  <text class="label" x="955" y="758">Edit family/docs</text>
+  <path class="line-soft" d="M940 840 H1012 V515 H940"/>
+  <text class="label" x="955" y="612">Edit student info</text>
+
+  <!-- Payments -->
+  <rect class="lane" x="1080" y="385" width="765" height="895"/>
+  <text class="section-title" x="1105" y="420">Payments, Fees, Receipt, and Wallet</text>
+
+  <rect class="box-amber" x="1125" y="455" width="300" height="125"/>
+  <text class="node-title" x="1150" y="488">Fee Summary</text>
+  <text class="node-text" x="1150" y="516">Billed, paid, outstanding, progress</text>
+  <text class="node-text" x="1150" y="540">Fee list with paid/partial/due states</text>
+  <text class="node-small" x="1150" y="564">Pay outstanding opens Pay Tuition</text>
+
+  <rect class="box-red" x="1510" y="455" width="285" height="125"/>
+  <text class="node-title" x="1535" y="488">Pay Tuition</text>
+  <text class="node-text" x="1535" y="516">Select fees to pay</text>
+  <text class="node-text" x="1535" y="540">July tuition, supplies, PTA, field trip</text>
+  <text class="node-small" x="1535" y="564">togglePayFee recalculates total</text>
+
+  <rect class="box-red" x="1510" y="635" width="285" height="120"/>
+  <text class="node-title" x="1535" y="668">Payment Method</text>
+  <text class="node-text" x="1535" y="696">Online banking</text>
+  <text class="node-text" x="1535" y="720">E-wallet</text>
+  <text class="node-text" x="1535" y="744">Debit / credit card</text>
+
+  <rect class="box-red" x="1510" y="810" width="285" height="110"/>
+  <text class="node-title" x="1535" y="843">IPAY Checkout CTA</text>
+  <text class="node-text" x="1535" y="871">Pay selected amount via IPAY</text>
+  <text class="node-small" x="1535" y="897">Static demo goes directly to receipt</text>
+
+  <rect class="box-green" x="1510" y="980" width="285" height="130"/>
+  <text class="node-title" x="1535" y="1013">Receipt</text>
+  <text class="node-text" x="1535" y="1041">Payment successful</text>
+  <text class="node-text" x="1535" y="1065">Reference, student, items, total, method</text>
+  <text class="node-small" x="1535" y="1092">Download, view fees, or dashboard</text>
+
+  <rect class="box" x="1125" y="655" width="300" height="120"/>
+  <text class="node-title" x="1150" y="688">Payment History</text>
+  <text class="node-text" x="1150" y="716">Search transactions</text>
+  <text class="node-text" x="1150" y="740">Filter by student</text>
+  <text class="node-text" x="1150" y="764">Export button</text>
+
+  <rect class="box-green" x="1125" y="850" width="300" height="145"/>
+  <text class="node-title" x="1150" y="883">Wallet and Top-up</text>
+  <text class="node-text" x="1150" y="911">Balances for Juan and Maria Jr.</text>
+  <text class="node-text" x="1150" y="935">Select student and amount</text>
+  <text class="node-text" x="1150" y="959">Summary: amount + convenience fee</text>
+  <text class="node-small" x="1150" y="982">Confirm top-up via IPAY</text>
+
+  <rect class="note" x="1125" y="1055" width="300" height="115"/>
+  <text class="node-title" x="1150" y="1088">JS Payment State</text>
+  <text class="node-small" x="1150" y="1114">payFees starts with PHP 3,500 + PHP 350</text>
+  <text class="node-small" x="1150" y="1136">Transaction fee: PHP 15 when total &gt; 0</text>
+  <text class="node-small" x="1150" y="1158">selectPayMethod marks one method selected</text>
+
+  <path class="line-orange" d="M1425 518 H1510"/>
+  <path class="line-orange" d="M1653 580 V635"/>
+  <path class="line-orange" d="M1653 755 V810"/>
+  <path class="line-orange" d="M1653 920 V980"/>
+  <path class="line-soft" d="M1510 1045 H1460 V520 H1425"/>
+  <text class="label" x="1454" y="1030">View all fees</text>
+  <path class="line-soft" d="M1510 1072 H1468 V1220 H385 V805"/>
+  <text class="label" x="1472" y="1210">Back to dashboard</text>
+
+  <!-- Cross navigation from dashboard and profile -->
+  <path class="line-soft" d="M385 515 H530"/>
+  <text class="label" x="412" y="488">Enroll student</text>
+  <path class="line-soft" d="M385 665 H1125 V518"/>
+  <text class="label" x="470" y="632">Upcoming dues</text>
+  <path class="line-soft" d="M385 805 H1125 V715"/>
+  <text class="label" x="452" y="790">View all</text>
+  <path class="line-soft" d="M940 1038 H1060 V518 H1125"/>
+  <text class="label" x="958" y="1024">Pay outstanding fees</text>
+
+  <!-- Navigation map -->
+  <rect class="lane" x="55" y="1310" width="1790" height="95"/>
+  <text class="section-title" x="80" y="1345">Main Page IDs in HTML</text>
+  <text class="node-text" x="80" y="1378">overview -> enroll-step1 -> enroll-step2 -> enroll-step3 -> student-profile</text>
+  <text class="node-text" x="655" y="1378">fees -> pay-tuition -> receipt</text>
+  <text class="node-text" x="1060" y="1378">history</text>
+  <text class="node-text" x="1190" y="1378">wallet</text>
+  <text class="node-small" x="80" y="1398">Every page transition is implemented with nav(id, btn); the mockup stores state only in DOM classes and small JavaScript objects.</text>
+</svg>

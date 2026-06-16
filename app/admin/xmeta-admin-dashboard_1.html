@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XMETA Pay — School Admin Dashboard · Brentwood Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root {
+  --orange:#E64A19;--orange-dark:#BF360C;--orange-light:#FBE9E7;--orange-subtle:#FFF3F0;
+  --amber:#F57C00;--amber-light:#FFF3E0;
+  --green:#2E7D32;--green-light:#E8F5E9;--green-mid:#43A047;
+  --red:#C62828;--red-light:#FFEBEE;
+  --blue:#1565C0;--blue-light:#E3F2FD;
+  --purple:#6A1B9A;--purple-light:#F3E5F5;
+  --teal:#00695C;--teal-light:#E0F2F1;
+  --ink:#0F1117;--ink-2:#1E2230;--ink-3:#2D3348;
+  --text-primary:#0F1117;--text-secondary:#5A6070;--text-hint:#9BA3B8;
+  --surface:#FFFFFF;--surface-2:#F7F8FA;--surface-3:#EFF1F5;
+  --border:rgba(15,17,23,0.07);--border-strong:rgba(15,17,23,0.13);
+  --sidebar-w:232px;--font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;
+  --radius:8px;--radius-lg:12px;--radius-xl:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--surface-2);color:var(--text-primary);font-size:13px;line-height:1.5;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);background:var(--ink);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .25s ease}
+.sb-brand{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.sb-logo-box{width:32px;height:32px;border-radius:7px;background:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-box i{font-size:17px;color:#fff}
+.sb-brand-name{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.sb-school-tag{font-size:10.5px;color:rgba(255,255,255,.4);line-height:1.4}
+.sb-admin-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-admin-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.9)}
+.sb-admin-role{font-size:10px;color:rgba(255,255,255,.4)}
+.sb-nav{flex:1;padding:8px 10px;overflow-y:auto}
+.sb-section-lbl{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:10px 8px 4px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);font-size:12.5px;color:rgba(255,255,255,.55);cursor:pointer;border:none;background:transparent;width:100%;text-align:left;transition:background .14s,color .14s;font-family:var(--font)}
+.sb-item i{font-size:16px;flex-shrink:0}
+.sb-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
+.sb-item.active{background:var(--orange);color:#fff}
+.sb-item.active i{color:#fff}
+.sb-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9.5px;font-weight:700;border-radius:20px;padding:1px 6px;line-height:16px}
+.sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.07);font-size:11.5px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:8px}
+.sb-footer i{font-size:15px}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-left{display:flex;flex-direction:column}
+.topbar-title{font-size:16px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px}
+.topbar-sub{font-size:11.5px;color:var(--text-secondary);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.tb-btn{display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:var(--radius);font-size:12.5px;font-family:var(--font);border:1px solid var(--border-strong);background:var(--surface);color:var(--text-secondary);cursor:pointer;transition:background .14s;font-weight:500}
+.tb-btn:hover{background:var(--surface-3)}
+.tb-btn.primary{background:var(--orange);color:#fff;border-color:var(--orange)}
+.tb-btn.primary:hover{background:var(--orange-dark)}
+.tb-btn.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tb-btn i{font-size:15px}
+.content{padding:22px 24px;flex:1}
+.page{display:none;animation:fadeIn .18s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px 18px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.kpi.k-orange::before{background:var(--orange)}
+.kpi.k-green::before{background:var(--green-mid)}
+.kpi.k-red::before{background:var(--red)}
+.kpi.k-blue::before{background:var(--blue)}
+.kpi.k-purple::before{background:var(--purple)}
+.kpi.k-teal::before{background:var(--teal)}
+.kpi-lbl{font-size:10.5px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kpi-val{font-size:24px;font-weight:700;color:var(--text-primary);line-height:1;letter-spacing:-.5px;margin-bottom:5px}
+.kpi-sub{font-size:11.5px;color:var(--text-secondary)}
+.kpi-sub.up{color:var(--green)}
+.kpi-sub.warn{color:var(--amber)}
+.kpi-sub.danger{color:var(--red)}
+.kpi-icon{position:absolute;right:14px;top:14px;font-size:22px;opacity:.1}
+.card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);overflow:hidden;margin-bottom:18px}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-size:13px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:7px;letter-spacing:-.2px}
+.card-title i{font-size:17px;color:var(--orange)}
+.card-body{padding:18px}
+.card-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+.alert{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:var(--radius);font-size:12.5px;margin-bottom:14px}
+.alert i{font-size:16px;flex-shrink:0;margin-top:1px}
+.alert.danger{background:var(--red-light);color:var(--red);border:1px solid rgba(198,40,40,.15)}
+.alert.warn{background:var(--amber-light);color:var(--amber);border:1px solid rgba(245,124,0,.2)}
+.alert.info{background:var(--blue-light);color:var(--blue);border:1px solid rgba(21,101,192,.15)}
+.alert.success{background:var(--green-light);color:var(--green);border:1px solid rgba(46,125,50,.15)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;line-height:1.5;white-space:nowrap}
+.pill.paid{background:var(--green-light);color:var(--green)}
+.pill.partial{background:var(--amber-light);color:var(--amber)}
+.pill.unpaid{background:var(--red-light);color:var(--red)}
+.pill.enrolled{background:var(--blue-light);color:var(--blue)}
+.pill.active{background:var(--green-light);color:var(--green)}
+.pill.inactive{background:var(--surface-3);color:var(--text-secondary)}
+.pill.pending{background:var(--purple-light);color:var(--purple)}
+.pill.low{background:var(--amber-light);color:var(--amber)}
+.pill.online{background:var(--teal-light);color:var(--teal)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.07em;padding:9px 14px;border-bottom:1px solid var(--border);background:var(--surface-2);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface-2)}
+.td-mono{font-family:var(--mono);font-size:11px;color:var(--text-secondary)}
+.td-name{font-weight:600;color:var(--text-primary)}
+.td-link{color:var(--orange);cursor:pointer;font-weight:500}
+.td-link:hover{text-decoration:underline}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em}
+.field label .req{color:var(--orange)}
+.field input,.field select,.field textarea{font-family:var(--font);font-size:13px;padding:8px 11px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text-primary);transition:border-color .14s,box-shadow .14s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(230,74,25,.1)}
+.field textarea{resize:vertical;min-height:70px}
+.field-note{font-size:10.5px;color:var(--text-hint);margin-top:2px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row{grid-column:1 / -1}
+.form-section-title{font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid var(--orange-light);display:flex;align-items:center;gap:6px}
+.form-section-title i{font-size:14px}
+.form-section{margin-bottom:22px}
+.form-section:last-child{margin-bottom:0}
+.search-wrap{display:flex;align-items:center;gap:8px}
+.search-box{display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface-2);font-size:12.5px;min-width:200px}
+.search-box i{font-size:15px;color:var(--text-hint);flex-shrink:0}
+.search-box input{border:none;background:transparent;outline:none;font-family:var(--font);font-size:12.5px;color:var(--text-primary);flex:1;width:100%}
+select.flt{font-family:var(--font);font-size:12.5px;padding:6px 10px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text-primary);cursor:pointer}
+.bar-chart{padding:2px 0}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bar-row:last-child{margin-bottom:0}
+.bar-lbl{font-size:11.5px;color:var(--text-secondary);width:70px;flex-shrink:0;font-weight:500}
+.bar-track{flex:1;height:7px;background:var(--surface-3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--orange);transition:width .5s ease}
+.bar-fill.green{background:var(--green-mid)}
+.bar-fill.blue{background:var(--blue)}
+.bar-val{font-size:11.5px;font-weight:600;color:var(--text-primary);width:58px;text-align:right;flex-shrink:0}
+.info-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-lbl{font-size:11.5px;color:var(--text-secondary);width:140px;flex-shrink:0;padding-top:1px}
+.info-val{font-size:12.5px;color:var(--text-primary);font-weight:600;flex:1}
+.fee-row{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--border);transition:background .12s}
+.fee-row:last-child{border-bottom:none}
+.fee-row:hover{background:var(--surface-2)}
+.fee-left{display:flex;align-items:center;gap:10px}
+.fee-icon{width:34px;height:34px;border-radius:var(--radius);background:var(--orange-light);color:var(--orange);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.fee-name{font-size:13px;font-weight:600;color:var(--text-primary)}
+.fee-desc{font-size:11px;color:var(--text-secondary);margin-top:1px}
+.fee-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.fee-amt{font-size:14px;font-weight:700;color:var(--text-primary)}
+.student-hero{background:var(--ink);border-radius:var(--radius-xl);padding:20px 24px;display:flex;align-items:center;gap:18px;margin-bottom:20px;position:relative;overflow:hidden}
+.student-hero::before{content:'';position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04)}
+.student-hero::after{content:'';position:absolute;right:60px;bottom:-25px;width:90px;height:90px;border-radius:50%;background:rgba(230,74,25,.15)}
+.hero-av{width:56px;height:56px;border-radius:50%;background:var(--orange);border:2.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0}
+.hero-name{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.3px;margin-bottom:2px}
+.hero-meta{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:7px}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);font-size:11px;font-weight:600;border-radius:20px;padding:2px 10px;margin-right:6px}
+.hero-stats{display:flex;gap:24px;margin-left:auto}
+.hero-stat{text-align:right}
+.hero-stat-val{font-size:18px;font-weight:700;color:#fff}
+.hero-stat-lbl{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:1px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,17,23,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-xl);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;border:1px solid var(--border)}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px}
+.modal-close{width:30px;height:30px;border-radius:var(--radius);border:1px solid var(--border-strong);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary)}
+.modal-body{padding:22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.timeline{padding:6px 0}
+.tl-item{display:flex;gap:14px;margin-bottom:14px}
+.tl-item:last-child{margin-bottom:0}
+.tl-left{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:10px;height:10px;border-radius:50%;background:var(--orange);flex-shrink:0;margin-top:3px}
+.tl-dot.green{background:var(--green-mid)}
+.tl-dot.gray{background:var(--surface-3);border:1.5px solid var(--border-strong)}
+.tl-line{width:2px;flex:1;background:var(--border);margin:4px 0}
+.tl-body{flex:1;padding-bottom:4px}
+.tl-title{font-size:12.5px;font-weight:600;color:var(--text-primary)}
+.tl-sub{font-size:11.5px;color:var(--text-secondary);margin-top:1px}
+.tl-time{font-size:10.5px;color:var(--text-hint);margin-top:2px;font-family:var(--mono)}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.sum-row:last-child{border-bottom:none}
+.sum-lbl{color:var(--text-secondary)}
+.sum-val{font-weight:700;color:var(--text-primary)}
+.tabs{display:flex;gap:2px;background:var(--surface-3);border-radius:var(--radius);padding:3px}
+.tab-btn{flex:1;padding:6px 10px;border-radius:6px;border:none;background:transparent;font-family:var(--font);font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all .13s}
+.tab-btn.active{background:var(--surface);color:var(--text-primary);font-weight:600}
+.mobile-toggle{display:none;position:fixed;top:12px;left:12px;z-index:200;width:34px;height:34px;border-radius:var(--radius);background:var(--orange);border:none;cursor:pointer;align-items:center;justify-content:center;color:#fff}
+.mobile-toggle i{font-size:18px}
+@media(max-width:960px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .mobile-toggle{display:flex}
+  .kpi-strip{grid-template-columns:1fr 1fr}
+  .two-col,.three-col{grid-template-columns:1fr}
+  .content{padding:16px}
+  .form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle menu"><i class="ti ti-menu-2"></i></button>
+
+<!-- MODAL: Add Student -->
+<div class="modal-overlay" id="modal-add-student">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add / enroll student</div><button class="modal-close" onclick="closeModal('modal-add-student')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-section">
+        <div class="form-section-title"><i class="ti ti-user"></i>Student information</div>
+        <div class="form-grid">
+          <div class="field"><label>Last name <span class="req">*</span></label><input type="text" placeholder="e.g. Santos"></div>
+          <div class="field"><label>First name <span class="req">*</span></label><input type="text" placeholder="e.g. Juan Miguel"></div>
+          <div class="field"><label>Middle name</label><input type="text" placeholder="Optional"></div>
+          <div class="field"><label>Sex <span class="req">*</span></label><select><option>Male</option><option>Female</option></select></div>
+          <div class="field"><label>Date of birth <span class="req">*</span></label><input type="date" value="2012-03-12"></div>
+          <div class="field"><label>Grade level <span class="req">*</span></label><select><option>Grade 1</option><option>Grade 2</option><option>Grade 3</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option selected>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Grade 10</option></select></div>
+          <div class="field"><label>Section</label><input type="text" placeholder="e.g. Section A"></div>
+          <div class="field"><label>Student type</label><select><option>New</option><option>Transferee</option><option>Returnee</option></select></div>
+          <div class="field"><label>LRN</label><input type="text" placeholder="12-digit (optional)"></div>
+          <div class="field"><label>School year <span class="req">*</span></label><select><option>2025-2026</option><option>2024-2025</option></select></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title"><i class="ti ti-users"></i>Parent / guardian</div>
+        <div class="form-grid">
+          <div class="field"><label>Parent full name <span class="req">*</span></label><input type="text" placeholder="Last, First"></div>
+          <div class="field"><label>Relationship</label><select><option>Mother</option><option>Father</option><option>Guardian</option></select></div>
+          <div class="field"><label>Contact number <span class="req">*</span></label><input type="text" placeholder="09XX-XXX-XXXX"></div>
+          <div class="field"><label>Email (for portal)</label><input type="email" placeholder="parent@email.com"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="tb-btn" onclick="closeModal('modal-add-student')">Cancel</button><button class="tb-btn primary"><i class="ti ti-user-plus"></i>Enroll student</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Record Payment -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Record manual payment</div><button class="modal-close" onclick="closeModal('modal-payment')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="field form-row"><label>Student <span class="req">*</span></label><select><option>-- Select student --</option><option>Juan Santos - Grade 7</option><option>Maria Cruz - Grade 4</option><option>Carlo Reyes - Grade 8</option></select></div>
+          <div class="field"><label>Fee type <span class="req">*</span></label><select><option>Monthly tuition</option><option>School supplies fee</option><option>PTA contribution</option><option>Field trip</option><option>Lab fee</option><option>Other</option></select></div>
+          <div class="field"><label>Period / month</label><select><option>June 2025</option><option>July 2025</option><option>August 2025</option></select></div>
+          <div class="field"><label>Amount paid <span class="req">*</span></label><input type="number" placeholder="0.00" value="3500"></div>
+          <div class="field"><label>Payment date <span class="req">*</span></label><input type="date" value="2025-05-19"></div>
+          <div class="field"><label>Channel</label><select><option>Cash (manual)</option><option>Bank transfer</option><option>Online - XMETA/IPAY</option></select></div>
+          <div class="field form-row"><label>Notes / reference</label><input type="text" placeholder="OR number, bank reference, etc."></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="tb-btn" onclick="closeModal('modal-payment')">Cancel</button><button class="tb-btn primary"><i class="ti ti-check"></i>Record payment</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Send Reminder -->
+<div class="modal-overlay" id="modal-reminder">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Send payment reminder</div><button class="modal-close" onclick="closeModal('modal-reminder')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="alert warn" style="margin-bottom:16px"><i class="ti ti-alert-triangle"></i>This will send SMS/email reminders to the selected parents.</div>
+      <div class="form-section">
+        <div class="form-grid">
+          <div class="field form-row"><label>Send to</label><select><option>All parents with unpaid fees</option><option>Parents with overdue tuition only</option><option>Specific student</option></select></div>
+          <div class="field"><label>Reminder type</label><select><option>Tuition due reminder</option><option>Overdue notice</option><option>Final notice</option></select></div>
+          <div class="field"><label>Channel</label><select><option>SMS + Email</option><option>Email only</option><option>SMS only</option></select></div>
+          <div class="field form-row"><label>Custom message (optional)</label><textarea placeholder="Leave blank to use the default message template..."></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="tb-btn" onclick="closeModal('modal-reminder')">Cancel</button><button class="tb-btn primary"><i class="ti ti-send"></i>Send reminders (41 parents)</button></div>
+  </div>
+</div>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo-row"><div class="sb-logo-box"><i class="ti ti-credit-card" aria-hidden="true"></i></div><div><div class="sb-brand-name">XMETA Pay</div></div></div>
+    <div class="sb-school-tag">Brentwood Academy of Las Pinas<br>Admin dashboard - SY 2025-2026</div>
+  </div>
+  <div class="sb-admin-row"><div class="sb-avatar">CN</div><div><div class="sb-admin-name">Ms. Charmaine Nase</div><div class="sb-admin-role">School administrator</div></div></div>
+  <nav class="sb-nav">
+    <div class="sb-section-lbl">Overview</div>
+    <button class="sb-item active" onclick="nav('overview',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
+    <div class="sb-section-lbl">Finance</div>
+    <button class="sb-item" onclick="nav('tuition',this)"><i class="ti ti-receipt"></i>Tuition report<span class="sb-badge">41</span></button>
+    <button class="sb-item" onclick="nav('collections',this)"><i class="ti ti-cash"></i>Collections log</button>
+    <button class="sb-item" onclick="nav('other-fees',this)"><i class="ti ti-clipboard-list"></i>Other fees</button>
+    <div class="sb-section-lbl">Students</div>
+    <button class="sb-item" onclick="nav('students',this)"><i class="ti ti-user-check"></i>Enrolled students</button>
+    <button class="sb-item" onclick="nav('student-profile',this)"><i class="ti ti-id-badge"></i>Student profile</button>
+    <button class="sb-item" onclick="nav('parents',this)"><i class="ti ti-users"></i>Parent contacts</button>
+    <div class="sb-section-lbl">Allowance</div>
+    <button class="sb-item" onclick="nav('allowance',this)"><i class="ti ti-wallet"></i>Allowance ledger</button>
+    <button class="sb-item" onclick="nav('canteen',this)"><i class="ti ti-building-store"></i>Store transactions</button>
+    <div class="sb-section-lbl">Reports</div>
+    <button class="sb-item" onclick="nav('reports',this)"><i class="ti ti-chart-bar"></i>Financial reports</button>
+  </nav>
+  <div class="sb-footer"><i class="ti ti-settings"></i>Settings &amp; configuration</div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left"><div class="topbar-title" id="tb-title">Dashboard</div><div class="topbar-sub" id="tb-sub">Brentwood Academy - SY 2025-2026 - May 19, 2025</div></div>
+    <div class="topbar-right">
+      <button class="tb-btn" onclick="openModal('modal-reminder')"><i class="ti ti-send"></i>Send reminders</button>
+      <button class="tb-btn" onclick="openModal('modal-payment')"><i class="ti ti-plus"></i>Record payment</button>
+      <button class="tb-btn primary" onclick="openModal('modal-add-student')"><i class="ti ti-user-plus"></i>Enroll student</button>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-overview">
+      <div class="alert danger"><i class="ti ti-alert-circle"></i><span><strong>41 students</strong> have unpaid tuition for June. Total outstanding: <strong>P143,500</strong>. <span class="td-link" onclick="nav('tuition',document.querySelectorAll('.sb-item')[1])">View report</span></span></div>
+      <div class="alert warn"><i class="ti ti-clock"></i><span>7 students' allowance wallets are below P50. Parents have been notified automatically.</span></div>
+      <div class="kpi-strip">
+        <div class="kpi k-blue"><i class="ti ti-users kpi-icon"></i><div class="kpi-lbl">Total enrolled</div><div class="kpi-val">244</div><div class="kpi-sub up">+12 from last SY</div></div>
+        <div class="kpi k-orange"><i class="ti ti-cash kpi-icon"></i><div class="kpi-lbl">Collected - June</div><div class="kpi-val">P682,500</div><div class="kpi-sub up">87% collection rate</div></div>
+        <div class="kpi k-red"><i class="ti ti-alert-circle kpi-icon"></i><div class="kpi-lbl">Outstanding - June</div><div class="kpi-val">P143,500</div><div class="kpi-sub danger">41 students unpaid</div></div>
+        <div class="kpi k-green"><i class="ti ti-wallet kpi-icon"></i><div class="kpi-lbl">Top-ups today</div><div class="kpi-val">P4,200</div><div class="kpi-sub up">21 transactions</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i>Tuition collected by grade - June</div></div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-lbl">Grade 7</span><div class="bar-track"><div class="bar-fill" style="width:94%"></div></div><span class="bar-val">P94,500</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 8</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div><span class="bar-val">P88,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 9</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span class="bar-val">P82,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 4</span><div class="bar-track"><div class="bar-fill" style="width:76%"></div></div><span class="bar-val">P76,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 5</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div><span class="bar-val">P70,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 6</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">P65,000</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-calculator"></i>Monthly summary</div><button class="tb-btn"><i class="ti ti-download"></i>Export</button></div>
+          <div class="card-body" style="padding:0 18px">
+            <div class="sum-row"><span class="sum-lbl">Total tuition billed - Jun</span><span class="sum-val">P826,000</span></div>
+            <div class="sum-row"><span class="sum-lbl">Collected to date</span><span class="sum-val" style="color:var(--green)">P682,500</span></div>
+            <div class="sum-row"><span class="sum-lbl">Outstanding balance</span><span class="sum-val" style="color:var(--red)">P143,500</span></div>
+            <div class="sum-row"><span class="sum-lbl">Collection rate</span><span class="sum-val">82.6%</span></div>
+            <div style="height:8px"></div>
+            <div class="sum-row"><span class="sum-lbl">Allowance top-ups - May</span><span class="sum-val">P38,400</span></div>
+            <div class="sum-row"><span class="sum-lbl">Store transactions - May</span><span class="sum-val">P22,180</span></div>
+            <div class="sum-row"><span class="sum-lbl">Transaction fees earned</span><span class="sum-val" style="color:var(--green)">P1,173</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-history"></i>Recent payment activity</div><button class="tb-btn" onclick="nav('collections',document.querySelectorAll('.sb-item')[2])">View all</button></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th style="width:14%">Time</th><th style="width:22%">Student</th><th style="width:22%">Type</th><th style="width:14%">Amount</th><th style="width:14%">Channel</th><th style="width:14%">Status</th></tr></thead>
+              <tbody>
+                <tr><td class="td-mono">10:24 AM</td><td class="td-name">Juan Santos</td><td>Canteen spend</td><td>P85</td><td><span class="pill online">Online</span></td><td><span class="pill paid">Done</span></td></tr>
+                <tr><td class="td-mono">10:12 AM</td><td class="td-name">Maria Cruz</td><td>Allowance top-up</td><td>P500</td><td><span class="pill online">Online</span></td><td><span class="pill paid">Done</span></td></tr>
+                <tr><td class="td-mono">9:55 AM</td><td class="td-name">Carlo Reyes</td><td>Monthly tuition</td><td>P3,500</td><td><span class="pill online">Online</span></td><td><span class="pill paid">Done</span></td></tr>
+                <tr><td class="td-mono">9:15 AM</td><td class="td-name">Ben Torres</td><td>Monthly tuition</td><td>P3,500</td><td><span class="pill online">Online</span></td><td><span class="pill partial">Partial</span></td></tr>
+                <tr><td class="td-mono">8:33 AM</td><td class="td-name">Miguel Tan</td><td>Monthly tuition</td><td>P3,500</td><td><span class="pill online">Online</span></td><td><span class="pill unpaid">Failed</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-activity"></i>Activity feed</div></div>
+          <div class="card-body" style="padding:0 18px">
+            <div class="timeline">
+              <div class="tl-item"><div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div><div class="tl-body"><div class="tl-title">41 payment reminders sent</div><div class="tl-sub">Automated SMS + email via XMETA</div><div class="tl-time">Today 7:00 AM</div></div></div>
+              <div class="tl-item"><div class="tl-left"><div class="tl-dot green"></div><div class="tl-line"></div></div><div class="tl-body"><div class="tl-title">Carlo Reyes paid June tuition</div><div class="tl-sub">P3,500 via online banking - IPAY</div><div class="tl-time">Today 9:55 AM</div></div></div>
+              <div class="tl-item"><div class="tl-left"><div class="tl-dot green"></div><div class="tl-line"></div></div><div class="tl-body"><div class="tl-title">Maria Cruz top-up: P500</div><div class="tl-sub">Student allowance wallet funded</div><div class="tl-time">Today 10:12 AM</div></div></div>
+              <div class="tl-item"><div class="tl-left"><div class="tl-dot gray"></div></div><div class="tl-body"><div class="tl-title">Miguel Tan payment failed</div><div class="tl-sub">Insufficient funds - Retry pending</div><div class="tl-time">Today 8:33 AM</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TUITION REPORT -->
+    <div class="page" id="page-tuition">
+      <div class="kpi-strip">
+        <div class="kpi k-blue"><div class="kpi-lbl">Total billed - Jun</div><div class="kpi-val">P826,000</div><div class="kpi-sub">244 students</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">Fully paid</div><div class="kpi-val">142</div><div class="kpi-sub up">P497,000 collected</div></div>
+        <div class="kpi k-orange"><div class="kpi-lbl">Partial payment</div><div class="kpi-val">61</div><div class="kpi-sub warn">P185,500 collected</div></div>
+        <div class="kpi k-red"><div class="kpi-lbl">Unpaid</div><div class="kpi-val">41</div><div class="kpi-sub danger">P143,500 outstanding</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-receipt"></i>Tuition ledger - June 2025</div>
+          <div class="card-actions">
+            <div class="tabs">
+              <button class="tab-btn active" onclick="filterTuition('all',this)">All (244)</button>
+              <button class="tab-btn" onclick="filterTuition('paid',this)">Paid (142)</button>
+              <button class="tab-btn" onclick="filterTuition('partial',this)">Partial (61)</button>
+              <button class="tab-btn" onclick="filterTuition('unpaid',this)">Unpaid (41)</button>
+            </div>
+            <button class="tb-btn" onclick="openModal('modal-reminder')"><i class="ti ti-send"></i>Send reminders</button>
+            <button class="tb-btn dark"><i class="ti ti-download"></i>Export CSV</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th style="width:20%">Student name</th><th style="width:10%">Grade</th><th style="width:10%">Section</th><th style="width:12%">Fee due</th><th style="width:11%">Paid</th><th style="width:11%">Balance</th><th style="width:13%">Last payment</th><th style="width:13%">Status</th></tr></thead><tbody id="tuition-tbody"></tbody></table></div>
+      </div>
+      <div class="two-col">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i>Outstanding by grade</div></div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-lbl">Grade 7</span><div class="bar-track"><div class="bar-fill" style="width:62%"></div></div><span class="bar-val">P42,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 8</span><div class="bar-track"><div class="bar-fill" style="width:44%"></div></div><span class="bar-val">P28,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 9</span><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div><span class="bar-val">P24,500</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 4</span><div class="bar-track"><div class="bar-fill" style="width:27%"></div></div><span class="bar-val">P17,500</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 5</span><div class="bar-track"><div class="bar-fill" style="width:21%"></div></div><span class="bar-val">P14,000</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 6</span><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><span class="bar-val">P8,400</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-clipboard-list"></i>Other fee items - Jun</div></div>
+          <div class="tbl-wrap"><table><thead><tr><th style="width:40%">Fee type</th><th style="width:20%">Billed</th><th style="width:20%">Collected</th><th style="width:20%">Rate</th></tr></thead><tbody>
+            <tr><td>School supplies</td><td>P24,400</td><td style="color:var(--green);font-weight:600">P19,520</td><td>80%</td></tr>
+            <tr><td>PTA contribution</td><td>P12,200</td><td style="color:var(--green);font-weight:600">P10,980</td><td>90%</td></tr>
+            <tr><td>Field trip - Jun</td><td>P18,300</td><td style="color:var(--amber);font-weight:600">P9,150</td><td>50%</td></tr>
+            <tr><td>Lab fee (Science)</td><td>P9,760</td><td style="color:var(--green);font-weight:600">P8,784</td><td>90%</td></tr>
+            <tr><td>ID / uniform fee</td><td>P6,100</td><td style="color:var(--green);font-weight:600">P5,490</td><td>90%</td></tr>
+          </tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLLECTIONS LOG -->
+    <div class="page" id="page-collections">
+      <div class="kpi-strip">
+        <div class="kpi k-orange"><div class="kpi-lbl">Collected today</div><div class="kpi-val">P38,500</div><div class="kpi-sub up">11 transactions</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">Collected this month</div><div class="kpi-val">P682,500</div><div class="kpi-sub up">vs P640K last month</div></div>
+        <div class="kpi k-blue"><div class="kpi-lbl">Online vs manual</div><div class="kpi-val">94%</div><div class="kpi-sub">online via XMETA/IPAY</div></div>
+        <div class="kpi k-teal"><div class="kpi-lbl">Avg. days to pay</div><div class="kpi-val">3.2</div><div class="kpi-sub">days after due date</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-cash"></i>Payment collection log</div>
+          <div class="card-actions">
+            <div class="search-box"><i class="ti ti-search"></i><input placeholder="Search student, ref..."></div>
+            <select class="flt"><option>All types</option><option>Tuition</option><option>Top-up</option><option>Other fees</option></select>
+            <button class="tb-btn" onclick="openModal('modal-payment')"><i class="ti ti-plus"></i>Record manual</button>
+            <button class="tb-btn dark"><i class="ti ti-download"></i>Export</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th style="width:9%">Ref #</th><th style="width:18%">Student</th><th style="width:10%">Grade</th><th style="width:17%">Fee type</th><th style="width:11%">Amount</th><th style="width:16%">Date &amp; time</th><th style="width:11%">Channel</th><th style="width:8%">Status</th></tr></thead><tbody>
+          <tr><td class="td-mono">TXN-4912</td><td class="td-name">Juan Santos</td><td>Grade 7</td><td>Monthly tuition</td><td style="font-weight:600">P3,500</td><td class="td-mono">May 19 9:55 AM</td><td><span class="pill online">Online</span></td><td><span class="pill paid">Done</span></td></tr>
+          <tr><td class="td-mono">TXN-4911</td><td class="td-name">Maria Cruz</td><td>Grade 4</td><td>Monthly tuition</td><td style="font-weight:600">P3,500</td><td class="td-mono">May 19 9:40 AM</td><td><span class="pill online">Online</span></td><td><span class="pill paid">Done</span></td></tr>
+          <tr><td class="td-mono">TXN-4910</td><td class="td-name">Carlo Reyes</td><td>Grade 8</td><td>Monthly tuition</td><td style="font-weight:600">P3,500</td><td class="td-mono">May 19 9:15 AM</td><td><span class="pill online">Online</span></td><td><span class="pill paid">Done</span></td></tr>
+          <tr><td class="td-mono">TXN-4909</td><td class="td-name">Lea Flores</td><td>Grade 5</td><td>Supply fee</td><td style="font-weight:600">P400</td><td class="td-mono">May 18 3:22 PM</td><td><span class="pill online">Online</span></td><td><span class="pill paid">Done</span></td></tr>
+          <tr><td class="td-mono">TXN-4908</td><td class="td-name">Ana Gonzalez</td><td>Grade 6</td><td>Monthly tuition</td><td style="font-weight:600">P3,500</td><td class="td-mono">May 18 2:15 PM</td><td><span class="pill online">Online</span></td><td><span class="pill paid">Done</span></td></tr>
+          <tr><td class="td-mono">TXN-4907</td><td class="td-name">Ben Torres</td><td>Grade 9</td><td>Monthly tuition</td><td style="font-weight:600">P1,500</td><td class="td-mono">May 18 11:00 AM</td><td><span class="pill online">Online</span></td><td><span class="pill partial">Partial</span></td></tr>
+          <tr><td class="td-mono">TXN-4906</td><td class="td-name">Rosa Mendoza</td><td>Grade 7</td><td>PTA contribution</td><td style="font-weight:600">P200</td><td class="td-mono">May 17 8:45 AM</td><td><span class="pill inactive">Manual</span></td><td><span class="pill paid">Done</span></td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- OTHER FEES -->
+    <div class="page" id="page-other-fees">
+      <div class="kpi-strip">
+        <div class="kpi k-orange"><div class="kpi-lbl">Total other fees billed</div><div class="kpi-val">P70,760</div><div class="kpi-sub">SY 2025-2026 to date</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">Collected</div><div class="kpi-val">P53,924</div><div class="kpi-sub up">76% collection rate</div></div>
+        <div class="kpi k-red"><div class="kpi-lbl">Outstanding</div><div class="kpi-val">P16,836</div><div class="kpi-sub danger">Across 5 fee types</div></div>
+        <div class="kpi k-blue"><div class="kpi-lbl">Active fee types</div><div class="kpi-val">8</div><div class="kpi-sub">SY 2025-2026</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-clipboard-list"></i>Other school fees - SY 2025-2026</div><div class="card-actions"><button class="tb-btn dark"><i class="ti ti-plus"></i>Add fee type</button><button class="tb-btn"><i class="ti ti-download"></i>Export</button></div></div>
+        <div style="padding:0">
+          <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-school"></i></div><div><div class="fee-name">Enrollment / registration fee</div><div class="fee-desc">One-time - SY 2025-2026 - P500 per student</div></div></div><div class="fee-right"><div class="fee-amt">P122,000</div><span class="pill paid">244 / 244 paid</span></div></div>
+          <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-backpack"></i></div><div><div class="fee-name">School supplies fee</div><div class="fee-desc">Annual - P750 per student - Due June 10</div></div></div><div class="fee-right"><div class="fee-amt">P183,000</div><span class="pill partial">196 / 244 paid</span></div></div>
+          <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-users"></i></div><div><div class="fee-name">PTA contribution</div><div class="fee-desc">Annual - P200 per student - Due June 15</div></div></div><div class="fee-right"><div class="fee-amt">P48,800</div><span class="pill partial">218 / 244 paid</span></div></div>
+          <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-bus"></i></div><div><div class="fee-name">Field trip - June</div><div class="fee-desc">Per event - P350 per student - Due June 20</div></div></div><div class="fee-right"><div class="fee-amt">P85,400</div><span class="pill partial">122 / 244 paid</span></div></div>
+          <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-microscope"></i></div><div><div class="fee-name">Science lab fee</div><div class="fee-desc">Annual - P200 per student</div></div></div><div class="fee-right"><div class="fee-amt">P48,800</div><span class="pill paid">226 / 244 paid</span></div></div>
+          <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-id-badge"></i></div><div><div class="fee-name">ID and uniform processing fee</div><div class="fee-desc">One-time - P250 per student</div></div></div><div class="fee-right"><div class="fee-amt">P61,000</div><span class="pill paid">238 / 244 paid</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENROLLED STUDENTS -->
+    <div class="page" id="page-students">
+      <div class="kpi-strip">
+        <div class="kpi k-blue"><div class="kpi-lbl">Total enrolled</div><div class="kpi-val">244</div><div class="kpi-sub up">SY 2025-2026</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">Active students</div><div class="kpi-val">238</div><div class="kpi-sub up">97.5% active</div></div>
+        <div class="kpi k-orange"><div class="kpi-lbl">Linked to parent</div><div class="kpi-val">231</div><div class="kpi-sub warn">13 unlinked</div></div>
+        <div class="kpi k-teal"><div class="kpi-lbl">With active wallet</div><div class="kpi-val">218</div><div class="kpi-sub">89% of enrolled</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-user-check"></i>Student registry</div>
+          <div class="card-actions">
+            <div class="search-box"><i class="ti ti-search"></i><input placeholder="Search student..." oninput="filterStudents(this.value)"></div>
+            <select class="flt" onchange="filterStudentGrade(this.value)"><option value="">All grades</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option></select>
+            <select class="flt"><option>All status</option><option>Enrolled</option><option>Inactive</option></select>
+            <button class="tb-btn primary" onclick="openModal('modal-add-student')"><i class="ti ti-user-plus"></i>Add student</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th style="width:8%">ID</th><th style="width:19%">Full name</th><th style="width:9%">Grade</th><th style="width:7%">Sec.</th><th style="width:15%">Parent</th><th style="width:14%">Contact</th><th style="width:10%">Wallet</th><th style="width:9%">Tuition</th><th style="width:9%">Status</th></tr></thead><tbody id="students-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- STUDENT PROFILE -->
+    <div class="page" id="page-student-profile">
+      <div class="student-hero">
+        <div class="hero-av">JS</div>
+        <div>
+          <div class="hero-name">Juan Miguel Santos</div>
+          <div class="hero-meta">Brentwood Academy - SY 2025-2026 - Grade 7, Section A</div>
+          <div><span class="hero-tag">BWA-2025-0312</span><span class="hero-tag">New student</span><span class="hero-tag">Grade 7</span></div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="hero-stat-val">P320</div><div class="hero-stat-lbl">Wallet balance</div></div>
+          <div class="hero-stat"><div class="hero-stat-val">82%</div><div class="hero-stat-lbl">Fees paid</div></div>
+          <div class="hero-stat"><div class="hero-stat-val">P1,100</div><div class="hero-stat-lbl">Outstanding</div></div>
+        </div>
+      </div>
+      <div class="three-col">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-id-badge"></i>Student details</div><button class="tb-btn"><i class="ti ti-edit"></i>Edit</button></div>
+          <div class="card-body" style="padding:0 18px">
+            <div class="info-row"><span class="info-lbl">Student ID</span><span class="info-val td-mono">BWA-2025-0312</span></div>
+            <div class="info-row"><span class="info-lbl">Full name</span><span class="info-val">Santos, Juan Miguel</span></div>
+            <div class="info-row"><span class="info-lbl">Grade and section</span><span class="info-val">Grade 7 - Section A</span></div>
+            <div class="info-row"><span class="info-lbl">Student type</span><span class="info-val">New student</span></div>
+            <div class="info-row"><span class="info-lbl">Date of birth</span><span class="info-val">March 12, 2012 (13 yrs)</span></div>
+            <div class="info-row"><span class="info-lbl">Sex</span><span class="info-val">Male</span></div>
+            <div class="info-row"><span class="info-lbl">LRN</span><span class="info-val" style="color:var(--text-hint)">Pending assignment</span></div>
+            <div class="info-row"><span class="info-lbl">Enrollment status</span><span class="info-val"><span class="pill enrolled">Enrolled</span></span></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-users"></i>Parent / guardian</div></div>
+          <div class="card-body" style="padding:0 18px">
+            <div class="info-row"><span class="info-lbl">Father</span><span class="info-val">Roberto C. Santos</span></div>
+            <div class="info-row"><span class="info-lbl">Father contact</span><span class="info-val">0918-111-2222</span></div>
+            <div class="info-row"><span class="info-lbl">Mother</span><span class="info-val">Maria G. De Leon</span></div>
+            <div class="info-row"><span class="info-lbl">Mother contact</span><span class="info-val">0917-234-5678</span></div>
+            <div class="info-row"><span class="info-lbl">Portal email</span><span class="info-val">m.santos@gmail.com</span></div>
+            <div class="info-row"><span class="info-lbl">Emergency contact</span><span class="info-val">Maria Santos - 0917-234-5678</span></div>
+            <div class="info-row"><span class="info-lbl">Home address</span><span class="info-val">123 Mabini St., Las Pinas</span></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-wallet"></i>Allowance wallet</div></div>
+          <div class="card-body" style="padding:0 18px">
+            <div class="info-row"><span class="info-lbl">Current balance</span><span class="info-val" style="color:var(--orange);font-size:16px;font-weight:700">P320.00</span></div>
+            <div class="info-row"><span class="info-lbl">Last top-up</span><span class="info-val">Today - P200 by parent</span></div>
+            <div class="info-row"><span class="info-lbl">Month spend</span><span class="info-val">P680 - canteen and store</span></div>
+            <div class="info-row"><span class="info-lbl">Total top-ups May</span><span class="info-val">P1,000 across 5 top-ups</span></div>
+            <div class="info-row"><span class="info-lbl">Wallet status</span><span class="info-val"><span class="pill active">Active</span></span></div>
+            <div class="info-row"><span class="info-lbl">Restriction</span><span class="info-val" style="font-size:11.5px;color:var(--text-secondary)">Campus stores and canteen only</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-receipt"></i>Fee and payment status</div><button class="tb-btn" onclick="openModal('modal-payment')"><i class="ti ti-plus"></i>Record payment</button></div>
+          <div style="padding:0">
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-school"></i></div><div><div class="fee-name">Registration fee</div><div class="fee-desc">One-time - SY 2025-2026</div></div></div><div class="fee-right"><div class="fee-amt">P500</div><span class="pill paid">Paid May 3</span></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-receipt"></i></div><div><div class="fee-name">June 2025 tuition</div><div class="fee-desc">Monthly - Due June 5</div></div></div><div class="fee-right"><div class="fee-amt">P3,500</div><span class="pill paid">Paid May 15</span></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-receipt"></i></div><div><div class="fee-name">July 2025 tuition</div><div class="fee-desc">Monthly - Due July 5</div></div></div><div class="fee-right"><div class="fee-amt">P3,500</div><span class="pill unpaid">Due Jul 5</span></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-backpack"></i></div><div><div class="fee-name">School supplies</div><div class="fee-desc">Partial - P400 paid</div></div></div><div class="fee-right"><div class="fee-amt">P750</div><span class="pill partial">Partial</span></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-users"></i></div><div><div class="fee-name">PTA contribution</div><div class="fee-desc">Due June 15, 2025</div></div></div><div class="fee-right"><div class="fee-amt">P200</div><span class="pill unpaid">Due</span></div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-history"></i>Recent transactions</div></div>
+          <div class="tbl-wrap"><table><thead><tr><th style="width:16%">Date</th><th style="width:30%">Description</th><th style="width:18%">Amount</th><th style="width:16%">Channel</th><th style="width:20%">Status</th></tr></thead><tbody>
+            <tr><td class="td-mono">May 19</td><td>Allowance top-up</td><td style="color:var(--green);font-weight:600">+P200</td><td>Online</td><td><span class="pill paid">Done</span></td></tr>
+            <tr><td class="td-mono">May 19</td><td>Canteen spend</td><td>P85</td><td>Wallet</td><td><span class="pill paid">Done</span></td></tr>
+            <tr><td class="td-mono">May 15</td><td>June tuition</td><td style="font-weight:600">P3,500</td><td>Online</td><td><span class="pill paid">Done</span></td></tr>
+            <tr><td class="td-mono">May 14</td><td>School store</td><td>P65</td><td>Wallet</td><td><span class="pill paid">Done</span></td></tr>
+            <tr><td class="td-mono">May 3</td><td>Registration fee</td><td style="font-weight:600">P500</td><td>Online</td><td><span class="pill paid">Done</span></td></tr>
+          </tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARENT CONTACTS -->
+    <div class="page" id="page-parents">
+      <div class="kpi-strip">
+        <div class="kpi k-blue"><div class="kpi-lbl">Registered parents</div><div class="kpi-val">198</div><div class="kpi-sub">in XMETA portal</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">Linked to students</div><div class="kpi-val">193</div><div class="kpi-sub up">97% linked</div></div>
+        <div class="kpi k-orange"><div class="kpi-lbl">Made a payment</div><div class="kpi-val">181</div><div class="kpi-sub up">this school year</div></div>
+        <div class="kpi k-red"><div class="kpi-lbl">Not yet registered</div><div class="kpi-val">13</div><div class="kpi-sub danger">students unlinked</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-users"></i>Parent directory</div>
+          <div class="card-actions">
+            <div class="search-box"><i class="ti ti-search"></i><input placeholder="Search parent or student..."></div>
+            <button class="tb-btn" onclick="openModal('modal-reminder')"><i class="ti ti-send"></i>Send reminder</button>
+            <button class="tb-btn dark"><i class="ti ti-download"></i>Export</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th style="width:18%">Parent name</th><th style="width:16%">Student(s)</th><th style="width:9%">Grade</th><th style="width:16%">Contact number</th><th style="width:21%">Email address</th><th style="width:11%">Wallet total</th><th style="width:9%">Status</th></tr></thead><tbody>
+          <tr><td class="td-name">Maria Santos</td><td>Juan, Maria Jr.</td><td>7, 4</td><td>0917-234-5678</td><td style="color:var(--blue)">m.santos@gmail.com</td><td style="color:var(--orange);font-weight:600">P470</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Rosa Cruz</td><td>Maria Cruz</td><td>4</td><td>0918-345-6789</td><td style="color:var(--blue)">rosa.cruz@yahoo.com</td><td style="color:var(--orange);font-weight:600">P640</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Pedro Reyes</td><td>Carlo Reyes</td><td>8</td><td>0919-456-7890</td><td style="color:var(--blue)">p.reyes@gmail.com</td><td style="color:var(--text-hint)">P0</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Linda Tan</td><td>Miguel Tan</td><td>7</td><td>0920-567-8901</td><td style="color:var(--blue)">linda.tan@gmail.com</td><td style="color:var(--amber);font-weight:600">P45</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Jun Torres</td><td>Ben Torres</td><td>9</td><td>0921-678-9012</td><td style="color:var(--blue)">jtorres@gmail.com</td><td style="color:var(--amber);font-weight:600">P30</td><td><span class="pill partial">Partial</span></td></tr>
+          <tr><td class="td-name">Nena Flores</td><td>Lea Flores</td><td>5</td><td>0922-789-0123</td><td style="color:var(--text-hint)">not provided</td><td style="color:var(--orange);font-weight:600">P280</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Carla Mendoza</td><td>Rosa Mendoza</td><td>7</td><td>0923-890-1234</td><td style="color:var(--blue)">c.mendoza@gmail.com</td><td style="color:var(--text-hint)">P0</td><td><span class="pill inactive">Inactive</span></td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ALLOWANCE LEDGER -->
+    <div class="page" id="page-allowance">
+      <div class="kpi-strip">
+        <div class="kpi k-blue"><div class="kpi-lbl">Active wallets</div><div class="kpi-val">218</div><div class="kpi-sub">of 244 students</div></div>
+        <div class="kpi k-orange"><div class="kpi-lbl">Total wallet balance</div><div class="kpi-val">P48,320</div><div class="kpi-sub">across all students</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">Top-ups this month</div><div class="kpi-val">P38,400</div><div class="kpi-sub up">192 transactions</div></div>
+        <div class="kpi k-teal"><div class="kpi-lbl">Store spend - May</div><div class="kpi-val">P22,180</div><div class="kpi-sub">avg P91/student</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-wallet"></i>Student wallet balances</div>
+          <div class="card-actions">
+            <div class="tabs"><button class="tab-btn active">All students</button><button class="tab-btn">Low balance</button><button class="tab-btn">Zero balance</button></div>
+            <button class="tb-btn dark"><i class="ti ti-download"></i>Export</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead><tr><th style="width:22%">Student</th><th style="width:11%">Grade</th><th style="width:16%">Current balance</th><th style="width:14%">Last top-up</th><th style="width:13%">Month spend</th><th style="width:14%">Total top-ups</th><th style="width:10%">Status</th></tr></thead><tbody>
+          <tr><td class="td-name">Juan Santos</td><td>Grade 7</td><td style="color:var(--orange);font-weight:700">P320.00</td><td>Today</td><td>P680</td><td>P1,000</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Maria Santos Jr.</td><td>Grade 4</td><td style="color:var(--orange);font-weight:700">P150.00</td><td>Yesterday</td><td>P420</td><td>P800</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Rosa Cruz</td><td>Grade 4</td><td style="color:var(--orange);font-weight:700">P640.00</td><td>Today</td><td>P860</td><td>P1,500</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Carlo Reyes</td><td>Grade 8</td><td style="color:var(--text-hint)">P0.00</td><td>May 17</td><td>P220</td><td>P500</td><td><span class="pill inactive">No balance</span></td></tr>
+          <tr><td class="td-name">Miguel Tan</td><td>Grade 7</td><td style="color:var(--amber);font-weight:700">P45.00</td><td>May 16</td><td>P540</td><td>P1,200</td><td><span class="pill low">Low</span></td></tr>
+          <tr><td class="td-name">Lea Flores</td><td>Grade 5</td><td style="color:var(--orange);font-weight:700">P280.00</td><td>May 18</td><td>P390</td><td>P900</td><td><span class="pill active">Active</span></td></tr>
+          <tr><td class="td-name">Ben Torres</td><td>Grade 9</td><td style="color:var(--amber);font-weight:700">P30.00</td><td>May 15</td><td>P710</td><td>P1,800</td><td><span class="pill low">Low</span></td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- STORE TRANSACTIONS -->
+    <div class="page" id="page-canteen">
+      <div class="kpi-strip">
+        <div class="kpi k-orange"><div class="kpi-lbl">Transactions today</div><div class="kpi-val">47</div><div class="kpi-sub up">P1,840 total</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">This month</div><div class="kpi-val">P22,180</div><div class="kpi-sub">924 transactions</div></div>
+        <div class="kpi k-blue"><div class="kpi-lbl">Avg spend per visit</div><div class="kpi-val">P91</div><div class="kpi-sub">per student</div></div>
+        <div class="kpi k-teal"><div class="kpi-lbl">Transaction fees</div><div class="kpi-val">P333</div><div class="kpi-sub up">1.5% per transaction</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i>Spend by grade - May</div></div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-lbl">Grade 7</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div><span class="bar-val">P5,460</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 8</span><div class="bar-track"><div class="bar-fill" style="width:74%"></div></div><span class="bar-val">P4,610</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 9</span><div class="bar-track"><div class="bar-fill" style="width:62%"></div></div><span class="bar-val">P3,840</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 4</span><div class="bar-track"><div class="bar-fill" style="width:52%"></div></div><span class="bar-val">P3,220</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 5</span><div class="bar-track"><div class="bar-fill" style="width:42%"></div></div><span class="bar-val">P2,610</span></div>
+              <div class="bar-row"><span class="bar-lbl">Grade 6</span><div class="bar-track"><div class="bar-fill" style="width:36%"></div></div><span class="bar-val">P2,200</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-clock"></i>Peak hours today</div></div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-lbl">7-8 AM</span><div class="bar-track"><div class="bar-fill green" style="width:28%"></div></div><span class="bar-val">5 txns</span></div>
+              <div class="bar-row"><span class="bar-lbl">8-9 AM</span><div class="bar-track"><div class="bar-fill green" style="width:50%"></div></div><span class="bar-val">9 txns</span></div>
+              <div class="bar-row"><span class="bar-lbl">10-11 AM</span><div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div><span class="bar-val">18 txns</span></div>
+              <div class="bar-row"><span class="bar-lbl">12-1 PM</span><div class="bar-track"><div class="bar-fill green" style="width:78%"></div></div><span class="bar-val">14 txns</span></div>
+              <div class="bar-row"><span class="bar-lbl">2-3 PM</span><div class="bar-track"><div class="bar-fill green" style="width:6%"></div></div><span class="bar-val">1 txn</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-building-store"></i>Store transaction log - today</div><div class="card-actions"><button class="tb-btn dark"><i class="ti ti-download"></i>Export</button></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th style="width:10%">Ref #</th><th style="width:20%">Student</th><th style="width:10%">Grade</th><th style="width:16%">Store</th><th style="width:14%">Amount</th><th style="width:12%">Txn fee</th><th style="width:18%">Time</th></tr></thead><tbody>
+          <tr><td class="td-mono">STR-4821</td><td class="td-name">Juan Santos</td><td>Grade 7</td><td>Canteen</td><td style="font-weight:600">P85.00</td><td class="td-mono">P1.28</td><td class="td-mono">10:24 AM</td></tr>
+          <tr><td class="td-mono">STR-4820</td><td class="td-name">Ana Gonzalez</td><td>Grade 6</td><td>Canteen</td><td style="font-weight:600">P120.00</td><td class="td-mono">P1.80</td><td class="td-mono">10:12 AM</td></tr>
+          <tr><td class="td-mono">STR-4819</td><td class="td-name">Rosa Cruz</td><td>Grade 4</td><td>School store</td><td style="font-weight:600">P65.00</td><td class="td-mono">P0.98</td><td class="td-mono">9:48 AM</td></tr>
+          <tr><td class="td-mono">STR-4818</td><td class="td-name">Lea Flores</td><td>Grade 5</td><td>Canteen</td><td style="font-weight:600">P95.00</td><td class="td-mono">P1.43</td><td class="td-mono">9:30 AM</td></tr>
+          <tr><td class="td-mono">STR-4817</td><td class="td-name">Carlo Reyes</td><td>Grade 8</td><td>Canteen</td><td style="font-weight:600">P150.00</td><td class="td-mono">P2.25</td><td class="td-mono">8:55 AM</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- FINANCIAL REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="kpi-strip">
+        <div class="kpi k-orange"><div class="kpi-lbl">Total revenue - May</div><div class="kpi-val">P743,253</div><div class="kpi-sub up">vs P698K April</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">Collection efficiency</div><div class="kpi-val">87.2%</div><div class="kpi-sub up">+3.1% vs last month</div></div>
+        <div class="kpi k-blue"><div class="kpi-lbl">Total txn fees earned</div><div class="kpi-val">P1,173</div><div class="kpi-sub">from XMETA system</div></div>
+        <div class="kpi k-teal"><div class="kpi-lbl">Digital payment rate</div><div class="kpi-val">94%</div><div class="kpi-sub up">vs 68% last SY</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i>Monthly revenue trend</div><button class="tb-btn dark"><i class="ti ti-download"></i>Export PDF</button></div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-lbl">January</span><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><span class="bar-val">P594K</span></div>
+              <div class="bar-row"><span class="bar-lbl">February</span><div class="bar-track"><div class="bar-fill" style="width:68%"></div></div><span class="bar-val">P561K</span></div>
+              <div class="bar-row"><span class="bar-lbl">March</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">P660K</span></div>
+              <div class="bar-row"><span class="bar-lbl">April</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="bar-val">P700K</span></div>
+              <div class="bar-row"><span class="bar-lbl">May</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="bar-val">P743K</span></div>
+              <div class="bar-row"><span class="bar-lbl">June</span><div class="bar-track"><div class="bar-fill blue" style="width:55%"></div></div><span class="bar-val">P453K</span></div>
+            </div>
+            <div style="font-size:11px;color:var(--text-hint);margin-top:10px">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--orange);margin-right:5px;vertical-align:-1px"></span>Collected
+              <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--blue);margin-right:5px;margin-left:12px;vertical-align:-1px"></span>Partial / in progress
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-header"><div class="card-title"><i class="ti ti-report"></i>Downloadable reports</div></div>
+          <div style="padding:0">
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-file-spreadsheet"></i></div><div><div class="fee-name">Monthly collection report - May 2025</div><div class="fee-desc">All payments by student and fee type</div></div></div><div class="fee-right"><button class="tb-btn dark"><i class="ti ti-download"></i>CSV</button></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-file-text"></i></div><div><div class="fee-name">Unpaid accounts - Jun 2025</div><div class="fee-desc">41 students with outstanding tuition</div></div></div><div class="fee-right"><button class="tb-btn dark"><i class="ti ti-download"></i>PDF</button></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-wallet"></i></div><div><div class="fee-name">Allowance ledger - May 2025</div><div class="fee-desc">All top-ups and student spending</div></div></div><div class="fee-right"><button class="tb-btn dark"><i class="ti ti-download"></i>CSV</button></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-building-store"></i></div><div><div class="fee-name">Canteen and store report - May 2025</div><div class="fee-desc">Store transactions and peak hours</div></div></div><div class="fee-right"><button class="tb-btn dark"><i class="ti ti-download"></i>CSV</button></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-users"></i></div><div><div class="fee-name">Student and parent directory</div><div class="fee-desc">Full registry with contact details</div></div></div><div class="fee-right"><button class="tb-btn dark"><i class="ti ti-download"></i>CSV</button></div></div>
+            <div class="fee-row"><div class="fee-left"><div class="fee-icon"><i class="ti ti-chart-bar"></i></div><div><div class="fee-name">Annual financial summary SY 2025-26</div><div class="fee-desc">Year-to-date collection vs billing</div></div></div><div class="fee-right"><button class="tb-btn dark"><i class="ti ti-download"></i>PDF</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<script>
+var pageTitles = {
+  'overview':         ['Dashboard',           'Brentwood Academy - SY 2025-2026 - May 19, 2025'],
+  'tuition':          ['Tuition report',      'June 2025 - collection status and outstanding balances'],
+  'collections':      ['Collections log',     'All incoming payments - SY 2025-2026'],
+  'other-fees':       ['Other school fees',   'Non-tuition fee items - SY 2025-2026'],
+  'students':         ['Enrolled students',   'Student registry - SY 2025-2026'],
+  'student-profile':  ['Student profile',     'Juan Miguel Santos - BWA-2025-0312 - Grade 7'],
+  'parents':          ['Parent contacts',     'Registered parents and contact directory'],
+  'allowance':        ['Allowance ledger',    'Student wallet balances and top-up history'],
+  'canteen':          ['Store transactions',  'Canteen and school store spending log'],
+  'reports':          ['Financial reports',   'Downloadable reports and monthly revenue trends']
+};
+
+function nav(id, el) {
+  var pages = document.querySelectorAll('.page');
+  for (var i = 0; i < pages.length; i++) { pages[i].classList.remove('active'); }
+  var pg = document.getElementById('page-' + id);
+  if (pg) { pg.classList.add('active'); }
+  var btns = document.querySelectorAll('.sb-item');
+  for (var j = 0; j < btns.length; j++) { btns[j].classList.remove('active'); }
+  if (el) { el.classList.add('active'); }
+  var t = pageTitles[id] || ['Dashboard', ''];
+  document.getElementById('tb-title').textContent = t[0];
+  document.getElementById('tb-sub').textContent = t[1];
+  document.getElementById('content').scrollTop = 0;
+  if (window.innerWidth < 960) { document.getElementById('sidebar').classList.remove('open'); }
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+var overlays = document.querySelectorAll('.modal-overlay');
+for (var k = 0; k < overlays.length; k++) {
+  overlays[k].addEventListener('click', function(e) {
+    if (e.target === this) { this.classList.remove('open'); }
+  });
+}
+
+var tuitionData = [
+  {name:'Juan Santos',    grade:'Grade 7', sec:'Section A', due:3500, paid:3500, last:'May 15', status:'paid'},
+  {name:'Maria Cruz',     grade:'Grade 4', sec:'Section B', due:3500, paid:3500, last:'May 15', status:'paid'},
+  {name:'Carlo Reyes',    grade:'Grade 8', sec:'Section A', due:3500, paid:3500, last:'May 19', status:'paid'},
+  {name:'Ana Gonzalez',   grade:'Grade 6', sec:'Section C', due:3500, paid:3500, last:'May 18', status:'paid'},
+  {name:'Lea Flores',     grade:'Grade 5', sec:'Section A', due:3500, paid:3500, last:'May 17', status:'paid'},
+  {name:'Ben Torres',     grade:'Grade 9', sec:'Section B', due:3500, paid:1500, last:'May 18', status:'partial'},
+  {name:'Rosa Mendoza',   grade:'Grade 7', sec:'Section A', due:3500, paid:2000, last:'May 16', status:'partial'},
+  {name:'Linda Garcia',   grade:'Grade 5', sec:'Section C', due:3500, paid:1000, last:'May 14', status:'partial'},
+  {name:'Miguel Tan',     grade:'Grade 7', sec:'Section B', due:3500, paid:0,    last:'none',   status:'unpaid'},
+  {name:'Jose Bautista',  grade:'Grade 8', sec:'Section A', due:3500, paid:0,    last:'none',   status:'unpaid'},
+  {name:'Clara Lim',      grade:'Grade 9', sec:'Section B', due:3500, paid:0,    last:'none',   status:'unpaid'},
+  {name:'Pedro Santos',   grade:'Grade 4', sec:'Section A', due:3500, paid:0,    last:'none',   status:'unpaid'}
+];
+
+function renderTuition(filter) {
+  var tb = document.getElementById('tuition-tbody');
+  var html = '';
+  for (var i = 0; i < tuitionData.length; i++) {
+    var r = tuitionData[i];
+    if (filter !== 'all' && r.status !== filter) { continue; }
+    var bal = r.due - r.paid;
+    var cls = r.status === 'paid' ? 'paid' : r.status === 'partial' ? 'partial' : 'unpaid';
+    var lbl = r.status.charAt(0).toUpperCase() + r.status.slice(1);
+    var balColor = bal > 0 ? 'color:var(--red);font-weight:600' : 'color:var(--text-hint)';
+    var lastTxt = r.last === 'none' ? '<span style="color:var(--text-hint)">None</span>' : r.last;
+    html += '<tr>';
+    html += '<td class="td-name">' + r.name + '</td>';
+    html += '<td>' + r.grade + '</td>';
+    html += '<td>' + r.sec + '</td>';
+    html += '<td>P' + r.due.toLocaleString() + '</td>';
+    html += '<td style="color:var(--green);font-weight:600">P' + r.paid.toLocaleString() + '</td>';
+    html += '<td style="' + balColor + '">P' + bal.toLocaleString() + '</td>';
+    html += '<td class="td-mono">' + lastTxt + '</td>';
+    html += '<td><span class="pill ' + cls + '">' + lbl + '</span></td>';
+    html += '</tr>';
+  }
+  tb.innerHTML = html;
+}
+
+function filterTuition(f, btn) {
+  var tabs = document.querySelectorAll('#page-tuition .tab-btn');
+  for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+  btn.classList.add('active');
+  renderTuition(f);
+}
+
+var studentData = [
+  {id:'BWA-001', name:'Juan Santos',     grade:'Grade 7', sec:'A', parent:'Maria Santos',   contact:'0917-234-5678', wallet:'P320', tuition:'paid',    status:'enrolled'},
+  {id:'BWA-002', name:'Maria Cruz',      grade:'Grade 4', sec:'B', parent:'Rosa Cruz',      contact:'0918-345-6789', wallet:'P640', tuition:'paid',    status:'enrolled'},
+  {id:'BWA-003', name:'Carlo Reyes',     grade:'Grade 8', sec:'A', parent:'Pedro Reyes',    contact:'0919-456-7890', wallet:'P0',   tuition:'paid',    status:'enrolled'},
+  {id:'BWA-004', name:'Miguel Tan',      grade:'Grade 7', sec:'B', parent:'Linda Tan',      contact:'0920-567-8901', wallet:'P45',  tuition:'unpaid',  status:'enrolled'},
+  {id:'BWA-005', name:'Lea Flores',      grade:'Grade 5', sec:'A', parent:'Nena Flores',    contact:'0922-789-0123', wallet:'P280', tuition:'paid',    status:'enrolled'},
+  {id:'BWA-006', name:'Ben Torres',      grade:'Grade 9', sec:'B', parent:'Jun Torres',     contact:'0921-678-9012', wallet:'P30',  tuition:'partial', status:'enrolled'},
+  {id:'BWA-007', name:'Rosa Mendoza',    grade:'Grade 7', sec:'A', parent:'Carla Mendoza',  contact:'0923-890-1234', wallet:'P0',   tuition:'partial', status:'inactive'},
+  {id:'BWA-008', name:'Ana Gonzalez',    grade:'Grade 6', sec:'C', parent:'not linked',     contact:'not on file',  wallet:'P180', tuition:'paid',    status:'enrolled'}
+];
+
+var nameFilter = '';
+var gradeFilter = '';
+
+function renderStudents() {
+  var tb = document.getElementById('students-tbody');
+  var html = '';
+  for (var i = 0; i < studentData.length; i++) {
+    var r = studentData[i];
+    var nmMatch = nameFilter === '' || r.name.toLowerCase().indexOf(nameFilter.toLowerCase()) !== -1;
+    var gdMatch = gradeFilter === '' || r.grade === gradeFilter;
+    if (!nmMatch || !gdMatch) { continue; }
+    var sc = r.status === 'enrolled' ? 'enrolled' : 'inactive';
+    var tc = r.tuition === 'paid' ? 'paid' : r.tuition === 'partial' ? 'partial' : 'unpaid';
+    var tl = r.tuition.charAt(0).toUpperCase() + r.tuition.slice(1);
+    var sl = r.status.charAt(0).toUpperCase() + r.status.slice(1);
+    html += '<tr>';
+    html += '<td class="td-mono">' + r.id + '</td>';
+    html += '<td class="td-name td-link" onclick="nav(\'student-profile\',document.querySelectorAll(\'.sb-item\')[5])">' + r.name + '</td>';
+    html += '<td>' + r.grade + '</td>';
+    html += '<td>' + r.sec + '</td>';
+    html += '<td>' + r.parent + '</td>';
+    html += '<td class="td-mono">' + r.contact + '</td>';
+    html += '<td style="font-weight:600;color:var(--orange)">' + r.wallet + '</td>';
+    html += '<td><span class="pill ' + tc + '">' + tl + '</span></td>';
+    html += '<td><span class="pill ' + sc + '">' + sl + '</span></td>';
+    html += '</tr>';
+  }
+  tb.innerHTML = html;
+}
+
+function filterStudents(v) { nameFilter = v; renderStudents(); }
+function filterStudentGrade(v) { gradeFilter = v; renderStudents(); }
+
+renderTuition('all');
+renderStudents();
+</script>
+</body>
+</html>
