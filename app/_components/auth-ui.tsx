@@ -11,22 +11,12 @@ type Field = {
 
 const portalTheme = {
   admin: {
-    eyebrow: "School Admin",
-    title: "Run tuition, enrollment, and allowance operations from one desk.",
-    description:
-      "Built for school finance and registrar teams who need quick visibility into payments, students, and parent accounts.",
-    panelClass: "bg-[#11131a] text-white",
-    accentClass: "bg-[#e64a19]",
     href: "/admin",
+    loginHref: "/admin/xmeta-admin-dashboard_1.html",
   },
   parent: {
-    eyebrow: "Parent / Guardian",
-    title: "Track school fees, student enrollment, and allowance wallet activity.",
-    description:
-      "A calm portal for families to review balances, start enrollment, pay fees, and monitor student spending.",
-    panelClass: "bg-white text-[#1a1a1a]",
-    accentClass: "bg-[#e64a19]",
     href: "/parent",
+    loginHref: "/parent/xmeta-parent-portal.html",
   },
 };
 
@@ -57,67 +47,23 @@ export function PortalAuthLayout({
   mode: "login" | "register";
   children: React.ReactNode;
 }) {
-  const theme = portalTheme[portal];
-  const isAdmin = portal === "admin";
   const otherMode = mode === "login" ? "register" : "login";
 
   return (
     <main className="min-h-screen bg-[#f7f8fa] px-4 py-6 text-[#11131a] sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-6xl flex-col">
+      <div className="mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-3xl flex-col">
         <header className="flex items-center justify-between gap-4">
           <BrandMark />
           <Link
             href="/"
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-[#e64a19]/40 hover:text-[#bf360c]"
+            className="rounded-lg border border-button-outline bg-white px-4 py-2 text-sm font-semibold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19]"
           >
             Choose portal
           </Link>
         </header>
 
-        <section className="grid flex-1 items-center gap-8 py-10 lg:grid-cols-[1fr_0.92fr]">
-          <aside
-            className={`relative overflow-hidden rounded-2xl p-8 shadow-sm ${theme.panelClass} ${isAdmin ? "" : "border border-zinc-200"}`}
-          >
-            <div className="relative z-10">
-              <span className="inline-flex rounded-full bg-[#e64a19]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#e64a19]">
-                {theme.eyebrow}
-              </span>
-              <h1
-                className={`mt-8 max-w-xl text-3xl font-bold tracking-tight sm:text-4xl ${isAdmin ? "text-white" : "text-[#11131a]"}`}
-              >
-                {theme.title}
-              </h1>
-              <p
-                className={`mt-4 max-w-lg text-base leading-7 ${isAdmin ? "text-zinc-300" : "text-zinc-600"}`}
-              >
-                {theme.description}
-              </p>
-
-              <div className="mt-10 grid gap-3 sm:grid-cols-3">
-                {[
-                  ["Collections", isAdmin ? "P842k" : "P1.1k"],
-                  [isAdmin ? "Students" : "Children", isAdmin ? "244" : "2"],
-                  ["Wallets", isAdmin ? "218" : "P470"],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className={`rounded-xl p-4 ${isAdmin ? "bg-white/8 ring-1 ring-white/10" : "bg-[#f7f8fa] ring-1 ring-zinc-200"}`}
-                  >
-                    <div
-                      className={`text-xs font-semibold uppercase tracking-[0.12em] ${isAdmin ? "text-zinc-400" : "text-zinc-500"}`}
-                    >
-                      {label}
-                    </div>
-                    <div className="mt-2 text-2xl font-bold">{value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#e64a19]/20" />
-            <div className="absolute -bottom-20 right-20 h-40 w-40 rounded-full bg-white/5" />
-          </aside>
-
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+        <section className="flex flex-1 items-center justify-center py-10">
+          <div className="w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
             {children}
             <div className="mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-600">
               {mode === "login" ? "New to this portal?" : "Already have access?"}{" "}
@@ -148,8 +94,12 @@ export function AuthForm({
   subtitle: string;
   fields: Field[];
 }) {
+  const theme = portalTheme[portal];
+  const action = mode === "login" ? theme.loginHref : theme.href;
+  const method = mode === "login" ? "post" : "get";
+
   return (
-    <form action={`/${portal}`} className="space-y-5">
+    <form action={action} method={method} className="space-y-5">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#e64a19]">
           {portal === "admin" ? "Admin access" : "Family access"}
@@ -255,13 +205,13 @@ export function PortalCard({
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <Link
           href={href}
-          className="inline-flex h-11 flex-1 items-center justify-center rounded-lg bg-[#2f68b7] px-4 text-sm font-bold text-white transition hover:bg-[#24518f]"
+          className="inline-flex h-11 flex-1 items-center justify-center rounded-lg bg-[#e64a19] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus:ring-4 focus:ring-[#e64a19]/20"
         >
           Sign in
         </Link>
         <Link
           href={registerHref}
-          className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-zinc-300 px-4 text-sm font-bold text-[#11131a] transition hover:border-[#2f68b7] hover:text-[#2f68b7]"
+          className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-button-outline bg-white px-4 text-sm font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus:ring-4 focus:ring-[#e64a19]/10"
         >
           Register
         </Link>

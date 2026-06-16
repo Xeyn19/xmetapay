@@ -73,13 +73,13 @@ export function AdminDashboardShell() {
           <div className="flex gap-3">
             <Link
               href="/admin/login"
-              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-bold text-zinc-700 hover:text-[#bf360c]"
+              className="rounded-lg border border-button-outline bg-white px-4 py-2 text-sm font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19]"
             >
               Login UI
             </Link>
             <Link
               href="/"
-              className="rounded-lg bg-[#11131a] px-4 py-2 text-sm font-bold text-white hover:bg-[#2d3348]"
+              className="rounded-lg bg-[#11131a] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#2d3348] focus:outline-none focus:ring-4 focus:ring-[#11131a]/15"
             >
               Switch portal
             </Link>
@@ -145,13 +145,13 @@ export function ParentDashboardShell() {
           <div className="flex gap-3">
             <Link
               href="/parent/login"
-              className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-zinc-700 hover:text-[#bf360c]"
+              className="rounded-lg border border-button-outline bg-white px-4 py-2 text-sm font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19]"
             >
               Login UI
             </Link>
             <Link
               href="/"
-              className="rounded-lg bg-[#e64a19] px-4 py-2 text-sm font-bold text-white hover:bg-[#bf360c]"
+              className="rounded-lg bg-[#e64a19] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus:ring-4 focus:ring-[#e64a19]/20"
             >
               Switch portal
             </Link>
