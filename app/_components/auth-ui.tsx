@@ -22,15 +22,18 @@ const portalTheme = {
 
 export function BrandMark() {
   return (
-    <Link href="/" className="inline-flex items-center gap-3">
-      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e64a19] text-sm font-bold text-white shadow-sm">
+    <Link
+      href="/"
+      className="inline-flex min-w-0 items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#e64a19] text-sm font-bold text-white shadow-sm">
         XP
       </span>
-      <span>
-        <span className="block text-base font-bold tracking-tight text-[#11131a]">
+      <span className="min-w-0">
+        <span className="block truncate text-base font-bold tracking-tight text-[#11131a]">
           XMETA Pay
         </span>
-        <span className="block text-xs font-medium text-zinc-500">
+        <span className="block truncate text-xs font-medium text-zinc-500">
           School payment portal
         </span>
       </span>
@@ -50,26 +53,26 @@ export function PortalAuthLayout({
   const otherMode = mode === "login" ? "register" : "login";
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa] px-4 py-6 text-[#11131a] sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-3xl flex-col">
-        <header className="flex items-center justify-between gap-4">
+    <main className="min-h-screen bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-4xl flex-col sm:min-h-[calc(100svh-48px)]">
+        <header className="flex min-h-12 items-center justify-between gap-3">
           <BrandMark />
           <Link
             href="/"
-            className="rounded-lg border border-button-outline bg-white px-4 py-2 text-sm font-semibold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19]"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-button-outline bg-white px-3 py-2 text-sm font-semibold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 sm:px-4"
           >
             Choose portal
           </Link>
         </header>
 
-        <section className="flex flex-1 items-center justify-center py-10">
-          <div className="w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+        <section className="flex flex-1 items-center justify-center py-8 sm:py-10 lg:py-12">
+          <div className="w-full rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 lg:p-8">
             {children}
             <div className="mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-600">
               {mode === "login" ? "New to this portal?" : "Already have access?"}{" "}
               <Link
                 href={`/${portal}/${otherMode}`}
-                className="font-bold text-[#bf360c] hover:text-[#e64a19]"
+                className="rounded-md font-bold text-[#bf360c] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
               >
                 {mode === "login" ? "Create an account" : "Sign in instead"}
               </Link>
@@ -97,29 +100,33 @@ export function AuthForm({
   const theme = portalTheme[portal];
   const action = mode === "login" ? theme.loginHref : theme.href;
   const method = "get";
+  const fieldGridClass =
+    mode === "register" ? "grid gap-4 sm:grid-cols-2" : "grid gap-4";
 
   return (
-    <form action={action} method={method} className="space-y-5">
+    <form action={action} method={method} className="space-y-5 sm:space-y-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#e64a19]">
+        <p className="text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#e64a19] sm:text-xs sm:tracking-[0.18em]">
           {portal === "admin" ? "Admin access" : "Family access"}
         </p>
-        <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#11131a]">
+        <h2 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-[#11131a] sm:text-3xl">
           {title}
         </h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-600">{subtitle}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600 sm:text-base sm:leading-7">
+          {subtitle}
+        </p>
       </div>
 
-      <div className="grid gap-4">
+      <div className={fieldGridClass}>
         {fields.map((field) => (
           <label key={field.name} className="block">
-            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">
+            <span className="mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-500 sm:text-xs sm:tracking-[0.12em]">
               {field.label}
             </span>
             {field.options ? (
               <select
                 name={field.name}
-                className="h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-[#11131a] outline-none transition focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
+                className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
                 defaultValue=""
               >
                 <option value="" disabled>
@@ -134,7 +141,7 @@ export function AuthForm({
                 name={field.name}
                 type={field.type ?? "text"}
                 placeholder={field.placeholder}
-                className="h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
+                className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
               />
             )}
           </label>
@@ -142,15 +149,18 @@ export function AuthForm({
       </div>
 
       {mode === "login" ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-          <label className="inline-flex items-center gap-2 text-zinc-600">
+        <div className="flex flex-col gap-3 text-sm min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+          <label className="inline-flex min-h-8 items-center gap-2 text-zinc-600">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-zinc-300 accent-[#e64a19]"
+              className="h-4 w-4 rounded border-zinc-300 accent-[#e64a19] focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
             />
             Remember me
           </label>
-          <a href="#" className="font-semibold text-[#bf360c] hover:text-[#e64a19]">
+          <a
+            href="#"
+            className="inline-flex min-h-8 items-center rounded-md font-semibold text-[#bf360c] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
+          >
             Forgot password?
           </a>
         </div>
@@ -158,7 +168,7 @@ export function AuthForm({
 
       <button
         type="submit"
-        className="h-12 w-full rounded-lg bg-[#e64a19] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus:ring-4 focus:ring-[#e64a19]/20"
+        className="min-h-12 w-full rounded-lg bg-[#e64a19] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
       >
         {mode === "login" ? "Sign in" : "Create account"}
       </button>
@@ -184,34 +194,36 @@ export function PortalCard({
   const isAdmin = variant === "admin";
 
   return (
-    <article className="flex h-full flex-col rounded-2xl border-[0.5px] border-zinc-300 bg-white p-6 text-left text-[#11131a] shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e8f1ff] text-[#2f68b7]">
+    <article className="flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-5 text-left text-[#11131a] shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md sm:p-6 lg:p-7">
+      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#e8f1ff] text-[#2f68b7] ring-1 ring-[#2f68b7]/10">
         {isAdmin ? <SettingsIcon /> : <PeopleIcon />}
       </div>
-      <h2 className="mt-6 text-2xl font-bold tracking-tight">{title}</h2>
-      <p className="mt-3 flex-1 leading-7 text-zinc-600">
+      <h2 className="mt-5 text-xl font-bold leading-tight tracking-tight sm:text-2xl">
+        {title}
+      </h2>
+      <p className="mt-3 flex-1 text-sm leading-7 text-zinc-600 sm:text-base">
         {description}
       </p>
       <div className="mt-5 flex flex-wrap gap-2">
         {tags.map((tag) => (
           <span
             key={tag}
-            className="rounded-md bg-[#f4f1e9] px-3 py-1 text-[11px] font-bold text-zinc-700"
+            className="inline-flex min-h-7 items-center rounded-md bg-[#f1f3f5] px-3 text-[11px] font-bold text-zinc-700"
           >
             {tag}
           </span>
         ))}
       </div>
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-6 flex flex-col gap-3 min-[420px]:flex-row">
         <Link
           href={href}
-          className="inline-flex h-11 flex-1 items-center justify-center rounded-lg bg-[#e64a19] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus:ring-4 focus:ring-[#e64a19]/20"
+          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[#e64a19] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
         >
           Sign in
         </Link>
         <Link
           href={registerHref}
-          className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-button-outline bg-white px-4 text-sm font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus:ring-4 focus:ring-[#e64a19]/10"
+          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-button-outline bg-white px-4 py-2 text-sm font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
         >
           Register
         </Link>

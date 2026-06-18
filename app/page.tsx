@@ -2,29 +2,29 @@ import { BrandMark, PortalCard } from "./_components/auth-ui";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#f7f8fa] px-4 py-5 text-[#11131a] sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-40px)] w-full max-w-6xl flex-col">
-        <header className="flex items-center justify-between gap-4">
+    <main className="min-h-screen bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-6xl flex-col sm:min-h-[calc(100svh-48px)]">
+        <header className="flex min-h-12 items-center justify-between gap-3">
           <BrandMark />
-          <span className="hidden rounded-full border border-[#e64a19]/20 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#bf360c] shadow-sm sm:inline-flex">
+          <span className="hidden min-h-8 items-center rounded-lg border border-[#e64a19]/20 bg-white px-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[#bf360c] shadow-sm sm:inline-flex">
             UI prototype
           </span>
         </header>
 
-        <section className="flex flex-1 items-center justify-center py-8">
+        <section className="flex flex-1 items-center py-10 sm:py-12 lg:py-16">
           <div className="w-full text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e64a19]">
-              Brentwood Academy of Las Piñas
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#e64a19] sm:text-xs sm:tracking-[0.18em]">
+              Brentwood Academy of Las Pinas
             </p>
-            <h1 className="mx-auto mt-4 max-w-2xl text-3xl font-bold tracking-tight text-[#11131a] sm:text-4xl lg:text-5xl">
+            <h1 className="mx-auto mt-4 max-w-3xl text-balance text-[2rem] font-bold leading-[1.08] tracking-tight text-[#11131a] sm:text-5xl lg:text-[3.5rem]">
               Choose where you want to continue.
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-zinc-600">
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-[0.95rem] leading-7 text-zinc-600 sm:text-base lg:text-lg lg:leading-8">
               XMETA Pay separates school operations from family payment tasks,
               so each user lands in a portal designed around their work.
             </p>
 
-            <div className="mt-8 grid gap-5 md:grid-cols-2">
+            <div className="mt-8 grid gap-4 sm:mt-10 sm:gap-5 md:grid-cols-2 lg:gap-6">
               <PortalCard
                 variant="admin"
                 title="School Admin"
@@ -43,7 +43,7 @@ export default function Home() {
               />
             </div>
 
-            <p className="mt-5 text-center text-sm font-medium text-zinc-600">
+            <p className="mx-auto mt-6 max-w-sm text-center text-sm font-medium leading-6 text-zinc-600 sm:max-w-none">
               New to XMETA Pay? Register takes under 2 minutes.
             </p>
           </div>
