@@ -16,7 +16,7 @@ const portalTheme = {
   },
   parent: {
     href: "/parent",
-    loginHref: "/parent/xmeta-parent-portal.html",
+    loginHref: "/parent/dashboard",
   },
 };
 
@@ -96,7 +96,7 @@ export function AuthForm({
 }) {
   const theme = portalTheme[portal];
   const action = mode === "login" ? theme.loginHref : theme.href;
-  const method = mode === "login" && portal === "parent" ? "post" : "get";
+  const method = "get";
 
   return (
     <form action={action} method={method} className="space-y-5">

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1450" viewBox="0 0 1900 1450" role="img" aria-labelledby="title desc">
   <title id="title">XMETA Parent Portal comprehensive flowchart</title>
-  <desc id="desc">Flowchart derived from xmeta-parent-portal.html showing global navigation, enrollment, payments, receipt, history, and wallet top-up flows.</desc>
+  <desc id="desc">Flowchart showing global navigation, enrollment, payments, receipt, history, and wallet top-up flows.</desc>
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L0,6 L9,3 z" fill="#374151"/>
@@ -34,7 +34,7 @@
 
   <rect class="bg" x="0" y="0" width="1900" height="1450"/>
   <text class="title" x="70" y="70">XMETA Pay Parent Portal Flowchart</text>
-  <text class="subtitle" x="70" y="102">Based on xmeta-parent-portal.html - Brentwood Academy parent/guardian portal</text>
+  <text class="subtitle" x="70" y="102">Brentwood Academy parent/guardian portal flow</text>
 
   <!-- Global shell -->
   <rect class="lane" x="55" y="135" width="1790" height="215"/>
