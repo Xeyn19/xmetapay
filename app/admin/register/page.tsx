@@ -36,6 +36,7 @@ export default function AdminRegisterPage() {
             name: "role",
             placeholder: "Select staff role",
             options: ["Finance officer", "Registrar", "School administrator"],
+            spanFull: true,
           },
           {
             label: "Password",

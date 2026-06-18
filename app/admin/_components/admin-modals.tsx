@@ -106,26 +106,26 @@ function Modal({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0f1117]/50 p-5"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0f1117]/50 p-3 sm:p-5"
       role="dialog"
       aria-modal="true"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-black/[0.07] bg-white">
-        <header className="flex items-center justify-between gap-4 border-b border-black/[0.07] px-5 py-4">
-          <h2 className="text-[15px] font-bold tracking-[-0.02em] text-[#0f1117]">{title}</h2>
+      <section className="max-h-[calc(100svh-24px)] w-full max-w-xl overflow-y-auto rounded-xl border border-black/[0.07] bg-white sm:max-h-[90svh]">
+        <header className="flex items-center justify-between gap-4 border-b border-black/[0.07] px-4 py-3.5 sm:px-5 sm:py-4">
+          <h2 className="text-[15px] font-bold leading-5 text-[#0f1117]">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-lg border border-black/15 text-[#5a6070] transition hover:bg-[#eff1f5]"
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-black/15 text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
             aria-label="Close modal"
           >
             <X className="size-4" />
           </button>
         </header>
-        <div className="px-5 py-5">{children}</div>
+        <div className="px-4 py-4 sm:px-5 sm:py-5">{children}</div>
       </section>
     </div>
   );
@@ -142,7 +142,7 @@ function FormSection({
 }) {
   return (
     <section>
-      <h3 className="mb-3 flex items-center gap-1.5 border-b-2 border-[#fbe9e7] pb-2 text-[11px] font-bold uppercase tracking-[0.07em] text-[#e64a19]">
+      <h3 className="mb-3 flex items-center gap-1.5 border-b-2 border-[#fbe9e7] pb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#e64a19]">
         <Icon className="size-3.5" />
         {title}
       </h3>
@@ -153,7 +153,7 @@ function FormSection({
 
 function ModalFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div className="-mx-5 mt-5 flex justify-end gap-2 border-t border-black/[0.07] px-5 pt-4">
+    <div className="-mx-4 mt-5 grid gap-2 border-t border-black/[0.07] px-4 pt-4 min-[420px]:flex min-[420px]:justify-end sm:-mx-5 sm:px-5">
       {children}
     </div>
   );
