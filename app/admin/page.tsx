@@ -1,5 +1,6 @@
-import { AdminDashboardShell } from "../_components/dashboard-ui";
+import { redirect } from "next/navigation";
 
 export default function AdminPage() {
-  return <AdminDashboardShell />;
+  redirect("/admin/dashboard");
 }
+

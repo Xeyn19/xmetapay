@@ -12,7 +12,7 @@ type Field = {
 const portalTheme = {
   admin: {
     href: "/admin",
-    loginHref: "/admin/xmeta-admin-dashboard_1.html",
+    loginHref: "/admin/dashboard",
   },
   parent: {
     href: "/parent",
@@ -96,7 +96,7 @@ export function AuthForm({
 }) {
   const theme = portalTheme[portal];
   const action = mode === "login" ? theme.loginHref : theme.href;
-  const method = mode === "login" ? "post" : "get";
+  const method = mode === "login" && portal === "parent" ? "post" : "get";
 
   return (
     <form action={action} method={method} className="space-y-5">
