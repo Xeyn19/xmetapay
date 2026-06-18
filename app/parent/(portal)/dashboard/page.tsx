@@ -18,7 +18,7 @@ export default function ParentDashboardPage() {
     <>
       <ParentAlert>
         You have <strong>P1,100</strong> in outstanding fees due this month.{" "}
-        <Link href="/parent/pay-tuition" className="font-semibold underline">
+        <Link href="/parent/pay-tuition" className="font-semibold underline underline-offset-2 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
           Pay now
         </Link>
       </ParentAlert>
@@ -34,7 +34,7 @@ export default function ParentDashboardPage() {
           title="My students"
           icon={Users}
           action={
-            <Link href="/parent/enroll" className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] text-[#6b6b6b] hover:bg-[#f2f1ef]">
+            <Link href="/parent/enroll" className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 min-[420px]:w-auto">
               <Plus className="size-4" />
               Add student
             </Link>
@@ -42,7 +42,7 @@ export default function ParentDashboardPage() {
           bodyClassName="p-0"
         >
           {children.map((student) => (
-            <Link key={student.name} href="/parent/student-profile" className="flex items-center justify-between gap-4 border-b border-black/[0.08] px-5 py-4 last:border-b-0 hover:bg-[#f8f8f7]">
+            <Link key={student.name} href="/parent/student-profile" className="flex items-center justify-between gap-3 border-b border-black/[0.08] px-4 py-4 transition last:border-b-0 hover:bg-[#f8f8f7] focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 sm:gap-4 sm:px-5">
               <div className="flex min-w-0 items-center gap-3">
                 <span className={student.tone === "blue" ? "flex size-10 items-center justify-center rounded-[10px] bg-[#e3f2fd] text-lg font-semibold text-[#1565c0]" : "flex size-10 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]"}>
                   {student.initials}
@@ -61,7 +61,7 @@ export default function ParentDashboardPage() {
           title="Outstanding fees"
           icon={CalendarClock}
           action={
-            <Link href="/parent/pay-tuition" className="inline-flex h-8 items-center rounded-[10px] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white hover:bg-[#bf360c]">
+            <Link href="/parent/pay-tuition" className="inline-flex min-h-11 w-full items-center justify-center rounded-[10px] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30 min-[420px]:w-auto">
               Pay now
             </Link>
           }

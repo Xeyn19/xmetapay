@@ -42,26 +42,26 @@ const valueToneClass = {
 };
 
 export function KpiGrid({ children }: { children: ReactNode }) {
-  return <div className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">{children}</div>;
+  return <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{children}</div>;
 }
 
 export function KpiCard({ label, value, note, tone, noteTone = "default", icon: Icon }: Kpi) {
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-xl border border-black/[0.07] bg-white px-[18px] py-4",
+        "relative overflow-hidden rounded-xl border border-black/[0.07] bg-white px-4 py-4 sm:px-[18px]",
         "before:absolute before:inset-x-0 before:top-0 before:h-[3px]",
         toneBorder[tone]
       )}
     >
       {Icon ? <Icon className="absolute right-3.5 top-3.5 size-[22px] text-[#0f1117]/10" /> : null}
-      <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#9ba3b8]">
+      <div className="mb-1.5 pr-8 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9ba3b8]">
         {label}
       </div>
-      <div className="mb-1 text-2xl font-bold leading-none tracking-[-0.02em] text-[#0f1117]">
+      <div className="mb-1 text-2xl font-bold leading-tight text-[#0f1117]">
         {value}
       </div>
-      <div className={cn("text-[11.5px]", noteToneClass[noteTone])}>{note}</div>
+      <div className={cn("text-[11.5px] leading-5", noteToneClass[noteTone])}>{note}</div>
     </section>
   );
 }
@@ -83,9 +83,9 @@ export function AlertBanner({
   };
 
   return (
-    <div className={cn("mb-3.5 flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-[12.5px]", classes[tone])}>
+    <div className={cn("mb-3.5 flex items-start gap-2.5 rounded-lg border px-3.5 py-3 text-[12.5px] leading-5", classes[tone])}>
       <Icon className="mt-0.5 size-4 shrink-0" />
-      <div>{children}</div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }
@@ -107,9 +107,9 @@ export function DashboardCard({
 }) {
   return (
     <section className={cn("overflow-hidden rounded-xl border border-black/[0.07] bg-white", className)}>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.07] px-[18px] py-3.5">
-        <h2 className="flex items-center gap-2 text-[13px] font-bold tracking-[-0.01em] text-[#0f1117]">
-          {Icon ? <Icon className="size-[17px] text-[#e64a19]" /> : null}
+      <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:px-[18px]">
+        <h2 className="flex min-w-0 items-center gap-2 text-[13px] font-bold leading-5 text-[#0f1117]">
+          {Icon ? <Icon className="size-[17px] shrink-0 text-[#e64a19]" /> : null}
           {title}
         </h2>
         {action}
@@ -128,7 +128,7 @@ export function StatusPill({ tone, children }: { tone: StatusTone; children: Rea
 }
 
 export function TableShell({ children }: { children: ReactNode }) {
-  return <div className="overflow-x-auto">{children}</div>;
+  return <div className="overflow-x-auto overscroll-x-contain">{children}</div>;
 }
 
 export function AdminTable({
@@ -140,14 +140,14 @@ export function AdminTable({
 }) {
   return (
     <TableShell>
-      <table className="w-full table-fixed border-collapse text-[12.5px]">
+      <table className="min-w-[700px] w-full table-fixed border-collapse text-[12.5px]">
         <thead>
           <tr>
             {headers.map((header) => (
               <th
                 key={header.label}
                 className={cn(
-                  "border-b border-black/[0.07] bg-[#f7f8fa] px-3.5 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.07em] text-[#9ba3b8]",
+                  "border-b border-black/[0.07] bg-[#f7f8fa] px-3.5 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.04em] text-[#9ba3b8]",
                   header.className
                 )}
               >
@@ -156,7 +156,7 @@ export function AdminTable({
             ))}
           </tr>
         </thead>
-        <tbody className="[&_td]:border-b [&_td]:border-black/[0.07] [&_td]:px-3.5 [&_td]:py-2.5 [&_td]:align-middle [&_td]:last:border-b-0 [&_td]:whitespace-nowrap [&_td]:overflow-hidden [&_td]:text-ellipsis [&_tr:hover_td]:bg-[#f7f8fa]">
+        <tbody className="[&_td]:border-b [&_td]:border-black/[0.07] [&_td]:px-3.5 [&_td]:py-3 [&_td]:align-middle [&_td]:last:border-b-0 [&_td]:whitespace-nowrap [&_td]:overflow-hidden [&_td]:text-ellipsis [&_tr:hover_td]:bg-[#f7f8fa]">
           {children}
         </tbody>
       </table>
@@ -180,15 +180,15 @@ export function BarList({
   return (
     <div className="space-y-2.5">
       {rows.map((row) => (
-        <div key={`${row.label}-${row.value}`} className="flex items-center gap-2.5">
-          <span className="w-[70px] shrink-0 text-[11.5px] font-medium text-[#5a6070]">{row.label}</span>
+        <div key={`${row.label}-${row.value}`} className="grid grid-cols-[minmax(52px,70px)_1fr_minmax(58px,68px)] items-center gap-2.5">
+          <span className="min-w-0 text-[11.5px] font-medium leading-4 text-[#5a6070]">{row.label}</span>
           <span className="h-[7px] flex-1 overflow-hidden rounded-full bg-[#eff1f5]">
             <span
               className={cn("block h-full rounded-full", fillClass[row.tone ?? tone])}
               style={{ width: `${row.percent}%` }}
             />
           </span>
-          <span className="w-[68px] shrink-0 text-right text-[11.5px] font-bold text-[#0f1117]">{row.value}</span>
+          <span className="text-right text-[11.5px] font-bold text-[#0f1117]">{row.value}</span>
         </div>
       ))}
     </div>
@@ -203,9 +203,9 @@ export function SummaryRows({
   return (
     <div className="divide-y divide-black/[0.07]">
       {rows.map((row) => (
-        <div key={row.label} className="flex items-center justify-between gap-4 py-2 text-[12.5px]">
-          <span className="text-[#5a6070]">{row.label}</span>
-          <span className={cn("font-bold", valueToneClass[row.tone ?? "default"])}>{row.value}</span>
+        <div key={row.label} className="flex items-start justify-between gap-4 py-2.5 text-[12.5px] leading-5">
+          <span className="min-w-0 text-[#5a6070]">{row.label}</span>
+          <span className={cn("shrink-0 text-right font-bold", valueToneClass[row.tone ?? "default"])}>{row.value}</span>
         </div>
       ))}
     </div>
@@ -230,9 +230,9 @@ export function Timeline({
             <span className={cn("mt-1 size-2.5 rounded-full", dot[item.tone])} />
             {index < items.length - 1 ? <span className="my-1 w-px flex-1 bg-black/[0.07]" /> : null}
           </div>
-          <div className="pb-1">
-            <div className="text-[12.5px] font-bold text-[#0f1117]">{item.title}</div>
-            <div className="mt-0.5 text-[11.5px] text-[#5a6070]">{item.detail}</div>
+          <div className="min-w-0 pb-1">
+            <div className="text-[12.5px] font-bold leading-5 text-[#0f1117]">{item.title}</div>
+            <div className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{item.detail}</div>
             <div className="mt-0.5 font-mono text-[10.5px] text-[#9ba3b8]">{item.time}</div>
           </div>
         </div>
@@ -253,7 +253,7 @@ export function SearchInput({
   readOnly?: boolean;
 }) {
   return (
-    <label className="flex min-w-[200px] items-center gap-2 rounded-lg border border-black/15 bg-[#f7f8fa] px-3 py-1.5 text-[12.5px]">
+    <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg border border-black/15 bg-[#f7f8fa] px-3 py-2 text-[12.5px] sm:min-w-[200px]">
       <Search className="size-[15px] shrink-0 text-[#9ba3b8]" />
       <input
         value={value}
@@ -276,7 +276,7 @@ export function SegmentedTabs<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="flex gap-0.5 rounded-lg bg-[#eff1f5] p-1">
+    <div className="flex gap-0.5 overflow-x-auto rounded-lg bg-[#eff1f5] p-1">
       {tabs.map((tab) => (
         <button
           key={tab.value}
@@ -284,7 +284,7 @@ export function SegmentedTabs<T extends string>({
           data-tab-value={tab.value}
           onClick={() => onChange(tab.value)}
           className={cn(
-            "rounded-md px-3 py-1.5 text-[12px] font-semibold text-[#5a6070] transition",
+            "min-h-9 whitespace-nowrap rounded-md px-3 py-1.5 text-[12px] font-semibold text-[#5a6070] transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20",
             active === tab.value && "bg-white text-[#0f1117] shadow-sm"
           )}
         >
@@ -313,7 +313,7 @@ export function AdminButton({
     <button
       type="button"
       className={cn(
-        "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-3 text-[12.5px] font-semibold transition focus:outline-none focus:ring-3 focus:ring-[#e64a19]/20 disabled:pointer-events-none disabled:opacity-60",
+        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-3.5 text-[12.5px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60",
         toneClasses[tone],
         className
       )}
@@ -337,7 +337,7 @@ export function Field({
 }) {
   return (
     <label className={cn("grid gap-1", className)}>
-      <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#5a6070]">
+      <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#5a6070]">
         {label} {required ? <span className="text-[#e64a19]">*</span> : null}
       </span>
       {children}
@@ -346,7 +346,7 @@ export function Field({
 }
 
 export const fieldControlClass =
-  "h-9 rounded-lg border border-black/15 bg-white px-3 text-[13px] text-[#0f1117] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/10";
+  "min-h-11 rounded-lg border border-black/15 bg-white px-3 text-[13px] text-[#0f1117] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/10";
 
 export function EmptyState({ children }: { children: ReactNode }) {
   return (

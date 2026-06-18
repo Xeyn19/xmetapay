@@ -15,15 +15,18 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
   const Settings = settingsIcon;
 
   return (
-    <div className="min-h-screen bg-[#f8f8f7] text-[#1a1a1a]">
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed left-3 top-3 z-[120] flex size-9 items-center justify-center rounded-[10px] bg-[#e64a19] text-white shadow-sm lg:hidden"
-        aria-label="Open parent menu"
-      >
-        <Menu className="size-5" />
-      </button>
+    <div className="min-h-[100svh] bg-[#f8f8f7] text-[#1a1a1a]">
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="fixed left-3 top-3 z-[120] flex size-11 items-center justify-center rounded-[10px] bg-[#e64a19] text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30 lg:hidden"
+          aria-label="Open parent menu"
+          aria-expanded={open}
+        >
+          <Menu className="size-5" />
+        </button>
+      ) : null}
 
       {open ? <button type="button" className="fixed inset-0 z-[90] bg-black/35 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu overlay" /> : null}
 
@@ -55,7 +58,7 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
             <div className="truncate text-[13px] font-semibold">Maria Santos</div>
             <div className="text-[11px] text-[#6b6b6b]">Parent / guardian</div>
           </div>
-          <button type="button" className="flex size-7 items-center justify-center rounded-md text-[#6b6b6b] hover:bg-white/60 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu">
+          <button type="button" className="flex size-11 items-center justify-center rounded-md text-[#6b6b6b] transition hover:bg-white/60 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu">
             <X className="size-4" />
           </button>
         </div>
@@ -76,7 +79,7 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       onClick={() => setOpen(false)}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a]",
+                        "flex min-h-11 items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20",
                         active && "bg-[#fbe9e7] text-[#e64a19] hover:bg-[#fbe9e7] hover:text-[#e64a19]"
                       )}
                     >
@@ -97,24 +100,24 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="min-h-screen lg:pl-60">
-        <header className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.08] bg-white px-4 py-3.5 pl-14 lg:px-7 lg:pl-7">
-          <div>
-            <h1 className="text-[17px] font-semibold text-[#1a1a1a]">{meta.title}</h1>
-            <p className="mt-0.5 text-xs text-[#6b6b6b]">{meta.subtitle}</p>
+      <div className="min-h-[100svh] lg:pl-60">
+        <header className="sticky top-0 z-50 flex flex-col gap-3 border-b border-black/[0.08] bg-white px-4 py-3 pl-16 sm:flex-row sm:items-center sm:justify-between lg:px-7 lg:pl-7">
+          <div className="min-w-0">
+            <h1 className="text-[17px] font-semibold leading-6 text-[#1a1a1a]">{meta.title}</h1>
+            <p className="mt-0.5 text-xs leading-5 text-[#6b6b6b]">{meta.subtitle}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Link href="/parent/enroll" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef]">
+          <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:w-auto">
+            <Link href="/parent/enroll" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
               <UserPlus className="size-4" />
               Enroll student
             </Link>
-            <Link href="/parent/pay-tuition" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c]">
+            <Link href="/parent/pay-tuition" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30">
               <Wallet className="size-4" />
               Pay fees
             </Link>
           </div>
         </header>
-        <main className="px-4 py-7 lg:px-7">{children}</main>
+        <main className="px-4 py-5 sm:py-6 lg:px-7 lg:py-7">{children}</main>
       </div>
     </div>
   );

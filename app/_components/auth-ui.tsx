@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { PasswordInput } from "./password-input";
+import { cn } from "@/lib/utils";
 
 type Portal = "admin" | "parent";
 type Field = {
@@ -7,6 +9,7 @@ type Field = {
   placeholder: string;
   name: string;
   options?: string[];
+  spanFull?: boolean;
 };
 
 const portalTheme = {
@@ -51,9 +54,10 @@ export function PortalAuthLayout({
   children: React.ReactNode;
 }) {
   const otherMode = mode === "login" ? "register" : "login";
+  const isLogin = mode === "login";
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
+    <main className="min-h-[100svh] bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-4xl flex-col sm:min-h-[calc(100svh-48px)]">
         <header className="flex min-h-12 items-center justify-between gap-3">
           <BrandMark />
@@ -65,10 +69,10 @@ export function PortalAuthLayout({
           </Link>
         </header>
 
-        <section className="flex flex-1 items-center justify-center py-8 sm:py-10 lg:py-12">
-          <div className="w-full rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 lg:p-8">
+        <section className={isLogin ? "flex flex-1 items-center justify-center py-6 sm:py-8" : "flex flex-1 items-center justify-center py-8 sm:py-10 lg:py-12"}>
+          <div className={isLogin ? "w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6" : "w-full max-w-3xl rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 lg:p-8"}>
             {children}
-            <div className="mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-600">
+            <div className={isLogin ? "mt-5 border-t border-zinc-100 pt-4 text-center text-sm text-zinc-600" : "mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-600"}>
               {mode === "login" ? "New to this portal?" : "Already have access?"}{" "}
               <Link
                 href={`/${portal}/${otherMode}`}
@@ -100,52 +104,47 @@ export function AuthForm({
   const theme = portalTheme[portal];
   const action = mode === "login" ? theme.loginHref : theme.href;
   const method = "get";
+  const isLogin = mode === "login";
   const fieldGridClass =
     mode === "register" ? "grid gap-4 sm:grid-cols-2" : "grid gap-4";
+  const passwordIndex = fields.findIndex((field) => field.name === "password");
+  const confirmPasswordIndex = fields.findIndex((field) => field.name === "confirmPassword");
+  const hasPasswordPair =
+    mode === "register" &&
+    passwordIndex >= 0 &&
+    confirmPasswordIndex >= 0;
+  const visibleFields = hasPasswordPair
+    ? fields.filter((field) => field.name !== "password" && field.name !== "confirmPassword")
+    : fields;
+  const passwordFields = hasPasswordPair
+    ? [fields[passwordIndex], fields[confirmPasswordIndex]]
+    : [];
 
   return (
-    <form action={action} method={method} className="space-y-5 sm:space-y-6">
+    <form action={action} method={method} className={isLogin ? "space-y-4" : "space-y-5 sm:space-y-6"}>
       <div>
-        <p className="text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#e64a19] sm:text-xs sm:tracking-[0.18em]">
+        <p className={isLogin ? "text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#e64a19]" : "text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#e64a19] sm:text-xs sm:tracking-[0.18em]"}>
           {portal === "admin" ? "Admin access" : "Family access"}
         </p>
-        <h2 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-[#11131a] sm:text-3xl">
+        <h2 className={isLogin ? "mt-2 text-2xl font-bold leading-tight text-[#11131a]" : "mt-3 text-2xl font-bold leading-tight tracking-tight text-[#11131a] sm:text-3xl"}>
           {title}
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600 sm:text-base sm:leading-7">
+        <p className={isLogin ? "mt-2 text-sm leading-6 text-zinc-600" : "mt-2 max-w-2xl text-sm leading-6 text-zinc-600 sm:text-base sm:leading-7"}>
           {subtitle}
         </p>
       </div>
 
       <div className={fieldGridClass}>
-        {fields.map((field) => (
-          <label key={field.name} className="block">
-            <span className="mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-500 sm:text-xs sm:tracking-[0.12em]">
-              {field.label}
-            </span>
-            {field.options ? (
-              <select
-                name={field.name}
-                className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  {field.placeholder}
-                </option>
-                {field.options.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                name={field.name}
-                type={field.type ?? "text"}
-                placeholder={field.placeholder}
-                className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
-              />
-            )}
-          </label>
+        {visibleFields.map((field) => (
+          <AuthField key={field.name} field={field} compact={isLogin} />
         ))}
+        {hasPasswordPair ? (
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2 sm:gap-4">
+            {passwordFields.map((field) => (
+              <AuthField key={field.name} field={field} compact={isLogin} alignLabel />
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {mode === "login" ? (
@@ -173,6 +172,43 @@ export function AuthForm({
         {mode === "login" ? "Sign in" : "Create account"}
       </button>
     </form>
+  );
+}
+
+function AuthField({ field, compact, alignLabel = false }: { field: Field; compact: boolean; alignLabel?: boolean }) {
+  return (
+    <label className={cn("block", field.spanFull && "sm:col-span-2")}>
+      <span className={compact ? "mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-500" : `mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-500 sm:text-xs sm:tracking-[0.12em] ${alignLabel ? "min-h-8 sm:min-h-0" : ""}`}>
+        {field.label}
+      </span>
+      {field.options ? (
+        <select
+          name={field.name}
+          className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            {field.placeholder}
+          </option>
+          {field.options.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
+        </select>
+      ) : field.type === "password" ? (
+        <PasswordInput
+          name={field.name}
+          placeholder={field.placeholder}
+          className="px-3 py-2 text-sm text-[#11131a] placeholder:text-zinc-400"
+        />
+      ) : (
+        <input
+          name={field.name}
+          type={field.type ?? "text"}
+          placeholder={field.placeholder}
+          className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
+        />
+      )}
+    </label>
   );
 }
 
