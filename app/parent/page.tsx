@@ -1,5 +1,6 @@
-import { ParentDashboardShell } from "../_components/dashboard-ui";
+import { redirect } from "next/navigation";
 
 export default function ParentPage() {
-  return <ParentDashboardShell />;
+  redirect("/parent/dashboard");
 }
+
