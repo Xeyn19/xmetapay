@@ -1,0 +1,5 @@
+interface:
+  display_name: "Responsive UI/UX"
+  short_description: "Responsive polish for XMETA Pay UI"
+  default_prompt: "Use $responsive-ui-ux to polish this XMETA Pay screen for responsive UI and accessibility."
+
