@@ -4,17 +4,17 @@ import test from "node:test";
 
 const authUi = readFileSync("app/_components/auth-ui.tsx", "utf8");
 
-test("login forms submit directly to the static dashboard html pages", () => {
-  assert.match(authUi, /admin:\s*{[\s\S]*loginHref:\s*"\/admin\/xmeta-admin-dashboard_1\.html"/);
-  assert.match(authUi, /parent:\s*{[\s\S]*loginHref:\s*"\/parent\/xmeta-parent-portal\.html"/);
+test("login forms submit directly to the app dashboard pages", () => {
+  assert.match(authUi, /admin:\s*{[\s\S]*loginHref:\s*"\/admin\/dashboard"/);
+  assert.match(authUi, /parent:\s*{[\s\S]*loginHref:\s*"\/parent\/dashboard"/);
   assert.match(authUi, /const action = mode === "login" \? theme\.loginHref : theme\.href;/);
-  assert.match(authUi, /const method = mode === "login" \? "post" : "get";/);
+  assert.match(authUi, /const method = "get";/);
   assert.match(authUi, /<form action={action} method={method}/);
 });
 
-test("dashboard html urls are exposed through app route handlers", () => {
-  assert.equal(existsSync("app/admin/[file]/route.ts"), true);
-  assert.equal(existsSync("app/parent/[file]/route.ts"), true);
+test("dashboard urls are exposed through app pages", () => {
+  assert.equal(existsSync("app/admin/(dashboard)/dashboard/page.tsx"), true);
+  assert.equal(existsSync("app/parent/(portal)/dashboard/page.tsx"), true);
 });
 
 test("auth pages do not render the portal promo summary panels", () => {
