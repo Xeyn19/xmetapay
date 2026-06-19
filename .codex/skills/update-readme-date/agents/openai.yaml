@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update README Date"
+  short_description: "Update README safely and refresh its date"
+  default_prompt: "Use $update-readme-date to update README.md from safe public project changes and refresh its date footer."
