@@ -1,0 +1,4 @@
+interface:
+  display_name: "Auto E2E Tests"
+  short_description: "Generate Playwright tests from project changes"
+  default_prompt: "Use $auto-e2e-tests to create Playwright e2e coverage for my latest feature changes."
