@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# XMETA Pay
+
+XMETA Pay is a Next.js school-fintech app for parent payments and school administration workflows. It includes parent portal screens, admin dashboard screens, shared UI components, and automated tests.
+
+## Features
+
+- Parent portal flows for login, registration, dashboard, enrollment, fees, tuition payment, receipts, transaction history, wallet, and student profile views.
+- Admin flows for login, registration, dashboard, student and parent management, tuition, other fees, collections, reports, allowance, and store transactions.
+- Shared UI components built with React, Tailwind CSS, Base UI, and lucide-react icons.
+- Playwright end-to-end coverage and Node test scripts.
+- Project-local Codex skills for workflow automation, including `$update-readme-date` to refresh this README from safe public project changes and update the footer date.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies, then run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev          # Start the development server
+npm run build        # Build the app
+npm run start        # Start the production server
+npm run lint         # Run ESLint
+npm run test         # Run unit and end-to-end tests
+npm run test:unit    # Run Node unit tests
+npm run test:e2e     # Run Playwright tests
+```
 
-## Learn More
+## Project Notes
 
-To learn more about Next.js, take a look at the following resources:
+- The app uses Next.js 16, React 19, TypeScript, and Tailwind CSS.
+- End-to-end tests live in `e2e/`.
+- Codex project skills live in `.codex/skills/`.
+- Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Last updated: 2026-06-19
