@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   Menu,
   MonitorCog,
+  LogOut,
   Plus,
   ReceiptText,
   Send,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { AdminModalId, AdminModals } from "./admin-modals";
+import { logoutAction } from "@/app/auth/actions";
 import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
 import { cn } from "@/lib/utils";
@@ -24,6 +26,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<AdminModalId | null>(null);
   const meta = pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
+  const logout = logoutAction.bind(null, "admin");
 
   const openModal = (modal: AdminModalId) => setActiveModal(modal);
   const closeModal = () => setActiveModal(null);
@@ -124,9 +127,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 border-t border-white/[0.07] px-4 py-3 text-[11.5px] text-white/35">
-          <Settings className="size-[15px]" />
-          Settings & configuration
+        <div className="grid gap-2 border-t border-white/[0.07] px-4 py-3">
+          <div className="flex items-center gap-2 text-[11.5px] text-white/35">
+            <Settings className="size-[15px]" />
+            Settings & configuration
+          </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] font-semibold text-white/55 transition hover:bg-white/[0.07] hover:text-white/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-white/20"
+            >
+              <LogOut className="size-4" />
+              Log out
+            </button>
+          </form>
         </div>
       </aside>
 

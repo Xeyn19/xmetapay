@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { createHmac } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 test.describe("XMETA Pay portal entry", () => {
   test("home page shows both portal choices", async ({ page }) => {
@@ -49,40 +51,46 @@ test.describe("XMETA Pay portal entry", () => {
 });
 
 test.describe("XMETA Pay login flows", () => {
-  test("admin login form submits to the admin dashboard", async ({ page }) => {
+  test("admin login form handles invalid or unavailable credentials without query-string passwords", async ({ page }) => {
     await page.goto("/admin/login");
 
-    await page.getByLabel("Work email").fill("admin@school.edu.ph");
+    await page.getByLabel("Work email").fill("missing-admin@school.edu.ph");
     await page.locator('input[name="password"]').fill("demo-password");
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page).toHaveURL(
-      "/admin/dashboard?email=admin%40school.edu.ph&password=demo-password"
-    );
-    await expect(
-      page.getByRole("heading", { name: "Dashboard" })
-    ).toBeVisible();
-    await expect(page.getByText("School administrator")).toBeVisible();
+    await expect(page).toHaveURL("/admin/login");
+    await expect(page).not.toHaveURL(/password=/);
+    await expect(page.getByText(/invalid login details|unable to sign in/i)).toBeVisible();
   });
 
-  test("parent login form submits to the parent dashboard", async ({ page }) => {
+  test("parent login form handles invalid or unavailable credentials without query-string passwords", async ({ page }) => {
     await page.goto("/parent/login");
 
-    await page.getByLabel("Email or mobile number").fill("parent@email.com");
+    await page.getByLabel("Email or mobile number").fill("missing-parent@email.com");
     await page.locator('input[name="password"]').fill("demo-password");
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page).toHaveURL(
-      "/parent/dashboard?identifier=parent%40email.com&password=demo-password"
-    );
-    await expect(
-      page.getByRole("heading", { name: "Dashboard" })
-    ).toBeVisible();
-    await expect(page.getByText("Parent / guardian")).toBeVisible();
+    await expect(page).toHaveURL("/parent/login");
+    await expect(page).not.toHaveURL(/password=/);
+    await expect(page.getByText(/invalid login details|unable to sign in/i)).toBeVisible();
   });
 });
 
 test.describe("XMETA Pay dashboard smoke tests", () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([
+      {
+        name: "xmetapay_session",
+        value: signedSessionCookie("admin"),
+        domain: "localhost",
+        path: "/",
+        httpOnly: true,
+        sameSite: "Lax",
+        expires: Math.floor(Date.now() / 1000) + 60 * 60,
+      },
+    ]);
+  });
+
   test("important admin dashboard routes render without crashing", async ({
     page,
   }) => {
@@ -101,6 +109,34 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
         page.getByRole("heading", { level: 1, name: route.heading })
       ).toBeVisible();
     }
+  });
+
+  test("admin logout clears the session and returns to admin login", async ({
+    page,
+  }) => {
+    await page.goto("/admin/dashboard", { waitUntil: "domcontentloaded" });
+
+    await page.getByRole("button", { name: "Log out" }).click();
+
+    await expect(page).toHaveURL("/admin/login");
+    await page.goto("/admin/dashboard");
+    await expect(page).toHaveURL("/admin/login");
+  });
+});
+
+test.describe("XMETA Pay parent portal smoke tests", () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([
+      {
+        name: "xmetapay_session",
+        value: signedSessionCookie("parent"),
+        domain: "localhost",
+        path: "/",
+        httpOnly: true,
+        sameSite: "Lax",
+        expires: Math.floor(Date.now() / 1000) + 60 * 60,
+      },
+    ]);
   });
 
   test("important parent portal routes render without crashing", async ({
@@ -122,4 +158,60 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
       ).toBeVisible();
     }
   });
+
+  test("parent logout clears the session and returns to parent login", async ({
+    page,
+  }) => {
+    await page.goto("/parent/dashboard", { waitUntil: "domcontentloaded" });
+
+    await page.getByRole("button", { name: "Log out" }).click();
+
+    await expect(page).toHaveURL("/parent/login");
+    await page.goto("/parent/dashboard");
+    await expect(page).toHaveURL("/parent/login");
+  });
 });
+
+test.describe("XMETA Pay dashboard protection", () => {
+  test("admin dashboard redirects to admin login without a session", async ({ page }) => {
+    await page.goto("/admin/dashboard");
+    await expect(page).toHaveURL("/admin/login");
+  });
+
+  test("parent dashboard redirects to parent login without a session", async ({ page }) => {
+    await page.goto("/parent/dashboard");
+    await expect(page).toHaveURL("/parent/login");
+  });
+});
+
+function signedSessionCookie(role: "admin" | "parent") {
+  const payload = {
+    userId: role === "admin" ? 1 : 2,
+    role,
+    name: role === "admin" ? "Test Admin" : "Test Parent",
+    expiresAt: Date.now() + 60 * 60 * 1000,
+  };
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = createHmac("sha256", testSessionSecret())
+    .update(body)
+    .digest("base64url");
+
+  return `${body}.${signature}`;
+}
+
+function testSessionSecret() {
+  if (process.env.AUTH_SESSION_SECRET) {
+    return process.env.AUTH_SESSION_SECRET;
+  }
+
+  try {
+    const env = readFileSync(".env", "utf8");
+    const line = env
+      .split(/\r?\n/)
+      .find((entry) => entry.startsWith("AUTH_SESSION_SECRET="));
+
+    return line?.slice("AUTH_SESSION_SECRET=".length) || "xmetapay-local-dev-session-secret";
+  } catch {
+    return "xmetapay-local-dev-session-secret";
+  }
+}

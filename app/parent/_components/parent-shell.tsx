@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Receipt, UserPlus, Wallet, X } from "lucide-react";
+import { LogOut, Menu, Receipt, UserPlus, Wallet, X } from "lucide-react";
 import { useState } from "react";
 
+import { logoutAction } from "@/app/auth/actions";
 import { cn } from "@/lib/utils";
 import { parentNavSections, parentPageMeta, settingsIcon } from "../_data/parent-portal-data";
 
@@ -13,6 +14,7 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const meta = parentPageMeta[pathname] ?? parentPageMeta["/parent/dashboard"];
   const Settings = settingsIcon;
+  const logout = logoutAction.bind(null, "parent");
 
   return (
     <div className="min-h-[100svh] bg-[#f8f8f7] text-[#1a1a1a]">
@@ -94,9 +96,20 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 border-t border-black/[0.08] px-[18px] py-3.5 text-xs text-[#6b6b6b]">
-          <Settings className="size-[15px]" />
-          Account settings
+        <div className="grid gap-2 border-t border-black/[0.08] px-[18px] py-3.5">
+          <div className="flex items-center gap-2 text-xs text-[#6b6b6b]">
+            <Settings className="size-[15px]" />
+            Account settings
+          </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex min-h-11 w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+            >
+              <LogOut className="size-[17px]" />
+              Log out
+            </button>
+          </form>
         </div>
       </aside>
 
