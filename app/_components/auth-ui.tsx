@@ -1,4 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useActionState } from "react";
+
+import { loginAction, registerAction, type AuthFormState } from "@/app/auth/actions";
 import { PasswordInput } from "./password-input";
 import { cn } from "@/lib/utils";
 
@@ -10,17 +15,6 @@ type Field = {
   name: string;
   options?: string[];
   spanFull?: boolean;
-};
-
-const portalTheme = {
-  admin: {
-    href: "/admin",
-    loginHref: "/admin/dashboard",
-  },
-  parent: {
-    href: "/parent",
-    loginHref: "/parent/dashboard",
-  },
 };
 
 export function BrandMark() {
@@ -101,10 +95,11 @@ export function AuthForm({
   subtitle: string;
   fields: Field[];
 }) {
-  const theme = portalTheme[portal];
-  const action = mode === "login" ? theme.loginHref : theme.href;
-  const method = "get";
   const isLogin = mode === "login";
+  const serverAction = (isLogin ? loginAction : registerAction).bind(null, portal);
+  const [state, action, pending] = useActionState<AuthFormState, FormData>(serverAction, {
+    message: "",
+  });
   const fieldGridClass =
     mode === "register" ? "grid gap-4 sm:grid-cols-2" : "grid gap-4";
   const passwordIndex = fields.findIndex((field) => field.name === "password");
@@ -121,7 +116,7 @@ export function AuthForm({
     : [];
 
   return (
-    <form action={action} method={method} className={isLogin ? "space-y-4" : "space-y-5 sm:space-y-6"}>
+    <form action={action} className={isLogin ? "space-y-4" : "space-y-5 sm:space-y-6"}>
       <div>
         <p className={isLogin ? "text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#e64a19]" : "text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#e64a19] sm:text-xs sm:tracking-[0.18em]"}>
           {portal === "admin" ? "Admin access" : "Family access"}
@@ -136,16 +131,22 @@ export function AuthForm({
 
       <div className={fieldGridClass}>
         {visibleFields.map((field) => (
-          <AuthField key={field.name} field={field} compact={isLogin} />
+          <AuthField key={field.name} field={field} compact={isLogin} error={state.errors?.[field.name]} />
         ))}
         {hasPasswordPair ? (
           <div className="grid grid-cols-2 gap-3 sm:col-span-2 sm:gap-4">
             {passwordFields.map((field) => (
-              <AuthField key={field.name} field={field} compact={isLogin} alignLabel />
+              <AuthField key={field.name} field={field} compact={isLogin} alignLabel error={state.errors?.[field.name]} />
             ))}
           </div>
         ) : null}
       </div>
+
+      {state.message ? (
+        <p className="rounded-lg border border-[#f4b6a5] bg-[#fff4f0] px-3 py-2 text-sm font-semibold text-[#9f2f12]" aria-live="polite">
+          {state.message}
+        </p>
+      ) : null}
 
       {mode === "login" ? (
         <div className="flex flex-col gap-3 text-sm min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
@@ -167,15 +168,26 @@ export function AuthForm({
 
       <button
         type="submit"
-        className="min-h-12 w-full rounded-lg bg-[#e64a19] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
+        disabled={pending}
+        className="min-h-12 w-full rounded-lg bg-[#e64a19] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {mode === "login" ? "Sign in" : "Create account"}
+        {pending ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
       </button>
     </form>
   );
 }
 
-function AuthField({ field, compact, alignLabel = false }: { field: Field; compact: boolean; alignLabel?: boolean }) {
+function AuthField({
+  field,
+  compact,
+  alignLabel = false,
+  error,
+}: {
+  field: Field;
+  compact: boolean;
+  alignLabel?: boolean;
+  error?: string;
+}) {
   return (
     <label className={cn("block", field.spanFull && "sm:col-span-2")}>
       <span className={compact ? "mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-500" : `mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-500 sm:text-xs sm:tracking-[0.12em] ${alignLabel ? "min-h-8 sm:min-h-0" : ""}`}>
@@ -184,6 +196,8 @@ function AuthField({ field, compact, alignLabel = false }: { field: Field; compa
       {field.options ? (
         <select
           name={field.name}
+          required
+          aria-invalid={Boolean(error)}
           className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
           defaultValue=""
         >
@@ -198,6 +212,8 @@ function AuthField({ field, compact, alignLabel = false }: { field: Field; compa
         <PasswordInput
           name={field.name}
           placeholder={field.placeholder}
+          required
+          aria-invalid={Boolean(error)}
           className="px-3 py-2 text-sm text-[#11131a] placeholder:text-zinc-400"
         />
       ) : (
@@ -205,9 +221,12 @@ function AuthField({ field, compact, alignLabel = false }: { field: Field; compa
           name={field.name}
           type={field.type ?? "text"}
           placeholder={field.placeholder}
+          required
+          aria-invalid={Boolean(error)}
           className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
         />
       )}
+      {error ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{error}</span> : null}
     </label>
   );
 }
