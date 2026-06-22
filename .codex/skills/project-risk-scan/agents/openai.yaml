@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Risk Scan"
+  short_description: "Scan XMETA Pay for project security risks"
+  default_prompt: "Use $project-risk-scan to scan the project for security and quality risks."
