@@ -6,6 +6,7 @@ XMETA Pay is a Next.js school-fintech app for parent payments and school adminis
 
 - Parent portal flows for login, registration, dashboard, enrollment, fees, tuition payment, receipts, transaction history, wallet, and student profile views.
 - Admin flows for login, registration, dashboard, student and parent management, tuition, other fees, collections, reports, allowance, and store transactions.
+- Toast feedback for login, registration, and logout across the admin and parent auth flows.
 - Shared UI components built with React, Tailwind CSS, Base UI, and lucide-react icons.
 - Playwright end-to-end coverage and Node test scripts.
 - Project-local Codex skills for workflow automation, including `$update-readme-date` to refresh this README from safe public project changes and update the footer date.
@@ -40,4 +41,4 @@ npm run test:e2e     # Run Playwright tests
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
-Last updated: 2026-06-19
+Last updated: 2026-06-22

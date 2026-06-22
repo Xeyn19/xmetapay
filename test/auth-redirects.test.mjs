@@ -5,6 +5,10 @@ import test from "node:test";
 const authUi = readFileSync("app/_components/auth-ui.tsx", "utf8");
 const authActions = readFileSync("app/auth/actions.ts", "utf8");
 const session = readFileSync("lib/auth/session.ts", "utf8");
+const rootLayout = readFileSync("app/layout.tsx", "utf8");
+const flashToast = readFileSync("app/_components/flash-toast.tsx", "utf8");
+const adminLoginPage = readFileSync("app/admin/login/page.tsx", "utf8");
+const parentLoginPage = readFileSync("app/parent/login/page.tsx", "utf8");
 
 test("auth forms submit through server actions instead of static redirects", () => {
   assert.match(authUi, /"use client";/);
@@ -32,7 +36,8 @@ test("logout clears the auth session and redirects by portal role", () => {
   assert.match(session, /cookieStore\.delete\(\{[\s\S]*name: cookieName,[\s\S]*path: "\/",[\s\S]*\}\);/);
   assert.match(authActions, /export async function logoutAction\(role: PortalRole\)/);
   assert.match(authActions, /await deleteSession\(\);/);
-  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/login" : "\/parent\/login"\);/);
+  assert.match(authActions, /title: "Signed out"/);
+  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/login\?signedOut=1" : "\/parent\/login\?signedOut=1"\);/);
   assert.match(adminShell, /logoutAction\.bind\(null, "admin"\)/);
   assert.match(parentShell, /logoutAction\.bind\(null, "parent"\)/);
   assert.match(adminShell, /Log out/);
@@ -53,4 +58,43 @@ test("auth pages do not render the portal promo summary panels", () => {
     "P1.1k",
     "P470",
   ].forEach((text) => assert.equal(authUi.includes(text), false, text));
+});
+
+test("auth flows surface toast feedback for login and register across portals", () => {
+  const adminLayout = readFileSync("app/admin/(dashboard)/layout.tsx", "utf8");
+  const parentLayout = readFileSync("app/parent/(portal)/layout.tsx", "utf8");
+
+  assert.equal(existsSync("components/ui/sonner.tsx"), true);
+  assert.equal(existsSync("app/_components/auth-toast-listener.tsx"), true);
+  assert.equal(existsSync("app/_components/flash-toast.tsx"), true);
+  assert.match(rootLayout, /import \{ Toaster \} from "@\/components\/ui\/sonner";/);
+  assert.match(rootLayout, /<Toaster/);
+  assert.match(authUi, /import \{ AuthToastListener \} from "\.\/auth-toast-listener";/);
+  assert.match(authUi, /<AuthToastListener state={state} mode={mode} portal={portal} \/>/);
+  assert.match(authActions, /setAuthFlashToast\(/);
+  assert.match(session, /export async function setAuthFlashToast/);
+  assert.match(session, /export async function consumeAuthFlashToast/);
+  assert.match(session, /export async function clearAuthFlashToast/);
+  const consumeFlashToastBody = session.match(/export async function consumeAuthFlashToast[\s\S]*?\n}\n/)?.[0] ?? "";
+  assert.doesNotMatch(consumeFlashToastBody, /cookieStore\.delete/);
+  assert.equal(existsSync("app/auth/flash-toast/route.ts"), true);
+  assert.match(readFileSync("app/auth/flash-toast/route.ts", "utf8"), /export async function DELETE\(\)/);
+  assert.match(flashToast, /fetch\("\/auth\/flash-toast", \{ method: "DELETE" \}\)/);
+  assert.match(adminLayout, /const toast = await consumeAuthFlashToast\("admin"\);/);
+  assert.match(parentLayout, /const toast = await consumeAuthFlashToast\("parent"\);/);
+  assert.match(adminLayout, /<FlashToast toast={toast} \/>/);
+  assert.match(parentLayout, /<FlashToast toast={toast} \/>/);
+});
+
+test("logout flash toasts render on the redirected login pages", () => {
+  assert.match(adminLoginPage, /import \{ FlashToast \} from "@\/app\/_components\/flash-toast";/);
+  assert.match(parentLoginPage, /import \{ FlashToast \} from "@\/app\/_components\/flash-toast";/);
+  assert.match(adminLoginPage, /searchParams: Promise<\{ signedOut\?: string \}>/);
+  assert.match(parentLoginPage, /searchParams: Promise<\{ signedOut\?: string \}>/);
+  assert.match(adminLoginPage, /signedOut === "1"/);
+  assert.match(parentLoginPage, /signedOut === "1"/);
+  assert.match(adminLoginPage, /await consumeAuthFlashToast\("admin"\)/);
+  assert.match(parentLoginPage, /await consumeAuthFlashToast\("parent"\)/);
+  assert.match(adminLoginPage, /<FlashToast toast={toast} \/>/);
+  assert.match(parentLoginPage, /<FlashToast toast={toast} \/>/);
 });

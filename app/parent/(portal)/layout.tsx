@@ -1,5 +1,6 @@
+import { FlashToast } from "@/app/_components/flash-toast";
+import { consumeAuthFlashToast, requireRole } from "@/lib/auth/session";
 import { ParentShell } from "../_components/parent-shell";
-import { requireRole } from "@/lib/auth/session";
 
 export default async function ParentPortalLayout({
   children,
@@ -7,7 +8,13 @@ export default async function ParentPortalLayout({
   children: React.ReactNode;
 }>) {
   await requireRole("parent");
+  const toast = await consumeAuthFlashToast("parent");
 
-  return <ParentShell>{children}</ParentShell>;
+  return (
+    <ParentShell>
+      <FlashToast toast={toast} />
+      {children}
+    </ParentShell>
+  );
 }
 

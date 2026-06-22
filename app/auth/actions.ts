@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
-import { createSession, deleteSession, type PortalRole } from "@/lib/auth/session";
+import { createSession, deleteSession, setAuthFlashToast, type PortalRole } from "@/lib/auth/session";
 import { hashPassword, verifyPassword } from "@/lib/auth/password.mjs";
 import { parseLoginForm, parseRegisterForm } from "@/lib/auth/validation.mjs";
 
@@ -67,6 +67,13 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
 
     await connection.commit();
     await createSession({ userId: userResult.insertId, role, name: parsed.data.name });
+    await setAuthFlashToast({
+      role,
+      title: "Account created",
+      description: role === "admin"
+        ? "Welcome to the school admin dashboard."
+        : "Welcome to your parent portal.",
+    });
   } catch (error) {
     if (connection) {
       await connection.rollback();
@@ -118,6 +125,13 @@ export async function loginAction(role: PortalRole, _state: AuthFormState = init
       { id: user.id },
     );
     await createSession({ userId: user.id, role, name: user.name });
+    await setAuthFlashToast({
+      role,
+      title: "Signed in",
+      description: role === "admin"
+        ? "Welcome back to the school admin dashboard."
+        : "Welcome back to your parent portal.",
+    });
   } catch {
     return { message: "Unable to sign in. Check that MySQL/XAMPP is running and try again." };
   }
@@ -127,8 +141,15 @@ export async function loginAction(role: PortalRole, _state: AuthFormState = init
 
 export async function logoutAction(role: PortalRole) {
   await deleteSession();
+  await setAuthFlashToast({
+    role,
+    title: "Signed out",
+    description: role === "admin"
+      ? "You have signed out of the school admin dashboard."
+      : "You have signed out of the parent portal.",
+  });
 
-  redirect(role === "admin" ? "/admin/login" : "/parent/login");
+  redirect(role === "admin" ? "/admin/login?signedOut=1" : "/parent/login?signedOut=1");
 }
 
 function duplicateAccount(error: unknown) {
