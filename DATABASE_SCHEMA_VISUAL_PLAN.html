@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>XMETA Pay Visual Database Schema Plan</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fb;
+        --surface: #ffffff;
+        --ink: #162033;
+        --muted: #5c687a;
+        --line: #d9dee8;
+        --accent: #d46b08;
+        --accent-soft: #fff3e6;
+        --code: #101828;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.6;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0 64px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 28px;
+        padding-bottom: 24px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.4rem);
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin-top: 34px;
+        font-size: clamp(1.45rem, 2.5vw, 2rem);
+      }
+
+      h3 {
+        margin-top: 24px;
+        font-size: 1.1rem;
+      }
+
+      p {
+        color: var(--muted);
+        margin: 12px 0 0;
+      }
+
+      a {
+        color: #0f66b5;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .pill {
+        background: var(--accent-soft);
+        border: 1px solid #ffd7ad;
+        border-radius: 999px;
+        color: #8a3f00;
+        font-size: 0.9rem;
+        padding: 6px 12px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        margin-top: 18px;
+      }
+
+      .card,
+      .diagram-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 14px 34px rgb(15 23 42 / 7%);
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .card strong {
+        color: var(--ink);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .diagram-card {
+        margin-top: 16px;
+        overflow: auto;
+        padding: 16px;
+      }
+
+      .diagram-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-bottom: 12px;
+        position: sticky;
+        right: 0;
+        z-index: 1;
+      }
+
+      .diagram-actions button {
+        appearance: none;
+        background: #162033;
+        border: 1px solid #162033;
+        border-radius: 6px;
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 650;
+        line-height: 1;
+        padding: 9px 12px;
+      }
+
+      .diagram-actions button.secondary {
+        background: #ffffff;
+        color: #162033;
+      }
+
+      .diagram-actions button:hover {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgb(212 107 8 / 16%);
+      }
+
+      .diagram-card.large {
+        min-height: 520px;
+      }
+
+      .diagram-card .mermaid {
+        min-width: 880px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #eef2f7;
+        color: #24324a;
+      }
+
+      code,
+      pre {
+        font-family:
+          "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono",
+          monospace;
+      }
+
+      pre {
+        background: var(--code);
+        border-radius: 8px;
+        color: #f5f7fb;
+        margin-top: 14px;
+        overflow: auto;
+        padding: 16px;
+      }
+
+      ul,
+      ol {
+        margin-top: 12px;
+        padding-left: 22px;
+      }
+
+      li {
+        margin: 6px 0;
+      }
+
+      .note {
+        background: #edf7f4;
+        border: 1px solid #b9ded4;
+        border-radius: 8px;
+        color: #1d594f;
+        margin-top: 18px;
+        padding: 14px 16px;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+
+        main {
+          width: 100%;
+          padding: 16px;
+        }
+
+        .card,
+        .diagram-card {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>XMETA Pay Visual Database Schema Plan</h1>
+        <p>
+          A browser-viewable version of the full practical MVP database plan for
+          the admin/school dashboard and parent portal. This file is
+          documentation only and does not change the live SQL import file.
+        </p>
+        <div class="meta">
+          <span class="pill">MySQL / XAMPP</span>
+          <span class="pill">InnoDB</span>
+          <span class="pill">utf8mb4</span>
+          <span class="pill">Admin + Parent Portals</span>
+        </div>
+      </header>
+
+      <section>
+        <h2>Project Overview</h2>
+        <div class="grid">
+          <div class="card">
+            <strong>Admin/school portal</strong>
+            School setup, student records, parent directory, tuition,
+            collections, allowance, store transactions, and reports.
+          </div>
+          <div class="card">
+            <strong>Parent portal</strong>
+            Registration, login, linked students, enrollment, fee viewing,
+            tuition payment, receipts, history, and wallet top-up.
+          </div>
+          <div class="card">
+            <strong>Auth foundation</strong>
+            Keep the existing shared <code>users</code> table with
+            role-specific <code>admin_profiles</code> and
+            <code>parent_profiles</code>.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Core Table Groups</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Tables</th>
+              <th>Main purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Auth</td>
+              <td><code>users</code>, <code>admin_profiles</code>, <code>parent_profiles</code></td>
+              <td>Login, registration, role redirects, and account status.</td>
+            </tr>
+            <tr>
+              <td>School setup</td>
+              <td><code>schools</code>, <code>school_years</code>, <code>grade_levels</code>, <code>sections</code></td>
+              <td>School structure used by admin dashboards and student placement.</td>
+            </tr>
+            <tr>
+              <td>Students</td>
+              <td><code>students</code>, <code>student_guardians</code></td>
+              <td>Student profiles and parent-to-student links.</td>
+            </tr>
+            <tr>
+              <td>Enrollment</td>
+              <td><code>enrollments</code>, <code>enrollment_documents</code></td>
+              <td>Enrollment status, grade/section assignment, and required documents.</td>
+            </tr>
+            <tr>
+              <td>Fees</td>
+              <td><code>fee_types</code>, <code>student_fee_assignments</code></td>
+              <td>Tuition, other fees, due dates, and balances.</td>
+            </tr>
+            <tr>
+              <td>Payments</td>
+              <td><code>payments</code>, <code>payment_allocations</code>, <code>receipts</code></td>
+              <td>Payment records, fee allocation, and receipt generation.</td>
+            </tr>
+            <tr>
+              <td>Wallet</td>
+              <td><code>wallets</code>, <code>wallet_transactions</code></td>
+              <td>Student allowance balance, top-ups, purchases, and adjustments.</td>
+            </tr>
+            <tr>
+              <td>Store</td>
+              <td><code>store_merchants</code>, <code>store_transactions</code></td>
+              <td>Canteen and school store spending logs.</td>
+            </tr>
+            <tr>
+              <td>Notifications</td>
+              <td><code>notification_logs</code></td>
+              <td>Payment reminders, receipts, low-wallet alerts, and enrollment updates.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Visual ERD</h2>
+        <p>
+          This ERD shows the planned practical MVP relationships. Scroll inside
+          the diagram area if your screen is narrow.
+        </p>
+        <div class="diagram-card large">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="xmetapay-erd.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+erDiagram
+  USERS ||--o| ADMIN_PROFILES : "has admin profile"
+  USERS ||--o| PARENT_PROFILES : "has parent profile"
+  USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
+  USERS ||--o{ PAYMENTS : "pays"
+  USERS ||--o{ NOTIFICATION_LOGS : "receives"
+
+  SCHOOLS ||--o{ SCHOOL_YEARS : "has"
+  SCHOOLS ||--o{ GRADE_LEVELS : "has"
+  SCHOOLS ||--o{ SECTIONS : "has"
+  SCHOOLS ||--o{ STUDENTS : "has"
+  SCHOOLS ||--o{ FEE_TYPES : "defines"
+  SCHOOLS ||--o{ PAYMENTS : "collects"
+  SCHOOLS ||--o{ STORE_MERCHANTS : "has"
+  SCHOOLS ||--o{ NOTIFICATION_LOGS : "sends"
+
+  SCHOOL_YEARS ||--o{ SECTIONS : "organizes"
+  SCHOOL_YEARS ||--o{ ENROLLMENTS : "contains"
+  SCHOOL_YEARS ||--o{ FEE_TYPES : "prices"
+  SCHOOL_YEARS ||--o{ STUDENT_FEE_ASSIGNMENTS : "bills"
+
+  GRADE_LEVELS ||--o{ SECTIONS : "has"
+  GRADE_LEVELS ||--o{ ENROLLMENTS : "places"
+  SECTIONS ||--o{ ENROLLMENTS : "groups"
+
+  STUDENTS ||--o{ STUDENT_GUARDIANS : "has"
+  STUDENTS ||--o{ ENROLLMENTS : "enrolls"
+  STUDENTS ||--o{ STUDENT_FEE_ASSIGNMENTS : "owes"
+  STUDENTS ||--o{ PAYMENTS : "paid for"
+  STUDENTS ||--o| WALLETS : "owns"
+  STUDENTS ||--o{ STORE_TRANSACTIONS : "spends"
+  STUDENTS ||--o{ NOTIFICATION_LOGS : "about"
+
+  ENROLLMENTS ||--o{ ENROLLMENT_DOCUMENTS : "requires"
+  FEE_TYPES ||--o{ STUDENT_FEE_ASSIGNMENTS : "assigned as"
+  STUDENT_FEE_ASSIGNMENTS ||--o{ PAYMENT_ALLOCATIONS : "paid by"
+
+  PAYMENTS ||--o{ PAYMENT_ALLOCATIONS : "allocates"
+  PAYMENTS ||--o| RECEIPTS : "generates"
+  PAYMENTS ||--o{ WALLET_TRANSACTIONS : "may fund"
+
+  WALLETS ||--o{ WALLET_TRANSACTIONS : "records"
+  WALLET_TRANSACTIONS ||--o| STORE_TRANSACTIONS : "may create"
+  STORE_MERCHANTS ||--o{ STORE_TRANSACTIONS : "records"
+
+  USERS {
+    bigint id PK
+    enum role
+    varchar name
+    varchar email
+    varchar phone
+    varchar password_hash
+    enum status
+  }
+
+  ADMIN_PROFILES {
+    bigint id PK
+    bigint user_id FK
+    varchar school_name
+    enum staff_role
+  }
+
+  PARENT_PROFILES {
+    bigint id PK
+    bigint user_id FK
+    varchar student_name
+    varchar student_reference
+    enum relationship
+  }
+
+  SCHOOLS {
+    bigint id PK
+    varchar name
+    varchar code
+    enum status
+  }
+
+  SCHOOL_YEARS {
+    bigint id PK
+    bigint school_id FK
+    varchar name
+    date starts_on
+    date ends_on
+    enum status
+  }
+
+  GRADE_LEVELS {
+    bigint id PK
+    bigint school_id FK
+    varchar name
+    smallint sort_order
+  }
+
+  SECTIONS {
+    bigint id PK
+    bigint school_id FK
+    bigint school_year_id FK
+    bigint grade_level_id FK
+    varchar name
+  }
+
+  STUDENTS {
+    bigint id PK
+    bigint school_id FK
+    varchar student_reference
+    varchar first_name
+    varchar last_name
+    enum status
+  }
+
+  STUDENT_GUARDIANS {
+    bigint id PK
+    bigint student_id FK
+    bigint parent_user_id FK
+    enum relationship
+    boolean is_primary
+  }
+
+  ENROLLMENTS {
+    bigint id PK
+    bigint student_id FK
+    bigint school_year_id FK
+    bigint grade_level_id FK
+    bigint section_id FK
+    enum status
+  }
+
+  ENROLLMENT_DOCUMENTS {
+    bigint id PK
+    bigint enrollment_id FK
+    varchar document_type
+    varchar file_name
+    enum status
+  }
+
+  FEE_TYPES {
+    bigint id PK
+    bigint school_id FK
+    bigint school_year_id FK
+    varchar name
+    enum category
+    decimal default_amount
+  }
+
+  STUDENT_FEE_ASSIGNMENTS {
+    bigint id PK
+    bigint student_id FK
+    bigint fee_type_id FK
+    bigint school_year_id FK
+    decimal amount_due
+    decimal amount_paid
+    enum status
+  }
+
+  PAYMENTS {
+    bigint id PK
+    bigint school_id FK
+    bigint payer_user_id FK
+    bigint student_id FK
+    varchar reference_number
+    enum channel
+    decimal amount
+    enum status
+  }
+
+  PAYMENT_ALLOCATIONS {
+    bigint id PK
+    bigint payment_id FK
+    bigint student_fee_assignment_id FK
+    decimal amount
+  }
+
+  RECEIPTS {
+    bigint id PK
+    bigint payment_id FK
+    varchar receipt_number
+    datetime issued_at
+  }
+
+  WALLETS {
+    bigint id PK
+    bigint student_id FK
+    decimal balance
+    enum status
+  }
+
+  WALLET_TRANSACTIONS {
+    bigint id PK
+    bigint wallet_id FK
+    bigint payment_id FK
+    enum type
+    decimal amount
+    decimal balance_after
+  }
+
+  STORE_MERCHANTS {
+    bigint id PK
+    bigint school_id FK
+    varchar name
+    enum type
+    enum status
+  }
+
+  STORE_TRANSACTIONS {
+    bigint id PK
+    bigint merchant_id FK
+    bigint student_id FK
+    bigint wallet_transaction_id FK
+    varchar reference_number
+    decimal amount
+    decimal fee_amount
+  }
+
+  NOTIFICATION_LOGS {
+    bigint id PK
+    bigint school_id FK
+    bigint recipient_user_id FK
+    bigint student_id FK
+    enum type
+    enum channel
+    enum status
+  }
+          </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Admin/School Flowcharts</h2>
+
+        <h3>Admin/School Setup Flow</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-school-setup-flow.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin opens school registration"] --> B["Submit admin user details and school name"]
+  B --> C["Create user with role admin"]
+  C --> D["Create admin profile"]
+  D --> E["Create or link school record"]
+  E --> F["Create active school year"]
+  F --> G["Create grade levels"]
+  G --> H["Create sections"]
+  H --> I["Admin lands on dashboard"]
+          </pre>
+        </div>
+
+        <h3>Admin Student and Enrollment Flow</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-student-enrollment-flow.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin opens students page"] --> B["Create or search student by reference"]
+  B --> C{"Student exists?"}
+  C -->|No| D["Create student record"]
+  C -->|Yes| E["Open existing student record"]
+  D --> F["Link parent account through student_guardians"]
+  E --> F
+  F --> G["Create enrollment for active school year"]
+  G --> H["Assign grade level and section"]
+  H --> I["Assign tuition and other fees"]
+  I --> J["Student appears in admin lists and parent portal"]
+          </pre>
+        </div>
+
+        <h3>Admin Payment Monitoring Flow</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-payment-monitoring-flow.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin opens dashboard"] --> B["Read payments, fees, wallets, and store transactions"]
+  B --> C["Show collection KPIs"]
+  C --> D["Open tuition report"]
+  D --> E["Filter by status, grade, section, or due date"]
+  E --> F["Open collections log"]
+  F --> G["Review payment records and receipts"]
+  G --> H["Open reports page"]
+  H --> I["Export CSV or PDF from report query"]
+          </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Parent Flowcharts</h2>
+
+        <h3>Parent Registration and Login Flow</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="parent-registration-login-flow.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Parent opens register page"] --> B["Submit guardian details and student reference"]
+  B --> C["Create user with role parent"]
+  C --> D["Create parent profile"]
+  D --> E["Find student by student_reference"]
+  E --> F{"Student found?"}
+  F -->|Yes| G["Create student_guardians link"]
+  F -->|No| H["Keep profile pending for school review"]
+  G --> I["Create session"]
+  H --> I
+  I --> J["Redirect to parent dashboard"]
+          </pre>
+        </div>
+
+        <h3>Parent Payment Flow</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="parent-payment-flow.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Parent opens fee summary"] --> B["Load linked students"]
+  B --> C["Load open and partial fee assignments"]
+  C --> D["Parent selects payable fees"]
+  D --> E["Create payment with pending status"]
+  E --> F["Payment channel confirms payment"]
+  F --> G["Update payment status to paid"]
+  G --> H["Create payment allocations"]
+  H --> I["Update student fee balances and statuses"]
+  I --> J["Create receipt"]
+  J --> K["Show receipt and payment history"]
+          </pre>
+        </div>
+
+        <h3>Parent Wallet and Allowance Flow</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="parent-wallet-allowance-flow.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Parent opens wallet page"] --> B["Load student wallets"]
+  B --> C["Parent chooses top-up amount"]
+  C --> D["Create payment for wallet top-up"]
+  D --> E["Payment succeeds"]
+  E --> F["Increase wallet balance"]
+  F --> G["Create wallet top_up transaction"]
+  G --> H["Student buys from canteen or store"]
+  H --> I["Create wallet purchase transaction"]
+  I --> J["Create store transaction"]
+  J --> K["Admin sees allowance and store reports"]
+          </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Suggested Implementation Order</h2>
+        <ol>
+          <li>Keep the current auth schema working first.</li>
+          <li>Add school setup tables.</li>
+          <li>Add student and guardian tables.</li>
+          <li>Add enrollment tables.</li>
+          <li>Add fee tables.</li>
+          <li>Add payment and receipt tables.</li>
+          <li>Add wallet and wallet transaction tables.</li>
+          <li>Add store merchant and store transaction tables.</li>
+          <li>Add notification logs when reminders are implemented.</li>
+          <li>Build reports from operational query views instead of separate report storage tables.</li>
+        </ol>
+        <div class="note">
+          No real credentials, database passwords, session secrets, seed users,
+          or exported database records belong in this document.
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        securityLevel: "loose",
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#fff3e6",
+          primaryTextColor: "#162033",
+          primaryBorderColor: "#d46b08",
+          lineColor: "#637083",
+          secondaryColor: "#eef6ff",
+          tertiaryColor: "#f7f8fb",
+          fontFamily:
+            "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+        },
+      });
+
+      function saveBlob(blob, fileName) {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      }
+
+      function serializeDiagramSvg(svg) {
+        const clone = svg.cloneNode(true);
+        clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+        const viewBox = svg.viewBox.baseVal;
+        const bounds = svg.getBoundingClientRect();
+        const width = Math.ceil(viewBox.width || bounds.width || 1200);
+        const height = Math.ceil(viewBox.height || bounds.height || 800);
+
+        clone.setAttribute("width", String(width));
+        clone.setAttribute("height", String(height));
+
+        return new XMLSerializer().serializeToString(clone);
+      }
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-diagram-download]");
+
+        if (!button) {
+          return;
+        }
+
+        const card = button.closest(".diagram-card");
+        const svg = card?.querySelector("svg");
+
+        if (!svg) {
+          window.alert("Diagram is still rendering. Please try again in a moment.");
+          return;
+        }
+
+        const fileName = button.dataset.fileName || "xmetapay-diagram.svg";
+        const svgText = serializeDiagramSvg(svg);
+        saveBlob(
+          new Blob([svgText], { type: "image/svg+xml;charset=utf-8" }),
+          fileName,
+        );
+      });
+    </script>
+  </body>
+</html>
