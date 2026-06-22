@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 
 import { loginAction, registerAction, type AuthFormState } from "@/app/auth/actions";
+import { AuthToastListener } from "./auth-toast-listener";
 import { PasswordInput } from "./password-input";
 import { cn } from "@/lib/utils";
 
@@ -117,6 +118,7 @@ export function AuthForm({
 
   return (
     <form action={action} className={isLogin ? "space-y-4" : "space-y-5 sm:space-y-6"}>
+      <AuthToastListener state={state} mode={mode} portal={portal} />
       <div>
         <p className={isLogin ? "text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#e64a19]" : "text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#e64a19] sm:text-xs sm:tracking-[0.18em]"}>
           {portal === "admin" ? "Admin access" : "Family access"}

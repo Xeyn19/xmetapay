@@ -60,7 +60,8 @@ test.describe("XMETA Pay login flows", () => {
 
     await expect(page).toHaveURL("/admin/login");
     await expect(page).not.toHaveURL(/password=/);
-    await expect(page.getByText(/invalid login details|unable to sign in/i)).toBeVisible();
+    await expect(page.locator('p[aria-live="polite"]')).toContainText(/invalid login details|unable to sign in/i);
+    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Sign in failed" })).toBeVisible();
   });
 
   test("parent login form handles invalid or unavailable credentials without query-string passwords", async ({ page }) => {
@@ -72,7 +73,8 @@ test.describe("XMETA Pay login flows", () => {
 
     await expect(page).toHaveURL("/parent/login");
     await expect(page).not.toHaveURL(/password=/);
-    await expect(page.getByText(/invalid login details|unable to sign in/i)).toBeVisible();
+    await expect(page.locator('p[aria-live="polite"]')).toContainText(/invalid login details|unable to sign in/i);
+    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Sign in failed" })).toBeVisible();
   });
 });
 
@@ -116,9 +118,10 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
   }) => {
     await page.goto("/admin/dashboard", { waitUntil: "domcontentloaded" });
 
-    await page.getByRole("button", { name: "Log out" }).click();
+    await page.getByRole("button", { name: "Log out" }).press("Enter");
 
-    await expect(page).toHaveURL("/admin/login");
+    await expect(page).toHaveURL("/admin/login?signedOut=1");
+    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Signed out" })).toBeVisible();
     await page.goto("/admin/dashboard");
     await expect(page).toHaveURL("/admin/login");
   });
@@ -164,9 +167,10 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
   }) => {
     await page.goto("/parent/dashboard", { waitUntil: "domcontentloaded" });
 
-    await page.getByRole("button", { name: "Log out" }).click();
+    await page.getByRole("button", { name: "Log out" }).press("Enter");
 
-    await expect(page).toHaveURL("/parent/login");
+    await expect(page).toHaveURL("/parent/login?signedOut=1");
+    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Signed out" })).toBeVisible();
     await page.goto("/parent/dashboard");
     await expect(page).toHaveURL("/parent/login");
   });

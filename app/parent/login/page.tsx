@@ -1,8 +1,24 @@
+import { FlashToast } from "@/app/_components/flash-toast";
+import { consumeAuthFlashToast } from "@/lib/auth/session";
 import { AuthForm, PortalAuthLayout } from "../../_components/auth-ui";
 
-export default function ParentLoginPage() {
+export default async function ParentLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ signedOut?: string }>;
+}) {
+  const { signedOut } = await searchParams;
+  const toast = signedOut === "1"
+    ? {
+        role: "parent" as const,
+        title: "Signed out",
+        description: "You have signed out of the parent portal.",
+      }
+    : await consumeAuthFlashToast("parent");
+
   return (
     <PortalAuthLayout portal="parent" mode="login">
+      <FlashToast toast={toast} />
       <AuthForm
         portal="parent"
         mode="login"

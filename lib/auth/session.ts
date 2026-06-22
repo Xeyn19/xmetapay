@@ -5,6 +5,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export type PortalRole = "admin" | "parent";
+export type AuthFlashToast = {
+  role: PortalRole;
+  title: string;
+  description: string;
+};
 
 type SessionPayload = {
   userId: number;
@@ -14,6 +19,7 @@ type SessionPayload = {
 };
 
 const cookieName = "xmetapay_session";
+const flashToastCookieName = "xmetapay_auth_toast";
 const maxAgeSeconds = 60 * 60 * 8;
 
 export async function createSession(payload: Omit<SessionPayload, "expiresAt">) {
@@ -42,6 +48,44 @@ export async function deleteSession() {
 
   cookieStore.delete({
     name: cookieName,
+    path: "/",
+  });
+}
+
+export async function setAuthFlashToast(toast: AuthFlashToast) {
+  const cookieStore = await cookies();
+
+  cookieStore.set(flashToastCookieName, Buffer.from(JSON.stringify(toast)).toString("base64url"), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 30,
+    path: "/",
+  });
+}
+
+export async function consumeAuthFlashToast(role: PortalRole) {
+  const cookieStore = await cookies();
+  const encodedToast = cookieStore.get(flashToastCookieName)?.value;
+
+  if (!encodedToast) {
+    return null;
+  }
+
+  try {
+    const toast = JSON.parse(Buffer.from(encodedToast, "base64url").toString("utf8")) as AuthFlashToast;
+
+    return toast.role === role ? toast : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearAuthFlashToast() {
+  const cookieStore = await cookies();
+
+  cookieStore.delete({
+    name: flashToastCookieName,
     path: "/",
   });
 }
