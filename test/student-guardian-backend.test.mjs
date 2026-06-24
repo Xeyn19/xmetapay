@@ -9,6 +9,8 @@ const authActionsPath = "app/auth/actions.ts";
 const adminStudentsPagePath = "app/admin/(dashboard)/students/page.tsx";
 const adminParentsPagePath = "app/admin/(dashboard)/parents/page.tsx";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
+const parentLayoutPath = "app/parent/(portal)/layout.tsx";
+const parentStudentProfilePath = "app/parent/(portal)/student-profile/page.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
 const adminModalsPath = "app/admin/_components/admin-modals.tsx";
 const parentShellPath = "app/parent/_components/parent-shell.tsx";
@@ -24,10 +26,13 @@ test("student records helper reads students, enrollment, and guardian links from
   assert.match(helper, /export async function getAdminStudentPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getAdminParentsPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getParentDashboardData\(parentUserId: number\)/);
+  assert.match(helper, /export async function getParentPortalContext\(parentUserId: number/);
+  assert.match(helper, /export async function getParentStudentProfileData\(parentUserId: number/);
   assert.match(helper, /FROM students/);
   assert.match(helper, /JOIN enrollments/);
   assert.match(helper, /FROM student_guardians/);
   assert.match(helper, /parent_user_id = :parentUserId/);
+  assert.match(helper, /WHERE sg\.parent_user_id = :parentUserId/);
 });
 
 test("admin student action is protected and creates student enrollment records", () => {
@@ -112,6 +117,34 @@ test("parent portal removes dead enrollment wizard and keeps student reference l
   assert.match(parentDashboard, /Link another student/);
   assert.match(parentDashboard, /name="studentReference"/);
   assert.doesNotMatch(parentDashboard, /href="\/parent\/enroll"/);
+});
+
+test("parent portal shell and profile use real database-backed identity", () => {
+  const helper = readFileSync(studentRecordsPath, "utf8");
+  const parentLayout = readFileSync(parentLayoutPath, "utf8");
+  const parentShell = readFileSync(parentShellPath, "utf8");
+  const parentProfile = readFileSync(parentStudentProfilePath, "utf8");
+  const parentPortalData = readFileSync(parentPortalDataPath, "utf8");
+
+  assert.match(parentLayout, /getParentPortalContext/);
+  assert.match(parentLayout, /<ParentShell context=\{parentContext\}>/);
+
+  assert.match(parentShell, /context\.parentName/);
+  assert.match(parentShell, /context\.parentInitials/);
+  assert.match(parentShell, /context\.relationshipLabel/);
+  assert.match(parentShell, /context\.schoolName/);
+  assert.doesNotMatch(parentShell, /Maria Santos|Brentwood Academy of Las Pinas/);
+
+  assert.match(parentProfile, /getParentStudentProfileData/);
+  assert.match(parentProfile, /data\.student/);
+  assert.match(parentProfile, /student\.studentDetails/);
+  assert.match(parentProfile, /student\.guardianDetails/);
+  assert.doesNotMatch(parentProfile, /profileDetails|parentDetails|profileStats/);
+  assert.doesNotMatch(parentProfile, /Juan Miguel Santos|Maria Santos|Brentwood Academy of Las Pinas/);
+
+  assert.doesNotMatch(parentPortalData, /Juan Miguel Santos|Maria Santos Jr\.|Juan Santos|maria@email\.com|0917-234-5678/);
+  assert.match(helper, /JOIN users u ON u\.id = sg\.parent_user_id/);
+  assert.match(helper, /JOIN schools sc ON sc\.id = st\.school_id/);
 });
 
 test("backend checklist tracks completed student and guardian linking slice", () => {

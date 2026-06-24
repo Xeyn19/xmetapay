@@ -14,12 +14,12 @@ export default function ReceiptPage() {
       <ParentCard title="Transaction receipt" icon={Receipt}>
         <DetailRows
           rows={[
-            { label: "Reference number", value: "TXN-20250519-5891" },
-            { label: "Student", value: "Juan Miguel Santos" },
-            { label: "Paid items", value: "July tuition, Supplies balance" },
-            { label: "Payment method", value: "XMETA wallet" },
-            { label: "Total paid", value: "P3,865", tone: "green" },
-            { label: "Date", value: "May 19, 2025" },
+            { label: "Reference number", value: "Pending" },
+            { label: "Student", value: "Linked student" },
+            { label: "Paid items", value: "Payment backend pending" },
+            { label: "Payment method", value: "Pending" },
+            { label: "Total paid", value: "Pending", tone: "green" },
+            { label: "Date", value: "Pending" },
           ]}
         />
         <div className="mt-6 flex flex-wrap justify-end gap-2">

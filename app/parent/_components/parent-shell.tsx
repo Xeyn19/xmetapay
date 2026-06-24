@@ -6,15 +6,24 @@ import { LogOut, Menu, Receipt, Wallet, X } from "lucide-react";
 import { useState } from "react";
 
 import { logoutAction } from "@/app/auth/actions";
+import type { ParentPortalContext } from "@/lib/students/records";
 import { cn } from "@/lib/utils";
 import { parentNavSections, parentPageMeta, settingsIcon } from "../_data/parent-portal-data";
 
-export function ParentShell({ children }: { children: React.ReactNode }) {
+export function ParentShell({
+  children,
+  context,
+}: {
+  children: React.ReactNode;
+  context: ParentPortalContext;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const meta = parentPageMeta[pathname] ?? parentPageMeta["/parent/dashboard"];
+  const meta = getParentMeta(pathname, context);
   const Settings = settingsIcon;
   const logout = logoutAction.bind(null, "parent");
+  const schoolLine = context.schoolName ?? "No linked school yet";
+  const yearLine = context.schoolYearName ? `Parent portal - SY ${context.schoolYearName}` : "Parent portal - link a student reference";
 
   return (
     <div className="min-h-[100svh] bg-[#f8f8f7] text-[#1a1a1a]">
@@ -46,19 +55,21 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
             <span className="text-[15px] font-semibold">XMETA Pay</span>
           </div>
           <p className="text-[11px] leading-4 text-[#6b6b6b]">
-            Brentwood Academy of Las Pinas
+            {schoolLine}
             <br />
-            Parent portal - SY 2025-2026
+            {yearLine}
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 border-b border-black/[0.08] bg-[#fbe9e7] px-[18px] py-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e64a19] text-[13px] font-semibold text-white">
-            MS
+            {context.parentInitials}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[13px] font-semibold">Maria Santos</div>
-            <div className="text-[11px] text-[#6b6b6b]">Parent / guardian</div>
+            <div className="truncate text-[13px] font-semibold">{context.parentName}</div>
+            <div className="truncate text-[11px] text-[#6b6b6b]">
+              {context.relationshipLabel} - {context.contactLine}
+            </div>
           </div>
           <button type="button" className="flex size-11 items-center justify-center rounded-md text-[#6b6b6b] transition hover:bg-white/60 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu">
             <X className="size-4" />
@@ -130,4 +141,41 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
+}
+
+function getParentMeta(pathname: string, context: ParentPortalContext) {
+  const page = parentPageMeta[pathname] ?? parentPageMeta["/parent/dashboard"];
+  const studentLabel = context.primaryStudentName && context.primaryStudentReference
+    ? `${context.primaryStudentName} - ${context.primaryStudentReference}`
+    : "Link a student reference to show student details";
+
+  if (pathname === "/parent/dashboard" || pathname === "/parent") {
+    return {
+      title: page.title,
+      subtitle: `Welcome back, ${context.parentFirstName}`,
+    };
+  }
+
+  if (pathname === "/parent/student-profile") {
+    return {
+      title: page.title,
+      subtitle: studentLabel,
+    };
+  }
+
+  if (pathname === "/parent/fees") {
+    return {
+      title: page.title,
+      subtitle: context.primaryStudentName ? `${context.primaryStudentName} - fee backend pending` : "Fee backend pending",
+    };
+  }
+
+  if (pathname === "/parent/pay-tuition") {
+    return {
+      title: page.title,
+      subtitle: context.primaryStudentName ? `${context.primaryStudentName} - local payment flow pending` : "Local payment flow pending",
+    };
+  }
+
+  return page;
 }

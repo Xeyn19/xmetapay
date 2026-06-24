@@ -14,8 +14,8 @@ export default function WalletPage() {
     <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
       <ParentCard title="Wallet balances" icon={Wallet}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <BalanceCard initials="JS" name="Juan Miguel Santos" balance="P320" />
-          <BalanceCard initials="MJ" name="Maria Santos Jr." balance="P150" blue />
+          <BalanceCard initials="ST" name="Linked student wallet" balance="Pending" />
+          <BalanceCard initials="ST" name="Additional linked wallet" balance="Pending" blue />
         </div>
       </ParentCard>
 

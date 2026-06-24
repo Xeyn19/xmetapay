@@ -60,12 +60,39 @@ export type ParentDashboardData = {
   linkedStudents: ParentLinkedStudent[];
 };
 
+export type ParentPortalContext = {
+  parentName: string;
+  parentFirstName: string;
+  parentInitials: string;
+  relationshipLabel: string;
+  contactLine: string;
+  schoolName: string | null;
+  schoolYearName: string | null;
+  primaryStudentName: string | null;
+  primaryStudentReference: string | null;
+};
+
 export type ParentLinkedStudent = {
   id: number;
   initials: string;
   fullName: string;
   meta: string;
   status: string;
+};
+
+export type ParentStudentProfileData = {
+  context: ParentPortalContext;
+  student: {
+    id: number;
+    initials: string;
+    fullName: string;
+    schoolName: string;
+    schoolYearName: string;
+    tags: string[];
+    stats: Array<{ label: string; value: string }>;
+    studentDetails: Array<{ label: string; value: string }>;
+    guardianDetails: Array<{ label: string; value: string }>;
+  } | null;
 };
 
 export async function getAdminStudentPageData(adminUserId: number): Promise<AdminStudentPageData> {
@@ -134,6 +161,111 @@ export async function getParentDashboardData(parentUserId: number): Promise<Pare
       linkedStudents: [],
       metrics: parentMetrics([]),
     };
+  }
+}
+
+export async function getParentPortalContext(parentUserId: number, fallbackName = "Parent"): Promise<ParentPortalContext> {
+  try {
+    const [rows] = await pool.execute<ParentPortalContextRow[]>(
+      `SELECT u.name AS parent_name, u.email, u.phone, pp.relationship,
+         sc.name AS school_name, sy.name AS school_year_name,
+         st.first_name, st.middle_name, st.last_name, st.student_reference
+       FROM users u
+       LEFT JOIN parent_profiles pp ON pp.user_id = u.id
+       LEFT JOIN student_guardians sg ON sg.parent_user_id = u.id
+       LEFT JOIN students st ON st.id = sg.student_id
+       LEFT JOIN schools sc ON sc.id = st.school_id
+       LEFT JOIN enrollments e ON e.student_id = st.id
+       LEFT JOIN school_years sy ON sy.id = e.school_year_id
+       WHERE u.id = :parentUserId AND u.role = 'parent'
+       ORDER BY sg.is_primary DESC, st.last_name ASC, st.first_name ASC,
+         (sy.status = 'active') DESC, sy.starts_on DESC, e.id DESC
+       LIMIT 1`,
+      { parentUserId },
+    );
+
+    return parentContextFromRow(rows[0], fallbackName);
+  } catch {
+    return parentContextFromRow(null, fallbackName);
+  }
+}
+
+export async function getParentStudentProfileData(parentUserId: number, fallbackName = "Parent"): Promise<ParentStudentProfileData> {
+  const context = await getParentPortalContext(parentUserId, fallbackName);
+
+  try {
+    const [rows] = await pool.execute<ParentStudentProfileRow[]>(
+      `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name,
+         st.birthdate, st.status AS student_status,
+         sc.name AS school_name,
+         COALESCE(sy.name, 'School year pending') AS school_year_name,
+         COALESCE(gl.name, 'Not enrolled') AS grade_name,
+         COALESCE(sec.name, '-') AS section_name,
+         COALESCE(e.status, 'pending') AS enrollment_status,
+         u.name AS parent_name, u.email, u.phone, u.status AS parent_status,
+         pp.relationship
+       FROM student_guardians sg
+       JOIN users u ON u.id = sg.parent_user_id
+       LEFT JOIN parent_profiles pp ON pp.user_id = u.id
+       JOIN students st ON st.id = sg.student_id
+       JOIN schools sc ON sc.id = st.school_id
+       LEFT JOIN enrollments e ON e.student_id = st.id
+       LEFT JOIN school_years sy ON sy.id = e.school_year_id
+       LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
+       LEFT JOIN sections sec ON sec.id = e.section_id
+       WHERE sg.parent_user_id = :parentUserId
+       ORDER BY sg.is_primary DESC, st.last_name ASC, st.first_name ASC,
+         (sy.status = 'active') DESC, sy.starts_on DESC, e.id DESC
+       LIMIT 1`,
+      { parentUserId },
+    );
+
+    const row = rows[0];
+
+    if (!row) {
+      return { context, student: null };
+    }
+
+    const fullStudentName = fullName(row.first_name, row.middle_name, row.last_name);
+    const gradeSection = [row.grade_name, row.section_name !== "-" ? row.section_name : null].filter(Boolean).join(" - ");
+    const enrollmentLabel = labelForStatus(row.enrollment_status);
+    const studentStatusLabel = labelForStatus(row.student_status);
+    const relationshipLabel = labelForRelationship(row.relationship ?? "guardian");
+
+    return {
+      context,
+      student: {
+        id: row.id,
+        initials: initialsFor(fullStudentName),
+        fullName: fullStudentName,
+        schoolName: row.school_name,
+        schoolYearName: row.school_year_name,
+        tags: [row.student_reference, gradeSection, enrollmentLabel].filter(Boolean),
+        stats: [
+          { label: "Enrollment", value: enrollmentLabel },
+          { label: "Grade", value: row.grade_name },
+          { label: "Status", value: studentStatusLabel },
+        ],
+        studentDetails: [
+          { label: "Student reference", value: row.student_reference },
+          { label: "Grade level", value: row.grade_name },
+          { label: "Section", value: row.section_name },
+          { label: "School year", value: row.school_year_name },
+          { label: "Date of birth", value: formatDate(row.birthdate) },
+          { label: "Enrollment status", value: enrollmentLabel },
+          { label: "Student status", value: studentStatusLabel },
+        ],
+        guardianDetails: [
+          { label: "Guardian", value: row.parent_name },
+          { label: "Relationship", value: relationshipLabel },
+          { label: "Mobile", value: row.phone ?? "Not on file" },
+          { label: "Email", value: row.email },
+          { label: "Portal access", value: labelForStatus(row.parent_status) },
+        ],
+      },
+    };
+  } catch {
+    return { context, student: null };
   }
 }
 
@@ -414,6 +546,63 @@ function labelForRelationship(relationship: string) {
   return relationship.charAt(0).toUpperCase() + relationship.slice(1);
 }
 
+function labelForStatus(status: string) {
+  return status
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function firstNameFor(name: string) {
+  return name.split(/\s+/).filter(Boolean)[0] ?? name;
+}
+
+function parentContextFromRow(row: ParentPortalContextRow | null | undefined, fallbackName: string): ParentPortalContext {
+  const parentName = row?.parent_name || fallbackName || "Parent";
+  const studentName = row?.first_name ? fullName(row.first_name, row.middle_name, row.last_name ?? "") : null;
+  const relationshipLabel = labelForRelationship(row?.relationship ?? "guardian");
+  const contactLine = row?.phone ?? row?.email ?? "No contact on file";
+
+  return {
+    parentName,
+    parentFirstName: firstNameFor(parentName),
+    parentInitials: initialsFor(parentName),
+    relationshipLabel,
+    contactLine,
+    schoolName: row?.school_name ?? null,
+    schoolYearName: row?.school_year_name ?? null,
+    primaryStudentName: studentName,
+    primaryStudentReference: row?.student_reference ?? null,
+  };
+}
+
+function formatDate(value: Date | string | null) {
+  if (!value) {
+    return "Not on file";
+  }
+
+  if (value instanceof Date) {
+    return value.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  const parsed = new Date(value);
+
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  return value;
+}
+
 type AdminSetupRow = RowDataPacket & {
   school_id: number | null;
   school_year_id: number | null;
@@ -465,6 +654,39 @@ type ParentStudentSqlRow = RowDataPacket & {
   grade_name: string;
   section_name: string;
   status: string;
+};
+
+type ParentPortalContextRow = RowDataPacket & {
+  parent_name: string;
+  email: string | null;
+  phone: string | null;
+  relationship: string | null;
+  school_name: string | null;
+  school_year_name: string | null;
+  first_name: string | null;
+  middle_name: string | null;
+  last_name: string | null;
+  student_reference: string | null;
+};
+
+type ParentStudentProfileRow = RowDataPacket & {
+  id: number;
+  student_reference: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  birthdate: Date | string | null;
+  student_status: string;
+  school_name: string;
+  school_year_name: string;
+  grade_name: string;
+  section_name: string;
+  enrollment_status: string;
+  parent_name: string;
+  email: string;
+  phone: string | null;
+  parent_status: string;
+  relationship: string | null;
 };
 
 type ParentProfileRow = RowDataPacket & {
