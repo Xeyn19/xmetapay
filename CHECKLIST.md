@@ -20,9 +20,9 @@ Source schema reference: `DATABASE_SCHEMA_PLAN.md`
 
 Do this first before connecting dashboards to real data:
 
-- [ ] Create a new reviewed SQL file for the full MVP schema: `database/full-schema-v1.sql`.
-- [ ] Copy the planned tables from `DATABASE_SCHEMA_PLAN.md` into the new SQL file.
-- [ ] Keep `database/auth-schema.sql` unchanged until the full schema is reviewed.
+- [x] Create a new reviewed SQL file for the full MVP schema: `database/full-schema-v1.sql`.
+- [x] Copy the planned tables from `DATABASE_SCHEMA_PLAN.md` into the new SQL file.
+- [x] Keep `database/auth-schema.sql` unchanged until the full schema is reviewed.
 - [ ] Import the new SQL file into local XAMPP/phpMyAdmin only after reviewing it.
 - [ ] Confirm all tables and indexes appear in phpMyAdmin.
 - [ ] Run auth register/login/logout again after import to make sure auth still works.
@@ -31,11 +31,11 @@ Done when: the full database structure exists locally and auth still works.
 
 ## Phase 1: Database Migration Foundation
 
-- [ ] Add `database/full-schema-v1.sql` with school, student, enrollment, fee, payment, wallet, store, and notification tables.
-- [ ] Use `CREATE TABLE IF NOT EXISTS` so local imports are safer.
-- [ ] Use InnoDB and `utf8mb4_unicode_ci` for every table.
-- [ ] Keep foreign keys and indexes from `DATABASE_SCHEMA_PLAN.md`.
-- [ ] Add a short `database/README.md` explaining import order.
+- [x] Add `database/full-schema-v1.sql` with school, student, enrollment, fee, payment, wallet, store, and notification tables.
+- [x] Use `CREATE TABLE IF NOT EXISTS` so local imports are safer.
+- [x] Use InnoDB and `utf8mb4_unicode_ci` for every table.
+- [x] Keep foreign keys and indexes from `DATABASE_SCHEMA_PLAN.md`.
+- [x] Add a short `database/README.md` explaining import order.
 - [ ] Verify the SQL imports cleanly in XAMPP/phpMyAdmin.
 
 Done when: the full schema can be imported from a clean local database without errors.
