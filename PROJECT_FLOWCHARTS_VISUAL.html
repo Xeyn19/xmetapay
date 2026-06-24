@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>XMETA Pay Project Flowcharts</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f8fb;
+        --surface: #ffffff;
+        --ink: #162033;
+        --muted: #5d6878;
+        --line: #d9dee8;
+        --accent: #0f766e;
+        --accent-strong: #115e59;
+        --accent-soft: #e8f6f4;
+        --admin: #174ea6;
+        --parent: #9a3412;
+        --future: #6d28d9;
+        --code: #101828;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.6;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0 64px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 28px;
+        padding-bottom: 24px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.35rem);
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin-top: 34px;
+        font-size: clamp(1.45rem, 2.5vw, 2rem);
+      }
+
+      h3 {
+        margin-top: 24px;
+        font-size: 1.08rem;
+      }
+
+      p {
+        color: var(--muted);
+        margin: 12px 0 0;
+      }
+
+      a {
+        color: #0f66b5;
+      }
+
+      code,
+      pre {
+        font-family:
+          "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono",
+          monospace;
+      }
+
+      .meta,
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .pill {
+        background: var(--accent-soft);
+        border: 1px solid #b9ded4;
+        border-radius: 999px;
+        color: var(--accent-strong);
+        font-size: 0.9rem;
+        padding: 6px 12px;
+      }
+
+      .pill.admin {
+        background: #eaf1ff;
+        border-color: #c8d8ff;
+        color: var(--admin);
+      }
+
+      .pill.parent {
+        background: #fff2e8;
+        border-color: #ffd0ad;
+        color: var(--parent);
+      }
+
+      .pill.future {
+        background: #f3edff;
+        border-color: #d8c7ff;
+        color: var(--future);
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+        margin-top: 18px;
+      }
+
+      .card,
+      .diagram-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 14px 34px rgb(15 23 42 / 7%);
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .card strong {
+        color: var(--ink);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .diagram-card {
+        margin-top: 16px;
+        overflow: auto;
+        padding: 16px;
+      }
+
+      .diagram-card.large {
+        min-height: 520px;
+      }
+
+      .diagram-card .mermaid {
+        min-width: 880px;
+      }
+
+      .diagram-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-bottom: 12px;
+        position: sticky;
+        right: 0;
+        z-index: 1;
+      }
+
+      .diagram-actions button {
+        appearance: none;
+        background: var(--accent-strong);
+        border: 1px solid var(--accent-strong);
+        border-radius: 6px;
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 650;
+        line-height: 1;
+        padding: 9px 12px;
+      }
+
+      .diagram-actions button:hover {
+        border-color: #0f66b5;
+        box-shadow: 0 0 0 3px rgb(15 118 110 / 16%);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #eef2f7;
+        color: #24324a;
+      }
+
+      .note {
+        background: #edf7f4;
+        border: 1px solid #b9ded4;
+        border-radius: 8px;
+        color: #1d594f;
+        margin-top: 18px;
+        padding: 14px 16px;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+
+        main {
+          width: 100%;
+          padding: 16px;
+        }
+
+        .card,
+        .diagram-card {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>XMETA Pay Project Flowcharts</h1>
+        <p>
+          A browser-viewable process map for how the school/admin portal and
+          parent portal work together from registration to student linking, with
+          future fees, payments, wallet, store, and report flows.
+        </p>
+        <div class="meta">
+          <span class="pill admin">Admin/school portal</span>
+          <span class="pill parent">Parent portal</span>
+          <span class="pill">Student linking</span>
+          <span class="pill future">Future payments and wallet</span>
+        </div>
+        <div class="links">
+          <a href="PROJECT_FLOWCHARTS.md">Markdown version</a>
+          <a href="DATABASE_SCHEMA_PLAN.md">Database schema plan</a>
+          <a href="DATABASE_SCHEMA_EXPLANATION.md">Schema explanation</a>
+          <a href="DATABASE_SCHEMA_VISUAL_PLAN.html">Schema visual plan</a>
+          <a href="CHECKLIST.md">Backend checklist</a>
+        </div>
+      </header>
+
+      <section>
+        <h2>Current Status</h2>
+        <div class="grid">
+          <div class="card">
+            <strong>Implemented</strong>
+            Auth, logout, protected redirects, school setup bootstrap, student
+            creation, enrollment, and parent-student linking. Parent-side mock
+            enrollment has been removed.
+          </div>
+          <div class="card">
+            <strong>Next</strong>
+            Fees and tuition backend, including parent fee summaries and admin
+            tuition reports from MySQL.
+          </div>
+          <div class="card">
+            <strong>Future</strong>
+            Payments, receipts, wallet top-ups, store/canteen spending,
+            notifications, and report exports.
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Whole Project Overview</h2>
+        <p>
+          The admin creates the official school and student records. Parents can
+          only see students after a <code>student_guardians</code> link exists.
+          In the current backend, parents link existing school-created students
+          instead of enrolling new students directly.
+        </p>
+        <div class="diagram-card large">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="xmetapay-whole-project-overview.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin registers or logs in"] --> B["Admin initializes school setup"]
+  B --> C["School, school year, grade levels, and sections exist"]
+  C --> D["Admin creates student"]
+  D --> E["Admin creates enrollment"]
+  E --> F["Student gets official student_reference"]
+
+  G["Parent registers or logs in"] --> H["Parent submits student_reference"]
+  H --> I{"Matching student found?"}
+  I -->|Yes| J["Create student_guardians link"]
+  I -->|No| K["Parent stays active but has no linked student yet"]
+  J --> L["Parent dashboard shows linked student"]
+  K --> M["Parent can try link-by-reference later"]
+
+  L --> N["Future: parent views fees"]
+  N --> O["Future: parent pays fees"]
+  O --> P["Future: receipt and payment history"]
+  L --> Q["Future: wallet top-up and allowance"]
+  Q --> R["Future: store/canteen spending"]
+
+  P --> S["Admin sees collections and reports"]
+  R --> T["Admin sees wallet and store reports"]
+          </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Admin Portal</h2>
+
+        <h3>Admin Registration And Login</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-registration-login.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin opens /admin/register"] --> B["Submit name, school name, email or phone, staff role, password"]
+  B --> C["Validate required fields"]
+  C --> D{"Email or phone already used for admin role?"}
+  D -->|Yes| E["Show duplicate account error"]
+  D -->|No| F["Hash password"]
+  F --> G["Insert users row with role admin"]
+  G --> H["Insert admin_profiles row"]
+  H --> I["Create signed session"]
+  I --> J["Redirect to /admin/dashboard"]
+
+  K["Admin opens /admin/login"] --> L["Find active admin user by email or phone"]
+  L --> M{"Password valid?"}
+  M -->|No| N["Show invalid login error"]
+  M -->|Yes| O["Create signed session"]
+  O --> J
+          </pre>
+        </div>
+
+        <h3>School Setup Bootstrap</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="school-setup-bootstrap.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin dashboard loads"] --> B{"admin_profiles.school_id exists?"}
+  B -->|Yes| C["Use linked school context"]
+  B -->|No| D["Show Initialize school setup panel"]
+  D --> E["Admin clicks Initialize school setup"]
+  E --> F["Require admin session"]
+  F --> G["Create or reuse schools row from school_name"]
+  G --> H["Update admin_profiles.school_id"]
+  H --> I["Create or reuse active school year"]
+  I --> J["Create or reuse Grade 1 to Grade 10"]
+  J --> K["Create or reuse Section A for each grade"]
+  K --> L["Redirect back to dashboard"]
+  L --> C
+          </pre>
+        </div>
+
+        <h3>Student Creation And Enrollment</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-student-creation-enrollment.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin opens /admin/students"] --> B{"School setup complete?"}
+  B -->|No| C["Show setup required message"]
+  B -->|Yes| D["Load active school year, grade levels, and sections"]
+  D --> E["Admin submits student form"]
+  E --> F["Validate student_reference, first name, last name, grade, and section"]
+  F --> G{"student_reference already exists in this school?"}
+  G -->|Yes| H["Show duplicate reference error"]
+  G -->|No| I["Insert students row"]
+  I --> J["Insert enrollments row for active school year"]
+  J --> K["Student appears in enrolled students table"]
+  K --> L["Parent can now link using student_reference"]
+          </pre>
+        </div>
+
+        <h3>Admin Parent Directory</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-parent-directory.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin opens /admin/parents"] --> B["Load admin school_id"]
+  B --> C["Load linked guardians through student_guardians"]
+  B --> D["Load parent_profiles with no matching student_guardians link"]
+  C --> E["Show linked parent, student, and relationship"]
+  D --> F["Show pending parent profile"]
+  E --> G["Admin understands who can access student records"]
+  F --> H["Admin can create matching student or ask parent to retry reference"]
+          </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Parent Portal</h2>
+
+        <h3>Parent Registration And Automatic Student Linking</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="parent-registration-auto-link.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Parent opens /parent/register"] --> B["Submit guardian details, relationship, student name, student_reference, password"]
+  B --> C["Validate required fields"]
+  C --> D{"Email or phone already used for parent role?"}
+  D -->|Yes| E["Show duplicate account error"]
+  D -->|No| F["Hash password"]
+  F --> G["Insert users row with role parent"]
+  G --> H["Insert parent_profiles row"]
+  H --> I["Search students by student_reference"]
+  I --> J{"Exactly one matching student?"}
+  J -->|Yes| K["Insert student_guardians row"]
+  J -->|No| L["Keep parent active with no linked student"]
+  K --> M["Create signed session"]
+  L --> M
+  M --> N["Redirect to /parent/dashboard"]
+          </pre>
+        </div>
+
+        <h3>Parent Login And Dashboard Student Read</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="parent-dashboard-linked-students.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Parent opens /parent/login"] --> B["Find active parent user by email or phone"]
+  B --> C{"Password valid?"}
+  C -->|No| D["Show invalid login error"]
+  C -->|Yes| E["Create signed session"]
+  E --> F["Redirect to /parent/dashboard"]
+  F --> G["Require parent session"]
+  G --> H["Read student_guardians by parent_user_id"]
+  H --> I{"Linked students found?"}
+  I -->|Yes| J["Show linked students and enrollment info"]
+  I -->|No| K["Show link-by-reference form"]
+          </pre>
+        </div>
+
+        <h3>Parent Manual Link By Reference</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="parent-manual-link-by-reference.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Parent dashboard shows no linked students"] --> B["Parent enters student_reference"]
+  B --> C["Require parent session"]
+  C --> D["Search students by student_reference"]
+  D --> E{"Exactly one matching student?"}
+  E -->|No| F["Show friendly not found or ambiguous message"]
+  E -->|Yes| G["Create or reuse student_guardians link"]
+  G --> H["Reload parent dashboard"]
+  H --> I["Linked student appears"]
+          </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Shared Access And Sessions</h2>
+
+        <h3>Cross-Portal Student Access Rule</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="cross-portal-student-access-rule.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin creates official student"] --> B["students.student_reference exists"]
+  B --> C["Parent submits student_reference"]
+  C --> D{"Can the system find exactly one matching student?"}
+  D -->|No| E["No access link is created"]
+  D -->|Yes| F["Create student_guardians row"]
+  F --> G["Parent can read that student"]
+  G --> H["Parent dashboard filters by parent_user_id"]
+  H --> I["Only linked students are returned"]
+  E --> J["Parent can retry after admin fixes or creates student"]
+          </pre>
+        </div>
+
+        <h3>Session Guard And Logout</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="session-guard-logout.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["User visits protected page"] --> B["Read signed session cookie"]
+  B --> C{"Session exists and valid?"}
+  C -->|No| D["Redirect to matching login page"]
+  C -->|Yes| E["Load user role"]
+  E --> F{"Required role matches user role?"}
+  F -->|No| D
+  F -->|Yes| G["Render protected dashboard page"]
+
+  H["User clicks Log out"] --> I["Server action deletes session cookie"]
+  I --> J{"Portal role?"}
+  J -->|Admin| K["Redirect to /admin/login"]
+  J -->|Parent| L["Redirect to /parent/login"]
+          </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Future Backend Phases</h2>
+
+        <h3>Fees And Tuition</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="future-fees-tuition.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin opens fees or tuition setup"] --> B["Create fee_types for active school year"]
+  B --> C["Select students or grade level"]
+  C --> D["Create student_fee_assignments"]
+  D --> E["Parent dashboard loads linked students"]
+  E --> F["Parent opens fee summary"]
+  F --> G["Read open, partial, and paid fee assignments"]
+  G --> H["Show balances by student"]
+  H --> I["Admin tuition report reads the same balances"]
+          </pre>
+        </div>
+
+        <h3>Payment And Receipt</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="future-payment-receipt.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Parent selects fee items"] --> B["Create payments row with pending status"]
+  B --> C["Local test payment is confirmed"]
+  C --> D["Update payment status to paid"]
+  D --> E["Create payment_allocations rows"]
+  E --> F["Update student_fee_assignments amount_paid"]
+  F --> G{"Balance fully paid?"}
+  G -->|Yes| H["Mark fee assignment paid"]
+  G -->|No| I["Mark fee assignment partial"]
+  H --> J["Create receipt"]
+  I --> J
+  J --> K["Parent sees payment history and receipt"]
+  K --> L["Admin sees collections report"]
+          </pre>
+        </div>
+
+        <h3>Wallet, Allowance, And Store</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="future-wallet-store.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Wallet exists for student"] --> B["Parent chooses top-up amount"]
+  B --> C["Create payment for wallet top-up"]
+  C --> D["Payment succeeds"]
+  D --> E["Increase wallet balance"]
+  E --> F["Create wallet_transactions row with type top_up"]
+  F --> G["Student spends at canteen or school store"]
+  G --> H["Create wallet_transactions row with type purchase"]
+  H --> I["Create store_transactions row"]
+  I --> J["Parent sees wallet history"]
+  I --> K["Admin sees store and allowance reports"]
+          </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Manual Testing Order</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>What to check</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Register and log in as admin.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Initialize school setup and confirm school context loads.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Create a student with a clear <code>student_reference</code>.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Register a parent using that same reference.</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Confirm the parent dashboard shows only the linked student.</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Log out and back in from both portals to confirm persistence.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="note">
+          This page is documentation only. It does not include credentials, seed
+          users, database exports, or real student/payment data.
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        securityLevel: "loose",
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#e8f6f4",
+          primaryTextColor: "#162033",
+          primaryBorderColor: "#0f766e",
+          lineColor: "#637083",
+          secondaryColor: "#eaf1ff",
+          tertiaryColor: "#fff2e8",
+          fontFamily:
+            "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+        },
+      });
+
+      function saveBlob(blob, fileName) {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      }
+
+      function serializeDiagramSvg(svg) {
+        const clone = svg.cloneNode(true);
+        clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+        const viewBox = svg.viewBox.baseVal;
+        const bounds = svg.getBoundingClientRect();
+        const width = Math.ceil(viewBox.width || bounds.width || 1200);
+        const height = Math.ceil(viewBox.height || bounds.height || 800);
+
+        clone.setAttribute("width", String(width));
+        clone.setAttribute("height", String(height));
+
+        return new XMLSerializer().serializeToString(clone);
+      }
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-diagram-download]");
+
+        if (!button) {
+          return;
+        }
+
+        const card = button.closest(".diagram-card");
+        const svg = card?.querySelector("svg");
+
+        if (!svg) {
+          window.alert("Diagram is still rendering. Please try again in a moment.");
+          return;
+        }
+
+        const fileName = button.dataset.fileName || "xmetapay-project-flow.svg";
+        const svgText = serializeDiagramSvg(svg);
+        saveBlob(
+          new Blob([svgText], { type: "image/svg+xml;charset=utf-8" }),
+          fileName,
+        );
+      });
+    </script>
+  </body>
+</html>

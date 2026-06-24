@@ -183,7 +183,13 @@ export function AdminShell({
           <div className="grid w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
             <AdminButton data-modal-trigger="reminder" onClick={() => openModal("reminder")}><Send className="size-4" />Send reminders</AdminButton>
             <AdminButton data-modal-trigger="payment" onClick={() => openModal("payment")}><Plus className="size-4" />Record payment</AdminButton>
-            <AdminButton data-modal-trigger="enroll" tone="primary" onClick={() => openModal("enroll")}><UserPlus className="size-4" />Enroll student</AdminButton>
+            <Link
+              href="/admin/students#add-student"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+            >
+              <UserPlus className="size-4" />
+              Add student
+            </Link>
           </div>
         </header>
 

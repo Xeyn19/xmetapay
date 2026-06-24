@@ -9,6 +9,10 @@ const authActionsPath = "app/auth/actions.ts";
 const adminStudentsPagePath = "app/admin/(dashboard)/students/page.tsx";
 const adminParentsPagePath = "app/admin/(dashboard)/parents/page.tsx";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
+const adminShellPath = "app/admin/_components/admin-shell.tsx";
+const adminModalsPath = "app/admin/_components/admin-modals.tsx";
+const parentShellPath = "app/parent/_components/parent-shell.tsx";
+const parentPortalDataPath = "app/parent/_data/parent-portal-data.ts";
 const checklistPath = "CHECKLIST.md";
 
 test("student records helper reads students, enrollment, and guardian links from MySQL", () => {
@@ -77,6 +81,37 @@ test("admin and parent pages use database helpers instead of mock student arrays
   assert.match(parentDashboard, /linkParentStudentAction/);
   assert.match(parentDashboard, /<form action=\{linkParentStudentAction\}/);
   assert.doesNotMatch(parentDashboard, /children|dashboardMetrics|outstandingFees|recentActivity/);
+});
+
+test("admin header enrollment action opens the database-backed student form", () => {
+  const shell = readFileSync(adminShellPath, "utf8");
+  const modals = readFileSync(adminModalsPath, "utf8");
+
+  assert.match(shell, /href="\/admin\/students#add-student"/);
+  assert.match(shell, /Add student/);
+  assert.doesNotMatch(shell, /openModal\("enroll"\)/);
+  assert.doesNotMatch(shell, /data-modal-trigger="enroll"/);
+  assert.doesNotMatch(modals, /activeModal === "enroll"/);
+  assert.doesNotMatch(modals, /Add \/ enroll student/);
+});
+
+test("parent portal removes dead enrollment wizard and keeps student reference linking", () => {
+  const parentDashboard = readFileSync(parentDashboardPath, "utf8");
+  const parentShell = readFileSync(parentShellPath, "utf8");
+  const parentPortalData = readFileSync(parentPortalDataPath, "utf8");
+
+  assert.equal(existsSync("app/parent/(portal)/enroll/page.tsx"), false);
+  assert.equal(existsSync("app/parent/(portal)/enroll/family/page.tsx"), false);
+  assert.equal(existsSync("app/parent/(portal)/enroll/review/page.tsx"), false);
+
+  assert.doesNotMatch(parentShell, /\/parent\/enroll/);
+  assert.doesNotMatch(parentShell, /Enroll student/);
+  assert.doesNotMatch(parentPortalData, /Enroll a student|\/parent\/enroll/);
+
+  assert.match(parentDashboard, /linkParentStudentAction/);
+  assert.match(parentDashboard, /Link another student/);
+  assert.match(parentDashboard, /name="studentReference"/);
+  assert.doesNotMatch(parentDashboard, /href="\/parent\/enroll"/);
 });
 
 test("backend checklist tracks completed student and guardian linking slice", () => {

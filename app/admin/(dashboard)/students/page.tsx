@@ -35,47 +35,49 @@ export default async function StudentsPage() {
         ))}
       </KpiGrid>
 
-      <DashboardCard title="Add student" icon={UserPlus} className="mb-5">
-        <form action={createStudentAction} className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-4">
-          <Field label="Student reference" required>
-            <input name="studentReference" className={fieldControlClass} placeholder="e.g. BWA-2025-0312" required />
-          </Field>
-          <Field label="First name" required>
-            <input name="firstName" className={fieldControlClass} placeholder="Juan Miguel" required />
-          </Field>
-          <Field label="Middle name">
-            <input name="middleName" className={fieldControlClass} placeholder="Optional" />
-          </Field>
-          <Field label="Last name" required>
-            <input name="lastName" className={fieldControlClass} placeholder="Santos" required />
-          </Field>
-          <Field label="Birthdate">
-            <input name="birthdate" className={fieldControlClass} type="date" />
-          </Field>
-          <Field label="Grade level" required>
-            <select name="gradeLevelId" className={fieldControlClass} required disabled={!data.ready}>
-              <option value="">Choose grade</option>
-              {data.gradeOptions.map((grade) => (
-                <option key={grade.id} value={grade.id}>{grade.name}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Section" required>
-            <select name="sectionId" className={fieldControlClass} required disabled={!data.ready}>
-              <option value="">Choose section</option>
-              {data.sectionOptions.map((section) => (
-                <option key={section.id} value={section.id}>{section.label}</option>
-              ))}
-            </select>
-          </Field>
-          <div className="flex items-end">
-            <AdminButton type="submit" tone="primary" className="w-full" disabled={!data.ready}>
-              <UserPlus className="size-4" />
-              Enroll student
-            </AdminButton>
-          </div>
-        </form>
-      </DashboardCard>
+      <div id="add-student" className="scroll-mt-32">
+        <DashboardCard title="Add student" icon={UserPlus} className="mb-5">
+          <form action={createStudentAction} className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-4">
+            <Field label="Student reference" required>
+              <input name="studentReference" className={fieldControlClass} placeholder="e.g. BWA-2025-0312" required />
+            </Field>
+            <Field label="First name" required>
+              <input name="firstName" className={fieldControlClass} placeholder="Juan Miguel" required />
+            </Field>
+            <Field label="Middle name">
+              <input name="middleName" className={fieldControlClass} placeholder="Optional" />
+            </Field>
+            <Field label="Last name" required>
+              <input name="lastName" className={fieldControlClass} placeholder="Santos" required />
+            </Field>
+            <Field label="Birthdate">
+              <input name="birthdate" className={fieldControlClass} type="date" />
+            </Field>
+            <Field label="Grade level" required>
+              <select name="gradeLevelId" className={fieldControlClass} required disabled={!data.ready}>
+                <option value="">Choose grade</option>
+                {data.gradeOptions.map((grade) => (
+                  <option key={grade.id} value={grade.id}>{grade.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Section" required>
+              <select name="sectionId" className={fieldControlClass} required disabled={!data.ready}>
+                <option value="">Choose section</option>
+                {data.sectionOptions.map((section) => (
+                  <option key={section.id} value={section.id}>{section.label}</option>
+                ))}
+              </select>
+            </Field>
+            <div className="flex items-end">
+              <AdminButton type="submit" tone="primary" className="w-full" disabled={!data.ready}>
+                <UserPlus className="size-4" />
+                Enroll student
+              </AdminButton>
+            </div>
+          </form>
+        </DashboardCard>
+      </div>
 
       <DashboardCard
         title={`Student registry - ${data.activeSchoolYearName ?? "School year pending"}`}
