@@ -43,23 +43,23 @@ export type ParentMetric = {
 export const parentPageMeta: Record<string, ParentPageMeta> = {
   "/parent/dashboard": {
     title: "Dashboard",
-    subtitle: "Welcome back, Maria - May 19, 2025",
+    subtitle: "Welcome back",
   },
   "/parent/student-profile": {
     title: "Student profile",
-    subtitle: "Juan Miguel Santos - BWA-2025-0312",
+    subtitle: "Linked student details",
   },
   "/parent/fees": {
     title: "Fee summary",
-    subtitle: "Juan Miguel Santos - SY 2025-2026",
+    subtitle: "Fee backend pending",
   },
   "/parent/pay-tuition": {
     title: "Pay tuition & fees",
-    subtitle: "Juan Miguel Santos - Select and pay outstanding fees",
+    subtitle: "Local payment flow pending",
   },
   "/parent/receipt": {
     title: "Payment complete",
-    subtitle: "Transaction confirmed - TXN-20250519-5891",
+    subtitle: "Receipt records will appear after payments are connected",
   },
   "/parent/history": {
     title: "Payment history",
@@ -95,54 +95,48 @@ export const parentNavSections: ParentNavSection[] = [
 ];
 
 export const dashboardMetrics: ParentMetric[] = [
-  { label: "Students enrolled", value: "2", note: "Juan & Maria Jr.", accent: true },
-  { label: "Paid this month", value: "P3,500", note: "July tuition - paid", tone: "green" },
-  { label: "Outstanding balance", value: "P1,100", note: "2 items due", tone: "red" },
-  { label: "Wallet balances", value: "P470", note: "Juan P320 - Maria P150" },
+  { label: "Students enrolled", value: "0", note: "Use linked student records", accent: true },
+  { label: "Paid this month", value: "Pending", note: "Payment backend pending", tone: "green" },
+  { label: "Outstanding balance", value: "Pending", note: "Fee backend pending", tone: "red" },
+  { label: "Wallet balances", value: "Pending", note: "Wallet backend pending" },
 ];
 
 export const children = [
   {
-    initials: "JS",
+    initials: "ST",
     tone: "orange" as const,
-    name: "Juan Miguel Santos",
-    meta: "Grade 7 - BWA-2025-0312 - Wallet: P320",
+    name: "Linked student",
+    meta: "Database-backed student details appear on the dashboard",
   },
   {
-    initials: "MJ",
+    initials: "ST",
     tone: "blue" as const,
-    name: "Maria Santos Jr.",
-    meta: "Grade 4 - BWA-2025-0145 - Wallet: P150",
+    name: "Additional student",
+    meta: "Link another student reference to show more records",
   },
 ];
 
 export const outstandingFees = [
-  { icon: Receipt, title: "PTA contribution", desc: "Juan - Due June 15", amount: "P200", status: "Due", tone: "red" as const },
-  { icon: Bus, title: "Field trip - June", desc: "Juan - Due June 20", amount: "P350", status: "Due", tone: "red" as const },
-  { icon: GraduationCap, title: "Supply fee balance", desc: "Juan - Partial - P350 remaining", amount: "P350", status: "Partial", tone: "amber" as const },
+  { icon: Receipt, title: "Fee backend pending", desc: "Student fee assignments will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const },
+  { icon: Bus, title: "Other fees pending", desc: "Transportation or activity fees will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const },
+  { icon: GraduationCap, title: "Tuition balance pending", desc: "Tuition balances will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const },
 ];
 
 export const recentActivity = [
-  ["May 19", "Juan Santos", "Allowance top-up", "+P200", "Online", "Done"],
-  ["May 18", "Juan Santos", "Canteen purchase", "-P85", "Wallet", "Done"],
-  ["May 15", "Juan Santos", "PTA contribution", "P200", "Pending", "Due"],
-  ["May 10", "Maria Santos Jr.", "Allowance top-up", "+P150", "Online", "Done"],
+  ["Pending", "Linked student", "Payment and wallet activity pending", "-", "Backend", "Pending"],
 ];
 
 export const feeSummary = [
-  { title: "July 2025 tuition", desc: "Juan Miguel Santos - Due July 5", amount: "P3,500", status: "Paid", tone: "green" as const, icon: Receipt },
-  { title: "PTA contribution", desc: "Juan Miguel Santos - Due June 15", amount: "P200", status: "Due", tone: "red" as const, icon: FileText },
-  { title: "Field trip - June", desc: "Juan Miguel Santos - Due June 20", amount: "P350", status: "Due", tone: "red" as const, icon: Bus },
-  { title: "Supply fee balance", desc: "Juan Miguel Santos - Partial - P350 remaining", amount: "P350", status: "Partial", tone: "amber" as const, icon: BookOpen },
-  { title: "Maria July tuition", desc: "Maria Santos Jr. - Due July 5", amount: "P3,500", status: "Open", tone: "blue" as const, icon: Receipt },
-  { title: "Uniform set", desc: "Maria Santos Jr. - Paid May 6", amount: "P950", status: "Paid", tone: "green" as const, icon: GraduationCap },
+  { title: "Tuition fees", desc: "Student fee assignments will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const, icon: Receipt },
+  { title: "Other school fees", desc: "Activity, supply, and other fees will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const, icon: FileText },
+  { title: "Transportation or trips", desc: "Optional fees will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const, icon: Bus },
+  { title: "Books and supplies", desc: "Assigned balances will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const, icon: BookOpen },
+  { title: "Uniforms", desc: "Paid records will appear after Phase 5", amount: "Pending", status: "Pending", tone: "amber" as const, icon: GraduationCap },
 ];
 
 export const payableFees = [
-  { id: "tuition", title: "July 2025 tuition", desc: "Juan Miguel Santos - Due July 5", amount: 3500, defaultSelected: true },
-  { id: "supply", title: "School supplies balance", desc: "Juan Miguel Santos - P350 remaining", amount: 350, defaultSelected: true },
-  { id: "pta", title: "PTA contribution", desc: "Juan Miguel Santos - Due June 15", amount: 200, defaultSelected: false },
-  { id: "field-trip", title: "Field trip - June", desc: "Juan Miguel Santos - Due June 20", amount: 350, defaultSelected: false },
+  { id: "tuition", title: "Tuition payment", desc: "Fee balances will load from MySQL after Phase 4", amount: 0, defaultSelected: false },
+  { id: "other-fees", title: "Other school fees", desc: "Assigned fees will load from MySQL after Phase 4", amount: 0, defaultSelected: false },
 ];
 
 export const paymentMethods = [
@@ -152,39 +146,32 @@ export const paymentMethods = [
 ];
 
 export const historyRows = [
-  ["TXN-20250519-5891", "May 19", "Juan Santos", "Allowance top-up", "P200", "Online", "Done"],
-  ["TXN-20250515-1208", "May 15", "Juan Santos", "July tuition", "P3,500", "Card", "Paid"],
-  ["TXN-20250510-7781", "May 10", "Maria Santos Jr.", "Allowance top-up", "P150", "Online", "Done"],
-  ["TXN-20250506-6210", "May 6", "Maria Santos Jr.", "Uniform set", "P950", "Maya", "Paid"],
-  ["TXN-20250429-4421", "Apr 29", "Juan Santos", "Books and modules", "P1,200", "GCash", "Paid"],
+  ["Pending", "Pending", "Linked student", "Payment history will appear after Phase 5", "-", "Backend", "Pending"],
 ];
 
 export const walletTransactions = [
-  ["May 19", "Juan Santos", "Allowance top-up", "+P200", "Online", "Done"],
-  ["May 18", "Juan Santos", "Canteen purchase", "-P85", "Wallet", "Done"],
-  ["May 17", "Maria Santos Jr.", "School store", "-P45", "Wallet", "Done"],
-  ["May 10", "Maria Santos Jr.", "Allowance top-up", "+P150", "Online", "Done"],
+  ["Pending", "Linked student", "Wallet history will appear after Phase 6", "-", "Backend", "Pending"],
 ];
 
 export const profileStats = [
-  { label: "Wallet balance", value: "P320" },
-  { label: "Fees paid", value: "82%" },
-  { label: "Outstanding", value: "P1,100" },
+  { label: "Wallet balance", value: "Pending" },
+  { label: "Fees paid", value: "Pending" },
+  { label: "Outstanding", value: "Pending" },
 ];
 
 export const profileDetails = [
-  { label: "Student ID", value: "BWA-2025-0312" },
-  { label: "Grade level", value: "Grade 7" },
-  { label: "Student type", value: "New student" },
-  { label: "Date of birth", value: "March 12, 2012" },
-  { label: "Status", value: "Enrolled" },
+  { label: "Student reference", value: "Linked student required" },
+  { label: "Grade level", value: "Pending" },
+  { label: "Student type", value: "Pending" },
+  { label: "Date of birth", value: "Pending" },
+  { label: "Status", value: "Pending" },
 ];
 
 export const parentDetails = [
-  { label: "Guardian", value: "Maria Santos" },
-  { label: "Relationship", value: "Mother" },
-  { label: "Mobile", value: "0917-234-5678" },
-  { label: "Email", value: "maria@email.com" },
+  { label: "Guardian", value: "Signed-in parent" },
+  { label: "Relationship", value: "Parent / guardian" },
+  { label: "Mobile", value: "From account profile" },
+  { label: "Email", value: "From account profile" },
   { label: "Portal access", value: "Active" },
 ];
 

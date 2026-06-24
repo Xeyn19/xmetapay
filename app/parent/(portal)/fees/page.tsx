@@ -8,10 +8,10 @@ export default function FeesPage() {
   return (
     <>
       <MetricGrid>
-        <MetricCard metric={{ label: "Total billed", value: "P9,550", note: "Across two students" }} />
-        <MetricCard metric={{ label: "Paid", value: "P7,450", note: "78% complete", tone: "green" }} />
-        <MetricCard metric={{ label: "Outstanding", value: "P1,100", note: "2 items due", tone: "red" }} />
-        <MetricCard metric={{ label: "Next due date", value: "Jun 15", note: "PTA contribution" }} />
+        <MetricCard metric={{ label: "Total billed", value: "Pending", note: "Fee backend pending" }} />
+        <MetricCard metric={{ label: "Paid", value: "Pending", note: "Payment records pending", tone: "green" }} />
+        <MetricCard metric={{ label: "Outstanding", value: "Pending", note: "Balances pending", tone: "red" }} />
+        <MetricCard metric={{ label: "Next due date", value: "Pending", note: "Due dates pending" }} />
       </MetricGrid>
       <ParentCard
         title="Fee summary"
