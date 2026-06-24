@@ -52,11 +52,11 @@ Done when: the admin dashboard can load school setup data from MySQL.
 
 ## Phase 3: Students And Guardian Linking
 
-- [ ] Add backend helpers for `students` and `student_guardians`.
-- [ ] Create an admin flow for adding or listing students.
-- [ ] Link parent accounts to students using `student_reference`.
-- [ ] Show linked students on the parent dashboard from the database.
-- [ ] Keep parent access limited to their linked students only.
+- [x] Add backend helpers for `students` and `student_guardians`.
+- [x] Create an admin flow for adding or listing students.
+- [x] Link parent accounts to students using `student_reference`.
+- [x] Show linked students on the parent dashboard from the database.
+- [x] Keep parent access limited to their linked students only.
 
 Done when: admins can manage students and parents can see only their linked children.
 
