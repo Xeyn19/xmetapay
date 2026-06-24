@@ -9,6 +9,7 @@ export type AdminSchoolContext = {
   adminInitials: string;
   staffRole: string;
   staffRoleLabel: string;
+  schoolId: number | null;
   schoolName: string;
   schoolCode: string | null;
   activeSchoolYear: {
@@ -28,6 +29,7 @@ const fallbackContext: AdminSchoolContext = {
   adminInitials: "SA",
   staffRole: "school_administrator",
   staffRoleLabel: "School administrator",
+  schoolId: null,
   schoolName: "School setup pending",
   schoolCode: null,
   activeSchoolYear: null,
@@ -46,7 +48,9 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
     }
 
     const baseContext = contextFromProfile(profile);
-    const school = await getSchoolByName(profile.school_name);
+    const school = profile.school_id
+      ? (await getSchoolById(profile.school_id)) ?? (await getSchoolByName(profile.school_name))
+      : await getSchoolByName(profile.school_name);
 
     if (!school) {
       return {
@@ -63,6 +67,7 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
 
     return {
       ...baseContext,
+      schoolId: school.id,
       schoolName: school.name,
       schoolCode: school.code,
       activeSchoolYear,
@@ -89,7 +94,7 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
 
 async function getAdminProfile(userId: number) {
   const [rows] = await pool.execute<AdminProfileRow[]>(
-    `SELECT u.name AS admin_name, ap.school_name, ap.staff_role
+    `SELECT u.name AS admin_name, ap.school_id, ap.school_name, ap.staff_role
      FROM users u
      JOIN admin_profiles ap ON ap.user_id = u.id
      WHERE u.id = :userId
@@ -104,8 +109,33 @@ async function tryGetAdminProfileOnly(userId: number) {
   try {
     return await getAdminProfile(userId);
   } catch {
-    return null;
+    try {
+      const [rows] = await pool.execute<AdminProfileRow[]>(
+        `SELECT u.name AS admin_name, NULL AS school_id, ap.school_name, ap.staff_role
+         FROM users u
+         JOIN admin_profiles ap ON ap.user_id = u.id
+         WHERE u.id = :userId
+         LIMIT 1`,
+        { userId },
+      );
+
+      return rows[0] ?? null;
+    } catch {
+      return null;
+    }
   }
+}
+
+async function getSchoolById(schoolId: number) {
+  const [rows] = await pool.execute<SchoolRow[]>(
+    `SELECT id, name, code, status
+     FROM schools
+     WHERE id = :schoolId
+     LIMIT 1`,
+    { schoolId },
+  );
+
+  return rows[0] ?? null;
 }
 
 async function getSchoolByName(schoolName: string) {
@@ -166,6 +196,7 @@ function contextFromProfile(profile: AdminProfileRow): AdminSchoolContext {
     adminInitials: initialsFor(profile.admin_name),
     staffRole: profile.staff_role,
     staffRoleLabel: labelForStaffRole(profile.staff_role),
+    schoolId: profile.school_id,
     schoolName: profile.school_name,
     schoolCode: null,
     activeSchoolYear: null,
@@ -211,6 +242,7 @@ function missingSchoolSetupTables(error: unknown) {
 
 type AdminProfileRow = RowDataPacket & {
   admin_name: string;
+  school_id: number | null;
   school_name: string;
   staff_role: string;
 };

@@ -62,8 +62,11 @@ One admin profile per admin user.
 | --- | --- |
 | `id` | Primary key |
 | `user_id` | Links to `users.id` |
+| `school_id` | Nullable link to `schools.id` after school setup is initialized |
 | `school_name` | School name captured during admin registration |
 | `staff_role` | Finance officer, registrar, or school administrator |
+
+Implementation note: `school_name` stays for display and old local records. After the full schema is imported, the admin setup bootstrap links each admin profile to the real `schools.id` record through `admin_profiles.school_id`.
 
 ### `parent_profiles`
 
@@ -522,6 +525,7 @@ erDiagram
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
 
   SCHOOLS ||--o{ SCHOOL_YEARS : "has"
+  SCHOOLS ||--o{ ADMIN_PROFILES : "linked admins"
   SCHOOLS ||--o{ GRADE_LEVELS : "has"
   SCHOOLS ||--o{ SECTIONS : "has"
   SCHOOLS ||--o{ STUDENTS : "has"
