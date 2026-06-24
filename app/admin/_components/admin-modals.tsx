@@ -1,11 +1,11 @@
 "use client";
 
-import { Bell, CreditCard, Send, User, UserPlus, Users, X } from "lucide-react";
+import { CreditCard, Send, X } from "lucide-react";
 
 import { AdminButton, Field, fieldControlClass } from "./admin-ui";
 import { cn } from "@/lib/utils";
 
-export type AdminModalId = "enroll" | "payment" | "reminder";
+export type AdminModalId = "payment" | "reminder";
 
 export function AdminModals({
   activeModal,
@@ -16,43 +16,6 @@ export function AdminModals({
 }) {
   return (
     <>
-      <Modal open={activeModal === "enroll"} title="Add / enroll student" onClose={onClose}>
-        <div className="grid gap-5">
-          <FormSection icon={User} title="Student information">
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              <Field label="Last name" required><input className={fieldControlClass} placeholder="e.g. Santos" /></Field>
-              <Field label="First name" required><input className={fieldControlClass} placeholder="e.g. Juan Miguel" /></Field>
-              <Field label="Middle name"><input className={fieldControlClass} placeholder="Optional" /></Field>
-              <Field label="Sex" required><select className={fieldControlClass}><option>Male</option><option>Female</option></select></Field>
-              <Field label="Date of birth" required><input className={fieldControlClass} type="date" defaultValue="2012-03-12" /></Field>
-              <Field label="Grade level" required>
-                <select className={fieldControlClass} defaultValue="Grade 7">
-                  {["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10"].map((grade) => (
-                    <option key={grade}>{grade}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Section"><input className={fieldControlClass} placeholder="e.g. Section A" /></Field>
-              <Field label="Student type"><select className={fieldControlClass}><option>New</option><option>Transferee</option><option>Returnee</option></select></Field>
-              <Field label="LRN"><input className={fieldControlClass} placeholder="12-digit (optional)" /></Field>
-              <Field label="School year" required><select className={fieldControlClass}><option>2025-2026</option><option>2024-2025</option></select></Field>
-            </div>
-          </FormSection>
-          <FormSection icon={Users} title="Parent / guardian">
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              <Field label="Parent full name" required><input className={fieldControlClass} placeholder="Last, First" /></Field>
-              <Field label="Relationship"><select className={fieldControlClass}><option>Mother</option><option>Father</option><option>Guardian</option></select></Field>
-              <Field label="Contact number" required><input className={fieldControlClass} placeholder="09XX-XXX-XXXX" /></Field>
-              <Field label="Email (for portal)"><input className={fieldControlClass} type="email" placeholder="parent@email.com" /></Field>
-            </div>
-          </FormSection>
-        </div>
-        <ModalFooter>
-          <AdminButton onClick={onClose}>Cancel</AdminButton>
-          <AdminButton tone="primary" onClick={onClose}><UserPlus className="size-4" />Enroll student</AdminButton>
-        </ModalFooter>
-      </Modal>
-
       <Modal open={activeModal === "payment"} title="Record manual payment" onClose={onClose}>
         <div className="grid gap-3.5 sm:grid-cols-2">
           <Field label="Student" required><select className={fieldControlClass}><option>Juan Santos</option><option>Ben Torres</option><option>Miguel Tan</option></select></Field>
@@ -128,26 +91,6 @@ function Modal({
         <div className="px-4 py-4 sm:px-5 sm:py-5">{children}</div>
       </section>
     </div>
-  );
-}
-
-function FormSection({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: typeof Bell;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <h3 className="mb-3 flex items-center gap-1.5 border-b-2 border-[#fbe9e7] pb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#e64a19]">
-        <Icon className="size-3.5" />
-        {title}
-      </h3>
-      {children}
-    </section>
   );
 }
 

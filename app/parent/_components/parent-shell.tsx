@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, Receipt, UserPlus, Wallet, X } from "lucide-react";
+import { LogOut, Menu, Receipt, Wallet, X } from "lucide-react";
 import { useState } from "react";
 
 import { logoutAction } from "@/app/auth/actions";
@@ -120,10 +120,6 @@ export function ParentShell({ children }: { children: React.ReactNode }) {
             <p className="mt-0.5 text-xs leading-5 text-[#6b6b6b]">{meta.subtitle}</p>
           </div>
           <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:w-auto">
-            <Link href="/parent/enroll" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
-              <UserPlus className="size-4" />
-              Enroll student
-            </Link>
             <Link href="/parent/pay-tuition" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30">
               <Wallet className="size-4" />
               Pay fees

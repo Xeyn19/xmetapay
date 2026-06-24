@@ -2,16 +2,13 @@ import {
   BookOpen,
   Bus,
   CreditCard,
-  FileCheck,
   FileText,
   GraduationCap,
   History,
   Home,
   IdCard,
-  Plus,
   Receipt,
   Settings,
-  UserPlus,
   Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -48,18 +45,6 @@ export const parentPageMeta: Record<string, ParentPageMeta> = {
     title: "Dashboard",
     subtitle: "Welcome back, Maria - May 19, 2025",
   },
-  "/parent/enroll": {
-    title: "Enroll a student - Step 1 of 3",
-    subtitle: "Student information - Brentwood Academy SY 2025-2026",
-  },
-  "/parent/enroll/family": {
-    title: "Enroll a student - Step 2 of 3",
-    subtitle: "Family information & required documents",
-  },
-  "/parent/enroll/review": {
-    title: "Enroll a student - Step 3 of 3",
-    subtitle: "Review and submit enrollment",
-  },
   "/parent/student-profile": {
     title: "Student profile",
     subtitle: "Juan Miguel Santos - BWA-2025-0312",
@@ -93,10 +78,7 @@ export const parentNavSections: ParentNavSection[] = [
   },
   {
     label: "Enrollment",
-    items: [
-      { label: "Enroll a student", href: "/parent/enroll", icon: UserPlus },
-      { label: "Student profile", href: "/parent/student-profile", icon: IdCard },
-    ],
+    items: [{ label: "Student profile", href: "/parent/student-profile", icon: IdCard }],
   },
   {
     label: "Payments",
@@ -184,15 +166,6 @@ export const walletTransactions = [
   ["May 10", "Maria Santos Jr.", "Allowance top-up", "+P150", "Online", "Done"],
 ];
 
-export const enrollmentReview = [
-  { label: "Student", value: "Juan Miguel Santos" },
-  { label: "Grade level", value: "Grade 7" },
-  { label: "School year", value: "2025-2026" },
-  { label: "Parent", value: "Maria Santos" },
-  { label: "Relationship", value: "Mother" },
-  { label: "Documents", value: "Birth certificate, Report card" },
-];
-
 export const profileStats = [
   { label: "Wallet balance", value: "P320" },
   { label: "Fees paid", value: "82%" },
@@ -217,5 +190,3 @@ export const parentDetails = [
 
 export const walletQuickAmounts = [100, 200, 500, 1000];
 export const settingsIcon = Settings;
-export const fileCheckIcon = FileCheck;
-export const plusIcon = Plus;

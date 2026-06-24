@@ -5,7 +5,7 @@
 XMETA Pay uses one MySQL database for two connected portals:
 
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
-- Parent portal: registration, student linking, enrollment, fee viewing, tuition payment, receipts, payment history, and wallet top-up.
+- Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, and wallet top-up.
 
 The current database already starts with shared authentication tables. The practical MVP should keep that foundation and add school, student, enrollment, billing, payment, wallet, and reporting tables around it.
 

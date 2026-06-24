@@ -39,43 +39,48 @@ export default async function ParentDashboardPage() {
         <ParentCard
           title="My students"
           icon={Users}
-          action={
-            <Link href="/parent/enroll" className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 min-[420px]:w-auto">
-              <Plus className="size-4" />
-              Add student
-            </Link>
-          }
           bodyClassName={hasLinkedStudents ? "p-0" : undefined}
         >
           {hasLinkedStudents ? (
-            data.linkedStudents.map((student) => (
-              <Link key={student.id} href="/parent/student-profile" className="flex items-center justify-between gap-3 border-b border-black/[0.08] px-4 py-4 transition last:border-b-0 hover:bg-[#f8f8f7] focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 sm:gap-4 sm:px-5">
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">
-                    {student.initials}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-[15px] font-medium text-[#1a1a1a]">{student.fullName}</div>
-                    <div className="mt-0.5 truncate text-xs text-[#6b6b6b]">{student.meta}</div>
+            <>
+              {data.linkedStudents.map((student) => (
+                <Link key={student.id} href="/parent/student-profile" className="flex items-center justify-between gap-3 border-b border-black/[0.08] px-4 py-4 transition hover:bg-[#f8f8f7] focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 sm:gap-4 sm:px-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-10 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">
+                      {student.initials}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="truncate text-[15px] font-medium text-[#1a1a1a]">{student.fullName}</div>
+                      <div className="mt-0.5 truncate text-xs text-[#6b6b6b]">{student.meta}</div>
+                    </div>
                   </div>
-                </div>
-                <StatusPill tone={student.status === "active" ? "blue" : "muted"}>
-                  {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
-                </StatusPill>
-              </Link>
-            ))
+                  <StatusPill tone={student.status === "active" ? "blue" : "muted"}>
+                    {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
+                  </StatusPill>
+                </Link>
+              ))}
+              <form action={linkParentStudentAction} className="grid gap-3 border-t border-black/[0.08] p-4 sm:p-5">
+                <ParentField label="Link another student by reference" required>
+                  <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
+                </ParentField>
+                <ParentButton type="submit" tone="primary" className="w-full min-[420px]:w-auto">
+                  <Plus className="size-4" />
+                  Link another student
+                </ParentButton>
+              </form>
+            </>
           ) : (
             <form action={linkParentStudentAction} className="grid gap-3">
               <ParentField label="Student reference" required>
                 <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
               </ParentField>
               <ParentButton type="submit" tone="primary">
+                <Plus className="size-4" />
                 Link student
               </ParentButton>
             </form>
           )}
         </ParentCard>
-
         <ParentCard title="Fees and balances" icon={CalendarClock}>
           <div className="grid gap-3 text-[13px] leading-5 text-[#6b6b6b]">
             <p>Fee balances will appear here after the tuition and fee backend is connected.</p>
