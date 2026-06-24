@@ -13,7 +13,7 @@ const adminShellPath = "app/admin/_components/admin-shell.tsx";
 const adminModalsPath = "app/admin/_components/admin-modals.tsx";
 const parentShellPath = "app/parent/_components/parent-shell.tsx";
 const parentPortalDataPath = "app/parent/_data/parent-portal-data.ts";
-const checklistPath = "CHECKLIST.md";
+const checklistPath = "docs/CHECKLIST.md";
 
 test("student records helper reads students, enrollment, and guardian links from MySQL", () => {
   assert.equal(existsSync(studentRecordsPath), true);
