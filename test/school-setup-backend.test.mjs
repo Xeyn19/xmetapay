@@ -6,7 +6,7 @@ const schoolSetupPath = "lib/school/setup.ts";
 const schoolSetupActionPath = "app/admin/school-setup/actions.ts";
 const adminLayoutPath = "app/admin/(dashboard)/layout.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
-const checklistPath = "CHECKLIST.md";
+const checklistPath = "docs/CHECKLIST.md";
 const fullSchemaPath = "database/full-schema-v1.sql";
 const migrationPath = "database/migrations/2026-06-24-admin-school-link.sql";
 
