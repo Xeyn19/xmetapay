@@ -38,6 +38,8 @@ Important behavior:
 
 This stores school-side profile details for users with the `admin` role. It records the school name entered during registration and the staff role, such as finance officer, registrar, or school administrator.
 
+After the full school setup is initialized, `admin_profiles.school_id` links the admin profile to the real `schools.id` record. The original `school_name` field remains useful for display, registration history, and fallback matching for older local accounts.
+
 ### `parent_profiles`
 
 This stores parent-side profile details for users with the `parent` role. It records the first student name, student reference, and relationship captured during parent registration.

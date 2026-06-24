@@ -270,7 +270,8 @@
             <strong>Auth foundation</strong>
             Keep the existing shared <code>users</code> table with
             role-specific <code>admin_profiles</code> and
-            <code>parent_profiles</code>.
+            <code>parent_profiles</code>. Admin profiles link to
+            <code>schools.id</code> after setup is initialized.
           </div>
         </div>
       </section>
@@ -354,6 +355,7 @@ erDiagram
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
 
   SCHOOLS ||--o{ SCHOOL_YEARS : "has"
+  SCHOOLS ||--o{ ADMIN_PROFILES : "linked admins"
   SCHOOLS ||--o{ GRADE_LEVELS : "has"
   SCHOOLS ||--o{ SECTIONS : "has"
   SCHOOLS ||--o{ STUDENTS : "has"
@@ -404,6 +406,7 @@ erDiagram
   ADMIN_PROFILES {
     bigint id PK
     bigint user_id FK
+    bigint school_id FK
     varchar school_name
     enum staff_role
   }

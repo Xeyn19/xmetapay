@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
+  Database,
   Menu,
   MonitorCog,
   LogOut,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { AdminModalId, AdminModals } from "./admin-modals";
+import { initializeSchoolSetupAction } from "@/app/admin/school-setup/actions";
 import { logoutAction } from "@/app/auth/actions";
 import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
@@ -35,6 +37,11 @@ export function AdminShell({
   const meta = pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
   const subtitle = dashboardSubtitle(meta.subtitle, schoolContext);
   const schoolYear = schoolContext.activeSchoolYear?.name ?? "School year pending";
+  const setupIncomplete = !schoolContext.schoolId
+    || !schoolContext.databaseReady
+    || !schoolContext.activeSchoolYear
+    || schoolContext.gradeLevelCount === 0
+    || schoolContext.sectionCount === 0;
   const logout = logoutAction.bind(null, "admin");
 
   const openModal = (modal: AdminModalId) => setActiveModal(modal);
@@ -160,6 +167,17 @@ export function AdminShell({
             <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{subtitle}</p>
             {!schoolContext.databaseReady && schoolContext.warning ? (
               <p className="mt-0.5 text-[11px] leading-4 text-[#f57c00]">{schoolContext.warning}</p>
+            ) : null}
+            {setupIncomplete ? (
+              <form action={initializeSchoolSetupAction} className="mt-2 flex flex-col gap-2 rounded-lg border border-[#f57c00]/20 bg-[#fff7ed] px-3 py-2 min-[520px]:flex-row min-[520px]:items-center">
+                <p className="min-w-0 flex-1 text-[11.5px] leading-5 text-[#8a4b00]">
+                  {schoolContext.warning ?? "Link this admin account to the real school setup records."}
+                </p>
+                <AdminButton type="submit" tone="primary" className="min-h-9 px-3 text-[12px]">
+                  <Database className="size-4" />
+                  Initialize school setup
+                </AdminButton>
+              </form>
             ) : null}
           </div>
           <div className="grid w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">

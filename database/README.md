@@ -10,6 +10,10 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
 2. Import `full-schema-v1.sql` second.
    - Adds the MVP project tables for schools, students, enrollment, fees, payments, receipts, wallets, store/canteen transactions, and notifications.
    - Assumes the auth tables already exist because some records reference `users.id`.
+3. If `full-schema-v1.sql` was already imported before the admin-school link was added, import `migrations/2026-06-24-admin-school-link.sql`.
+   - Adds `admin_profiles.school_id`.
+   - Adds the index and foreign key from admin profiles to `schools.id`.
+   - This migration is guarded so it can safely report that each piece already exists.
 
 ## Local Verification
 
