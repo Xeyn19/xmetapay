@@ -6,6 +6,7 @@ import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/prom
 import { pool } from "@/lib/auth/db";
 import { createSession, deleteSession, setAuthFlashToast, type PortalRole } from "@/lib/auth/session";
 import { hashPassword, verifyPassword } from "@/lib/auth/password.mjs";
+import { linkParentToStudentByReference } from "@/lib/students/records";
 import { parseLoginForm, parseRegisterForm } from "@/lib/auth/validation.mjs";
 
 export type AuthFormState = {
@@ -63,6 +64,16 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
           relationship: parsed.data.profile.relationship,
         },
       );
+
+      try {
+        await linkParentToStudentByReference(
+          connection,
+          userResult.insertId,
+          parsed.data.profile.studentReference,
+        );
+      } catch {
+        // Parent accounts can be created before the school has imported or added the student record.
+      }
     }
 
     await connection.commit();
