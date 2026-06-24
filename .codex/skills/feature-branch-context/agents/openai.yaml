@@ -1,0 +1,4 @@
+interface:
+  display_name: "Feature Branch Context"
+  short_description: "Start feature work with project context"
+  default_prompt: "Use $feature-branch-context to start a new feature branch for this XMETA Pay task."
