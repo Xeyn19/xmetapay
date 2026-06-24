@@ -20,12 +20,21 @@ import { logoutAction } from "@/app/auth/actions";
 import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
 import { cn } from "@/lib/utils";
+import type { AdminSchoolContext } from "@/lib/school/setup";
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  children,
+  schoolContext,
+}: {
+  children: React.ReactNode;
+  schoolContext: AdminSchoolContext;
+}) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<AdminModalId | null>(null);
   const meta = pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
+  const subtitle = dashboardSubtitle(meta.subtitle, schoolContext);
+  const schoolYear = schoolContext.activeSchoolYear?.name ?? "School year pending";
   const logout = logoutAction.bind(null, "admin");
 
   const openModal = (modal: AdminModalId) => setActiveModal(modal);
@@ -68,19 +77,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <span className="text-sm font-bold tracking-[-0.02em]">XMETA Pay</span>
           </div>
           <p className="text-[10.5px] leading-4 text-white/40">
-            Brentwood Academy of Las Pinas
+            {schoolContext.schoolName}
             <br />
-            Admin dashboard - SY 2025-2026
+            Admin dashboard - {schoolYear}
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 border-b border-white/[0.07] bg-white/[0.04] px-4 py-2.5">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#e64a19] text-[11px] font-bold">
-            CN
+            {schoolContext.adminInitials}
           </span>
           <div className="min-w-0">
-            <div className="truncate text-xs font-bold text-white/90">Ms. Charmaine Nase</div>
-            <div className="text-[10px] text-white/40">School administrator</div>
+            <div className="truncate text-xs font-bold text-white/90">{schoolContext.adminName}</div>
+            <div className="text-[10px] text-white/40">{schoolContext.staffRoleLabel}</div>
           </div>
           <button
             type="button"
@@ -148,7 +157,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-50 flex flex-col gap-3 border-b border-black/[0.07] bg-white px-4 py-3 pl-16 md:flex-row md:items-center md:justify-between lg:px-6 lg:pl-6">
           <div className="min-w-0">
             <h1 className="text-base font-bold leading-6 text-[#0f1117]">{meta.title}</h1>
-            <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{meta.subtitle}</p>
+            <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{subtitle}</p>
+            {!schoolContext.databaseReady && schoolContext.warning ? (
+              <p className="mt-0.5 text-[11px] leading-4 text-[#f57c00]">{schoolContext.warning}</p>
+            ) : null}
           </div>
           <div className="grid w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
             <AdminButton data-modal-trigger="reminder" onClick={() => openModal("reminder")}><Send className="size-4" />Send reminders</AdminButton>
@@ -167,4 +179,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
+}
+
+function dashboardSubtitle(subtitle: string, schoolContext: AdminSchoolContext) {
+  const schoolYear = schoolContext.activeSchoolYear?.name ?? "School year pending";
+
+  if (subtitle.includes("Brentwood Academy")) {
+    return `${schoolContext.schoolName} - ${schoolYear}`;
+  }
+
+  return subtitle.replaceAll("SY 2025-2026", schoolYear);
 }

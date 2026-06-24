@@ -23,9 +23,9 @@ Do this first before connecting dashboards to real data:
 - [x] Create a new reviewed SQL file for the full MVP schema: `database/full-schema-v1.sql`.
 - [x] Copy the planned tables from `DATABASE_SCHEMA_PLAN.md` into the new SQL file.
 - [x] Keep `database/auth-schema.sql` unchanged until the full schema is reviewed.
-- [ ] Import the new SQL file into local XAMPP/phpMyAdmin only after reviewing it.
-- [ ] Confirm all tables and indexes appear in phpMyAdmin.
-- [ ] Run auth register/login/logout again after import to make sure auth still works.
+- [x] Import the new SQL file into local XAMPP/phpMyAdmin only after reviewing it.
+- [x] Confirm all tables and indexes appear in phpMyAdmin.
+- [x] Run auth register/login/logout again after import to make sure auth still works.
 
 Done when: the full database structure exists locally and auth still works.
 
@@ -36,17 +36,17 @@ Done when: the full database structure exists locally and auth still works.
 - [x] Use InnoDB and `utf8mb4_unicode_ci` for every table.
 - [x] Keep foreign keys and indexes from `DATABASE_SCHEMA_PLAN.md`.
 - [x] Add a short `database/README.md` explaining import order.
-- [ ] Verify the SQL imports cleanly in XAMPP/phpMyAdmin.
+- [x] Verify the SQL imports cleanly in XAMPP/phpMyAdmin.
 
 Done when: the full schema can be imported from a clean local database without errors.
 
 ## Phase 2: School Setup Backend
 
-- [ ] Add backend helpers for `schools`, `school_years`, `grade_levels`, and `sections`.
+- [x] Add backend helpers for `schools`, `school_years`, `grade_levels`, and `sections`.
 - [ ] Link admin profiles to a real school record.
 - [ ] Create one active school year for the local test school.
 - [ ] Create grade levels and sections from the admin side or a safe local seed script.
-- [ ] Replace hard-coded school year/dashboard school labels with database reads.
+- [x] Replace hard-coded school year/dashboard school labels with database reads.
 
 Done when: the admin dashboard can load school setup data from MySQL.
 

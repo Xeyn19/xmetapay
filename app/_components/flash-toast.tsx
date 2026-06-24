@@ -14,9 +14,8 @@ export function FlashToast({ toast: flashToast }: { toast: AuthFlashToast | null
       return;
     }
 
-    shownToast.current = toastKey;
-
     const timeout = window.setTimeout(() => {
+      shownToast.current = toastKey;
       toast.success(flashToast.title, {
         description: flashToast.description,
       });

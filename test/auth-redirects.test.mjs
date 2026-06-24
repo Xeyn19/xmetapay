@@ -98,3 +98,13 @@ test("logout flash toasts render on the redirected login pages", () => {
   assert.match(adminLoginPage, /<FlashToast toast={toast} \/>/);
   assert.match(parentLoginPage, /<FlashToast toast={toast} \/>/);
 });
+
+test("flash toast is not marked shown before the browser toast is emitted", () => {
+  const shownAssignmentIndex = flashToast.indexOf("shownToast.current = toastKey");
+  const successIndex = flashToast.indexOf("toast.success");
+
+  assert.notEqual(shownAssignmentIndex, -1);
+  assert.notEqual(successIndex, -1);
+  assert.ok(shownAssignmentIndex < successIndex);
+  assert.match(flashToast, /window\.setTimeout\(\(\) => \{\s*shownToast\.current = toastKey;\s*toast\.success/);
+});
