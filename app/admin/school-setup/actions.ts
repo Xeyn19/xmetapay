@@ -65,6 +65,7 @@ export async function saveSchoolSetupAction(formData: FormData) {
        WHERE user_id = :userId`,
       { schoolId, schoolName: input.data.schoolName, userId: session.userId },
     );
+    await linkSameSchoolStaffProfiles(connection, schoolId, profile.school_name, input.data.schoolName);
 
     const schoolYearId = await ensureSchoolYear(connection, schoolId, input.data);
     const gradeLevelIds = await ensureGradeLevels(connection, schoolId, input.data.grades);
@@ -222,6 +223,21 @@ async function ensureSchool(connection: PoolConnection, profile: AdminProfileRow
   );
 
   return Number(result.insertId);
+}
+
+async function linkSameSchoolStaffProfiles(
+  connection: PoolConnection,
+  schoolId: number,
+  previousSchoolName: string,
+  currentSchoolName: string,
+) {
+  await connection.execute(
+    `UPDATE admin_profiles
+     SET school_id = :schoolId
+     WHERE school_id IS NULL
+       AND (school_name = :previousSchoolName OR school_name = :currentSchoolName)`,
+    { schoolId, previousSchoolName, currentSchoolName },
+  );
 }
 
 async function getSchoolById(connection: PoolConnection, schoolId: number) {

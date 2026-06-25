@@ -3,6 +3,7 @@ import "server-only";
 import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
 
 type Queryable = Pick<Pool | PoolConnection, "execute">;
 
@@ -100,23 +101,23 @@ export async function getAdminStudentPageData(adminUserId: number): Promise<Admi
   try {
     const setup = await getAdminSetup(adminUserId);
 
-    if (!setup?.school_id || !setup.school_year_id) {
-      return emptyAdminStudentData("Set up school records before adding students.");
+    if (!setup.schoolId || !setup.schoolYearId) {
+      return emptyAdminStudentData(setup.warning ?? "Ask a school administrator to complete school setup first.");
     }
 
     const [gradeOptions, sectionOptions, students] = await Promise.all([
-      getGradeOptions(setup.school_id),
-      getSectionOptions(setup.school_id, setup.school_year_id),
-      getAdminStudentRows(setup.school_id, setup.school_year_id),
+      getGradeOptions(setup.schoolId),
+      getSectionOptions(setup.schoolId, setup.schoolYearId),
+      getAdminStudentRows(setup.schoolId, setup.schoolYearId),
     ]);
 
     return {
       ready: true,
       warning: null,
-      activeSchoolYearName: setup.school_year_name,
+      activeSchoolYearName: setup.schoolYearName,
       gradeOptions,
       sectionOptions,
-      kpis: studentKpis(students, setup.school_year_name),
+      kpis: studentKpis(students, setup.schoolYearName),
       students,
     };
   } catch {
@@ -128,14 +129,14 @@ export async function getAdminParentsPageData(adminUserId: number): Promise<Admi
   try {
     const setup = await getAdminSetup(adminUserId);
 
-    if (!setup?.school_id) {
+    if (!setup.schoolId) {
       return {
         kpis: parentKpis([]),
         rows: [],
       };
     }
 
-    const rows = await getAdminParentRows(setup.school_id, setup.school_year_id);
+    const rows = await getAdminParentRows(setup.schoolId, setup.schoolYearId);
 
     return {
       kpis: parentKpis(rows),
@@ -341,17 +342,7 @@ export async function linkParentToStudentByReference(
 }
 
 async function getAdminSetup(adminUserId: number) {
-  const [rows] = await pool.execute<AdminSetupRow[]>(
-    `SELECT ap.school_id, sy.id AS school_year_id, sy.name AS school_year_name
-     FROM admin_profiles ap
-     LEFT JOIN school_years sy ON sy.school_id = ap.school_id AND sy.status = 'active'
-     WHERE ap.user_id = :adminUserId
-     ORDER BY sy.starts_on DESC, sy.id DESC
-     LIMIT 1`,
-    { adminUserId },
-  );
-
-  return rows[0] ?? null;
+  return getResolvedAdminSchoolSetup(adminUserId);
 }
 
 async function getGradeOptions(schoolId: number) {
@@ -611,12 +602,6 @@ function formatDate(value: Date | string | null) {
 
   return value;
 }
-
-type AdminSetupRow = RowDataPacket & {
-  school_id: number | null;
-  school_year_id: number | null;
-  school_year_name: string | null;
-};
 
 type GradeOptionRow = RowDataPacket & {
   id: number;

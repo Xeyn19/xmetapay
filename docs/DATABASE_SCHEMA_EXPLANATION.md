@@ -42,6 +42,8 @@ This stores school-side profile details for users with the `admin` role. It reco
 
 After a school administrator completes manual school setup, `admin_profiles.school_id` links the admin profile to the real `schools.id` record. The original `school_name` field remains useful for display, registration history, and fallback matching for older local accounts.
 
+School setup is shared across staff accounts. If a registrar or finance officer has the same exact `school_name`, XMETA Pay resolves that account to the existing `schools.id` and saves the matched `school_id` back to `admin_profiles`. This keeps staff accounts accurate after the first school administrator has finished setup. A future production version should use invite codes or school codes for stricter matching.
+
 ### `parent_profiles`
 
 This stores parent-side profile details for users with the `parent` role. It records the first student name, student reference, and relationship captured during parent registration.

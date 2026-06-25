@@ -30,7 +30,7 @@ export async function createStudentAction(formData: FormData) {
     const setup = await getAdminSetupForUpdate(connection, session.userId);
 
     if (!setup?.school_id || !setup.school_year_id) {
-      throw new Error("Set up school records before adding students.");
+      throw new Error("Ask a school administrator to complete school setup first.");
     }
 
     const section = await getSection(connection, setup.school_id, setup.school_year_id, input.data.sectionId);
@@ -107,15 +107,77 @@ function parseStudentForm(formData: FormData) {
 }
 
 async function getAdminSetupForUpdate(connection: PoolConnection, adminUserId: number) {
-  const [rows] = await connection.execute<AdminSetupRow[]>(
-    `SELECT ap.school_id, sy.id AS school_year_id
+  const [profileRows] = await connection.execute<AdminProfileSetupRow[]>(
+    `SELECT ap.user_id, ap.school_id, ap.school_name
      FROM admin_profiles ap
-     LEFT JOIN school_years sy ON sy.school_id = ap.school_id AND sy.status = 'active'
      WHERE ap.user_id = :adminUserId
-     ORDER BY sy.starts_on DESC, sy.id DESC
      LIMIT 1
      FOR UPDATE`,
     { adminUserId },
+  );
+  const profile = profileRows[0];
+
+  if (!profile) {
+    return null;
+  }
+
+  const schoolId = await resolveSchoolIdForProfile(connection, profile);
+
+  if (!schoolId) {
+    return { school_id: null, school_year_id: null };
+  }
+
+  const [rows] = await connection.execute<AdminSetupRow[]>(
+    `SELECT :schoolId AS school_id, sy.id AS school_year_id
+     FROM school_years sy
+     WHERE sy.school_id = :schoolId AND sy.status = 'active'
+     ORDER BY sy.starts_on DESC, sy.id DESC
+     LIMIT 1`,
+    { schoolId },
+  );
+
+  return rows[0] ?? { school_id: schoolId, school_year_id: null };
+}
+
+async function resolveSchoolIdForProfile(connection: PoolConnection, profile: AdminProfileSetupRow) {
+  const school = profile.school_id
+    ? (await getSchoolById(connection, profile.school_id)) ?? await getSchoolByName(connection, profile.school_name)
+    : await getSchoolByName(connection, profile.school_name);
+
+  const schoolId = school?.id ?? null;
+
+  if (schoolId && profile.school_id !== schoolId) {
+    await connection.execute(
+      `UPDATE admin_profiles
+       SET school_id = :schoolId
+       WHERE user_id = :userId AND (school_id IS NULL OR school_id <> :schoolId)`,
+      { schoolId, userId: profile.user_id },
+    );
+  }
+
+  return schoolId;
+}
+
+async function getSchoolById(connection: PoolConnection, schoolId: number) {
+  const [rows] = await connection.execute<SchoolMatchRow[]>(
+    `SELECT id
+     FROM schools
+     WHERE id = :schoolId
+     LIMIT 1`,
+    { schoolId },
+  );
+
+  return rows[0] ?? null;
+}
+
+async function getSchoolByName(connection: PoolConnection, schoolName: string) {
+  const [rows] = await connection.execute<SchoolMatchRow[]>(
+    `SELECT id
+     FROM schools
+     WHERE name = :schoolName
+     ORDER BY status = 'active' DESC, id ASC
+     LIMIT 1`,
+    { schoolName },
   );
 
   return rows[0] ?? null;
@@ -157,6 +219,16 @@ function value(formData: FormData, key: string) {
 type AdminSetupRow = RowDataPacket & {
   school_id: number | null;
   school_year_id: number | null;
+};
+
+type AdminProfileSetupRow = RowDataPacket & {
+  user_id: number;
+  school_id: number | null;
+  school_name: string;
+};
+
+type SchoolMatchRow = RowDataPacket & {
+  id: number;
 };
 
 type SectionRow = RowDataPacket & {

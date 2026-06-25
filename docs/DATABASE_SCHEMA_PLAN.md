@@ -68,7 +68,7 @@ One admin profile per admin user.
 | `school_name` | School name captured during admin registration |
 | `staff_role` | Admin staff permission: `school_administrator`, `registrar`, or `finance_officer` |
 
-Implementation note: `school_name` stays for display and old local records. After the full schema is imported, a `school_administrator` manually sets up school records and links the admin profile to the real `schools.id` record through `admin_profiles.school_id`.
+Implementation note: `school_name` stays for display, registration history, and fallback matching. After the full schema is imported, a `school_administrator` manually sets up school records and links the admin profile to the real `schools.id` record through `admin_profiles.school_id`. The setup is school-wide: registrar and finance officer profiles with the same exact `school_name` are also linked to that same `schools.id` so they can share the completed school context instead of setting up the school again.
 
 ### `parent_profiles`
 

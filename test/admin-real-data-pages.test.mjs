@@ -20,11 +20,12 @@ test("admin real-data helper reads supported MySQL schema tables with admin scho
 
   assert.match(helper, /import "server-only";/);
   assert.match(helper, /import \{ pool \} from "@\/lib\/auth\/db";/);
+  assert.match(helper, /import \{ getResolvedAdminSchoolSetup \} from "@\/lib\/school\/setup";/);
   assert.match(helper, /export async function getAdminDashboardRealData\(adminUserId: number\)/);
   assert.match(helper, /export async function getAdminTuitionPageRealData\(adminUserId: number\)/);
   assert.match(helper, /export async function getAdminStudentProfileRealData\(adminUserId: number\)/);
-  assert.match(helper, /FROM admin_profiles ap/);
-  assert.match(helper, /WHERE ap\.user_id = :adminUserId/);
+  assert.match(helper, /const setup = await getResolvedAdminSchoolSetup\(adminUserId\)/);
+  assert.doesNotMatch(helper, /FROM admin_profiles ap\s+LEFT JOIN school_years sy ON sy\.school_id = ap\.school_id/);
   assert.match(helper, /school_id = :schoolId|school_id = :schoolId/);
   assert.match(helper, /FROM students/);
   assert.match(helper, /FROM enrollments|JOIN enrollments/);

@@ -16,6 +16,7 @@ import type { LucideIcon } from "lucide-react";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
 
 type Tone = "orange" | "green" | "red" | "blue" | "purple" | "teal";
 type NoteTone = "default" | "up" | "warn" | "danger";
@@ -493,35 +494,14 @@ export async function getAdminStudentProfileRealData(adminUserId: number): Promi
 }
 
 async function getAdminSetup(adminUserId: number): Promise<AdminSetup> {
-  try {
-    const [rows] = await pool.execute<AdminSetupRow[]>(
-      `SELECT ap.school_id, sy.id AS school_year_id, sy.name AS school_year_name
-       FROM admin_profiles ap
-       LEFT JOIN school_years sy ON sy.school_id = ap.school_id AND sy.status = 'active'
-       WHERE ap.user_id = :adminUserId
-       ORDER BY sy.starts_on DESC, sy.id DESC
-       LIMIT 1`,
-      { adminUserId },
-    );
-    const row = rows[0];
+  const setup = await getResolvedAdminSchoolSetup(adminUserId);
 
-    if (!row?.school_id) {
-      return { schoolId: null, schoolYearId: null, schoolYearName: null, warning: "Set up school records before viewing database-backed admin pages." };
-    }
-
-    if (!row.school_year_id) {
-      return { schoolId: row.school_id, schoolYearId: null, schoolYearName: null, warning: "Create an active school year before viewing this page." };
-    }
-
-    return {
-      schoolId: row.school_id,
-      schoolYearId: row.school_year_id,
-      schoolYearName: row.school_year_name,
-      warning: null,
-    };
-  } catch {
-    return { schoolId: null, schoolYearId: null, schoolYearName: null, warning: "Admin school context is unavailable. Confirm MySQL/XAMPP is running." };
-  }
+  return {
+    schoolId: setup.schoolId,
+    schoolYearId: setup.schoolYearId,
+    schoolYearName: setup.schoolYearName,
+    warning: setup.warning,
+  };
 }
 
 async function getStudentSummary(schoolId: number, schoolYearId: number) {
@@ -1225,12 +1205,6 @@ function formatDateTime(value: Date | string | null) {
     minute: "2-digit",
   });
 }
-
-type AdminSetupRow = RowDataPacket & {
-  school_id: number | null;
-  school_year_id: number | null;
-  school_year_name: string | null;
-};
 
 type CountRow = RowDataPacket & {
   total: number;

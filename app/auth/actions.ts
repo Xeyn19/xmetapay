@@ -53,6 +53,7 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
           staffRole: parsed.data.profile.staffRole,
         },
       );
+      await tryLinkAdminProfileToExistingSchool(connection, userResult.insertId, parsed.data.profile.schoolName);
     } else {
       await connection.execute(
         `INSERT INTO parent_profiles (user_id, student_name, student_reference, relationship)
@@ -165,6 +166,48 @@ export async function logoutAction(role: PortalRole) {
 
 function duplicateAccount(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ER_DUP_ENTRY";
+}
+
+async function tryLinkAdminProfileToExistingSchool(
+  connection: PoolConnection,
+  userId: number,
+  schoolName: string,
+) {
+  try {
+    await connection.execute(
+      `UPDATE admin_profiles ap
+       SET ap.school_id = (
+         SELECT matched_school.id
+         FROM (
+           SELECT id
+           FROM schools
+           WHERE name = :schoolName
+           ORDER BY status = 'active' DESC, id ASC
+           LIMIT 1
+         ) matched_school
+       )
+       WHERE ap.user_id = :userId
+         AND ap.school_id IS NULL
+         AND ap.school_name = :schoolName
+         AND EXISTS (
+           SELECT 1
+           FROM schools
+           WHERE name = :schoolName
+         )`,
+      { userId, schoolName },
+    );
+  } catch (error) {
+    if (!missingFullSchema(error)) {
+      throw error;
+    }
+  }
+}
+
+function missingFullSchema(error: unknown) {
+  return typeof error === "object"
+    && error !== null
+    && "code" in error
+    && (error.code === "ER_NO_SUCH_TABLE" || error.code === "ER_BAD_FIELD_ERROR");
 }
 
 type AuthUserRow = RowDataPacket & {
