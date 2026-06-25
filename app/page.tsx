@@ -1,6 +1,19 @@
+import { redirect } from "next/navigation";
+
+import { getSession } from "@/lib/auth/session";
 import { BrandMark, PortalCard } from "./_components/auth-ui";
 
-export default function Home() {
+export default async function Home() {
+  const session = await getSession();
+
+  if (session?.role === "admin") {
+    redirect("/admin/dashboard");
+  }
+
+  if (session?.role === "parent") {
+    redirect("/parent/dashboard");
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-6xl flex-col sm:min-h-[calc(100svh-48px)]">

@@ -1,8 +1,11 @@
 import "server-only";
 
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { RowDataPacket } from "mysql2/promise";
+
+import { pool } from "@/lib/auth/db";
 
 export type PortalRole = "admin" | "parent";
 export type AuthFlashToast = {
@@ -20,18 +23,31 @@ type SessionPayload = {
 
 const cookieName = "xmetapay_session";
 const flashToastCookieName = "xmetapay_auth_toast";
-const maxAgeSeconds = 60 * 60 * 8;
+const defaultMaxAgeSeconds = 60 * 60 * 8;
 
 export async function createSession(payload: Omit<SessionPayload, "expiresAt">) {
-  const expiresAt = Date.now() + maxAgeSeconds * 1000;
-  const token = signSession({ ...payload, expiresAt });
+  const maxAge = maxAgeSeconds();
+  const expiresAt = new Date(Date.now() + maxAge * 1000);
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = hashSessionToken(token);
   const cookieStore = await cookies();
+
+  await pool.execute(
+    `INSERT INTO auth_sessions (user_id, role, token_hash, expires_at)
+     VALUES (:userId, :role, :tokenHash, :expiresAt)`,
+    {
+      userId: payload.userId,
+      role: payload.role,
+      tokenHash,
+      expiresAt,
+    },
+  );
 
   cookieStore.set(cookieName, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    maxAge: maxAgeSeconds,
+    maxAge,
     path: "/",
   });
 }
@@ -40,11 +56,72 @@ export async function getSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(cookieName)?.value;
 
-  return verifySessionToken(token);
+  if (!token) {
+    return null;
+  }
+
+  const tokenHash = hashSessionToken(token);
+  let row: AuthSessionRow | undefined;
+
+  try {
+    const [rows] = await pool.execute<AuthSessionRow[]>(
+      `SELECT
+         s.id,
+         s.user_id,
+         s.role,
+         s.expires_at,
+         u.name,
+         u.role AS user_role,
+         u.status AS user_status
+       FROM auth_sessions s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.token_hash = :tokenHash
+         AND s.revoked_at IS NULL
+         AND s.expires_at > CURRENT_TIMESTAMP
+       LIMIT 1`,
+      { tokenHash },
+    );
+    row = rows[0];
+  } catch {
+    return null;
+  }
+
+  if (!row || row.user_status !== "active" || row.user_role !== row.role) {
+    return null;
+  }
+
+  await pool.execute(
+    `UPDATE auth_sessions
+     SET last_used_at = CURRENT_TIMESTAMP
+     WHERE id = :id`,
+    { id: row.id },
+  );
+
+  return {
+    userId: row.user_id,
+    role: row.role,
+    name: row.name,
+    expiresAt: toTimestamp(row.expires_at),
+  };
 }
 
 export async function deleteSession() {
   const cookieStore = await cookies();
+  const token = cookieStore.get(cookieName)?.value;
+
+  if (token) {
+    try {
+      await pool.execute(
+        `UPDATE auth_sessions
+         SET revoked_at = CURRENT_TIMESTAMP
+         WHERE token_hash = :tokenHash
+           AND revoked_at IS NULL`,
+        { tokenHash: hashSessionToken(token) },
+      );
+    } catch {
+      // Always clear the browser cookie even if the database is temporarily unavailable.
+    }
+  }
 
   cookieStore.delete({
     name: cookieName,
@@ -100,45 +177,22 @@ export async function requireRole(role: PortalRole) {
   return session;
 }
 
-export function signSession(payload: SessionPayload) {
-  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = signatureFor(body);
-
-  return `${body}.${signature}`;
+function hashSessionToken(token: string) {
+  return createHmac("sha256", sessionSecret()).update(token).digest("hex");
 }
 
-export function verifySessionToken(token: string | undefined) {
-  if (!token) {
-    return null;
+function maxAgeSeconds() {
+  const days = Number(process.env.AUTH_SESSION_DAYS);
+
+  if (Number.isFinite(days) && days > 0) {
+    return Math.floor(days * 24 * 60 * 60);
   }
 
-  const [body, signature] = token.split(".");
-  if (!body || !signature || !safeEqual(signature, signatureFor(body))) {
-    return null;
-  }
-
-  try {
-    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as SessionPayload;
-
-    if (payload.expiresAt < Date.now()) {
-      return null;
-    }
-
-    return payload;
-  } catch {
-    return null;
-  }
+  return defaultMaxAgeSeconds;
 }
 
-function signatureFor(body: string) {
-  return createHmac("sha256", sessionSecret()).update(body).digest("base64url");
-}
-
-function safeEqual(left: string, right: string) {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+function toTimestamp(value: Date | string) {
+  return value instanceof Date ? value.getTime() : new Date(value).getTime();
 }
 
 function sessionSecret() {
@@ -154,3 +208,13 @@ function sessionSecret() {
 
   return "xmetapay-local-dev-session-secret";
 }
+
+type AuthSessionRow = RowDataPacket & {
+  id: number;
+  user_id: number;
+  role: PortalRole;
+  expires_at: Date | string;
+  name: string;
+  user_role: PortalRole;
+  user_status: "active" | "pending" | "disabled";
+};
