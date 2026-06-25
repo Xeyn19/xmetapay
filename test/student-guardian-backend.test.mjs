@@ -163,10 +163,14 @@ test("parent portal shell and profile use real database-backed identity", () => 
   assert.doesNotMatch(parentShell, /context\.schoolName/);
   assert.doesNotMatch(parentShell, /Maria Santos|Brentwood Academy of Las Pinas/);
 
-  assert.match(parentProfile, /getParentStudentProfileData/);
-  assert.match(parentProfile, /StudentProfileView/);
+  assert.match(parentProfile, /getParentDashboardData/);
+  assert.match(parentProfile, /StudentProfileSelector/);
   assert.match(parentProfile, /StudentProfileEmptyState/);
+  assert.match(parentProfile, /redirect\(data\.linkedStudents\[0\]\.profileHref\)/);
+  assert.doesNotMatch(parentProfile, /getParentStudentProfileData\(session\.userId, session\.name\)/);
   assert.match(parentProfileView, /export function StudentProfileView/);
+  assert.match(parentProfileView, /export function StudentProfileSelector/);
+  assert.match(parentProfileView, /href=\{student\.profileHref\}/);
   assert.match(parentProfileView, /student\.studentDetails/);
   assert.match(parentProfileView, /student\.guardianDetails/);
   assert.match(parentProfileView, /student\.schoolName/);
@@ -208,12 +212,20 @@ test("parent student profile helper can read a selected linked student only", ()
   assert.match(helper, /typeof studentId === "number" \? \{ parentUserId, studentId \} : \{ parentUserId \}/);
 });
 
-test("parent profile fallback keeps first linked student behavior", () => {
+test("parent profile fallback shows selector instead of first linked student details", () => {
   const parentProfile = readFileSync(parentStudentProfilePath, "utf8");
+  const parentProfileView = readFileSync(parentStudentProfileViewPath, "utf8");
 
-  assert.match(parentProfile, /getParentStudentProfileData\(session\.userId, session\.name\)/);
-  assert.match(parentProfile, /data\.student/);
+  assert.match(parentProfile, /getParentDashboardData\(session\.userId\)/);
+  assert.match(parentProfile, /data\.linkedStudents\.length === 0/);
+  assert.match(parentProfile, /data\.linkedStudents\.length === 1/);
+  assert.match(parentProfile, /redirect\(data\.linkedStudents\[0\]\.profileHref\)/);
+  assert.match(parentProfile, /<StudentProfileSelector students=\{data\.linkedStudents\} \/>/);
   assert.match(parentProfile, /StudentProfileEmptyState/);
+  assert.doesNotMatch(parentProfile, /StudentProfileView/);
+  assert.doesNotMatch(parentProfile, /getParentStudentProfileData\(session\.userId, session\.name\)/);
+  assert.match(parentProfileView, /Choose a student profile/);
+  assert.match(parentProfileView, /href=\{student\.profileHref\}/);
 });
 
 test("backend checklist tracks completed student and guardian linking slice", () => {

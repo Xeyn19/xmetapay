@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CreditCard, IdCard, Plus, Users, Wallet } from "lucide-react";
 
 import { linkParentStudentAction } from "@/app/parent/student-link/actions";
-import type { ParentStudentProfileData } from "@/lib/students/records";
+import type { ParentLinkedStudent, ParentStudentProfileData } from "@/lib/students/records";
 
 import {
   DetailRows,
@@ -10,6 +10,7 @@ import {
   ParentButton,
   ParentCard,
   ParentField,
+  StatusPill,
   parentControlClass,
 } from "../../_components/parent-ui";
 
@@ -30,6 +31,35 @@ export function StudentProfileEmptyState() {
           Link student
         </ParentButton>
       </form>
+    </ParentCard>
+  );
+}
+
+export function StudentProfileSelector({ students }: { students: ParentLinkedStudent[] }) {
+  return (
+    <ParentCard title="Choose a student profile" icon={IdCard} bodyClassName="p-0">
+      <div className="divide-y divide-black/[0.08]">
+        {students.map((student) => (
+          <Link
+            key={student.id}
+            href={student.profileHref}
+            className="flex flex-col gap-3 px-4 py-4 transition hover:bg-[#f8f8f7] focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-5"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">
+                {student.initials}
+              </span>
+              <div className="min-w-0">
+                <div className="truncate text-[15px] font-medium text-[#1a1a1a]">{student.fullName}</div>
+                <div className="mt-0.5 truncate text-xs text-[#6b6b6b]">{student.meta}</div>
+              </div>
+            </div>
+            <StatusPill tone={student.status === "active" ? "blue" : "muted"}>
+              {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
+            </StatusPill>
+          </Link>
+        ))}
+      </div>
     </ParentCard>
   );
 }
