@@ -7,6 +7,7 @@ const adminStudentActionsPath = "app/admin/students/actions.ts";
 const parentStudentLinkActionsPath = "app/parent/student-link/actions.ts";
 const authActionsPath = "app/auth/actions.ts";
 const adminStudentsPagePath = "app/admin/(dashboard)/students/page.tsx";
+const adminStudentFormPath = "app/admin/(dashboard)/students/student-enrollment-form.tsx";
 const adminParentsPagePath = "app/admin/(dashboard)/parents/page.tsx";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
 const parentLayoutPath = "app/parent/(portal)/layout.tsx";
@@ -45,6 +46,8 @@ test("admin student action is protected and creates student enrollment records",
   assert.match(action, /INSERT INTO students/);
   assert.match(action, /INSERT INTO enrollments/);
   assert.match(action, /status\s*:\s*"enrolled"|status = 'enrolled'|VALUES \(.*'enrolled'/s);
+  assert.match(action, /section\.grade_level_id !== input\.data\.gradeLevelId/);
+  assert.match(action, /Choose a section under the selected grade\./);
   assert.match(action, /redirect\("\/admin\/students"\)/);
 });
 
@@ -70,13 +73,15 @@ test("parent registration attempts guardian linking after creating parent profil
 
 test("admin and parent pages use database helpers instead of mock student arrays", () => {
   const adminStudentsPage = readFileSync(adminStudentsPagePath, "utf8");
+  const adminStudentForm = readFileSync(adminStudentFormPath, "utf8");
   const adminParentsPage = readFileSync(adminParentsPagePath, "utf8");
   const parentDashboard = readFileSync(parentDashboardPath, "utf8");
 
   assert.doesNotMatch(adminStudentsPage, /"use client";/);
   assert.match(adminStudentsPage, /getAdminStudentPageData/);
-  assert.match(adminStudentsPage, /createStudentAction/);
-  assert.match(adminStudentsPage, /<form action=\{createStudentAction\}/);
+  assert.match(adminStudentsPage, /StudentEnrollmentForm/);
+  assert.match(adminStudentForm, /createStudentAction/);
+  assert.match(adminStudentForm, /<form action=\{createStudentAction\}/);
   assert.doesNotMatch(adminStudentsPage, /studentRows|studentsKpis/);
 
   assert.match(adminParentsPage, /getAdminParentsPageData/);
@@ -86,6 +91,20 @@ test("admin and parent pages use database helpers instead of mock student arrays
   assert.match(parentDashboard, /linkParentStudentAction/);
   assert.match(parentDashboard, /<form action=\{linkParentStudentAction\}/);
   assert.doesNotMatch(parentDashboard, /children|dashboardMetrics|outstandingFees|recentActivity/);
+});
+
+test("admin student enrollment form filters sections by selected grade", () => {
+  assert.equal(existsSync(adminStudentFormPath), true);
+  const form = readFileSync(adminStudentFormPath, "utf8");
+
+  assert.match(form, /"use client";/);
+  assert.match(form, /useState\(""\)/);
+  assert.match(form, /setSectionId\(""\)/);
+  assert.match(form, /section\.gradeLevelId === selectedGradeLevelId/);
+  assert.match(form, /disabled=\{sectionDisabled\}/);
+  assert.match(form, /Choose grade first/);
+  assert.match(form, /name="gradeLevelId"/);
+  assert.match(form, /name="sectionId"/);
 });
 
 test("admin header enrollment action opens the database-backed student form", () => {

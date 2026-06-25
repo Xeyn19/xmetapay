@@ -29,7 +29,7 @@ export async function createStudentAction(formData: FormData) {
     const section = await getSection(connection, setup.school_id, setup.school_year_id, input.data.sectionId);
 
     if (!section || section.grade_level_id !== input.data.gradeLevelId) {
-      throw new Error("Choose a valid grade level and section.");
+      throw new Error("Choose a section under the selected grade.");
     }
 
     const [studentResult] = await connection.execute<ResultSetHeader>(
