@@ -117,6 +117,25 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
     await page.goto("/admin/dashboard");
     await expect(page).toHaveURL("/admin/login");
   });
+
+  test("admin mobile menu opens, navigates, and keeps the page within the viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/admin/dashboard", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle");
+
+    await expectNoHorizontalOverflow(page);
+
+    await page.getByRole("button", { name: "Open admin menu" }).click();
+    const adminDrawer = page.getByRole("dialog", { name: "Admin navigation" });
+    await expect(adminDrawer).toBeVisible();
+    await expect(adminDrawer).toBeInViewport();
+
+    await adminDrawer.getByRole("link", { name: "Dashboard" }).click();
+    await expect(page).toHaveURL("/admin/dashboard");
+    await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
+    await expect(adminDrawer).not.toBeInViewport();
+    await expectNoHorizontalOverflow(page);
+  });
 });
 
 test.describe("XMETA Pay parent portal smoke tests", () => {
@@ -155,6 +174,25 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
     await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Signed out" })).toBeVisible();
     await page.goto("/parent/dashboard");
     await expect(page).toHaveURL("/parent/login");
+  });
+
+  test("parent mobile menu opens, navigates, and keeps the page within the viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/parent/dashboard", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle");
+
+    await expectNoHorizontalOverflow(page);
+
+    await page.getByRole("button", { name: "Open parent menu" }).click();
+    const parentDrawer = page.getByRole("dialog", { name: "Parent navigation" });
+    await expect(parentDrawer).toBeVisible();
+    await expect(parentDrawer).toBeInViewport();
+
+    await parentDrawer.getByRole("link", { name: "Dashboard" }).click();
+    await expect(page).toHaveURL("/parent/dashboard");
+    await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
+    await expect(parentDrawer).not.toBeInViewport();
+    await expectNoHorizontalOverflow(page);
   });
 });
 
@@ -262,6 +300,12 @@ function databaseConfig() {
     password: process.env.MYSQL_PASSWORD ?? "",
     namedPlaceholders: true,
   };
+}
+
+async function expectNoHorizontalOverflow(page: import("@playwright/test").Page) {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+
+  expect(overflow).toBeLessThanOrEqual(1);
 }
 
 function testSessionSecret() {
