@@ -16,6 +16,7 @@ type Field = {
   name: string;
   options?: string[];
   spanFull?: boolean;
+  required?: boolean;
 };
 
 export function BrandMark() {
@@ -150,24 +151,6 @@ export function AuthForm({
         </p>
       ) : null}
 
-      {mode === "login" ? (
-        <div className="flex flex-col gap-3 text-sm min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
-          <label className="inline-flex min-h-8 items-center gap-2 text-zinc-600">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-zinc-300 accent-[#e64a19] focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
-            />
-            Remember me
-          </label>
-          <a
-            href="#"
-            className="inline-flex min-h-8 items-center rounded-md font-semibold text-[#bf360c] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
-          >
-            Forgot password?
-          </a>
-        </div>
-      ) : null}
-
       <button
         type="submit"
         disabled={pending}
@@ -190,15 +173,18 @@ function AuthField({
   alignLabel?: boolean;
   error?: string;
 }) {
+  const required = field.required ?? true;
+
   return (
     <label className={cn("block", field.spanFull && "sm:col-span-2")}>
       <span className={compact ? "mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-500" : `mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-500 sm:text-xs sm:tracking-[0.12em] ${alignLabel ? "min-h-8 sm:min-h-0" : ""}`}>
         {field.label}
+        {!required ? <span className="ml-1 font-semibold normal-case tracking-normal text-zinc-400">(optional)</span> : null}
       </span>
       {field.options ? (
         <select
           name={field.name}
-          required
+          required={required}
           aria-invalid={Boolean(error)}
           className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
           defaultValue=""
@@ -214,7 +200,7 @@ function AuthField({
         <PasswordInput
           name={field.name}
           placeholder={field.placeholder}
-          required
+          required={required}
           aria-invalid={Boolean(error)}
           className="px-3 py-2 text-sm text-[#11131a] placeholder:text-zinc-400"
         />
@@ -223,7 +209,7 @@ function AuthField({
           name={field.name}
           type={field.type ?? "text"}
           placeholder={field.placeholder}
-          required
+          required={required}
           aria-invalid={Boolean(error)}
           className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
         />

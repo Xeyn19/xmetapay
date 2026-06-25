@@ -16,6 +16,27 @@ test("auth forms submit through server actions instead of static redirects", () 
   assert.match(authUi, /const serverAction = \(isLogin \? loginAction : registerAction\)\.bind\(null, portal\);/);
   assert.match(authUi, /useActionState<AuthFormState, FormData>\(serverAction/);
   assert.match(authUi, /<form action={action}/);
+  assert.match(authUi, /required = field\.required \?\? true/);
+  assert.match(authUi, /required=\{required\}/);
+  assert.doesNotMatch(authUi, /Remember me/);
+  assert.doesNotMatch(authUi, /Forgot password\?/);
+});
+
+test("auth pages show fields that match the role-specific schema", () => {
+  const adminRegisterPage = readFileSync("app/admin/register/page.tsx", "utf8");
+  const parentRegisterPage = readFileSync("app/parent/register/page.tsx", "utf8");
+
+  assert.match(adminLoginPage, /label: "Email or phone"/);
+  assert.match(adminLoginPage, /placeholder: "admin@school\.edu\.ph or 0917 000 0000"/);
+  assert.doesNotMatch(adminLoginPage, /type: "email"/);
+
+  assert.match(adminRegisterPage, /name: "staffRole"/);
+  assert.match(adminRegisterPage, /label: "Staff role"/);
+  assert.doesNotMatch(adminRegisterPage, /name: "role"/);
+  assert.match(adminRegisterPage, /name: "phone"[\s\S]*required: false/);
+  assert.match(parentRegisterPage, /name: "phone"[\s\S]*required: false/);
+  assert.doesNotMatch(parentRegisterPage, /UI prototype/);
+  assert.doesNotMatch(parentLoginPage, /enrollment/);
 });
 
 test("dashboard route groups protect admin and parent portals by role", () => {

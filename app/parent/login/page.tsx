@@ -23,7 +23,7 @@ export default async function ParentLoginPage({
         portal="parent"
         mode="login"
         title="Sign in to parent portal"
-        subtitle="Open your family dashboard to review fees, enrollment, and allowance wallets."
+        subtitle="Open your family dashboard to view linked students, fees, and allowance wallets."
         fields={[
           {
             label: "Email or mobile number",

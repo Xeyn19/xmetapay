@@ -26,10 +26,9 @@ export default async function AdminLoginPage({
         subtitle="Use your school-issued account to open the admin operations dashboard."
         fields={[
           {
-            label: "Work email",
+            label: "Email or phone",
             name: "email",
-            type: "email",
-            placeholder: "admin@school.edu.ph",
+            placeholder: "admin@school.edu.ph or 0917 000 0000",
           },
           {
             label: "Password",
