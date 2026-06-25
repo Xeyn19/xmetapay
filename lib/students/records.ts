@@ -74,6 +74,7 @@ export type ParentPortalContext = {
 
 export type ParentLinkedStudent = {
   id: number;
+  profileHref: string;
   initials: string;
   fullName: string;
   meta: string;
@@ -190,8 +191,13 @@ export async function getParentPortalContext(parentUserId: number, fallbackName 
   }
 }
 
-export async function getParentStudentProfileData(parentUserId: number, fallbackName = "Parent"): Promise<ParentStudentProfileData> {
+export async function getParentStudentProfileData(
+  parentUserId: number,
+  fallbackName = "Parent",
+  studentId?: number,
+): Promise<ParentStudentProfileData> {
   const context = await getParentPortalContext(parentUserId, fallbackName);
+  const selectedStudentClause = typeof studentId === "number" ? "AND st.id = :studentId" : "";
 
   try {
     const [rows] = await pool.execute<ParentStudentProfileRow[]>(
@@ -214,10 +220,11 @@ export async function getParentStudentProfileData(parentUserId: number, fallback
        LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
        LEFT JOIN sections sec ON sec.id = e.section_id
        WHERE sg.parent_user_id = :parentUserId
+       ${selectedStudentClause}
        ORDER BY sg.is_primary DESC, st.last_name ASC, st.first_name ASC,
          (sy.status = 'active') DESC, sy.starts_on DESC, e.id DESC
        LIMIT 1`,
-      { parentUserId },
+      typeof studentId === "number" ? { parentUserId, studentId } : { parentUserId },
     );
 
     const row = rows[0];
@@ -248,6 +255,7 @@ export async function getParentStudentProfileData(parentUserId: number, fallback
         ],
         studentDetails: [
           { label: "Student reference", value: row.student_reference },
+          { label: "School", value: row.school_name },
           { label: "Grade level", value: row.grade_name },
           { label: "Section", value: row.section_name },
           { label: "School year", value: row.school_year_name },
@@ -471,6 +479,7 @@ async function getParentLinkedStudents(parentUserId: number) {
 
     return {
       id: row.id,
+      profileHref: `/parent/students/${row.id}`,
       initials: initialsFor(name),
       fullName: name,
       meta: `${row.grade_name} - ${row.section_name} - ${row.student_reference}`,

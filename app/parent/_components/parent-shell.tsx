@@ -22,8 +22,6 @@ export function ParentShell({
   const meta = getParentMeta(pathname, context);
   const Settings = settingsIcon;
   const logout = logoutAction.bind(null, "parent");
-  const schoolLine = context.schoolName ?? "No linked school yet";
-  const yearLine = context.schoolYearName ? `Parent portal - SY ${context.schoolYearName}` : "Parent portal - link a student reference";
 
   return (
     <div className="min-h-[100svh] bg-[#f8f8f7] text-[#1a1a1a]">
@@ -55,9 +53,9 @@ export function ParentShell({
             <span className="text-[15px] font-semibold">XMETA Pay</span>
           </div>
           <p className="text-[11px] leading-4 text-[#6b6b6b]">
-            {schoolLine}
+            Parent portal
             <br />
-            {yearLine}
+            Student-linked access
           </p>
         </div>
 
@@ -85,7 +83,10 @@ export function ParentShell({
               <div className="grid gap-1">
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`) || (pathname === "/parent" && item.href === "/parent/dashboard");
+                  const active = pathname === item.href
+                    || pathname.startsWith(`${item.href}/`)
+                    || (item.href === "/parent/student-profile" && pathname.startsWith("/parent/students/"))
+                    || (pathname === "/parent" && item.href === "/parent/dashboard");
                   return (
                     <Link
                       key={item.href}
@@ -144,7 +145,11 @@ export function ParentShell({
 }
 
 function getParentMeta(pathname: string, context: ParentPortalContext) {
-  const page = parentPageMeta[pathname] ?? parentPageMeta["/parent/dashboard"];
+  const isSelectedStudentProfilePath = pathname.startsWith("/parent/students/");
+  const isStudentProfilePath = pathname === "/parent/student-profile" || isSelectedStudentProfilePath;
+  const page = isStudentProfilePath
+    ? parentPageMeta["/parent/student-profile"]
+    : parentPageMeta[pathname] ?? parentPageMeta["/parent/dashboard"];
   const studentLabel = context.primaryStudentName && context.primaryStudentReference
     ? `${context.primaryStudentName} - ${context.primaryStudentReference}`
     : "Link a student reference to show student details";
@@ -156,10 +161,10 @@ function getParentMeta(pathname: string, context: ParentPortalContext) {
     };
   }
 
-  if (pathname === "/parent/student-profile") {
+  if (isStudentProfilePath) {
     return {
       title: page.title,
-      subtitle: studentLabel,
+      subtitle: isSelectedStudentProfilePath ? "Selected student details" : studentLabel,
     };
   }
 
