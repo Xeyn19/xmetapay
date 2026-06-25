@@ -26,6 +26,7 @@ test("student records helper reads students, enrollment, and guardian links from
 
   assert.match(helper, /import "server-only";/);
   assert.match(helper, /import \{ pool \} from "@\/lib\/auth\/db";/);
+  assert.match(helper, /import \{ getResolvedAdminSchoolSetup \} from "@\/lib\/school\/setup";/);
   assert.match(helper, /export async function getAdminStudentPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getAdminParentsPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getParentDashboardData\(parentUserId: number\)/);
@@ -38,6 +39,8 @@ test("student records helper reads students, enrollment, and guardian links from
   assert.match(helper, /WHERE sg\.parent_user_id = :parentUserId/);
   assert.match(helper, /studentId\?: number/);
   assert.match(helper, /AND st\.id = :studentId/);
+  assert.match(helper, /return getResolvedAdminSchoolSetup\(adminUserId\)/);
+  assert.doesNotMatch(helper, /FROM admin_profiles ap\s+LEFT JOIN school_years sy ON sy\.school_id = ap\.school_id/);
 });
 
 test("admin student action is protected and creates student enrollment records", () => {
@@ -49,6 +52,9 @@ test("admin student action is protected and creates student enrollment records",
   assert.match(action, /await requireRole\("admin"\)/);
   assert.match(action, /INSERT INTO students/);
   assert.match(action, /INSERT INTO enrollments/);
+  assert.match(action, /resolveSchoolIdForProfile/);
+  assert.match(action, /getSchoolByName/);
+  assert.match(action, /UPDATE admin_profiles\s+SET school_id = :schoolId/);
   assert.match(action, /status\s*:\s*"enrolled"|status = 'enrolled'|VALUES \(.*'enrolled'/s);
   assert.match(action, /section\.grade_level_id !== input\.data\.gradeLevelId/);
   assert.match(action, /Choose a section under the selected grade\./);
@@ -71,6 +77,9 @@ test("parent registration attempts guardian linking after creating parent profil
 
   assert.match(authActions, /import \{ linkParentToStudentByReference \} from "@\/lib\/students\/records";/);
   assert.match(authActions, /INSERT INTO parent_profiles/);
+  assert.match(authActions, /tryLinkAdminProfileToExistingSchool/);
+  assert.match(authActions, /UPDATE admin_profiles ap\s+SET ap\.school_id = \(/);
+  assert.match(authActions, /missingFullSchema/);
   assert.match(authActions, /await linkParentToStudentByReference\(/);
   assert.match(authActions, /parsed\.data\.profile\.studentReference/);
 });

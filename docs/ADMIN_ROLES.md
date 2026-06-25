@@ -36,13 +36,18 @@ Only a school administrator can complete `Set up school records`. This setup cre
 Ask a school administrator to complete school setup first.
 ```
 
+School setup is school-wide, not per staff account. After the school administrator saves setup, XMETA Pay links other unlinked `admin_profiles` with the same exact `school_name` to the same `schools.id`. New registrar and finance accounts also try to join the existing school context during registration. That means a registrar should not need to repeat setup when the school administrator already completed it for the same school name.
+
+For the MVP, this matching uses the exact school name from admin registration. A future production improvement should use a school invite code or required school code during staff registration so staff can join the correct school even when two schools have similar names.
+
 ## Practical Workflow
 
 1. A school administrator registers first.
 2. The school administrator completes school setup.
-3. A registrar can add and enroll students.
-4. Parents link to those students by `student_reference`.
-5. A finance officer works on tuition, collections, allowance, store transactions, and reports after fee/payment backend phases are implemented.
+3. Registrar and finance officer accounts with the same school name are linked to the existing school context.
+4. A registrar can add and enroll students.
+5. Parents link to those students by `student_reference`.
+6. A finance officer works on tuition, collections, allowance, store transactions, and reports after fee/payment backend phases are implemented.
 
 ## Database Source
 

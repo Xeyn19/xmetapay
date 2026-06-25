@@ -41,6 +41,15 @@ export type AdminSchoolSetupFormData = {
   }>;
 };
 
+export type ResolvedAdminSchoolSetup = {
+  schoolId: number | null;
+  schoolYearId: number | null;
+  schoolYearName: string | null;
+  gradeLevelCount: number;
+  sectionCount: number;
+  warning: string | null;
+};
+
 const fallbackContext: AdminSchoolContext = {
   adminName: "School administrator",
   adminInitials: "SA",
@@ -65,14 +74,12 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
     }
 
     const baseContext = contextFromProfile(profile);
-    const school = profile.school_id
-      ? (await getSchoolById(profile.school_id)) ?? (await getSchoolByName(profile.school_name))
-      : await getSchoolByName(profile.school_name);
+    const school = await resolveSchoolForProfile(profile);
 
     if (!school) {
       return {
         ...baseContext,
-        warning: "Create the matching school record after importing the full schema.",
+        warning: setupMissingSchoolWarning(profile.staff_role),
       };
     }
 
@@ -90,8 +97,8 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
       activeSchoolYear,
       gradeLevelCount,
       sectionCount,
-      databaseReady: true,
-      warning: activeSchoolYear ? null : "Create an active school year for this school.",
+      databaseReady: Boolean(activeSchoolYear && gradeLevelCount > 0 && sectionCount > 0),
+      warning: setupWarning(profile.staff_role, activeSchoolYear, gradeLevelCount, sectionCount),
     };
   } catch (error) {
     if (missingSchoolSetupTables(error)) {
@@ -109,6 +116,62 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
   }
 }
 
+export async function getResolvedAdminSchoolSetup(userId: number): Promise<ResolvedAdminSchoolSetup> {
+  try {
+    const profile = await getAdminProfile(userId);
+
+    if (!profile) {
+      return {
+        schoolId: null,
+        schoolYearId: null,
+        schoolYearName: null,
+        gradeLevelCount: 0,
+        sectionCount: 0,
+        warning: "Admin profile was not found.",
+      };
+    }
+
+    const school = await resolveSchoolForProfile(profile);
+
+    if (!school) {
+      return {
+        schoolId: null,
+        schoolYearId: null,
+        schoolYearName: null,
+        gradeLevelCount: 0,
+        sectionCount: 0,
+        warning: setupMissingSchoolWarning(profile.staff_role),
+      };
+    }
+
+    const [activeSchoolYear, gradeLevelCount, sectionCount] = await Promise.all([
+      getActiveSchoolYear(school.id),
+      countGradeLevels(school.id),
+      countSections(school.id),
+    ]);
+
+    return {
+      schoolId: school.id,
+      schoolYearId: activeSchoolYear?.id ?? null,
+      schoolYearName: activeSchoolYear?.name ?? null,
+      gradeLevelCount,
+      sectionCount,
+      warning: setupWarning(profile.staff_role, activeSchoolYear, gradeLevelCount, sectionCount),
+    };
+  } catch (error) {
+    return {
+      schoolId: null,
+      schoolYearId: null,
+      schoolYearName: null,
+      gradeLevelCount: 0,
+      sectionCount: 0,
+      warning: missingSchoolSetupTables(error)
+        ? "Import database/full-schema-v1.sql to enable school setup records."
+        : "School setup records are unavailable. Confirm MySQL/XAMPP is running.",
+    };
+  }
+}
+
 export async function getAdminSchoolSetupFormData(userId: number): Promise<AdminSchoolSetupFormData> {
   let profile: AdminProfileRow | null = null;
 
@@ -123,9 +186,7 @@ export async function getAdminSchoolSetupFormData(userId: number): Promise<Admin
   }
 
   try {
-    const school = profile.school_id
-      ? (await getSchoolById(profile.school_id)) ?? (await getSchoolByName(profile.school_name))
-      : await getSchoolByName(profile.school_name);
+    const school = await resolveSchoolForProfile(profile);
     const schoolName = school?.name ?? profile.school_name;
     const schoolCode = school?.code ?? schoolCodeFor(schoolName);
     const activeYear = school ? await getActiveSchoolYear(school.id) : null;
@@ -146,7 +207,7 @@ export async function getAdminSchoolSetupFormData(userId: number): Promise<Admin
 
 async function getAdminProfile(userId: number) {
   const [rows] = await pool.execute<AdminProfileRow[]>(
-    `SELECT u.name AS admin_name, ap.school_id, ap.school_name, ap.staff_role
+    `SELECT u.name AS admin_name, ap.user_id, ap.school_id, ap.school_name, ap.staff_role
      FROM users u
      JOIN admin_profiles ap ON ap.user_id = u.id
      WHERE u.id = :userId
@@ -163,7 +224,7 @@ async function tryGetAdminProfileOnly(userId: number) {
   } catch {
     try {
       const [rows] = await pool.execute<AdminProfileRow[]>(
-        `SELECT u.name AS admin_name, NULL AS school_id, ap.school_name, ap.staff_role
+        `SELECT u.name AS admin_name, ap.user_id, NULL AS school_id, ap.school_name, ap.staff_role
          FROM users u
          JOIN admin_profiles ap ON ap.user_id = u.id
          WHERE u.id = :userId
@@ -203,6 +264,27 @@ async function getSchoolByName(schoolName: string) {
   return rows[0] ?? null;
 }
 
+async function resolveSchoolForProfile(profile: AdminProfileRow) {
+  const school = profile.school_id
+    ? (await getSchoolById(profile.school_id)) ?? (await getSchoolByName(profile.school_name))
+    : await getSchoolByName(profile.school_name);
+
+  if (school && profile.school_id !== school.id) {
+    await linkAdminProfileToSchool(profile.user_id, school.id);
+  }
+
+  return school;
+}
+
+async function linkAdminProfileToSchool(userId: number, schoolId: number) {
+  await pool.execute(
+    `UPDATE admin_profiles
+     SET school_id = :schoolId
+     WHERE user_id = :userId AND (school_id IS NULL OR school_id <> :schoolId)`,
+    { userId, schoolId },
+  );
+}
+
 async function getActiveSchoolYear(schoolId: number) {
   const [rows] = await pool.execute<SchoolYearRow[]>(
     `SELECT id, name, starts_on, ends_on
@@ -240,6 +322,43 @@ async function countSections(schoolId: number) {
   );
 
   return Number(rows[0]?.total ?? 0);
+}
+
+function setupMissingSchoolWarning(staffRole: string) {
+  return normalizeAdminStaffRole(staffRole) === "school_administrator"
+    ? "Set up school records before viewing database-backed admin pages."
+    : "Ask a school administrator to set up this school first.";
+}
+
+function setupWarning(
+  staffRole: string,
+  activeSchoolYear: Awaited<ReturnType<typeof getActiveSchoolYear>>,
+  gradeLevelCount: number,
+  sectionCount: number,
+) {
+  const missing: string[] = [];
+
+  if (!activeSchoolYear) {
+    missing.push("an active school year");
+  }
+
+  if (gradeLevelCount === 0) {
+    missing.push("grade levels");
+  }
+
+  if (sectionCount === 0) {
+    missing.push("sections");
+  }
+
+  if (missing.length === 0) {
+    return null;
+  }
+
+  const missingText = missing.join(", ");
+
+  return normalizeAdminStaffRole(staffRole) === "school_administrator"
+    ? `Complete school setup by adding ${missingText}.`
+    : `Ask a school administrator to complete ${missingText}.`;
 }
 
 function contextFromProfile(profile: AdminProfileRow): AdminSchoolContext {
@@ -338,6 +457,7 @@ function missingSchoolSetupTables(error: unknown) {
 }
 
 type AdminProfileRow = RowDataPacket & {
+  user_id: number;
   admin_name: string;
   school_id: number | null;
   school_name: string;

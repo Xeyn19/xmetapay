@@ -42,15 +42,19 @@ test("school setup backend helper reads admin school context from MySQL", () => 
   assert.match(helper, /import "server-only";/);
   assert.match(helper, /import \{ pool \} from "@\/lib\/auth\/db";/);
   assert.match(helper, /export async function getAdminSchoolContext\(userId: number\)/);
+  assert.match(helper, /export async function getResolvedAdminSchoolSetup\(userId: number\)/);
   assert.match(helper, /FROM users u\s+JOIN admin_profiles ap ON ap\.user_id = u\.id/);
   assert.match(helper, /ap\.school_id/);
+  assert.match(helper, /resolveSchoolForProfile\(profile\)/);
   assert.match(helper, /getSchoolById/);
   assert.match(helper, /FROM schools/);
   assert.match(helper, /profile\.school_id/);
   assert.match(helper, /getSchoolByName\(profile\.school_name\)/);
+  assert.match(helper, /UPDATE admin_profiles\s+SET school_id = :schoolId/);
   assert.match(helper, /FROM school_years/);
   assert.match(helper, /FROM grade_levels/);
   assert.match(helper, /FROM sections/);
+  assert.match(helper, /Ask a school administrator to set up this school first\./);
   assert.match(helper, /missingSchoolSetupTables/);
   assert.match(helper, /export async function getAdminSchoolSetupFormData\(userId: number\)/);
   assert.match(helper, /getGradeSectionRows/);
@@ -77,6 +81,8 @@ test("admin manual school setup action is protected and saves submitted records"
   assert.match(action, /INSERT INTO sections/);
   assert.match(action, /ON DUPLICATE KEY UPDATE/);
   assert.match(action, /UPDATE admin_profiles\s+SET school_id = :schoolId/);
+  assert.match(action, /linkSameSchoolStaffProfiles/);
+  assert.match(action, /WHERE school_id IS NULL\s+AND \(school_name = :previousSchoolName OR school_name = :currentSchoolName\)/);
   assert.match(action, /setAuthFlashToast/);
   assert.match(action, /redirect\("\/admin\/school-setup"\)/);
   assert.match(action, /redirect\("\/admin\/dashboard"\)/);
@@ -145,6 +151,7 @@ test("backend checklist tracks completed school setup backend slice", () => {
   assert.match(checklist, /- \[x\] Add backend helpers for `schools`, `school_years`, `grade_levels`, and `sections`\./);
   assert.match(checklist, /- \[x\] Replace hard-coded school year\/dashboard school labels with database reads\./);
   assert.match(checklist, /- \[x\] Link admin profiles to a real school record\./);
+  assert.match(checklist, /- \[x\] Share the completed school context with same-school registrar and finance staff accounts\./);
   assert.match(checklist, /- \[x\] Create one active school year for the local test school\./);
   assert.match(checklist, /- \[x\] Create grade levels and sections from the admin side or a safe local seed script\./);
 });
