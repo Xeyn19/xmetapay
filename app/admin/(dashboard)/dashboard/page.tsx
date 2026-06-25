@@ -1,5 +1,8 @@
 import { AlertCircle, Calculator, Download, History, Siren } from "lucide-react";
 
+import { requireRole } from "@/lib/auth/session";
+import { getAdminDashboardRealData } from "@/lib/admin/real-data";
+
 import {
   AdminButton,
   AdminTable,
@@ -11,34 +14,37 @@ import {
   SummaryRows,
   Timeline,
 } from "../../_components/admin-ui";
-import {
-  activityFeed,
-  dashboardKpis,
-  monthlySummary,
-  recentPayments,
-  tuitionCollectedByGrade,
-} from "../../_data/admin-dashboard-data";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const session = await requireRole("admin");
+  const data = await getAdminDashboardRealData(session.userId);
+
   return (
     <>
-      <AlertBanner tone="danger" icon={AlertCircle}>
-        <strong>41 students</strong> have unpaid tuition for June. Total outstanding:{" "}
-        <strong>P143,500</strong>. <span className="font-bold text-[#e64a19]">View report</span>
-      </AlertBanner>
-      <AlertBanner tone="warn" icon={AlertCircle}>
-        7 students&apos; allowance wallets are below P50. Parents have been notified automatically.
-      </AlertBanner>
+      {data.warning ? (
+        <AlertBanner tone="warn" icon={AlertCircle}>
+          {data.warning}
+        </AlertBanner>
+      ) : null}
+      {data.alerts.map((alert) => (
+        <AlertBanner key={alert.message} tone={alert.tone} icon={AlertCircle}>
+          {alert.message}
+        </AlertBanner>
+      ))}
 
       <KpiGrid>
-        {dashboardKpis.map((kpi) => (
+        {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </KpiGrid>
 
       <div className="mb-[18px] grid gap-[18px] xl:grid-cols-[1fr_1fr]">
-        <DashboardCard title="Tuition collected by grade - June" icon={Siren}>
-          <BarList rows={tuitionCollectedByGrade} />
+        <DashboardCard title="Tuition collected by grade" icon={Siren}>
+          {data.tuitionByGrade.length > 0 ? (
+            <BarList rows={data.tuitionByGrade} />
+          ) : (
+            <div className="text-[12.5px] leading-5 text-[#5a6070]">Create tuition fee assignments to show grade collection totals.</div>
+          )}
         </DashboardCard>
 
         <DashboardCard
@@ -51,7 +57,7 @@ export default function AdminDashboardPage() {
             </AdminButton>
           }
         >
-          <SummaryRows rows={monthlySummary} />
+          <SummaryRows rows={data.monthlySummary} />
         </DashboardCard>
       </div>
 
@@ -67,21 +73,33 @@ export default function AdminDashboardPage() {
               { label: "Status", className: "w-[10%]" },
             ]}
           >
-            {recentPayments.map(([time, student, type, amount, channel, status]) => (
-              <tr key={`${time}-${student}`}>
-                <td className="font-mono text-[11px] text-[#5a6070]">{time}</td>
-                <td className="font-bold">{student}</td>
-                <td>{type}</td>
-                <td className="font-bold text-[#e64a19]">{amount}</td>
-                <td>{channel}</td>
-                <td className="font-semibold text-[#2e7d32]">{status}</td>
+            {data.recentPayments.length > 0 ? (
+              data.recentPayments.map(([time, student, type, amount, channel, status]) => (
+                <tr key={`${time}-${student}-${amount}`}>
+                  <td className="font-mono text-[11px] text-[#5a6070]">{time}</td>
+                  <td className="font-bold">{student}</td>
+                  <td>{type}</td>
+                  <td className="font-bold text-[#e64a19]">{amount}</td>
+                  <td>{channel}</td>
+                  <td className="font-semibold text-[#2e7d32]">{status}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="text-center text-[#5a6070]">
+                  No payment records yet.
+                </td>
               </tr>
-            ))}
+            )}
           </AdminTable>
         </DashboardCard>
 
         <DashboardCard title="Activity feed" icon={Siren}>
-          <Timeline items={activityFeed} />
+          {data.activityFeed.length > 0 ? (
+            <Timeline items={data.activityFeed} />
+          ) : (
+            <div className="text-[12.5px] leading-5 text-[#5a6070]">Notification activity is pending.</div>
+          )}
         </DashboardCard>
       </div>
     </>

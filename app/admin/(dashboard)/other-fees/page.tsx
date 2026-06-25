@@ -1,13 +1,19 @@
 import { ClipboardList, Download, Plus } from "lucide-react";
 
-import { AdminButton, DashboardCard, KpiCard, KpiGrid, StatusPill } from "../../_components/admin-ui";
-import { feeItems, otherFeesKpis } from "../../_data/admin-dashboard-data";
+import { requireRole } from "@/lib/auth/session";
+import { getAdminOtherFeesPageRealData } from "@/lib/admin/real-data";
 
-export default function OtherFeesPage() {
+import { AdminButton, AlertBanner, DashboardCard, KpiCard, KpiGrid, StatusPill } from "../../_components/admin-ui";
+
+export default async function OtherFeesPage() {
+  const session = await requireRole("admin");
+  const data = await getAdminOtherFeesPageRealData(session.userId);
+
   return (
     <>
+      {data.warning ? <AlertBanner tone="warn" icon={ClipboardList}>{data.warning}</AlertBanner> : null}
       <KpiGrid>
-        {otherFeesKpis.map((kpi) => (
+        {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </KpiGrid>
@@ -17,20 +23,20 @@ export default function OtherFeesPage() {
         icon={ClipboardList}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <AdminButton tone="dark"><Plus className="size-4" />Add fee type</AdminButton>
-            <AdminButton><Download className="size-4" />Export</AdminButton>
+            <AdminButton tone="dark" disabled><Plus className="size-4" />Add fee type pending</AdminButton>
+            <AdminButton disabled><Download className="size-4" />Export pending</AdminButton>
           </div>
         }
         bodyClassName="p-0"
       >
         <div className="divide-y divide-black/[0.07]">
-          {feeItems.map((item) => {
-            const Icon = item.icon;
+          {data.items.length > 0 ? (
+            data.items.map((item) => {
             return (
               <div key={item.name} className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 transition hover:bg-[#f7f8fa]">
                 <div className="flex items-center gap-2.5">
                   <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-[#fbe9e7] text-[#e64a19]">
-                    <Icon className="size-4" />
+                    <ClipboardList className="size-4" />
                   </span>
                   <div>
                     <div className="text-[13px] font-bold text-[#0f1117]">{item.name}</div>
@@ -46,7 +52,12 @@ export default function OtherFeesPage() {
                 </div>
               </div>
             );
-          })}
+            })
+          ) : (
+            <div className="px-[18px] py-8 text-center text-[12.5px] text-[#5a6070]">
+              No other fee types yet.
+            </div>
+          )}
         </div>
       </DashboardCard>
     </>

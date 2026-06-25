@@ -1,38 +1,28 @@
-"use client";
-
 import { Calculator, ClipboardList, Download, Receipt, Send } from "lucide-react";
-import { useMemo, useState } from "react";
+
+import { requireRole } from "@/lib/auth/session";
+import { getAdminTuitionPageRealData } from "@/lib/admin/real-data";
 
 import {
   AdminButton,
   AdminTable,
+  AlertBanner,
   BarList,
   DashboardCard,
   KpiCard,
   KpiGrid,
-  SegmentedTabs,
   StatusPill,
 } from "../../_components/admin-ui";
-import {
-  otherFeeSummary,
-  outstandingByGrade,
-  tuitionKpis,
-  tuitionRows,
-} from "../../_data/admin-dashboard-data";
 
-type TuitionFilter = "all" | "paid" | "partial" | "unpaid";
-
-export default function TuitionPage() {
-  const [filter, setFilter] = useState<TuitionFilter>("all");
-  const rows = useMemo(
-    () => tuitionRows.filter((row) => filter === "all" || row.status === filter),
-    [filter]
-  );
+export default async function TuitionPage() {
+  const session = await requireRole("admin");
+  const data = await getAdminTuitionPageRealData(session.userId);
 
   return (
     <>
+      {data.warning ? <AlertBanner tone="warn" icon={Receipt}>{data.warning}</AlertBanner> : null}
       <KpiGrid>
-        {tuitionKpis.map((kpi) => (
+        {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </KpiGrid>
@@ -42,23 +32,13 @@ export default function TuitionPage() {
         icon={Receipt}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <SegmentedTabs
-              active={filter}
-              onChange={setFilter}
-              tabs={[
-                { label: "All", value: "all" },
-                { label: "Paid", value: "paid" },
-                { label: "Partial", value: "partial" },
-                { label: "Unpaid", value: "unpaid" },
-              ]}
-            />
-            <AdminButton>
+            <AdminButton disabled>
               <Send className="size-4" />
-              Remind unpaid
+              Reminders pending
             </AdminButton>
-            <AdminButton tone="dark">
+            <AdminButton tone="dark" disabled>
               <Download className="size-4" />
-              Export
+              Export pending
             </AdminButton>
           </div>
         }
@@ -77,12 +57,13 @@ export default function TuitionPage() {
             { label: "Status", className: "w-[13%]" },
           ]}
         >
-          {rows.map((row) => {
+          {data.rows.length > 0 ? (
+            data.rows.map((row) => {
             const balance = row.due - row.paid;
             const statusLabel = row.status.charAt(0).toUpperCase() + row.status.slice(1);
             return (
-              <tr key={`${row.name}-${row.grade}`}>
-                <td className="font-bold">{row.name}</td>
+              <tr key={`${row.student}-${row.grade}`}>
+                <td className="font-bold">{row.student}</td>
                 <td>{row.grade}</td>
                 <td>{row.section}</td>
                 <td>P{row.due.toLocaleString()}</td>
@@ -90,21 +71,32 @@ export default function TuitionPage() {
                 <td className={balance > 0 ? "font-semibold text-[#c62828]" : "text-[#9ba3b8]"}>
                   P{balance.toLocaleString()}
                 </td>
-                <td className="font-mono text-[11px] text-[#5a6070]">{row.last}</td>
+                <td className="font-mono text-[11px] text-[#5a6070]">{row.lastPayment}</td>
                 <td>
                   <StatusPill tone={row.status as "paid" | "partial" | "unpaid"}>{statusLabel}</StatusPill>
                 </td>
               </tr>
             );
-          })}
+            })
+          ) : (
+            <tr>
+              <td colSpan={8} className="text-center text-[#5a6070]">
+                No tuition fee assignments yet.
+              </td>
+            </tr>
+          )}
         </AdminTable>
       </DashboardCard>
 
       <div className="grid gap-[18px] xl:grid-cols-2">
         <DashboardCard title="Outstanding by grade" icon={Calculator}>
-          <BarList rows={outstandingByGrade} />
+          {data.outstandingByGrade.length > 0 ? (
+            <BarList rows={data.outstandingByGrade} />
+          ) : (
+            <div className="text-[12.5px] leading-5 text-[#5a6070]">Outstanding balances are pending.</div>
+          )}
         </DashboardCard>
-        <DashboardCard title="Other fee items - Jun" icon={ClipboardList} bodyClassName="p-0">
+        <DashboardCard title="Other fee items" icon={ClipboardList} bodyClassName="p-0">
           <AdminTable
             headers={[
               { label: "Fee type", className: "w-[40%]" },
@@ -113,14 +105,22 @@ export default function TuitionPage() {
               { label: "Rate", className: "w-[20%]" },
             ]}
           >
-            {otherFeeSummary.map(([fee, billed, collected, rate]) => (
-              <tr key={fee}>
-                <td className="font-bold">{fee}</td>
-                <td>{billed}</td>
-                <td className="font-semibold text-[#2e7d32]">{collected}</td>
-                <td className="font-bold">{rate}</td>
+            {data.otherFeeSummary.length > 0 ? (
+              data.otherFeeSummary.map(([fee, billed, collected, rate]) => (
+                <tr key={fee}>
+                  <td className="font-bold">{fee}</td>
+                  <td>{billed}</td>
+                  <td className="font-semibold text-[#2e7d32]">{collected}</td>
+                  <td className="font-bold">{rate}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="text-center text-[#5a6070]">
+                  No other fee records yet.
+                </td>
               </tr>
-            ))}
+            )}
           </AdminTable>
         </DashboardCard>
       </div>
