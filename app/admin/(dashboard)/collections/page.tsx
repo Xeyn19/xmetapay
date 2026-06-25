@@ -1,21 +1,28 @@
 import { CreditCard, Download, Search } from "lucide-react";
 
+import { requireRole } from "@/lib/auth/session";
+import { getAdminCollectionsPageRealData } from "@/lib/admin/real-data";
+
 import {
   AdminButton,
   AdminTable,
+  AlertBanner,
   DashboardCard,
   KpiCard,
   KpiGrid,
   SearchInput,
   StatusPill,
 } from "../../_components/admin-ui";
-import { collectionsKpis, collectionsRows } from "../../_data/admin-dashboard-data";
 
-export default function CollectionsPage() {
+export default async function CollectionsPage() {
+  const session = await requireRole("admin");
+  const data = await getAdminCollectionsPageRealData(session.userId);
+
   return (
     <>
+      {data.warning ? <AlertBanner tone="warn" icon={CreditCard}>{data.warning}</AlertBanner> : null}
       <KpiGrid>
-        {collectionsKpis.map((kpi) => (
+        {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </KpiGrid>
@@ -26,13 +33,13 @@ export default function CollectionsPage() {
         action={
           <div className="flex flex-wrap items-center gap-2">
             <SearchInput placeholder="Search student, ref..." readOnly />
-            <AdminButton>
+            <AdminButton disabled>
               <Search className="size-4" />
-              Filter
+              Filter pending
             </AdminButton>
-            <AdminButton tone="dark">
+            <AdminButton tone="dark" disabled>
               <Download className="size-4" />
-              Export
+              Export pending
             </AdminButton>
           </div>
         }
@@ -50,18 +57,26 @@ export default function CollectionsPage() {
             { label: "Status", className: "w-[8%]" },
           ]}
         >
-          {collectionsRows.map(([ref, student, grade, fee, amount, date, channel, status]) => (
-            <tr key={ref}>
-              <td className="font-mono text-[11px] text-[#5a6070]">{ref}</td>
-              <td className="font-bold">{student}</td>
-              <td>{grade}</td>
-              <td>{fee}</td>
-              <td className="font-bold text-[#e64a19]">{amount}</td>
-              <td className="font-mono text-[11px] text-[#5a6070]">{date}</td>
-              <td>{channel}</td>
-              <td><StatusPill tone={status === "Partial" ? "partial" : "paid"}>{status}</StatusPill></td>
+          {data.rows.length > 0 ? (
+            data.rows.map(([ref, student, grade, fee, amount, date, channel, status]) => (
+              <tr key={ref}>
+                <td className="font-mono text-[11px] text-[#5a6070]">{ref}</td>
+                <td className="font-bold">{student}</td>
+                <td>{grade}</td>
+                <td>{fee}</td>
+                <td className="font-bold text-[#e64a19]">{amount}</td>
+                <td className="font-mono text-[11px] text-[#5a6070]">{date}</td>
+                <td>{channel}</td>
+                <td><StatusPill tone={status === "Partial" ? "partial" : status === "Paid" || status === "Done" ? "paid" : "pending"}>{status}</StatusPill></td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={8} className="text-center text-[#5a6070]">
+                No payment records yet.
+              </td>
             </tr>
-          ))}
+          )}
         </AdminTable>
       </DashboardCard>
     </>

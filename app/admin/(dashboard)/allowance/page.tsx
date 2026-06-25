@@ -1,35 +1,27 @@
-"use client";
-
 import { Download, Wallet } from "lucide-react";
-import { useMemo, useState } from "react";
+
+import { requireRole } from "@/lib/auth/session";
+import { getAdminAllowancePageRealData } from "@/lib/admin/real-data";
 
 import {
   AdminButton,
   AdminTable,
+  AlertBanner,
   DashboardCard,
   KpiCard,
   KpiGrid,
-  SegmentedTabs,
   StatusPill,
 } from "../../_components/admin-ui";
-import { allowanceKpis, allowanceRows } from "../../_data/admin-dashboard-data";
 
-type WalletFilter = "all" | "low" | "zero";
-
-export default function AllowancePage() {
-  const [filter, setFilter] = useState<WalletFilter>("all");
-  const rows = useMemo(() => {
-    return allowanceRows.filter((row) => {
-      if (filter === "all") return true;
-      if (filter === "low") return row[6] === "Low";
-      return row[6] === "No balance";
-    });
-  }, [filter]);
+export default async function AllowancePage() {
+  const session = await requireRole("admin");
+  const data = await getAdminAllowancePageRealData(session.userId);
 
   return (
     <>
+      {data.warning ? <AlertBanner tone="warn" icon={Wallet}>{data.warning}</AlertBanner> : null}
       <KpiGrid>
-        {allowanceKpis.map((kpi) => (
+        {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </KpiGrid>
@@ -38,16 +30,7 @@ export default function AllowancePage() {
         icon={Wallet}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <SegmentedTabs
-              active={filter}
-              onChange={setFilter}
-              tabs={[
-                { label: "All students", value: "all" },
-                { label: "Low balance", value: "low" },
-                { label: "Zero balance", value: "zero" },
-              ]}
-            />
-            <AdminButton tone="dark"><Download className="size-4" />Export</AdminButton>
+            <AdminButton tone="dark" disabled><Download className="size-4" />Export pending</AdminButton>
           </div>
         }
         bodyClassName="p-0"
@@ -63,19 +46,27 @@ export default function AllowancePage() {
             { label: "Status", className: "w-[10%]" },
           ]}
         >
-          {rows.map(([student, grade, balance, lastTopUp, spend, topUps, status]) => (
-            <tr key={student}>
-              <td className="font-bold">{student}</td>
-              <td>{grade}</td>
-              <td className={status === "No balance" ? "font-bold text-[#9ba3b8]" : status === "Low" ? "font-bold text-[#f57c00]" : "font-bold text-[#e64a19]"}>
-                {balance}
+          {data.rows.length > 0 ? (
+            data.rows.map(([student, grade, balance, lastTopUp, spend, topUps, status]) => (
+              <tr key={student}>
+                <td className="font-bold">{student}</td>
+                <td>{grade}</td>
+                <td className={status === "No balance" ? "font-bold text-[#9ba3b8]" : status === "Low" ? "font-bold text-[#f57c00]" : "font-bold text-[#e64a19]"}>
+                  {balance}
+                </td>
+                <td>{lastTopUp}</td>
+                <td>{spend}</td>
+                <td>{topUps}</td>
+                <td><StatusPill tone={status === "Low" ? "low" : status === "No balance" ? "inactive" : "active"}>{status}</StatusPill></td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={7} className="text-center text-[#5a6070]">
+                No wallet records yet.
               </td>
-              <td>{lastTopUp}</td>
-              <td>{spend}</td>
-              <td>{topUps}</td>
-              <td><StatusPill tone={status === "Low" ? "low" : status === "No balance" ? "inactive" : "active"}>{status}</StatusPill></td>
             </tr>
-          ))}
+          )}
         </AdminTable>
       </DashboardCard>
     </>
