@@ -65,7 +65,7 @@ export default async function StudentsPage() {
               <tr key={row.id}>
                 <td className="font-mono text-[11px] text-[#5a6070]">{row.studentReference}</td>
                 <td>
-                  <Link href="/admin/student-profile" className="font-bold text-[#e64a19] hover:underline">
+                  <Link href={`/admin/students/${row.id}`} className="font-bold text-[#e64a19] hover:underline">
                     {row.fullName}
                   </Link>
                 </td>

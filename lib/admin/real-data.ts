@@ -119,7 +119,9 @@ export type ReportsPageRealData = {
 
 export type AdminStudentProfileRealData = {
   warning: string | null;
+  students: AdminStudentProfileSummary[];
   student: {
+    id: number;
     initials: string;
     fullName: string;
     subtitle: string;
@@ -135,6 +137,18 @@ export type AdminStudentProfileRealData = {
     fees: SummaryRow[];
     transactions: Array<[string, string, string, string, string]>;
   } | null;
+};
+
+export type AdminStudentProfileSummary = {
+  id: number;
+  profileHref: string;
+  initials: string;
+  fullName: string;
+  studentReference: string;
+  gradeSection: string;
+  guardians: string;
+  enrollmentStatus: string;
+  studentStatus: string;
 };
 
 type AdminStudentTransactionDisplay = NonNullable<AdminStudentProfileRealData["student"]>["transactions"][number];
@@ -399,14 +413,19 @@ export async function getAdminReportsPageRealData(adminUserId: number): Promise<
   }
 }
 
-export async function getAdminStudentProfileRealData(adminUserId: number): Promise<AdminStudentProfileRealData> {
+export async function getAdminStudentProfileRealData(
+  adminUserId: number,
+  studentId?: number,
+): Promise<AdminStudentProfileRealData> {
   const setup = await getAdminSetup(adminUserId);
 
   if (!setup.schoolId || !setup.schoolYearId) {
-    return { warning: setup.warning, student: null };
+    return { warning: setup.warning, students: [], student: null };
   }
 
   try {
+    const students = await getAdminStudentProfileSummaries(setup.schoolId, setup.schoolYearId);
+    const selectedStudentClause = typeof studentId === "number" ? "AND st.id = :studentId" : "";
     const [rows] = await pool.execute<StudentProfileRow[]>(
       `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name,
          st.birthdate, st.status AS student_status,
@@ -427,16 +446,25 @@ export async function getAdminStudentProfileRealData(adminUserId: number): Promi
        LEFT JOIN users u ON u.id = sg.parent_user_id
        LEFT JOIN parent_profiles pp ON pp.user_id = u.id
        WHERE st.school_id = :schoolId
+       ${selectedStudentClause}
        GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.birthdate, st.status,
          gl.name, sec.name, e.status, w.balance, w.status
        ORDER BY st.created_at DESC, st.id DESC
        LIMIT 1`,
-      { schoolId: setup.schoolId, schoolYearId: setup.schoolYearId },
+      typeof studentId === "number"
+        ? { schoolId: setup.schoolId, schoolYearId: setup.schoolYearId, studentId }
+        : { schoolId: setup.schoolId, schoolYearId: setup.schoolYearId },
     );
     const row = rows[0];
 
     if (!row) {
-      return { warning: "No student records yet. Add a student before viewing a profile.", student: null };
+      return {
+        warning: students.length > 0
+          ? "Choose a student from the profile list to view accurate details."
+          : "No student records yet. Add a student before viewing a profile.",
+        students,
+        student: null,
+      };
     }
 
     const [feeSummary, transactionRows, walletSummary] = await Promise.all([
@@ -450,7 +478,9 @@ export async function getAdminStudentProfileRealData(adminUserId: number): Promi
 
     return {
       warning: null,
+      students,
       student: {
+        id: row.id,
         initials: initialsFor(fullStudentName),
         fullName: fullStudentName,
         subtitle: `${row.student_reference} - ${row.grade_name} - ${row.section_name}`,
@@ -489,8 +519,47 @@ export async function getAdminStudentProfileRealData(adminUserId: number): Promi
       },
     };
   } catch {
-    return { warning: "Student profile data is unavailable. Confirm MySQL/XAMPP and the full schema are ready.", student: null };
+    return { warning: "Student profile data is unavailable. Confirm MySQL/XAMPP and the full schema are ready.", students: [], student: null };
   }
+}
+
+async function getAdminStudentProfileSummaries(schoolId: number, schoolYearId: number) {
+  const [rows] = await pool.execute<StudentProfileSummaryRow[]>(
+    `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name,
+       st.status AS student_status,
+       COALESCE(gl.name, 'Not enrolled') AS grade_name,
+       COALESCE(sec.name, '-') AS section_name,
+       COALESCE(e.status, 'pending') AS enrollment_status,
+       COALESCE(GROUP_CONCAT(DISTINCT u.name ORDER BY sg.is_primary DESC, u.name SEPARATOR ', '), 'Not linked') AS guardian_names
+     FROM students st
+     LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
+     LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
+     LEFT JOIN sections sec ON sec.id = e.section_id
+     LEFT JOIN student_guardians sg ON sg.student_id = st.id
+     LEFT JOIN users u ON u.id = sg.parent_user_id
+     WHERE st.school_id = :schoolId
+     GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.status,
+       gl.name, sec.name, e.status
+     ORDER BY st.last_name ASC, st.first_name ASC, st.id ASC`,
+    { schoolId, schoolYearId },
+  );
+
+  return rows.map((row) => {
+    const name = fullName(row.first_name, row.middle_name, row.last_name);
+    const gradeSection = `${row.grade_name} - ${row.section_name}`;
+
+    return {
+      id: row.id,
+      profileHref: `/admin/students/${row.id}`,
+      initials: initialsFor(name),
+      fullName: name,
+      studentReference: row.student_reference,
+      gradeSection,
+      guardians: row.guardian_names,
+      enrollmentStatus: labelForStatus(row.enrollment_status),
+      studentStatus: labelForStatus(row.student_status),
+    };
+  });
 }
 
 async function getAdminSetup(adminUserId: number): Promise<AdminSetup> {
@@ -1333,6 +1402,19 @@ type StudentProfileRow = RowDataPacket & {
   guardian_names: string;
   relationships: string;
   guardian_contacts: string;
+};
+
+type StudentProfileSummaryRow = RowDataPacket & {
+  id: number;
+  student_reference: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  student_status: string;
+  grade_name: string;
+  section_name: string;
+  enrollment_status: string;
+  guardian_names: string;
 };
 
 type StudentWalletSummaryRow = RowDataPacket & {
