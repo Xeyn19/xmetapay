@@ -1,6 +1,7 @@
 import { Calculator, ClipboardList, Download, Receipt, Send } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminTuitionPageRealData } from "@/lib/admin/real-data";
 
 import {
@@ -16,6 +17,7 @@ import {
 
 export default async function TuitionPage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/tuition");
   const data = await getAdminTuitionPageRealData(session.userId);
 
   return (

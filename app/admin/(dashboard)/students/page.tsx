@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, UserPlus, Users } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminStudentPageData } from "@/lib/students/records";
 
 import {
@@ -16,6 +17,7 @@ import { StudentEnrollmentForm } from "./student-enrollment-form";
 
 export default async function StudentsPage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/students");
   const data = await getAdminStudentPageData(session.userId);
 
   return (

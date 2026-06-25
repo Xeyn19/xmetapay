@@ -1,6 +1,7 @@
 import { BarChart3, Download, FileText } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminReportsPageRealData } from "@/lib/admin/real-data";
 
 import {
@@ -14,6 +15,7 @@ import {
 
 export default async function ReportsPage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/reports");
   const data = await getAdminReportsPageRealData(session.userId);
 
   return (

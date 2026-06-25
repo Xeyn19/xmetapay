@@ -4,6 +4,8 @@ import test from "node:test";
 
 const schoolSetupPath = "lib/school/setup.ts";
 const schoolSetupActionPath = "app/admin/school-setup/actions.ts";
+const schoolSetupPagePath = "app/admin/(dashboard)/school-setup/page.tsx";
+const schoolSetupFormPath = "app/admin/(dashboard)/school-setup/manual-school-setup-form.tsx";
 const adminLayoutPath = "app/admin/(dashboard)/layout.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
 const checklistPath = "docs/CHECKLIST.md";
@@ -50,15 +52,25 @@ test("school setup backend helper reads admin school context from MySQL", () => 
   assert.match(helper, /FROM grade_levels/);
   assert.match(helper, /FROM sections/);
   assert.match(helper, /missingSchoolSetupTables/);
+  assert.match(helper, /export async function getAdminSchoolSetupFormData\(userId: number\)/);
+  assert.match(helper, /getGradeSectionRows/);
+  assert.match(helper, /schoolCodeFor/);
 });
 
-test("admin school setup action is protected and creates baseline school records", () => {
+test("admin manual school setup action is protected and saves submitted records", () => {
   assert.equal(existsSync(schoolSetupActionPath), true);
   const action = readFileSync(schoolSetupActionPath, "utf8");
 
   assert.match(action, /"use server";/);
-  assert.match(action, /export async function initializeSchoolSetupAction\(\)/);
+  assert.match(action, /export async function saveSchoolSetupAction\(formData: FormData\)/);
   assert.match(action, /await requireRole\("admin"\)/);
+  assert.match(action, /formData\.get\(key\)/);
+  assert.match(action, /schoolName/);
+  assert.match(action, /schoolCode/);
+  assert.match(action, /schoolYearName/);
+  assert.match(action, /startsOn/);
+  assert.match(action, /endsOn/);
+  assert.match(action, /gradeSetup/);
   assert.match(action, /INSERT INTO schools/);
   assert.match(action, /INSERT INTO school_years/);
   assert.match(action, /INSERT INTO grade_levels/);
@@ -66,7 +78,14 @@ test("admin school setup action is protected and creates baseline school records
   assert.match(action, /ON DUPLICATE KEY UPDATE/);
   assert.match(action, /UPDATE admin_profiles\s+SET school_id = :schoolId/);
   assert.match(action, /setAuthFlashToast/);
+  assert.match(action, /redirect\("\/admin\/school-setup"\)/);
   assert.match(action, /redirect\("\/admin\/dashboard"\)/);
+  assert.doesNotMatch(action, /defaultSchoolYear/);
+  assert.doesNotMatch(action, /defaultGradeLevels/);
+  assert.doesNotMatch(action, /starterSectionName/);
+  assert.doesNotMatch(action, /2025-2026/);
+  assert.doesNotMatch(action, /Grade 1/);
+  assert.doesNotMatch(action, /Section A/);
 });
 
 test("admin dashboard layout passes authenticated school context into the shell", () => {
@@ -81,7 +100,6 @@ test("admin dashboard layout passes authenticated school context into the shell"
 test("admin shell renders school setup context instead of fixed prototype labels", () => {
   const shell = readFileSync(adminShellPath, "utf8");
 
-  assert.match(shell, /import \{ initializeSchoolSetupAction \} from "@\/app\/admin\/school-setup\/actions";/);
   assert.match(shell, /import type \{ AdminSchoolContext \} from "@\/lib\/school\/setup";/);
   assert.match(shell, /schoolContext: AdminSchoolContext/);
   assert.match(shell, /const setupIncomplete = /);
@@ -89,10 +107,36 @@ test("admin shell renders school setup context instead of fixed prototype labels
   assert.match(shell, /schoolContext\.activeSchoolYear\?\.name/);
   assert.match(shell, /schoolContext\.adminInitials/);
   assert.match(shell, /schoolContext\.staffRoleLabel/);
-  assert.match(shell, /<form action=\{initializeSchoolSetupAction\}/);
-  assert.match(shell, /Initialize school setup/);
+  assert.match(shell, /href="\/admin\/school-setup"/);
+  assert.match(shell, /Set up school records/);
+  assert.doesNotMatch(shell, /initializeSchoolSetupAction/);
+  assert.doesNotMatch(shell, /Initialize school setup/);
   assert.doesNotMatch(shell, /Brentwood Academy of Las Pinas/);
   assert.doesNotMatch(shell, /Ms\. Charmaine Nase/);
+});
+
+test("manual school setup page uses protected data and editable setup form", () => {
+  assert.equal(existsSync(schoolSetupPagePath), true);
+  assert.equal(existsSync(schoolSetupFormPath), true);
+  const page = readFileSync(schoolSetupPagePath, "utf8");
+  const form = readFileSync(schoolSetupFormPath, "utf8");
+
+  assert.match(page, /await requireRole\("admin"\)/);
+  assert.match(page, /getAdminSchoolSetupFormData\(session\.userId\)/);
+  assert.match(page, /<ManualSchoolSetupForm initialData=\{initialData\} \/>/);
+  assert.match(form, /"use client";/);
+  assert.match(form, /saveSchoolSetupAction/);
+  assert.match(form, /name="gradeSetup"/);
+  assert.match(form, /name="schoolName"/);
+  assert.match(form, /name="schoolCode"/);
+  assert.match(form, /name="schoolYearName"/);
+  assert.match(form, /name="startsOn"/);
+  assert.match(form, /name="endsOn"/);
+  assert.match(form, /Add grade level/);
+  assert.match(form, /Add section/);
+  assert.match(form, /Grade 1-10/);
+  assert.match(form, /Section A/);
+  assert.match(form, /Save school setup/);
 });
 
 test("backend checklist tracks completed school setup backend slice", () => {

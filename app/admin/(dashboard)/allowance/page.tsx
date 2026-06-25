@@ -1,6 +1,7 @@
 import { Download, Wallet } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminAllowancePageRealData } from "@/lib/admin/real-data";
 
 import {
@@ -15,6 +16,7 @@ import {
 
 export default async function AllowancePage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/allowance");
   const data = await getAdminAllowancePageRealData(session.userId);
 
   return (

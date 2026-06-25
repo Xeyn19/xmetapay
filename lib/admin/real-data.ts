@@ -506,7 +506,7 @@ async function getAdminSetup(adminUserId: number): Promise<AdminSetup> {
     const row = rows[0];
 
     if (!row?.school_id) {
-      return { schoolId: null, schoolYearId: null, schoolYearName: null, warning: "Initialize school setup before viewing database-backed admin pages." };
+      return { schoolId: null, schoolYearId: null, schoolYearName: null, warning: "Set up school records before viewing database-backed admin pages." };
     }
 
     if (!row.school_year_id) {

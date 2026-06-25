@@ -5,12 +5,19 @@ import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/prom
 
 import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
+import { getAdminStaffRole } from "@/lib/admin/access";
+import { canManageStudents } from "@/lib/admin/permissions";
 
 export async function createStudentAction(formData: FormData) {
   const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
   let connection: PoolConnection | null = null;
 
   try {
+    if (!canManageStudents(staffRole)) {
+      throw new Error("Your staff role cannot add or enroll students.");
+    }
+
     const input = parseStudentForm(formData);
 
     if (!input.ok) {
@@ -23,7 +30,7 @@ export async function createStudentAction(formData: FormData) {
     const setup = await getAdminSetupForUpdate(connection, session.userId);
 
     if (!setup?.school_id || !setup.school_year_id) {
-      throw new Error("Initialize school setup before adding students.");
+      throw new Error("Set up school records before adding students.");
     }
 
     const section = await getSection(connection, setup.school_id, setup.school_year_id, input.data.sectionId);

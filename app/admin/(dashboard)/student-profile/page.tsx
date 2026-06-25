@@ -1,6 +1,7 @@
 import { CreditCard, Edit, History, IdCard, Plus, Users, Wallet } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminStudentProfileRealData } from "@/lib/admin/real-data";
 
 import {
@@ -15,6 +16,7 @@ import {
 
 export default async function StudentProfilePage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/student-profile");
   const data = await getAdminStudentProfileRealData(session.userId);
 
   if (!data.student) {

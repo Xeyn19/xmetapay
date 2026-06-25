@@ -4,6 +4,8 @@ Use this checklist to move from the current auth-only backend into the full XMET
 
 Source schema reference: `DATABASE_SCHEMA_PLAN.md`
 
+Admin role reference: `ADMIN_ROLES.md`
+
 ## Current Project Status
 
 - [x] Admin/school registration works.
@@ -12,6 +14,7 @@ Source schema reference: `DATABASE_SCHEMA_PLAN.md`
 - [x] Parent login works.
 - [x] Logout clears the session.
 - [x] Protected admin and parent dashboards redirect correctly.
+- [x] Admin/school staff roles are documented and enforced for key pages/actions.
 - [x] Local database environment file is ignored by Git.
 - [ ] Dashboard pages still use mostly static/mock data.
 - [ ] Full student, fee, payment, wallet, and report tables are not implemented yet.
@@ -47,6 +50,7 @@ Done when: the full schema can be imported from a clean local database without e
 - [x] Create one active school year for the local test school.
 - [x] Create grade levels and sections from the admin side or a safe local seed script.
 - [x] Replace hard-coded school year/dashboard school labels with database reads.
+- [x] Restrict school setup to `school_administrator`.
 
 Done when: the admin dashboard can load school setup data from MySQL.
 
@@ -54,6 +58,7 @@ Done when: the admin dashboard can load school setup data from MySQL.
 
 - [x] Add backend helpers for `students` and `student_guardians`.
 - [x] Create an admin flow for adding or listing students.
+- [x] Restrict student creation/enrollment to `school_administrator` and `registrar`.
 - [x] Link parent accounts to students using `student_reference`.
 - [x] Show linked students on the parent dashboard from the database.
 - [x] Keep parent access limited to their linked students only.

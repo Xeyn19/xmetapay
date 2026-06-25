@@ -1,6 +1,7 @@
 import { Clock, Download, Store } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminStoreTransactionsPageRealData } from "@/lib/admin/real-data";
 
 import {
@@ -15,6 +16,7 @@ import {
 
 export default async function StoreTransactionsPage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/store-transactions");
   const data = await getAdminStoreTransactionsPageRealData(session.userId);
 
   return (

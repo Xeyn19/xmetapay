@@ -256,6 +256,7 @@
           <a href="DATABASE_SCHEMA_EXPLANATION.md">Schema explanation</a>
           <a href="DATABASE_SCHEMA_VISUAL_PLAN.html">Schema visual plan</a>
           <a href="CHECKLIST.md">Backend checklist</a>
+          <a href="ADMIN_ROLES.md">Admin roles</a>
         </div>
       </header>
 
@@ -264,7 +265,7 @@
         <div class="grid">
           <div class="card">
             <strong>Implemented</strong>
-            Auth, logout, protected redirects, school setup bootstrap, student
+            Auth, logout, protected redirects, manual school setup, admin role permissions, student
             creation, enrollment, and parent-student linking. Parent-side mock
             enrollment has been removed.
           </div>
@@ -295,9 +296,9 @@
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Admin registers or logs in"] --> B["Admin initializes school setup"]
+  A["School administrator registers or logs in"] --> B["Admin sets up school records"]
   B --> C["School, school year, grade levels, and sections exist"]
-  C --> D["Admin creates student"]
+  C --> D["School administrator or registrar creates student"]
   D --> E["Admin creates enrollment"]
   E --> F["Student gets official student_reference"]
 
@@ -322,6 +323,22 @@ flowchart TD
 
       <section>
         <h2>Admin Portal</h2>
+
+        <h3>Admin Staff Role Access</h3>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-staff-role-access.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin user signs in"] --> B{"staff_role?"}
+  B -->|school_administrator| C["Can access all admin pages and set up school records"]
+  B -->|registrar| D["Can access dashboard, students, student profile, and parent contacts"]
+  B -->|finance_officer| E["Can access dashboard, tuition, collections, fees, allowance, store, and reports"]
+  D --> F["Cannot use school setup or finance pages"]
+  E --> G["Cannot set up school records or add/enroll students"]
+          </pre>
+        </div>
 
         <h3>Admin Registration And Login</h3>
         <div class="diagram-card">
@@ -348,25 +365,28 @@ flowchart TD
           </pre>
         </div>
 
-        <h3>School Setup Bootstrap</h3>
+        <h3>Manual School Setup</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
-            <button type="button" data-diagram-download="svg" data-file-name="school-setup-bootstrap.svg">Download SVG</button>
+            <button type="button" data-diagram-download="svg" data-file-name="manual-school-setup.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
   A["Admin dashboard loads"] --> B{"admin_profiles.school_id exists?"}
   B -->|Yes| C["Use linked school context"]
-  B -->|No| D["Show Initialize school setup panel"]
-  D --> E["Admin clicks Initialize school setup"]
-  E --> F["Require admin session"]
-  F --> G["Create or reuse schools row from school_name"]
-  G --> H["Update admin_profiles.school_id"]
-  H --> I["Create or reuse active school year"]
-  I --> J["Create or reuse Grade 1 to Grade 10"]
-  J --> K["Create or reuse Section A for each grade"]
-  K --> L["Redirect back to dashboard"]
-  L --> C
+  B -->|No| D{"staff_role is school_administrator?"}
+  D -->|No| E["Show ask school administrator message"]
+  D -->|Yes| F["Show Set up school records panel"]
+  F --> G["Admin opens manual setup screen"]
+  G --> H["Require admin session and school_administrator role"]
+  H --> I["Admin confirms school name and code"]
+  I --> J["Admin enters active school year and dates"]
+  J --> K["Admin adds grade levels"]
+  K --> L["Admin adds sections per grade"]
+  L --> M["Save schools, school_years, grade_levels, sections"]
+  M --> N["Update admin_profiles.school_id"]
+  N --> O["Redirect back to dashboard"]
+  O --> C
           </pre>
         </div>
 
@@ -600,7 +620,7 @@ flowchart TD
             </tr>
             <tr>
               <td>2</td>
-              <td>Initialize school setup and confirm school context loads.</td>
+              <td>Set up school records and confirm school context loads.</td>
             </tr>
             <tr>
               <td>3</td>

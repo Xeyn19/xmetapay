@@ -3,11 +3,16 @@ import "server-only";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import {
+  labelForAdminStaffRole,
+  normalizeAdminStaffRole,
+  type AdminStaffRole,
+} from "@/lib/admin/permissions";
 
 export type AdminSchoolContext = {
   adminName: string;
   adminInitials: string;
-  staffRole: string;
+  staffRole: AdminStaffRole;
   staffRoleLabel: string;
   schoolId: number | null;
   schoolName: string;
@@ -22,6 +27,18 @@ export type AdminSchoolContext = {
   sectionCount: number;
   databaseReady: boolean;
   warning: string | null;
+};
+
+export type AdminSchoolSetupFormData = {
+  schoolName: string;
+  schoolCode: string;
+  schoolYearName: string;
+  startsOn: string;
+  endsOn: string;
+  grades: Array<{
+    name: string;
+    sections: string[];
+  }>;
 };
 
 const fallbackContext: AdminSchoolContext = {
@@ -89,6 +106,41 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
     }
 
     return fallbackContext;
+  }
+}
+
+export async function getAdminSchoolSetupFormData(userId: number): Promise<AdminSchoolSetupFormData> {
+  let profile: AdminProfileRow | null = null;
+
+  try {
+    profile = await getAdminProfile(userId);
+  } catch {
+    profile = await tryGetAdminProfileOnly(userId);
+  }
+
+  if (!profile) {
+    return emptySetupFormData("School");
+  }
+
+  try {
+    const school = profile.school_id
+      ? (await getSchoolById(profile.school_id)) ?? (await getSchoolByName(profile.school_name))
+      : await getSchoolByName(profile.school_name);
+    const schoolName = school?.name ?? profile.school_name;
+    const schoolCode = school?.code ?? schoolCodeFor(schoolName);
+    const activeYear = school ? await getActiveSchoolYear(school.id) : null;
+    const grades = school && activeYear ? await getGradeSectionRows(school.id, activeYear.id) : [];
+
+    return {
+      schoolName,
+      schoolCode,
+      schoolYearName: activeYear?.name ?? "",
+      startsOn: activeYear?.startsOn ?? "",
+      endsOn: activeYear?.endsOn ?? "",
+      grades: grades.length > 0 ? grades : [{ name: "", sections: [""] }],
+    };
+  } catch {
+    return emptySetupFormData(profile.school_name);
   }
 }
 
@@ -191,11 +243,13 @@ async function countSections(schoolId: number) {
 }
 
 function contextFromProfile(profile: AdminProfileRow): AdminSchoolContext {
+  const staffRole = normalizeAdminStaffRole(profile.staff_role) ?? "school_administrator";
+
   return {
     adminName: profile.admin_name,
     adminInitials: initialsFor(profile.admin_name),
-    staffRole: profile.staff_role,
-    staffRoleLabel: labelForStaffRole(profile.staff_role),
+    staffRole,
+    staffRoleLabel: labelForAdminStaffRole(staffRole),
     schoolId: profile.school_id,
     schoolName: profile.school_name,
     schoolCode: null,
@@ -218,19 +272,62 @@ function initialsFor(name: string) {
   return initials || "SA";
 }
 
-function labelForStaffRole(role: string) {
-  return role
-    .split("_")
-    .map((word) => word[0]?.toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
 function formatDate(value: Date | string) {
   if (value instanceof Date) {
     return value.toISOString().slice(0, 10);
   }
 
   return value;
+}
+
+async function getGradeSectionRows(schoolId: number, schoolYearId: number) {
+  const [rows] = await pool.execute<GradeSectionRow[]>(
+    `SELECT gl.id, gl.name AS grade_name, sec.name AS section_name
+     FROM grade_levels gl
+     LEFT JOIN sections sec ON sec.grade_level_id = gl.id AND sec.school_year_id = :schoolYearId
+     WHERE gl.school_id = :schoolId
+     ORDER BY gl.sort_order ASC, gl.name ASC, sec.name ASC`,
+    { schoolId, schoolYearId },
+  );
+  const grades = new Map<number, { name: string; sections: string[] }>();
+
+  for (const row of rows) {
+    const grade = grades.get(row.id) ?? { name: row.grade_name, sections: [] };
+
+    if (row.section_name) {
+      grade.sections.push(row.section_name);
+    }
+
+    grades.set(row.id, grade);
+  }
+
+  return [...grades.values()].map((grade) => ({
+    name: grade.name,
+    sections: grade.sections.length > 0 ? grade.sections : [""],
+  }));
+}
+
+function emptySetupFormData(schoolName: string): AdminSchoolSetupFormData {
+  return {
+    schoolName,
+    schoolCode: schoolCodeFor(schoolName),
+    schoolYearName: "",
+    startsOn: "",
+    endsOn: "",
+    grades: [{ name: "", sections: [""] }],
+  };
+}
+
+function schoolCodeFor(schoolName: string) {
+  return schoolName
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 12) || "SCHOOL";
 }
 
 function missingSchoolSetupTables(error: unknown) {
@@ -263,4 +360,10 @@ type SchoolYearRow = RowDataPacket & {
 
 type CountRow = RowDataPacket & {
   total: number;
+};
+
+type GradeSectionRow = RowDataPacket & {
+  id: number;
+  grade_name: string;
+  section_name: string | null;
 };

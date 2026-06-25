@@ -1,6 +1,7 @@
 import { Users } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminParentsPageData } from "@/lib/students/records";
 
 import {
@@ -13,6 +14,7 @@ import {
 
 export default async function ParentsPage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/parents");
   const data = await getAdminParentsPageData(session.userId);
 
   return (

@@ -1,6 +1,7 @@
 import { CreditCard, Download, Search } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminCollectionsPageRealData } from "@/lib/admin/real-data";
 
 import {
@@ -16,6 +17,7 @@ import {
 
 export default async function CollectionsPage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/collections");
   const data = await getAdminCollectionsPageRealData(session.userId);
 
   return (
