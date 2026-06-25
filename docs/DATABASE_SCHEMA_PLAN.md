@@ -7,6 +7,8 @@ XMETA Pay uses one MySQL database for two connected portals:
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
 - Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, and wallet top-up.
 
+Related role guide: `ADMIN_ROLES.md` explains the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
+
 The current database already starts with shared authentication tables. The practical MVP should keep that foundation and add school, student, enrollment, billing, payment, wallet, and reporting tables around it.
 
 Recommended database defaults for XAMPP MySQL:
@@ -64,9 +66,9 @@ One admin profile per admin user.
 | `user_id` | Links to `users.id` |
 | `school_id` | Nullable link to `schools.id` after school setup is initialized |
 | `school_name` | School name captured during admin registration |
-| `staff_role` | Finance officer, registrar, or school administrator |
+| `staff_role` | Admin staff permission: `school_administrator`, `registrar`, or `finance_officer` |
 
-Implementation note: `school_name` stays for display and old local records. After the full schema is imported, the admin setup bootstrap links each admin profile to the real `schools.id` record through `admin_profiles.school_id`.
+Implementation note: `school_name` stays for display and old local records. After the full schema is imported, a `school_administrator` manually sets up school records and links the admin profile to the real `schools.id` record through `admin_profiles.school_id`.
 
 ### `parent_profiles`
 

@@ -8,6 +8,7 @@ Related documents:
 - `DATABASE_SCHEMA_EXPLANATION.md` - plain-language schema explanation.
 - `DATABASE_SCHEMA_VISUAL_PLAN.html` - browser visual for the database schema.
 - `CHECKLIST.md` - backend implementation tracker.
+- `ADMIN_ROLES.md` - admin/school staff roles and dashboard permissions.
 - `PROJECT_FLOWCHARTS_VISUAL.html` - browser visual for this project flow document.
 
 ## Status Legend
@@ -27,7 +28,8 @@ Implemented:
 - Logout and protected dashboard redirects.
 - Local MySQL/XAMPP database connection through environment variables.
 - Full schema import through `database/full-schema-v1.sql`.
-- Admin school setup bootstrap.
+- Manual school setup by `school_administrator`.
+- Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Admin student creation and enrollment.
 - Parent-to-student linking through `student_reference`.
 - Parent dashboard reads linked students through `student_guardians`.
@@ -53,9 +55,9 @@ For the current backend phase, parents do not directly enroll new students from 
 
 ```mermaid
 flowchart TD
-  A["Admin registers or logs in"] --> B["Admin initializes school setup"]
+  A["School administrator registers or logs in"] --> B["Admin sets up school records"]
   B --> C["School, school year, grade levels, and sections exist"]
-  C --> D["Admin creates student"]
+  C --> D["School administrator or registrar creates student"]
   D --> E["Admin creates enrollment"]
   E --> F["Student gets official student_reference"]
 
@@ -77,6 +79,27 @@ flowchart TD
 ```
 
 ## Admin Portal Flow
+
+### 0. Admin Staff Role Access
+
+Implemented.
+
+All school staff accounts use `users.role = admin`, but `admin_profiles.staff_role` controls dashboard permissions.
+
+```mermaid
+flowchart TD
+  A["Admin user signs in"] --> B{"staff_role?"}
+  B -->|school_administrator| C["Can access all admin pages and set up school records"]
+  B -->|registrar| D["Can access dashboard, students, student profile, and parent contacts"]
+  B -->|finance_officer| E["Can access dashboard, tuition, collections, fees, allowance, store, and reports"]
+  D --> F["Cannot use school setup or finance pages"]
+  E --> G["Cannot set up school records or add/enroll students"]
+```
+
+Permission source:
+
+- `admin_profiles.staff_role`
+- `ADMIN_ROLES.md`
 
 ### 1. Admin Registration And Login
 
@@ -108,26 +131,29 @@ Database touchpoints:
 - `users`
 - `admin_profiles`
 
-### 2. School Setup Bootstrap
+### 2. Manual School Setup
 
 Implemented.
 
-After the admin logs in, the admin profile should be linked to a real school record. This gives the rest of the backend a stable `school_id`.
+After the admin logs in, the admin profile should be linked to a real school record. The admin manually confirms the school, active school year, grade levels, and sections so the rest of the backend has a stable `school_id`.
 
 ```mermaid
 flowchart TD
   A["Admin dashboard loads"] --> B{"admin_profiles.school_id exists?"}
   B -->|Yes| C["Use linked school context"]
-  B -->|No| D["Show Initialize school setup panel"]
-  D --> E["Admin clicks Initialize school setup"]
-  E --> F["Require admin session"]
-  F --> G["Create or reuse schools row from school_name"]
-  G --> H["Update admin_profiles.school_id"]
-  H --> I["Create or reuse active school year"]
-  I --> J["Create or reuse Grade 1 to Grade 10"]
-  J --> K["Create or reuse Section A for each grade"]
-  K --> L["Redirect back to dashboard"]
-  L --> C
+  B -->|No| D{"staff_role is school_administrator?"}
+  D -->|No| E["Show ask school administrator message"]
+  D -->|Yes| F["Show Set up school records panel"]
+  F --> G["Admin opens manual setup screen"]
+  G --> H["Require admin session and school_administrator role"]
+  H --> I["Admin confirms school name and code"]
+  I --> J["Admin enters active school year and dates"]
+  J --> K["Admin adds grade levels"]
+  K --> L["Admin adds sections per grade"]
+  L --> M["Save schools, school_years, grade_levels, sections"]
+  M --> N["Update admin_profiles.school_id"]
+  N --> O["Redirect back to dashboard"]
+  O --> C
 ```
 
 Database touchpoints:
@@ -422,7 +448,7 @@ Use this testing order when checking the project manually in XAMPP:
 
 1. Register an admin account.
 2. Log in as admin.
-3. Initialize school setup.
+3. Set up school records with the real school year, grade levels, and sections.
 4. Create a student with a clear `student_reference`.
 5. Confirm the student appears in the admin student table.
 6. Register a parent account using the same `student_reference`.

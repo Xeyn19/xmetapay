@@ -63,6 +63,10 @@ export const pageMeta: Record<string, PageMeta> = {
     title: "Dashboard",
     subtitle: "Brentwood Academy - SY 2025-2026 - May 19, 2025",
   },
+  "/admin/school-setup": {
+    title: "School setup",
+    subtitle: "School year, grade levels, and sections",
+  },
   "/admin/tuition": {
     title: "Tuition report",
     subtitle: "June 2025 - collection status and outstanding balances",

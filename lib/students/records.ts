@@ -101,7 +101,7 @@ export async function getAdminStudentPageData(adminUserId: number): Promise<Admi
     const setup = await getAdminSetup(adminUserId);
 
     if (!setup?.school_id || !setup.school_year_id) {
-      return emptyAdminStudentData("Initialize school setup before adding students.");
+      return emptyAdminStudentData("Set up school records before adding students.");
     }
 
     const [gradeOptions, sectionOptions, students] = await Promise.all([

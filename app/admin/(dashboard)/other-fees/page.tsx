@@ -1,12 +1,14 @@
 import { ClipboardList, Download, Plus } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminOtherFeesPageRealData } from "@/lib/admin/real-data";
 
 import { AdminButton, AlertBanner, DashboardCard, KpiCard, KpiGrid, StatusPill } from "../../_components/admin-ui";
 
 export default async function OtherFeesPage() {
   const session = await requireRole("admin");
+  await requireAdminPageAccess(session.userId, "/admin/other-fees");
   const data = await getAdminOtherFeesPageRealData(session.userId);
 
   return (

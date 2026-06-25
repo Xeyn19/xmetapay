@@ -17,10 +17,14 @@ import {
 } from "lucide-react";
 
 import { AdminModalId, AdminModals } from "./admin-modals";
-import { initializeSchoolSetupAction } from "@/app/admin/school-setup/actions";
 import { logoutAction } from "@/app/auth/actions";
 import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
+import {
+  canManageSchoolSetup,
+  canUseAdminHeaderAction,
+  filterAdminNavSectionsForStaffRole,
+} from "@/lib/admin/permissions";
 import { cn } from "@/lib/utils";
 import type { AdminSchoolContext } from "@/lib/school/setup";
 
@@ -42,6 +46,10 @@ export function AdminShell({
     || !schoolContext.activeSchoolYear
     || schoolContext.gradeLevelCount === 0
     || schoolContext.sectionCount === 0;
+  const visibleNavSections = filterAdminNavSectionsForStaffRole(navSections, schoolContext.staffRole);
+  const canManageSetup = canManageSchoolSetup(schoolContext.staffRole);
+  const canAddStudents = canUseAdminHeaderAction(schoolContext.staffRole, "add_student");
+  const canRecordPayments = canUseAdminHeaderAction(schoolContext.staffRole, "record_payment");
   const logout = logoutAction.bind(null, "admin");
 
   const openModal = (modal: AdminModalId) => setActiveModal(modal);
@@ -109,7 +117,7 @@ export function AdminShell({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2.5 py-2">
-          {navSections.map((section) => (
+          {visibleNavSections.map((section) => (
             <div key={section.label}>
               <div className="px-2 py-2.5 pb-1 text-[9.5px] font-bold uppercase tracking-[0.1em] text-white/25">
                 {section.label}
@@ -169,27 +177,38 @@ export function AdminShell({
               <p className="mt-0.5 text-[11px] leading-4 text-[#f57c00]">{schoolContext.warning}</p>
             ) : null}
             {setupIncomplete ? (
-              <form action={initializeSchoolSetupAction} className="mt-2 flex flex-col gap-2 rounded-lg border border-[#f57c00]/20 bg-[#fff7ed] px-3 py-2 min-[520px]:flex-row min-[520px]:items-center">
+              <div className="mt-2 flex flex-col gap-2 rounded-lg border border-[#f57c00]/20 bg-[#fff7ed] px-3 py-2 min-[520px]:flex-row min-[520px]:items-center">
                 <p className="min-w-0 flex-1 text-[11.5px] leading-5 text-[#8a4b00]">
-                  {schoolContext.warning ?? "Link this admin account to the real school setup records."}
+                  {canManageSetup
+                    ? (schoolContext.warning ?? "Set up real school records before using database-backed admin pages.")
+                    : "Ask a school administrator to complete school setup first."}
                 </p>
-                <AdminButton type="submit" tone="primary" className="min-h-9 px-3 text-[12px]">
-                  <Database className="size-4" />
-                  Initialize school setup
-                </AdminButton>
-              </form>
+                {canManageSetup ? (
+                  <Link
+                    href="/admin/school-setup"
+                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3 text-[12px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                  >
+                    <Database className="size-4" />
+                    Set up school records
+                  </Link>
+                ) : null}
+              </div>
             ) : null}
           </div>
           <div className="grid w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
             <AdminButton data-modal-trigger="reminder" onClick={() => openModal("reminder")}><Send className="size-4" />Send reminders</AdminButton>
-            <AdminButton data-modal-trigger="payment" onClick={() => openModal("payment")}><Plus className="size-4" />Record payment</AdminButton>
-            <Link
-              href="/admin/students#add-student"
-              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
-            >
-              <UserPlus className="size-4" />
-              Add student
-            </Link>
+            {canRecordPayments ? (
+              <AdminButton data-modal-trigger="payment" onClick={() => openModal("payment")}><Plus className="size-4" />Record payment</AdminButton>
+            ) : null}
+            {canAddStudents ? (
+              <Link
+                href="/admin/students#add-student"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+              >
+                <UserPlus className="size-4" />
+                Add student
+              </Link>
+            ) : null}
           </div>
         </header>
 

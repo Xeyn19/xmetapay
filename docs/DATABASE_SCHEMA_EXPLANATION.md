@@ -2,6 +2,8 @@
 
 This document explains the purpose of the XMETA Pay database schema in `database/full-schema-v1.sql`. The schema extends the existing authentication database into the full project backend for school administration, parent access, student records, enrollment, fees, payments, receipts, wallet activity, store/canteen spending, and notifications.
 
+Related role guide: `ADMIN_ROLES.md` explains what `school_administrator`, `registrar`, and `finance_officer` can do in the admin/school portal.
+
 ## Import Order
 
 The database is split into two SQL files so the current authentication work stays stable.
@@ -36,9 +38,9 @@ Important behavior:
 
 ### `admin_profiles`
 
-This stores school-side profile details for users with the `admin` role. It records the school name entered during registration and the staff role, such as finance officer, registrar, or school administrator.
+This stores school-side profile details for users with the `admin` role. It records the school name entered during registration and the staff role: `school_administrator`, `registrar`, or `finance_officer`.
 
-After the full school setup is initialized, `admin_profiles.school_id` links the admin profile to the real `schools.id` record. The original `school_name` field remains useful for display, registration history, and fallback matching for older local accounts.
+After a school administrator completes manual school setup, `admin_profiles.school_id` links the admin profile to the real `schools.id` record. The original `school_name` field remains useful for display, registration history, and fallback matching for older local accounts.
 
 ### `parent_profiles`
 

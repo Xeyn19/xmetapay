@@ -5,22 +5,47 @@ import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/prom
 
 import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
+import { getAdminStaffRole } from "@/lib/admin/access";
+import { canManageSchoolSetup } from "@/lib/admin/permissions";
 
-const defaultSchoolYear = {
-  name: "2025-2026",
-  startsOn: "2025-06-01",
-  endsOn: "2026-03-31",
+type SetupGradeInput = {
+  name: string;
+  sections: string[];
 };
 
-const defaultGradeLevels = Array.from({ length: 10 }, (_, index) => ({
-  name: `Grade ${index + 1}`,
-  sortOrder: index + 1,
-}));
+type SetupInput = {
+  schoolName: string;
+  schoolCode: string;
+  schoolYearName: string;
+  startsOn: string;
+  endsOn: string;
+  grades: SetupGradeInput[];
+};
 
-const starterSectionName = "Section A";
-
-export async function initializeSchoolSetupAction() {
+export async function saveSchoolSetupAction(formData: FormData) {
   const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+
+  if (!canManageSchoolSetup(staffRole)) {
+    await setAuthFlashToast({
+      role: "admin",
+      title: "School setup not saved",
+      description: "Only school administrators can set up school records.",
+    });
+    redirect("/admin/dashboard");
+  }
+
+  const input = parseSchoolSetupForm(formData);
+
+  if (!input.ok) {
+    await setAuthFlashToast({
+      role: "admin",
+      title: "School setup not saved",
+      description: input.message,
+    });
+    redirect("/admin/school-setup");
+  }
+
   let connection: PoolConnection | null = null;
 
   try {
@@ -33,23 +58,23 @@ export async function initializeSchoolSetupAction() {
       throw new Error("Admin profile was not found.");
     }
 
-    const schoolId = await ensureSchool(connection, profile, session.userId);
+    const schoolId = await ensureSchool(connection, profile, session.userId, input.data);
     await connection.execute(
       `UPDATE admin_profiles
-       SET school_id = :schoolId
+       SET school_id = :schoolId, school_name = :schoolName
        WHERE user_id = :userId`,
-      { schoolId, userId: session.userId },
+      { schoolId, schoolName: input.data.schoolName, userId: session.userId },
     );
 
-    const schoolYearId = await ensureSchoolYear(connection, schoolId);
-    const gradeLevelIds = await ensureGradeLevels(connection, schoolId);
-    await ensureSections(connection, schoolId, schoolYearId, gradeLevelIds);
+    const schoolYearId = await ensureSchoolYear(connection, schoolId, input.data);
+    const gradeLevelIds = await ensureGradeLevels(connection, schoolId, input.data.grades);
+    await ensureSections(connection, schoolId, schoolYearId, input.data.grades, gradeLevelIds);
 
     await connection.commit();
     await setAuthFlashToast({
       role: "admin",
-      title: "School setup ready",
-      description: "Your school year, grade levels, and starter sections are ready.",
+      title: "School setup saved",
+      description: "Your school year, grade levels, and sections now use your real school records.",
     });
   } catch {
     if (connection) {
@@ -58,14 +83,96 @@ export async function initializeSchoolSetupAction() {
 
     await setAuthFlashToast({
       role: "admin",
-      title: "School setup not completed",
-      description: "Import the school setup migration, confirm MySQL is running, then try again.",
+      title: "School setup not saved",
+      description: "Check that the school code is unique and MySQL/XAMPP is running, then try again.",
     });
+    redirect("/admin/school-setup");
   } finally {
     connection?.release();
   }
 
   redirect("/admin/dashboard");
+}
+
+function parseSchoolSetupForm(formData: FormData) {
+  const schoolName = textValue(formData, "schoolName");
+  const schoolCode = normalizeCode(textValue(formData, "schoolCode"));
+  const schoolYearName = textValue(formData, "schoolYearName");
+  const startsOn = textValue(formData, "startsOn");
+  const endsOn = textValue(formData, "endsOn");
+  const grades = parseGradeSetup(textValue(formData, "gradeSetup"));
+
+  if (!schoolName || !schoolCode || !schoolYearName || !startsOn || !endsOn) {
+    return { ok: false as const, message: "Complete the school, school year, and date fields." };
+  }
+
+  if (new Date(startsOn) >= new Date(endsOn)) {
+    return { ok: false as const, message: "School year end date must be after the start date." };
+  }
+
+  if (grades.length === 0) {
+    return { ok: false as const, message: "Add at least one grade level." };
+  }
+
+  if (grades.some((grade) => grade.sections.length === 0)) {
+    return { ok: false as const, message: "Every grade level needs at least one section." };
+  }
+
+  return {
+    ok: true as const,
+    data: {
+      schoolName,
+      schoolCode,
+      schoolYearName,
+      startsOn,
+      endsOn,
+      grades,
+    },
+  };
+}
+
+function parseGradeSetup(value: string) {
+  try {
+    const parsed = JSON.parse(value) as Array<{ name?: unknown; sections?: unknown }>;
+    const seenGrades = new Set<string>();
+
+    return parsed
+      .map((grade) => {
+        const name = normalizeLabel(String(grade.name ?? ""));
+        const sections = Array.isArray(grade.sections)
+          ? grade.sections
+              .map((section) => normalizeLabel(String(section)))
+              .filter(Boolean)
+          : [];
+        const uniqueSections = [...new Set(sections)];
+
+        return { name, sections: uniqueSections };
+      })
+      .filter((grade) => {
+        const key = grade.name.toLowerCase();
+        const keep = Boolean(grade.name) && !seenGrades.has(key);
+
+        if (keep) {
+          seenGrades.add(key);
+        }
+
+        return keep;
+      });
+  } catch {
+    return [];
+  }
+}
+
+function textValue(formData: FormData, key: string) {
+  return String(formData.get(key) ?? "").trim();
+}
+
+function normalizeLabel(value: string) {
+  return value.trim().replace(/\s+/g, " ").slice(0, 60);
+}
+
+function normalizeCode(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 }
 
 async function getAdminProfileForUpdate(connection: PoolConnection, userId: number) {
@@ -81,18 +188,23 @@ async function getAdminProfileForUpdate(connection: PoolConnection, userId: numb
   return rows[0] ?? null;
 }
 
-async function ensureSchool(connection: PoolConnection, profile: AdminProfileRow, userId: number) {
-  if (profile.school_id) {
-    const linkedSchool = await getSchoolById(connection, profile.school_id);
-
-    if (linkedSchool) {
-      return linkedSchool.id;
-    }
-  }
-
-  const existingSchool = await getSchoolByName(connection, profile.school_name);
+async function ensureSchool(connection: PoolConnection, profile: AdminProfileRow, userId: number, input: SetupInput) {
+  const existingSchool = profile.school_id
+    ? await getSchoolById(connection, profile.school_id)
+    : await getSchoolByCodeOrName(connection, input.schoolCode, input.schoolName);
 
   if (existingSchool) {
+    await connection.execute(
+      `UPDATE schools
+       SET name = :name, code = :code, status = 'active'
+       WHERE id = :schoolId`,
+      {
+        schoolId: existingSchool.id,
+        name: input.schoolName,
+        code: input.schoolCode,
+      },
+    );
+
     return existingSchool.id;
   }
 
@@ -104,8 +216,8 @@ async function ensureSchool(connection: PoolConnection, profile: AdminProfileRow
        status = VALUES(status),
        id = LAST_INSERT_ID(id)`,
     {
-      name: profile.school_name,
-      code: schoolCodeFor(profile.school_name, userId),
+      name: input.schoolName,
+      code: input.schoolCode || schoolCodeFor(input.schoolName, userId),
     },
   );
 
@@ -124,20 +236,27 @@ async function getSchoolById(connection: PoolConnection, schoolId: number) {
   return rows[0] ?? null;
 }
 
-async function getSchoolByName(connection: PoolConnection, schoolName: string) {
+async function getSchoolByCodeOrName(connection: PoolConnection, schoolCode: string, schoolName: string) {
   const [rows] = await connection.execute<SchoolRow[]>(
     `SELECT id
      FROM schools
-     WHERE name = :schoolName
-     ORDER BY status = 'active' DESC, id ASC
+     WHERE code = :schoolCode OR name = :schoolName
+     ORDER BY code = :schoolCode DESC, status = 'active' DESC, id ASC
      LIMIT 1`,
-    { schoolName },
+    { schoolCode, schoolName },
   );
 
   return rows[0] ?? null;
 }
 
-async function ensureSchoolYear(connection: PoolConnection, schoolId: number) {
+async function ensureSchoolYear(connection: PoolConnection, schoolId: number, input: SetupInput) {
+  await connection.execute(
+    `UPDATE school_years
+     SET status = 'closed'
+     WHERE school_id = :schoolId AND name <> :name AND status = 'active'`,
+    { schoolId, name: input.schoolYearName },
+  );
+
   const [result] = await connection.execute<ResultSetHeader>(
     `INSERT INTO school_years (school_id, name, starts_on, ends_on, status)
      VALUES (:schoolId, :name, :startsOn, :endsOn, 'active')
@@ -148,19 +267,19 @@ async function ensureSchoolYear(connection: PoolConnection, schoolId: number) {
        id = LAST_INSERT_ID(id)`,
     {
       schoolId,
-      name: defaultSchoolYear.name,
-      startsOn: defaultSchoolYear.startsOn,
-      endsOn: defaultSchoolYear.endsOn,
+      name: input.schoolYearName,
+      startsOn: input.startsOn,
+      endsOn: input.endsOn,
     },
   );
 
   return Number(result.insertId);
 }
 
-async function ensureGradeLevels(connection: PoolConnection, schoolId: number) {
+async function ensureGradeLevels(connection: PoolConnection, schoolId: number, grades: SetupGradeInput[]) {
   const gradeLevelIds: number[] = [];
 
-  for (const gradeLevel of defaultGradeLevels) {
+  for (const [index, gradeLevel] of grades.entries()) {
     const [result] = await connection.execute<ResultSetHeader>(
       `INSERT INTO grade_levels (school_id, name, sort_order)
        VALUES (:schoolId, :name, :sortOrder)
@@ -170,7 +289,7 @@ async function ensureGradeLevels(connection: PoolConnection, schoolId: number) {
       {
         schoolId,
         name: gradeLevel.name,
-        sortOrder: gradeLevel.sortOrder,
+        sortOrder: index + 1,
       },
     );
 
@@ -184,22 +303,25 @@ async function ensureSections(
   connection: PoolConnection,
   schoolId: number,
   schoolYearId: number,
+  grades: SetupGradeInput[],
   gradeLevelIds: number[],
 ) {
-  for (const gradeLevelId of gradeLevelIds) {
-    await connection.execute(
-      `INSERT INTO sections (school_id, school_year_id, grade_level_id, name)
-       VALUES (:schoolId, :schoolYearId, :gradeLevelId, :name)
-       ON DUPLICATE KEY UPDATE
-         school_id = VALUES(school_id),
-         id = LAST_INSERT_ID(id)`,
-      {
-        schoolId,
-        schoolYearId,
-        gradeLevelId,
-        name: starterSectionName,
-      },
-    );
+  for (const [index, gradeLevel] of grades.entries()) {
+    for (const sectionName of gradeLevel.sections) {
+      await connection.execute(
+        `INSERT INTO sections (school_id, school_year_id, grade_level_id, name)
+         VALUES (:schoolId, :schoolYearId, :gradeLevelId, :name)
+         ON DUPLICATE KEY UPDATE
+           school_id = VALUES(school_id),
+           id = LAST_INSERT_ID(id)`,
+        {
+          schoolId,
+          schoolYearId,
+          gradeLevelId: gradeLevelIds[index],
+          name: sectionName,
+        },
+      );
+    }
   }
 }
 
