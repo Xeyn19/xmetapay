@@ -12,6 +12,8 @@ const adminParentsPagePath = "app/admin/(dashboard)/parents/page.tsx";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
 const parentLayoutPath = "app/parent/(portal)/layout.tsx";
 const parentStudentProfilePath = "app/parent/(portal)/student-profile/page.tsx";
+const parentStudentProfileViewPath = "app/parent/(portal)/student-profile/student-profile-view.tsx";
+const parentSelectedStudentProfilePath = "app/parent/(portal)/students/[studentId]/page.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
 const adminModalsPath = "app/admin/_components/admin-modals.tsx";
 const parentShellPath = "app/parent/_components/parent-shell.tsx";
@@ -28,12 +30,14 @@ test("student records helper reads students, enrollment, and guardian links from
   assert.match(helper, /export async function getAdminParentsPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getParentDashboardData\(parentUserId: number\)/);
   assert.match(helper, /export async function getParentPortalContext\(parentUserId: number/);
-  assert.match(helper, /export async function getParentStudentProfileData\(parentUserId: number/);
+  assert.match(helper, /export async function getParentStudentProfileData\(\s+parentUserId: number,/);
   assert.match(helper, /FROM students/);
   assert.match(helper, /JOIN enrollments/);
   assert.match(helper, /FROM student_guardians/);
   assert.match(helper, /parent_user_id = :parentUserId/);
   assert.match(helper, /WHERE sg\.parent_user_id = :parentUserId/);
+  assert.match(helper, /studentId\?: number/);
+  assert.match(helper, /AND st\.id = :studentId/);
 });
 
 test("admin student action is protected and creates student enrollment records", () => {
@@ -90,6 +94,8 @@ test("admin and parent pages use database helpers instead of mock student arrays
   assert.match(parentDashboard, /getParentDashboardData/);
   assert.match(parentDashboard, /linkParentStudentAction/);
   assert.match(parentDashboard, /<form action=\{linkParentStudentAction\}/);
+  assert.match(parentDashboard, /href=\{student\.profileHref\}/);
+  assert.doesNotMatch(parentDashboard, /href="\/parent\/student-profile"/);
   assert.doesNotMatch(parentDashboard, /children|dashboardMetrics|outstandingFees|recentActivity/);
 });
 
@@ -143,6 +149,7 @@ test("parent portal shell and profile use real database-backed identity", () => 
   const parentLayout = readFileSync(parentLayoutPath, "utf8");
   const parentShell = readFileSync(parentShellPath, "utf8");
   const parentProfile = readFileSync(parentStudentProfilePath, "utf8");
+  const parentProfileView = readFileSync(parentStudentProfileViewPath, "utf8");
   const parentPortalData = readFileSync(parentPortalDataPath, "utf8");
 
   assert.match(parentLayout, /getParentPortalContext/);
@@ -151,19 +158,62 @@ test("parent portal shell and profile use real database-backed identity", () => 
   assert.match(parentShell, /context\.parentName/);
   assert.match(parentShell, /context\.parentInitials/);
   assert.match(parentShell, /context\.relationshipLabel/);
-  assert.match(parentShell, /context\.schoolName/);
+  assert.match(parentShell, /Parent portal/);
+  assert.match(parentShell, /Student-linked access/);
+  assert.doesNotMatch(parentShell, /context\.schoolName/);
   assert.doesNotMatch(parentShell, /Maria Santos|Brentwood Academy of Las Pinas/);
 
   assert.match(parentProfile, /getParentStudentProfileData/);
-  assert.match(parentProfile, /data\.student/);
-  assert.match(parentProfile, /student\.studentDetails/);
-  assert.match(parentProfile, /student\.guardianDetails/);
+  assert.match(parentProfile, /StudentProfileView/);
+  assert.match(parentProfile, /StudentProfileEmptyState/);
+  assert.match(parentProfileView, /export function StudentProfileView/);
+  assert.match(parentProfileView, /student\.studentDetails/);
+  assert.match(parentProfileView, /student\.guardianDetails/);
+  assert.match(parentProfileView, /student\.schoolName/);
+  assert.match(parentProfileView, /student\.schoolYearName/);
+  assert.match(helper, /\{ label: "School", value: row\.school_name \}/);
+  assert.doesNotMatch(parentProfileView, /profileDetails|parentDetails|profileStats/);
+  assert.doesNotMatch(parentProfileView, /Juan Miguel Santos|Maria Santos|Brentwood Academy of Las Pinas/);
   assert.doesNotMatch(parentProfile, /profileDetails|parentDetails|profileStats/);
   assert.doesNotMatch(parentProfile, /Juan Miguel Santos|Maria Santos|Brentwood Academy of Las Pinas/);
 
   assert.doesNotMatch(parentPortalData, /Juan Miguel Santos|Maria Santos Jr\.|Juan Santos|maria@email\.com|0917-234-5678/);
   assert.match(helper, /JOIN users u ON u\.id = sg\.parent_user_id/);
   assert.match(helper, /JOIN schools sc ON sc\.id = st\.school_id/);
+});
+
+test("parent dashboard routes each linked student to its own protected profile", () => {
+  assert.equal(existsSync(parentSelectedStudentProfilePath), true);
+  const helper = readFileSync(studentRecordsPath, "utf8");
+  const parentDashboard = readFileSync(parentDashboardPath, "utf8");
+  const selectedProfile = readFileSync(parentSelectedStudentProfilePath, "utf8");
+  const parentShell = readFileSync(parentShellPath, "utf8");
+
+  assert.match(helper, /profileHref: `\/parent\/students\/\$\{row\.id\}`/);
+  assert.match(parentDashboard, /href=\{student\.profileHref\}/);
+  assert.match(selectedProfile, /params: Promise<\{ studentId: string \}>/);
+  assert.match(selectedProfile, /await params/);
+  assert.match(selectedProfile, /Number\(studentId\)/);
+  assert.match(selectedProfile, /getParentStudentProfileData\(session\.userId, session\.name, selectedStudentId\)/);
+  assert.match(selectedProfile, /notFound\(\)/);
+  assert.match(parentShell, /pathname\.startsWith\("\/parent\/students\/"\)/);
+  assert.match(parentShell, /Selected student details/);
+});
+
+test("parent student profile helper can read a selected linked student only", () => {
+  const helper = readFileSync(studentRecordsPath, "utf8");
+
+  assert.match(helper, /selectedStudentClause = typeof studentId === "number" \? "AND st\.id = :studentId" : ""/);
+  assert.match(helper, /WHERE sg\.parent_user_id = :parentUserId\s+\$\{selectedStudentClause\}/);
+  assert.match(helper, /typeof studentId === "number" \? \{ parentUserId, studentId \} : \{ parentUserId \}/);
+});
+
+test("parent profile fallback keeps first linked student behavior", () => {
+  const parentProfile = readFileSync(parentStudentProfilePath, "utf8");
+
+  assert.match(parentProfile, /getParentStudentProfileData\(session\.userId, session\.name\)/);
+  assert.match(parentProfile, /data\.student/);
+  assert.match(parentProfile, /StudentProfileEmptyState/);
 });
 
 test("backend checklist tracks completed student and guardian linking slice", () => {

@@ -44,7 +44,7 @@ export default async function ParentDashboardPage() {
           {hasLinkedStudents ? (
             <>
               {data.linkedStudents.map((student) => (
-                <Link key={student.id} href="/parent/student-profile" className="flex items-center justify-between gap-3 border-b border-black/[0.08] px-4 py-4 transition hover:bg-[#f8f8f7] focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 sm:gap-4 sm:px-5">
+                <Link key={student.id} href={student.profileHref} className="flex items-center justify-between gap-3 border-b border-black/[0.08] px-4 py-4 transition hover:bg-[#f8f8f7] focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 sm:gap-4 sm:px-5">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex size-10 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">
                       {student.initials}
