@@ -3,6 +3,9 @@ import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const helperPath = "lib/admin/real-data.ts";
+const adminStudentProfileSelectorPath = "app/admin/(dashboard)/student-profile/admin-student-profile-view.tsx";
+const adminSelectedStudentProfilePath = "app/admin/(dashboard)/students/[studentId]/page.tsx";
+const adminShellPath = "app/admin/_components/admin-shell.tsx";
 const adminPages = [
   "app/admin/(dashboard)/dashboard/page.tsx",
   "app/admin/(dashboard)/tuition/page.tsx",
@@ -23,7 +26,11 @@ test("admin real-data helper reads supported MySQL schema tables with admin scho
   assert.match(helper, /import \{ getResolvedAdminSchoolSetup \} from "@\/lib\/school\/setup";/);
   assert.match(helper, /export async function getAdminDashboardRealData\(adminUserId: number\)/);
   assert.match(helper, /export async function getAdminTuitionPageRealData\(adminUserId: number\)/);
-  assert.match(helper, /export async function getAdminStudentProfileRealData\(adminUserId: number\)/);
+  assert.match(helper, /export async function getAdminStudentProfileRealData\(\s+adminUserId: number,\s+studentId\?: number,/);
+  assert.match(helper, /export type AdminStudentProfileSummary/);
+  assert.match(helper, /getAdminStudentProfileSummaries\(setup\.schoolId, setup\.schoolYearId\)/);
+  assert.match(helper, /selectedStudentClause = typeof studentId === "number" \? "AND st\.id = :studentId" : ""/);
+  assert.match(helper, /profileHref: `\/admin\/students\/\$\{row\.id\}`/);
   assert.match(helper, /const setup = await getResolvedAdminSchoolSetup\(adminUserId\)/);
   assert.doesNotMatch(helper, /FROM admin_profiles ap\s+LEFT JOIN school_years sy ON sy\.school_id = ap\.school_id/);
   assert.match(helper, /school_id = :schoolId|school_id = :schoolId/);
@@ -40,6 +47,29 @@ test("admin real-data helper reads supported MySQL schema tables with admin scho
   assert.match(helper, /FROM store_transactions|JOIN store_transactions/);
   assert.match(helper, /Pending/);
   assert.match(helper, /No payment records yet|No store transactions yet|Wallet backend pending/);
+});
+
+test("admin student profile route lists students and selected route loads exact profile", () => {
+  assert.equal(existsSync(adminStudentProfileSelectorPath), true);
+  assert.equal(existsSync(adminSelectedStudentProfilePath), true);
+  const profilePage = readFileSync("app/admin/(dashboard)/student-profile/page.tsx", "utf8");
+  const selector = readFileSync(adminStudentProfileSelectorPath, "utf8");
+  const selectedProfile = readFileSync(adminSelectedStudentProfilePath, "utf8");
+  const shell = readFileSync(adminShellPath, "utf8");
+
+  assert.match(profilePage, /AdminStudentProfileSelector/);
+  assert.match(profilePage, /data\.students\.length > 0/);
+  assert.doesNotMatch(profilePage, /AdminStudentProfileView/);
+  assert.match(selector, /Choose a student profile/);
+  assert.match(selector, /href=\{student\.profileHref\}/);
+  assert.match(selectedProfile, /params: Promise<\{ studentId: string \}>/);
+  assert.match(selectedProfile, /await params/);
+  assert.match(selectedProfile, /Number\(studentId\)/);
+  assert.match(selectedProfile, /getAdminStudentProfileRealData\(session\.userId, selectedStudentId\)/);
+  assert.match(selectedProfile, /notFound\(\)/);
+  assert.match(selectedProfile, /AdminStudentProfileView/);
+  assert.match(shell, /selectedStudentProfilePath/);
+  assert.match(shell, /item\.href === "\/admin\/student-profile"/);
 });
 
 test("admin pages use real-data helpers instead of prototype dashboard arrays", () => {
@@ -63,7 +93,10 @@ test("admin pages use real-data helpers instead of prototype dashboard arrays", 
 });
 
 test("admin finance pages show empty or pending states when records do not exist", () => {
-  const pageText = adminPages.map((pagePath) => readFileSync(pagePath, "utf8")).join("\n");
+  const pageText = [
+    ...adminPages.map((pagePath) => readFileSync(pagePath, "utf8")),
+    readFileSync(adminStudentProfileSelectorPath, "utf8"),
+  ].join("\n");
 
   assert.match(pageText, /No tuition fee assignments yet/);
   assert.match(pageText, /No payment records yet/);

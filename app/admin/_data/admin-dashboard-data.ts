@@ -85,7 +85,7 @@ export const pageMeta: Record<string, PageMeta> = {
   },
   "/admin/student-profile": {
     title: "Student profile",
-    subtitle: "Juan Miguel Santos - BWA-2025-0312 - Grade 7",
+    subtitle: "Choose or view a real student record",
   },
   "/admin/parents": {
     title: "Parent contacts",

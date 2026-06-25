@@ -93,6 +93,8 @@ test("admin and parent pages use database helpers instead of mock student arrays
   assert.doesNotMatch(adminStudentsPage, /"use client";/);
   assert.match(adminStudentsPage, /getAdminStudentPageData/);
   assert.match(adminStudentsPage, /StudentEnrollmentForm/);
+  assert.match(adminStudentsPage, /href=\{`\/admin\/students\/\$\{row\.id\}`\}/);
+  assert.doesNotMatch(adminStudentsPage, /href="\/admin\/student-profile"/);
   assert.match(adminStudentForm, /createStudentAction/);
   assert.match(adminStudentForm, /<form action=\{createStudentAction\}/);
   assert.doesNotMatch(adminStudentsPage, /studentRows|studentsKpis/);

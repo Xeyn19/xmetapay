@@ -38,7 +38,10 @@ export function AdminShell({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<AdminModalId | null>(null);
-  const meta = pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
+  const selectedStudentProfilePath = /^\/admin\/students\/\d+$/.test(pathname);
+  const meta = selectedStudentProfilePath
+    ? pageMeta["/admin/student-profile"]
+    : pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
   const subtitle = dashboardSubtitle(meta.subtitle, schoolContext);
   const schoolYear = schoolContext.activeSchoolYear?.name ?? "School year pending";
   const setupIncomplete = !schoolContext.schoolId
@@ -124,7 +127,9 @@ export function AdminShell({
               </div>
               <div className="grid gap-0.5">
                 {section.items.map((item) => {
-                  const active = pathname === item.href || (pathname === "/admin" && item.href === "/admin/dashboard");
+                  const active = pathname === item.href
+                    || (pathname === "/admin" && item.href === "/admin/dashboard")
+                    || (selectedStudentProfilePath && item.href === "/admin/student-profile");
                   const Icon = item.icon;
                   return (
                     <Link
