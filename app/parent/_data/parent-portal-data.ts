@@ -47,7 +47,7 @@ export const parentPageMeta: Record<string, ParentPageMeta> = {
   },
   "/parent/student-profile": {
     title: "Student profile",
-    subtitle: "Linked student details",
+    subtitle: "Choose a linked student profile",
   },
   "/parent/fees": {
     title: "Fee summary",
