@@ -44,8 +44,8 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["adminName", " Maria Dela Cruz "],
     ["schoolName", " Brentwood Academy "],
     ["email", "REGISTRAR@SCHOOL.EDU.PH"],
-    ["phone", "0917 000 0000"],
-    ["role", "Finance officer"],
+    ["phone", ""],
+    ["staffRole", "Finance officer"],
     ["password", "SchoolPay#123"],
     ["confirmPassword", "SchoolPay#123"],
   ]));
@@ -53,12 +53,13 @@ test("auth validation normalizes role-specific registration payloads", async () 
   assert.equal(admin.ok, true);
   assert.equal(admin.data.name, "Maria Dela Cruz");
   assert.equal(admin.data.email, "registrar@school.edu.ph");
+  assert.equal(admin.data.phone, null);
   assert.equal(admin.data.profile.staffRole, "finance_officer");
 
   const parent = parseRegisterForm("parent", new Map([
     ["guardianName", " Maria Santos "],
     ["email", "PARENT@EMAIL.COM"],
-    ["phone", "0917 000 0000"],
+    ["phone", ""],
     ["studentName", "Juan Miguel Santos"],
     ["studentReference", "BWA-001"],
     ["relationship", "Mother"],
@@ -68,7 +69,22 @@ test("auth validation normalizes role-specific registration payloads", async () 
 
   assert.equal(parent.ok, true);
   assert.equal(parent.data.name, "Maria Santos");
+  assert.equal(parent.data.phone, null);
   assert.equal(parent.data.profile.relationship, "mother");
+
+  const adminPhoneLogin = parseLoginForm("admin", new Map([
+    ["email", " 0917 000 0000 "],
+    ["password", "SchoolPay#123"],
+  ]));
+
+  assert.deepEqual(adminPhoneLogin, {
+    ok: true,
+    data: {
+      role: "admin",
+      identifier: "0917 000 0000",
+      password: "SchoolPay#123",
+    },
+  });
 
   const login = parseLoginForm("parent", new Map([
     ["identifier", " PARENT@EMAIL.COM "],

@@ -7,7 +7,7 @@ export default function ParentRegisterPage() {
         portal="parent"
         mode="register"
         title="Create parent account"
-        subtitle="Link your guardian profile to a student record for this UI prototype."
+        subtitle="Link your guardian profile to an existing student record from the school."
         fields={[
           {
             label: "Guardian name",
@@ -25,6 +25,7 @@ export default function ParentRegisterPage() {
             name: "phone",
             type: "tel",
             placeholder: "0917 000 0000",
+            required: false,
           },
           {
             label: "Student name",
