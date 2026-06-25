@@ -24,13 +24,14 @@ export function ParentShell({
   const logout = logoutAction.bind(null, "parent");
 
   return (
-    <div className="min-h-[100svh] bg-[#f8f8f7] text-[#1a1a1a]">
+    <div className="min-h-[100svh] overflow-x-hidden bg-[#f8f8f7] text-[#1a1a1a]">
       {!open ? (
         <button
           type="button"
           onClick={() => setOpen(true)}
           className="fixed left-3 top-3 z-[120] flex size-11 items-center justify-center rounded-[10px] bg-[#e64a19] text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30 lg:hidden"
           aria-label="Open parent menu"
+          aria-controls="parent-sidebar"
           aria-expanded={open}
         >
           <Menu className="size-5" />
@@ -41,9 +42,14 @@ export function ParentShell({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[100] flex w-60 flex-col border-r border-black/[0.08] bg-white transition-transform duration-200",
+          "fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col border-r border-black/[0.08] bg-white transition-transform duration-200",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
+        id="parent-sidebar"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!open}
+        aria-label="Parent navigation"
       >
         <div className="border-b border-black/[0.08] px-[18px] pb-4 pt-5">
           <div className="mb-2 flex items-center gap-2.5">
@@ -69,7 +75,7 @@ export function ParentShell({
               {context.relationshipLabel} - {context.contactLine}
             </div>
           </div>
-          <button type="button" className="flex size-11 items-center justify-center rounded-md text-[#6b6b6b] transition hover:bg-white/60 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu">
+          <button type="button" className="flex size-11 items-center justify-center rounded-md text-[#6b6b6b] transition hover:bg-white/60 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu" aria-controls="parent-sidebar">
             <X className="size-4" />
           </button>
         </div>
@@ -125,20 +131,20 @@ export function ParentShell({
         </div>
       </aside>
 
-      <div className="min-h-[100svh] lg:pl-60">
-        <header className="sticky top-0 z-50 flex flex-col gap-3 border-b border-black/[0.08] bg-white px-4 py-3 pl-16 sm:flex-row sm:items-center sm:justify-between lg:px-7 lg:pl-7">
-          <div className="min-w-0">
+      <div className="min-h-[100svh] min-w-0 max-w-full lg:pl-60">
+        <header className="sticky top-0 z-50 flex min-w-0 max-w-full flex-col gap-3 border-b border-black/[0.08] bg-white px-4 py-3 pl-16 sm:flex-row sm:items-center sm:justify-between lg:px-7 lg:pl-7">
+          <div className="min-w-0 max-w-full">
             <h1 className="text-[17px] font-semibold leading-6 text-[#1a1a1a]">{meta.title}</h1>
             <p className="mt-0.5 text-xs leading-5 text-[#6b6b6b]">{meta.subtitle}</p>
           </div>
-          <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:w-auto">
+          <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:w-auto">
             <Link href="/parent/pay-tuition" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30">
               <Wallet className="size-4" />
               Pay fees
             </Link>
           </div>
         </header>
-        <main className="px-4 py-5 sm:py-6 lg:px-7 lg:py-7">{children}</main>
+        <main className="min-w-0 max-w-full px-4 py-5 sm:py-6 lg:px-7 lg:py-7">{children}</main>
       </div>
     </div>
   );

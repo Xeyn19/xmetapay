@@ -59,13 +59,14 @@ export function AdminShell({
   const closeModal = () => setActiveModal(null);
 
   return (
-    <div className="min-h-[100svh] bg-[#f7f8fa] text-[#0f1117]">
+    <div className="min-h-[100svh] overflow-x-hidden bg-[#f7f8fa] text-[#0f1117]">
       {!sidebarOpen ? (
         <button
           type="button"
           onClick={() => setSidebarOpen(true)}
           className="fixed left-3 top-3 z-[120] flex size-11 items-center justify-center rounded-lg bg-[#e64a19] text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30 lg:hidden"
           aria-label="Open admin menu"
+          aria-controls="admin-sidebar"
           aria-expanded={sidebarOpen}
         >
           <Menu className="size-4.5" />
@@ -83,9 +84,14 @@ export function AdminShell({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[100] flex w-[232px] flex-col bg-[#0f1117] text-white transition-transform duration-200",
+          "fixed inset-y-0 left-0 z-[100] flex w-[232px] max-w-[calc(100vw-24px)] flex-col bg-[#0f1117] text-white transition-transform duration-200",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
+        id="admin-sidebar"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!sidebarOpen}
+        aria-label="Admin navigation"
       >
         <div className="border-b border-white/[0.07] px-4 pb-3.5 pt-[18px]">
           <div className="mb-1.5 flex items-center gap-2.5">
@@ -114,6 +120,7 @@ export function AdminShell({
             onClick={() => setSidebarOpen(false)}
             className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-md text-white/55 transition hover:bg-white/10 focus:outline-none focus-visible:ring-3 focus-visible:ring-white/20 lg:hidden"
             aria-label="Close admin menu"
+            aria-controls="admin-sidebar"
           >
             <X className="size-4" />
           </button>
@@ -173,9 +180,9 @@ export function AdminShell({
         </div>
       </aside>
 
-      <div className="min-h-[100svh] lg:pl-[232px]">
-        <header className="sticky top-0 z-50 flex flex-col gap-3 border-b border-black/[0.07] bg-white px-4 py-3 pl-16 md:flex-row md:items-center md:justify-between lg:px-6 lg:pl-6">
-          <div className="min-w-0">
+      <div className="min-h-[100svh] min-w-0 max-w-full lg:pl-[232px]">
+        <header className="sticky top-0 z-50 flex min-w-0 max-w-full flex-col gap-3 border-b border-black/[0.07] bg-white px-4 py-3 pl-16 md:flex-row md:items-center md:justify-between lg:px-6 lg:pl-6">
+          <div className="min-w-0 max-w-full">
             <h1 className="text-base font-bold leading-6 text-[#0f1117]">{meta.title}</h1>
             <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{subtitle}</p>
             {!schoolContext.databaseReady && schoolContext.warning ? (
@@ -200,7 +207,7 @@ export function AdminShell({
               </div>
             ) : null}
           </div>
-          <div className="grid w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
+          <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
             <AdminButton data-modal-trigger="reminder" onClick={() => openModal("reminder")}><Send className="size-4" />Send reminders</AdminButton>
             {canRecordPayments ? (
               <AdminButton data-modal-trigger="payment" onClick={() => openModal("payment")}><Plus className="size-4" />Record payment</AdminButton>
@@ -217,7 +224,7 @@ export function AdminShell({
           </div>
         </header>
 
-        <main className="px-4 py-5 sm:py-6 lg:px-6">{children}</main>
+        <main className="min-w-0 max-w-full px-4 py-5 sm:py-6 lg:px-6">{children}</main>
       </div>
 
       <AdminModals activeModal={activeModal} onClose={closeModal} />
