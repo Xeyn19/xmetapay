@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
+const testCredentialInput = "not-a-real-test-login-value";
+
 test("auth schema creates role-scoped users and profile indexes for MySQL", () => {
   assert.equal(existsSync("database/auth-schema.sql"), true);
   const sql = readFileSync("database/auth-schema.sql", "utf8");
@@ -37,11 +39,11 @@ test("auth schema creates role-scoped users and profile indexes for MySQL", () =
 test("password helper hashes without storing the raw password", async () => {
   const { hashPassword, verifyPassword } = await import("../lib/auth/password.mjs");
 
-  const hash = await hashPassword("SchoolPay#123");
+  const hash = await hashPassword(testCredentialInput);
 
-  assert.notEqual(hash, "SchoolPay#123");
+  assert.notEqual(hash, testCredentialInput);
   assert.match(hash, /^scrypt\$/);
-  assert.equal(await verifyPassword("SchoolPay#123", hash), true);
+  assert.equal(await verifyPassword(testCredentialInput, hash), true);
   assert.equal(await verifyPassword("wrong-password", hash), false);
 });
 
@@ -54,8 +56,8 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["email", "REGISTRAR@SCHOOL.EDU.PH"],
     ["phone", ""],
     ["staffRole", "Finance officer"],
-    ["password", "SchoolPay#123"],
-    ["confirmPassword", "SchoolPay#123"],
+    ["password", testCredentialInput],
+    ["confirmPassword", testCredentialInput],
   ]));
 
   assert.equal(admin.ok, true);
@@ -71,8 +73,8 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["studentName", "Juan Miguel Santos"],
     ["studentReference", "BWA-001"],
     ["relationship", "Mother"],
-    ["password", "SchoolPay#123"],
-    ["confirmPassword", "SchoolPay#123"],
+    ["password", testCredentialInput],
+    ["confirmPassword", testCredentialInput],
   ]));
 
   assert.equal(parent.ok, true);
@@ -82,7 +84,7 @@ test("auth validation normalizes role-specific registration payloads", async () 
 
   const adminPhoneLogin = parseLoginForm("admin", new Map([
     ["email", " 0917 000 0000 "],
-    ["password", "SchoolPay#123"],
+    ["password", testCredentialInput],
   ]));
 
   assert.deepEqual(adminPhoneLogin, {
@@ -90,13 +92,13 @@ test("auth validation normalizes role-specific registration payloads", async () 
     data: {
       role: "admin",
       identifier: "0917 000 0000",
-      password: "SchoolPay#123",
+      password: testCredentialInput,
     },
   });
 
   const login = parseLoginForm("parent", new Map([
     ["identifier", " PARENT@EMAIL.COM "],
-    ["password", "SchoolPay#123"],
+    ["password", testCredentialInput],
   ]));
 
   assert.deepEqual(login, {
@@ -104,7 +106,7 @@ test("auth validation normalizes role-specific registration payloads", async () 
     data: {
       role: "parent",
       identifier: "parent@email.com",
-      password: "SchoolPay#123",
+      password: testCredentialInput,
     },
   });
 });
