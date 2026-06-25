@@ -1,6 +1,8 @@
-import { expect, test } from "@playwright/test";
-import { createHmac } from "node:crypto";
+import { expect, test, type BrowserContext } from "@playwright/test";
+import { createHmac, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
+import mysql from "mysql2/promise";
+import type { RowDataPacket } from "mysql2/promise";
 
 test.describe("XMETA Pay portal entry", () => {
   test("home page shows both portal choices", async ({ page }) => {
@@ -54,7 +56,7 @@ test.describe("XMETA Pay login flows", () => {
   test("admin login form handles invalid or unavailable credentials without query-string passwords", async ({ page }) => {
     await page.goto("/admin/login");
 
-    await page.getByLabel("Work email").fill("missing-admin@school.edu.ph");
+    await page.getByLabel("Email or phone").fill("missing-admin@school.edu.ph");
     await page.locator('input[name="password"]').fill("demo-password");
     await page.getByRole("button", { name: "Sign in" }).click();
 
@@ -80,17 +82,7 @@ test.describe("XMETA Pay login flows", () => {
 
 test.describe("XMETA Pay dashboard smoke tests", () => {
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      {
-        name: "xmetapay_session",
-        value: signedSessionCookie("admin"),
-        domain: "localhost",
-        path: "/",
-        httpOnly: true,
-        sameSite: "Lax",
-        expires: Math.floor(Date.now() / 1000) + 60 * 60,
-      },
-    ]);
+    await addDatabaseSessionCookie(context, "admin");
   });
 
   test("important admin dashboard routes render without crashing", async ({
@@ -129,17 +121,7 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
 
 test.describe("XMETA Pay parent portal smoke tests", () => {
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      {
-        name: "xmetapay_session",
-        value: signedSessionCookie("parent"),
-        domain: "localhost",
-        path: "/",
-        httpOnly: true,
-        sameSite: "Lax",
-        expires: Math.floor(Date.now() / 1000) + 60 * 60,
-      },
-    ]);
+    await addDatabaseSessionCookie(context, "parent");
   });
 
   test("important parent portal routes render without crashing", async ({
@@ -188,19 +170,98 @@ test.describe("XMETA Pay dashboard protection", () => {
   });
 });
 
-function signedSessionCookie(role: "admin" | "parent") {
-  const payload = {
-    userId: role === "admin" ? 1 : 2,
-    role,
-    name: role === "admin" ? "Test Admin" : "Test Parent",
-    expiresAt: Date.now() + 60 * 60 * 1000,
-  };
-  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = createHmac("sha256", testSessionSecret())
-    .update(body)
-    .digest("base64url");
+async function addDatabaseSessionCookie(context: BrowserContext, role: "admin" | "parent") {
+  const userId = await ensureE2EUser(role);
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = createHmac("sha256", testSessionSecret()).update(token).digest("hex");
+  const expires = Math.floor(Date.now() / 1000) + 60 * 60;
+  const connection = await mysql.createConnection(databaseConfig());
 
-  return `${body}.${signature}`;
+  try {
+    await connection.execute(
+      `INSERT INTO auth_sessions (user_id, role, token_hash, expires_at)
+       VALUES (:userId, :role, :tokenHash, FROM_UNIXTIME(:expires))`,
+      { userId, role, tokenHash, expires },
+    );
+  } finally {
+    await connection.end();
+  }
+
+  await context.addCookies([
+    {
+      name: "xmetapay_session",
+      value: token,
+      domain: "localhost",
+      path: "/",
+      httpOnly: true,
+      sameSite: "Lax",
+      expires,
+    },
+  ]);
+}
+
+async function ensureE2EUser(role: "admin" | "parent") {
+  const connection = await mysql.createConnection(databaseConfig());
+  const profileName = role === "admin" ? "E2E Admin" : "E2E Parent";
+  const email = role === "admin" ? "e2e-admin@xmetapay.test" : "e2e-parent@xmetapay.test";
+
+  try {
+    await connection.execute(
+      `INSERT INTO users (role, name, email, phone, password_hash, status)
+       VALUES (:role, :name, :email, NULL, :passwordHash, 'active')
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         status = 'active'`,
+      {
+        role,
+        name: profileName,
+        email,
+        passwordHash: "scrypt$e2e$0",
+      },
+    );
+
+    const [rows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM users WHERE role = :role AND email = :email LIMIT 1",
+      { role, email },
+    );
+    const userId = rows[0].id;
+
+    if (role === "admin") {
+      await connection.execute(
+        `INSERT INTO admin_profiles (user_id, school_name, staff_role)
+         VALUES (:userId, 'E2E Test School', 'school_administrator')
+         ON DUPLICATE KEY UPDATE
+           school_name = VALUES(school_name),
+           staff_role = VALUES(staff_role)`,
+        { userId },
+      );
+    } else {
+      await connection.execute(
+        `INSERT INTO parent_profiles (user_id, student_name, student_reference, relationship)
+         VALUES (:userId, 'E2E Student', 'E2E-001', 'guardian')
+         ON DUPLICATE KEY UPDATE
+           student_name = VALUES(student_name),
+           student_reference = VALUES(student_reference),
+           relationship = VALUES(relationship)`,
+        { userId },
+      );
+    }
+
+    return userId;
+  } finally {
+    await connection.end();
+  }
+}
+
+function databaseConfig() {
+  return {
+    host: process.env.MYSQL_HOST ?? "127.0.0.1",
+    port: Number(process.env.MYSQL_PORT ?? "3306"),
+    database: process.env.MYSQL_DATABASE ?? "xmetapay_db",
+    user: process.env.MYSQL_USER ?? "root",
+    password: process.env.MYSQL_PASSWORD ?? "",
+    namedPlaceholders: true,
+  };
 }
 
 function testSessionSecret() {

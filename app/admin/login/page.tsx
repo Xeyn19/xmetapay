@@ -1,5 +1,6 @@
 import { FlashToast } from "@/app/_components/flash-toast";
-import { consumeAuthFlashToast } from "@/lib/auth/session";
+import { consumeAuthFlashToast, getSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 import { AuthForm, PortalAuthLayout } from "../../_components/auth-ui";
 
 export default async function AdminLoginPage({
@@ -8,6 +9,12 @@ export default async function AdminLoginPage({
   searchParams: Promise<{ signedOut?: string }>;
 }) {
   const { signedOut } = await searchParams;
+  const session = await getSession();
+
+  if (session?.role === "admin") {
+    redirect("/admin/dashboard");
+  }
+
   const toast = signedOut === "1"
     ? {
         role: "admin" as const,
