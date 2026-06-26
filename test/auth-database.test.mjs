@@ -70,7 +70,9 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["guardianName", " Maria Santos "],
     ["email", "PARENT@EMAIL.COM"],
     ["phone", ""],
-    ["studentName", "Juan Miguel Santos"],
+    ["studentFirstName", "Juan"],
+    ["studentMiddleName", "Miguel"],
+    ["studentLastName", "Santos"],
     ["studentReference", "BWA-001"],
     ["relationship", "Mother"],
     ["password", testCredentialInput],
@@ -80,7 +82,40 @@ test("auth validation normalizes role-specific registration payloads", async () 
   assert.equal(parent.ok, true);
   assert.equal(parent.data.name, "Maria Santos");
   assert.equal(parent.data.phone, null);
+  assert.equal(parent.data.profile.studentName, "Juan Miguel Santos");
   assert.equal(parent.data.profile.relationship, "mother");
+
+  const parentWithoutMiddleName = parseRegisterForm("parent", new Map([
+    ["guardianName", " Maria Santos "],
+    ["email", "parent2@email.com"],
+    ["phone", ""],
+    ["studentFirstName", "Juan"],
+    ["studentMiddleName", ""],
+    ["studentLastName", "Santos"],
+    ["studentReference", "BWA-002"],
+    ["relationship", "Guardian"],
+    ["password", testCredentialInput],
+    ["confirmPassword", testCredentialInput],
+  ]));
+
+  assert.equal(parentWithoutMiddleName.ok, true);
+  assert.equal(parentWithoutMiddleName.data.profile.studentName, "Juan Santos");
+
+  const parentMissingLastName = parseRegisterForm("parent", new Map([
+    ["guardianName", " Maria Santos "],
+    ["email", "parent3@email.com"],
+    ["phone", ""],
+    ["studentFirstName", "Juan"],
+    ["studentMiddleName", "Miguel"],
+    ["studentLastName", ""],
+    ["studentReference", "BWA-003"],
+    ["relationship", "Mother"],
+    ["password", testCredentialInput],
+    ["confirmPassword", testCredentialInput],
+  ]));
+
+  assert.equal(parentMissingLastName.ok, false);
+  assert.equal(parentMissingLastName.errors.studentLastName, "Student last name is required.");
 
   const adminPhoneLogin = parseLoginForm("admin", new Map([
     ["email", " 0917 000 0000 "],

@@ -57,7 +57,7 @@ School setup is shared across staff accounts. If a registrar or finance officer 
 
 ### `parent_profiles`
 
-This stores parent-side profile details for users with the `parent` role. It records the first student name, student reference, and relationship captured during parent registration.
+This stores parent-side profile details for users with the `parent` role. Parent registration asks for the student's first name, optional middle name, and last name so it matches the admin enrollment form; those fields are combined into `parent_profiles.student_name` for pending-link display. Student access is still linked by `student_reference`, not by matching the typed name.
 
 ## School Setup Tables
 
