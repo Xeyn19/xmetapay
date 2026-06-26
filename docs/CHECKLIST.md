@@ -16,12 +16,14 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Protected admin and parent dashboards redirect correctly.
 - [x] Admin/school staff roles are documented and enforced for key pages/actions.
 - [x] Local database environment file is ignored by Git.
-- [ ] Dashboard pages still use mostly static/mock data.
-- [ ] Full student, fee, payment, wallet, and report tables are not implemented yet.
+- [x] Auth uses database-backed `auth_sessions` with hashed tokens and logout revocation.
+- [x] Admin dashboard pages use MySQL-backed reads where tables exist, with honest pending/empty states where feature data is not created yet.
+- [x] Student, enrollment, and guardian-linking backend is implemented.
+- [ ] Fee assignment, payment creation, receipt generation, wallet top-up, store spending, notification sending, and export workflows are not implemented yet.
 
-## Best Next Step
+## Completed Foundation Step
 
-Do this first before connecting dashboards to real data:
+This was the first backend milestone before connecting dashboards to real data:
 
 - [x] Create a new reviewed SQL file for the full MVP schema: `database/full-schema-v1.sql`.
 - [x] Copy the planned tables from `DATABASE_SCHEMA_PLAN.md` into the new SQL file.
@@ -95,7 +97,8 @@ Done when: a parent can record a local test payment and both portals show the re
 - [ ] Create one wallet per student.
 - [ ] Record local allowance top-ups.
 - [ ] Add `store_merchants` and `store_transactions` for canteen/store spending.
-- [ ] Replace allowance and store dashboard mock data with database reads.
+- [x] Admin allowance and store pages read database tables and show pending/empty states when no rows exist.
+- [ ] Add wallet top-up and store purchase write flows.
 - [ ] Add report queries for tuition, collections, wallet, and store summaries.
 - [ ] Add `notification_logs` after reminders are ready.
 

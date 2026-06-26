@@ -10,7 +10,7 @@ The database is split into two SQL files so the current authentication work stay
 
 1. `database/auth-schema.sql`
    - Creates the `xmetapay_db` database.
-   - Creates shared authentication tables: `users`, `admin_profiles`, and `parent_profiles`.
+   - Creates shared authentication tables: `users`, `auth_sessions`, `admin_profiles`, and `parent_profiles`.
    - Must be imported first because the full schema references `users.id`.
 2. `database/full-schema-v1.sql`
    - Adds the full MVP database layer.
@@ -35,6 +35,17 @@ Important behavior:
 - Unique email and phone indexes are scoped by role, so an email or phone can be handled safely per portal.
 - `status` supports active, pending, and disabled accounts.
 - Other tables reference `users.id` when a parent pays, receives notifications, or links to a student.
+
+### `auth_sessions`
+
+This stores server-managed login sessions. The browser receives a random `xmetapay_session` cookie token, while MySQL stores only a hashed token in `auth_sessions.token_hash`.
+
+Important behavior:
+
+- Sessions can expire through `expires_at`.
+- Logout revokes the active session by setting `revoked_at`.
+- Protected pages only accept sessions that are not expired, not revoked, and belong to an active user with the matching portal role.
+- `last_used_at` updates when a valid session is read.
 
 ### `admin_profiles`
 

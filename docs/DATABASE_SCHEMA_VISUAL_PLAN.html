@@ -297,8 +297,8 @@
           <tbody>
             <tr>
               <td>Auth</td>
-              <td><code>users</code>, <code>admin_profiles</code>, <code>parent_profiles</code></td>
-              <td>Login, registration, role redirects, and account status.</td>
+              <td><code>users</code>, <code>auth_sessions</code>, <code>admin_profiles</code>, <code>parent_profiles</code></td>
+              <td>Login, registration, DB-backed sessions, role redirects, and account status.</td>
             </tr>
             <tr>
               <td>School setup</td>
@@ -357,6 +357,7 @@
           <pre class="mermaid">
 erDiagram
   USERS ||--o| ADMIN_PROFILES : "has admin profile"
+  USERS ||--o{ AUTH_SESSIONS : "has sessions"
   USERS ||--o| PARENT_PROFILES : "has parent profile"
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
@@ -409,6 +410,15 @@ erDiagram
     varchar phone
     varchar password_hash
     enum status
+  }
+
+  AUTH_SESSIONS {
+    bigint id PK
+    bigint user_id FK
+    enum role
+    char token_hash
+    datetime expires_at
+    datetime revoked_at
   }
 
   ADMIN_PROFILES {
@@ -593,14 +603,16 @@ erDiagram
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Admin opens school registration"] --> B["Submit admin user details and school name"]
-  B --> C["Create user with role admin"]
-  C --> D["Create admin profile"]
-  D --> E["Create or link school record"]
-  E --> F["Create active school year"]
-  F --> G["Create grade levels"]
-  G --> H["Create sections"]
-  H --> I["Admin lands on dashboard"]
+  A["Admin opens /admin/register"] --> B["Create user and admin profile only"]
+  B --> C["Admin lands on dashboard"]
+  C --> D{"School setup complete?"}
+  D -->|Yes| E["Use linked school context"]
+  D -->|No| F{"staff_role is school_administrator?"}
+  F -->|No| G["Ask a school administrator to complete setup"]
+  F -->|Yes| H["Open Set up school records"]
+  H --> I["Save school, active year, grade levels, and sections"]
+  I --> J["Link same-school admin profiles to schools.id"]
+  J --> E
           </pre>
         </div>
 
@@ -615,12 +627,12 @@ flowchart TD
   B --> C{"Student exists?"}
   C -->|No| D["Create student record"]
   C -->|Yes| E["Open existing student record"]
-  D --> F["Link parent account through student_guardians"]
+  D --> F["Create enrollment for active school year"]
   E --> F
-  F --> G["Create enrollment for active school year"]
-  G --> H["Assign grade level and section"]
-  H --> I["Assign tuition and other fees"]
-  I --> J["Student appears in admin lists and parent portal"]
+  F --> G["Assign grade level and section"]
+  G --> H["Student appears in admin student table"]
+  H --> I["Student profile selector links to /admin/students/studentId"]
+  H --> J["Parent can link later using student_reference"]
           </pre>
         </div>
 
