@@ -101,7 +101,7 @@ One parent profile per parent user.
 | --- | --- |
 | `id` | Primary key |
 | `user_id` | Links to `users.id` |
-| `student_name` | First student name captured during registration |
+| `student_name` | Combined student first/middle/last name captured during parent registration for pending-link display |
 | `student_reference` | Student reference captured during registration |
 | `relationship` | Mother, father, or guardian |
 

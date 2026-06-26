@@ -233,7 +233,7 @@ During registration, the parent submits a `student_reference`. If exactly one ma
 
 ```mermaid
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Submit guardian details, relationship, student name, student_reference, password"]
+  A["Parent opens /parent/register"] --> B["Submit guardian details, relationship, student first/middle/last name, student_reference, password"]
   B --> C["Validate required fields"]
   C --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]

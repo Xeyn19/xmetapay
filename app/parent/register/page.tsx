@@ -28,9 +28,20 @@ export default function ParentRegisterPage() {
             required: false,
           },
           {
-            label: "Student name",
-            name: "studentName",
-            placeholder: "Juan Miguel Santos",
+            label: "Student first name",
+            name: "studentFirstName",
+            placeholder: "Juan Miguel",
+          },
+          {
+            label: "Student middle name",
+            name: "studentMiddleName",
+            placeholder: "Optional",
+            required: false,
+          },
+          {
+            label: "Student last name",
+            name: "studentLastName",
+            placeholder: "Santos",
           },
           {
             label: "Student ID or reference",

@@ -36,6 +36,10 @@ test("auth pages show fields that match the role-specific schema", () => {
   assert.doesNotMatch(adminRegisterPage, /name: "role"/);
   assert.match(adminRegisterPage, /name: "phone"[\s\S]*required: false/);
   assert.match(parentRegisterPage, /name: "phone"[\s\S]*required: false/);
+  assert.match(parentRegisterPage, /name: "studentFirstName"/);
+  assert.match(parentRegisterPage, /name: "studentMiddleName"[\s\S]*required: false/);
+  assert.match(parentRegisterPage, /name: "studentLastName"/);
+  assert.doesNotMatch(parentRegisterPage, /name: "studentName"/);
   assert.doesNotMatch(parentRegisterPage, /UI prototype/);
   assert.doesNotMatch(parentLoginPage, /enrollment/);
 });
