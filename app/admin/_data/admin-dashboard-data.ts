@@ -113,7 +113,7 @@ export const navSections: NavSection[] = [
   {
     label: "Finance",
     items: [
-      { label: "Tuition report", href: "/admin/tuition", icon: Receipt, badge: "41" },
+      { label: "Tuition report", href: "/admin/tuition", icon: Receipt },
       { label: "Collections log", href: "/admin/collections", icon: CreditCard },
       { label: "Other fees", href: "/admin/other-fees", icon: ClipboardList },
     ],

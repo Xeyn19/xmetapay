@@ -523,7 +523,7 @@ function parentMetrics(linkedStudents: ParentLinkedStudent[]): ParentDashboardDa
       note: linkedStudents.length > 0 ? "Database-backed guardian links" : "Link a student reference",
       accent: true,
     },
-    { label: "Fee records", value: "Next", note: "Phase 4 will add balances", tone: "blue" },
+    { label: "Fee records", value: "Ready", note: "Assigned balances from school records", tone: "blue" },
     { label: "Payments", value: "Next", note: "Phase 5 will add receipts", tone: "green" },
     { label: "Wallets", value: "Next", note: "Phase 6 will add allowance", tone: "orange" },
   ];

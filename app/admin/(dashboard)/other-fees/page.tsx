@@ -3,29 +3,39 @@ import { ClipboardList, Download, Plus } from "lucide-react";
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminOtherFeesPageRealData } from "@/lib/admin/real-data";
+import { getAdminFeeSetupData } from "@/lib/fees/records";
+import { FeeManagementForms } from "@/app/admin/fees/fee-management-forms";
 
 import { AdminButton, AlertBanner, DashboardCard, KpiCard, KpiGrid, StatusPill } from "../../_components/admin-ui";
 
 export default async function OtherFeesPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/other-fees");
-  const data = await getAdminOtherFeesPageRealData(session.userId);
+  const [data, feeSetup] = await Promise.all([
+    getAdminOtherFeesPageRealData(session.userId),
+    getAdminFeeSetupData(session.userId, "other"),
+  ]);
 
   return (
     <>
       {data.warning ? <AlertBanner tone="warn" icon={ClipboardList}>{data.warning}</AlertBanner> : null}
+      {feeSetup.warning ? <AlertBanner tone="warn" icon={ClipboardList}>{feeSetup.warning}</AlertBanner> : null}
       <KpiGrid>
         {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </KpiGrid>
 
+      <DashboardCard title={`Other fee setup - ${feeSetup.activeSchoolYearName ?? "School year pending"}`} icon={ClipboardList} className="mb-[18px]">
+        <FeeManagementForms category="other" redirectPath="/admin/other-fees" data={feeSetup} />
+      </DashboardCard>
+
       <DashboardCard
-        title="Other school fees - SY 2025-2026"
+        title={`Other school fees - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
         icon={ClipboardList}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <AdminButton tone="dark" disabled><Plus className="size-4" />Add fee type pending</AdminButton>
+            <AdminButton tone="dark" disabled><Plus className="size-4" />Bulk setup pending</AdminButton>
             <AdminButton disabled><Download className="size-4" />Export pending</AdminButton>
           </div>
         }

@@ -1,8 +1,6 @@
 import {
-  BookOpen,
   Bus,
   CreditCard,
-  FileText,
   GraduationCap,
   History,
   Home,
@@ -51,7 +49,7 @@ export const parentPageMeta: Record<string, ParentPageMeta> = {
   },
   "/parent/fees": {
     title: "Fee summary",
-    subtitle: "Fee backend pending",
+    subtitle: "Assigned balances from school records",
   },
   "/parent/pay-tuition": {
     title: "Pay tuition & fees",
@@ -97,7 +95,7 @@ export const parentNavSections: ParentNavSection[] = [
 export const dashboardMetrics: ParentMetric[] = [
   { label: "Students enrolled", value: "0", note: "Use linked student records", accent: true },
   { label: "Paid this month", value: "Pending", note: "Payment backend pending", tone: "green" },
-  { label: "Outstanding balance", value: "Pending", note: "Fee backend pending", tone: "red" },
+  { label: "Outstanding balance", value: "Pending", note: "Assigned fees appear on the fee summary", tone: "red" },
   { label: "Wallet balances", value: "Pending", note: "Wallet backend pending" },
 ];
 
@@ -117,26 +115,18 @@ export const children = [
 ];
 
 export const outstandingFees = [
-  { icon: Receipt, title: "Fee backend pending", desc: "Student fee assignments will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const },
-  { icon: Bus, title: "Other fees pending", desc: "Transportation or activity fees will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const },
-  { icon: GraduationCap, title: "Tuition balance pending", desc: "Tuition balances will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const },
+  { icon: Receipt, title: "Fee records ready", desc: "Open balances appear on the fee summary page", amount: "View summary", status: "Ready", tone: "blue" as const },
+  { icon: Bus, title: "Other fees", desc: "Assigned school fees appear after finance setup", amount: "View summary", status: "Ready", tone: "blue" as const },
+  { icon: GraduationCap, title: "Tuition balances", desc: "Assigned tuition appears after finance setup", amount: "View summary", status: "Ready", tone: "blue" as const },
 ];
 
 export const recentActivity = [
   ["Pending", "Linked student", "Payment and wallet activity pending", "-", "Backend", "Pending"],
 ];
 
-export const feeSummary = [
-  { title: "Tuition fees", desc: "Student fee assignments will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const, icon: Receipt },
-  { title: "Other school fees", desc: "Activity, supply, and other fees will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const, icon: FileText },
-  { title: "Transportation or trips", desc: "Optional fees will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const, icon: Bus },
-  { title: "Books and supplies", desc: "Assigned balances will appear after Phase 4", amount: "Pending", status: "Pending", tone: "amber" as const, icon: BookOpen },
-  { title: "Uniforms", desc: "Paid records will appear after Phase 5", amount: "Pending", status: "Pending", tone: "amber" as const, icon: GraduationCap },
-];
-
 export const payableFees = [
-  { id: "tuition", title: "Tuition payment", desc: "Fee balances will load from MySQL after Phase 4", amount: 0, defaultSelected: false },
-  { id: "other-fees", title: "Other school fees", desc: "Assigned fees will load from MySQL after Phase 4", amount: 0, defaultSelected: false },
+  { id: "tuition", title: "Tuition payment", desc: "Payment recording will connect in Phase 5", amount: 0, defaultSelected: false },
+  { id: "other-fees", title: "Other school fees", desc: "Payment recording will connect in Phase 5", amount: 0, defaultSelected: false },
 ];
 
 export const paymentMethods = [

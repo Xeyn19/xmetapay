@@ -3,6 +3,8 @@ import { Calculator, ClipboardList, Download, Receipt, Send } from "lucide-react
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminTuitionPageRealData } from "@/lib/admin/real-data";
+import { getAdminFeeSetupData } from "@/lib/fees/records";
+import { FeeManagementForms } from "@/app/admin/fees/fee-management-forms";
 
 import {
   AdminButton,
@@ -18,19 +20,27 @@ import {
 export default async function TuitionPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/tuition");
-  const data = await getAdminTuitionPageRealData(session.userId);
+  const [data, feeSetup] = await Promise.all([
+    getAdminTuitionPageRealData(session.userId),
+    getAdminFeeSetupData(session.userId, "tuition"),
+  ]);
 
   return (
     <>
       {data.warning ? <AlertBanner tone="warn" icon={Receipt}>{data.warning}</AlertBanner> : null}
+      {feeSetup.warning ? <AlertBanner tone="warn" icon={Receipt}>{feeSetup.warning}</AlertBanner> : null}
       <KpiGrid>
         {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </KpiGrid>
 
+      <DashboardCard title={`Tuition setup - ${feeSetup.activeSchoolYearName ?? "School year pending"}`} icon={Calculator} className="mb-[18px]">
+        <FeeManagementForms category="tuition" redirectPath="/admin/tuition" data={feeSetup} />
+      </DashboardCard>
+
       <DashboardCard
-        title="Tuition report - June 2025"
+        title={`Tuition report - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
         icon={Receipt}
         action={
           <div className="flex flex-wrap items-center gap-2">
