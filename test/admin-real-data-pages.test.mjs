@@ -25,6 +25,8 @@ test("admin real-data helper reads supported MySQL schema tables with admin scho
   assert.match(helper, /import \{ pool \} from "@\/lib\/auth\/db";/);
   assert.match(helper, /import \{ getResolvedAdminSchoolSetup \} from "@\/lib\/school\/setup";/);
   assert.match(helper, /export async function getAdminDashboardRealData\(adminUserId: number\)/);
+  assert.match(helper, /recentFeeAssignments/);
+  assert.match(helper, /getRecentFeeAssignments\(setup\.schoolId, setup\.schoolYearId\)/);
   assert.match(helper, /export async function getAdminTuitionPageRealData\(adminUserId: number\)/);
   assert.match(helper, /export async function getAdminStudentProfileRealData\(\s+adminUserId: number,\s+studentId\?: number,/);
   assert.match(helper, /export type AdminStudentProfileSummary/);
@@ -99,6 +101,8 @@ test("admin finance pages show empty or pending states when records do not exist
   ].join("\n");
 
   assert.match(pageText, /No tuition fee assignments yet/);
+  assert.match(pageText, /Recent fee assignments/);
+  assert.match(pageText, /No fee assignments yet/);
   assert.match(pageText, /No payment records yet/);
   assert.match(pageText, /No other fee types yet/);
   assert.match(pageText, /No wallet records yet/);

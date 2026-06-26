@@ -19,7 +19,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Auth uses database-backed `auth_sessions` with hashed tokens and logout revocation.
 - [x] Admin dashboard pages use MySQL-backed reads where tables exist, with honest pending/empty states where feature data is not created yet.
 - [x] Student, enrollment, and guardian-linking backend is implemented.
-- [ ] Fee assignment, payment creation, receipt generation, wallet top-up, store spending, notification sending, and export workflows are not implemented yet.
+- [ ] Payment creation, receipt generation, wallet top-up, store spending, notification sending, and export workflows are not implemented yet.
 
 ## Completed Foundation Step
 
@@ -70,12 +70,12 @@ Done when: admins can manage students and parents can see only their linked chil
 
 ## Phase 4: Fees And Tuition Backend
 
-- [ ] Add backend helpers for `fee_types` and `student_fee_assignments`.
-- [ ] Create tuition and other fee types for the active school year.
-- [ ] Assign fees to students.
-- [ ] Replace admin tuition report mock rows with database rows.
-- [ ] Replace parent fee summary mock rows with database rows.
-- [ ] Calculate open, partial, and paid balances from database values.
+- [x] Add backend helpers for `fee_types` and `student_fee_assignments`.
+- [x] Create tuition and other fee types for the active school year.
+- [x] Assign fees to students.
+- [x] Replace admin tuition report mock rows with database rows.
+- [x] Replace parent fee summary mock rows with database rows.
+- [x] Calculate open, partial, and paid balances from database values.
 
 Done when: admin and parent fee screens show real balances from MySQL.
 

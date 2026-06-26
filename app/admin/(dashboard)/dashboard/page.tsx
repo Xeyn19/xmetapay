@@ -1,4 +1,4 @@
-import { AlertCircle, Calculator, Download, History, Siren } from "lucide-react";
+import { AlertCircle, Calculator, Download, History, Receipt, Siren } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { getAdminDashboardRealData } from "@/lib/admin/real-data";
@@ -43,7 +43,7 @@ export default async function AdminDashboardPage() {
           {data.tuitionByGrade.length > 0 ? (
             <BarList rows={data.tuitionByGrade} />
           ) : (
-            <div className="text-[12.5px] leading-5 text-[#5a6070]">Create tuition fee assignments to show grade collection totals.</div>
+            <div className="text-[12.5px] leading-5 text-[#5a6070]">Collected tuition appears here after payments. Assigned balances appear below.</div>
           )}
         </DashboardCard>
 
@@ -61,7 +61,39 @@ export default async function AdminDashboardPage() {
         </DashboardCard>
       </div>
 
-      <div className="grid gap-[18px] xl:grid-cols-[1fr_1fr]">
+      <div className="mb-[18px] grid gap-[18px] xl:grid-cols-[1fr_1fr]">
+        <DashboardCard title="Recent fee assignments" icon={Receipt} bodyClassName="p-0">
+          <AdminTable
+            headers={[
+              { label: "Assigned", className: "w-[16%]" },
+              { label: "Student", className: "w-[22%]" },
+              { label: "Grade", className: "w-[14%]" },
+              { label: "Fee type", className: "w-[20%]" },
+              { label: "Balance", className: "w-[14%]" },
+              { label: "Status", className: "w-[14%]" },
+            ]}
+          >
+            {data.recentFeeAssignments.length > 0 ? (
+              data.recentFeeAssignments.map(([time, student, grade, feeType, balance, status]) => (
+                <tr key={`${time}-${student}-${feeType}`}>
+                  <td className="font-mono text-[11px] text-[#5a6070]">{time}</td>
+                  <td className="font-bold">{student}</td>
+                  <td>{grade}</td>
+                  <td>{feeType}</td>
+                  <td className="font-bold text-[#c62828]">{balance}</td>
+                  <td className="font-semibold text-[#e64a19]">{status}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="text-center text-[#5a6070]">
+                  No fee assignments yet.
+                </td>
+              </tr>
+            )}
+          </AdminTable>
+        </DashboardCard>
+
         <DashboardCard title="Recent payment activity" icon={History} action={<AdminButton>View all</AdminButton>} bodyClassName="p-0">
           <AdminTable
             headers={[
@@ -93,7 +125,9 @@ export default async function AdminDashboardPage() {
             )}
           </AdminTable>
         </DashboardCard>
+      </div>
 
+      <div className="grid gap-[18px] xl:grid-cols-[1fr_1fr]">
         <DashboardCard title="Activity feed" icon={Siren}>
           {data.activityFeed.length > 0 ? (
             <Timeline items={data.activityFeed} />

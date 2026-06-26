@@ -177,7 +177,7 @@ function getParentMeta(pathname: string, context: ParentPortalContext) {
   if (pathname === "/parent/fees") {
     return {
       title: page.title,
-      subtitle: context.primaryStudentName ? `${context.primaryStudentName} - fee backend pending` : "Fee backend pending",
+      subtitle: context.primaryStudentName ? `${context.primaryStudentName} - assigned school balances` : "Assigned school balances",
     };
   }
 
