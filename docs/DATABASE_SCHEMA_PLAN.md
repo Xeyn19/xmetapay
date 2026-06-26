@@ -56,6 +56,29 @@ KEY idx_users_role_status (role, status),
 KEY idx_users_created_at (created_at)
 ```
 
+### `auth_sessions`
+
+Server-managed sessions for public web auth.
+
+| Column | Purpose |
+| --- | --- |
+| `id` | Primary key |
+| `user_id` | Links to `users.id` |
+| `role` | Session portal role: `admin` or `parent` |
+| `token_hash` | HMAC hash of the browser session token |
+| `expires_at` | Session expiry time |
+| `last_used_at` | Last valid session read |
+| `revoked_at` | Logout/revocation timestamp |
+| `created_at` | Creation timestamp |
+
+Important indexes:
+
+```sql
+UNIQUE KEY uq_auth_sessions_token_hash (token_hash),
+KEY idx_auth_sessions_user_revoked_expires (user_id, revoked_at, expires_at),
+KEY idx_auth_sessions_role_expires (role, expires_at)
+```
+
 ### `admin_profiles`
 
 One admin profile per admin user.
@@ -521,6 +544,7 @@ Use indexes based on the screens and workflows in the app.
 ```mermaid
 erDiagram
   USERS ||--o| ADMIN_PROFILES : "has admin profile"
+  USERS ||--o{ AUTH_SESSIONS : "has sessions"
   USERS ||--o| PARENT_PROFILES : "has parent profile"
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
@@ -572,14 +596,16 @@ erDiagram
 
 ```mermaid
 flowchart TD
-  A["Admin opens school registration"] --> B["Submit admin user details and school name"]
-  B --> C["Create user with role admin"]
-  C --> D["Create admin profile"]
-  D --> E["Create or link school record"]
-  E --> F["Create active school year"]
-  F --> G["Create grade levels"]
-  G --> H["Create sections"]
-  H --> I["Admin lands on dashboard"]
+  A["Admin opens /admin/register"] --> B["Create user and admin profile only"]
+  B --> C["Admin lands on dashboard"]
+  C --> D{"School setup complete?"}
+  D -->|Yes| E["Use linked school context"]
+  D -->|No| F{"staff_role is school_administrator?"}
+  F -->|No| G["Ask a school administrator to complete setup"]
+  F -->|Yes| H["Open Set up school records"]
+  H --> I["Save school, active year, grade levels, and sections"]
+  I --> J["Link same-school admin profiles to schools.id"]
+  J --> E
 ```
 
 ### Admin Student and Enrollment Flow
@@ -590,12 +616,12 @@ flowchart TD
   B --> C{"Student exists?"}
   C -->|No| D["Create student record"]
   C -->|Yes| E["Open existing student record"]
-  D --> F["Link parent account through student_guardians"]
+  D --> F["Create enrollment for active school year"]
   E --> F
-  F --> G["Create enrollment for active school year"]
-  G --> H["Assign grade level and section"]
-  H --> I["Assign tuition and other fees"]
-  I --> J["Student appears in admin lists and parent portal"]
+  F --> G["Assign grade level and section"]
+  G --> H["Student appears in admin student table"]
+  H --> I["Student profile selector links to /admin/students/studentId"]
+  H --> J["Parent can link later using student_reference"]
 ```
 
 ### Admin Payment Monitoring Flow

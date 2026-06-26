@@ -31,6 +31,7 @@ Implemented:
 - Manual school setup by `school_administrator`.
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Admin student creation and enrollment.
+- Admin student profile selector and exact profile route `/admin/students/[studentId]`.
 - Parent-to-student linking through `student_reference`.
 - Parent dashboard reads linked students through `student_guardians`.
 - Parent-side mock enrollment wizard has been removed; the parent portal links existing school-created students only.
@@ -116,13 +117,13 @@ flowchart TD
   D -->|No| F["Hash password"]
   F --> G["Insert users row with role admin"]
   G --> H["Insert admin_profiles row"]
-  H --> I["Create signed session"]
+  H --> I["Create DB-backed session and HttpOnly cookie"]
   I --> J["Redirect to /admin/dashboard"]
 
   K["Admin opens /admin/login"] --> L["Find active admin user by email or phone"]
   L --> M{"Password valid?"}
   M -->|No| N["Show invalid login error"]
-  M -->|Yes| O["Create signed session"]
+  M -->|Yes| O["Create DB-backed session and HttpOnly cookie"]
   O --> J
 ```
 
@@ -185,7 +186,8 @@ flowchart TD
   G -->|No| I["Insert students row"]
   I --> J["Insert enrollments row for active school year"]
   J --> K["Student appears in enrolled students table"]
-  K --> L["Parent can now link using student_reference"]
+  K --> L["Admin can open exact profile at /admin/students/studentId"]
+  K --> M["Parent can now link using student_reference"]
 ```
 
 Database touchpoints:
@@ -242,7 +244,7 @@ flowchart TD
   I --> J{"Exactly one matching student?"}
   J -->|Yes| K["Insert student_guardians row"]
   J -->|No| L["Keep parent active with no linked student"]
-  K --> M["Create signed session"]
+  K --> M["Create DB-backed session and HttpOnly cookie"]
   L --> M
   M --> N["Redirect to /parent/dashboard"]
 ```
@@ -265,7 +267,7 @@ flowchart TD
   A["Parent opens /parent/login"] --> B["Find active parent user by email or phone"]
   B --> C{"Password valid?"}
   C -->|No| D["Show invalid login error"]
-  C -->|Yes| E["Create signed session"]
+  C -->|Yes| E["Create DB-backed session and HttpOnly cookie"]
   E --> F["Redirect to /parent/dashboard"]
   F --> G["Require parent session"]
   G --> H["Read student_guardians by parent_user_id"]
@@ -338,28 +340,31 @@ and student_guardians.student_id = students.id
 
 Implemented.
 
-Both portals use the same signed session cookie, but role checks decide which dashboard is allowed.
+Both portals use the same `xmetapay_session` cookie, but the cookie only stores a random session token. The server stores the hashed token in `auth_sessions`, and role checks decide which dashboard is allowed.
 
 ```mermaid
 flowchart TD
-  A["User visits protected page"] --> B["Read signed session cookie"]
-  B --> C{"Session exists and valid?"}
-  C -->|No| D["Redirect to matching login page"]
-  C -->|Yes| E["Load user role"]
-  E --> F{"Required role matches user role?"}
-  F -->|No| D
-  F -->|Yes| G["Render protected dashboard page"]
+  A["User visits protected page"] --> B["Read xmetapay_session cookie token"]
+  B --> C["Hash token and look up auth_sessions"]
+  C --> D{"Session exists, active, and not expired?"}
+  D -->|No| E["Redirect to matching login page"]
+  D -->|Yes| F["Load active user and session role"]
+  F --> G{"Required role matches session role?"}
+  G -->|No| E
+  G -->|Yes| H["Render protected dashboard page"]
 
-  H["User clicks Log out"] --> I["Server action deletes session cookie"]
-  I --> J{"Portal role?"}
-  J -->|Admin| K["Redirect to /admin/login"]
-  J -->|Parent| L["Redirect to /parent/login"]
+  I["User clicks Log out"] --> J["Server action sets auth_sessions.revoked_at"]
+  J --> K["Delete xmetapay_session cookie"]
+  K --> L{"Portal role?"}
+  L -->|Admin| M["Redirect to /admin/login"]
+  L -->|Parent| N["Redirect to /parent/login"]
 ```
 
 Database touchpoints:
 
 - `users`
-- signed session cookie only for browser session state
+- `auth_sessions`
+- `xmetapay_session` HttpOnly cookie containing only the raw random token
 
 ## Future Fees And Tuition Flow
 
