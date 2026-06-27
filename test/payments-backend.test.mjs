@@ -8,7 +8,9 @@ const payTuitionPagePath = "app/parent/(portal)/pay-tuition/page.tsx";
 const paymentFormPath = "app/parent/(portal)/pay-tuition/payment-form.tsx";
 const receiptPagePath = "app/parent/(portal)/receipt/page.tsx";
 const historyPagePath = "app/parent/(portal)/history/page.tsx";
+const historyTablePath = "app/parent/(portal)/history/history-table.tsx";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
+const parentDashboardTablePath = "app/parent/(portal)/dashboard/parent-recent-payments-table.tsx";
 const parentRecordsPath = "lib/students/records.ts";
 const parentPortalDataPath = "app/parent/_data/parent-portal-data.ts";
 const checklistPath = "docs/CHECKLIST.md";
@@ -54,6 +56,7 @@ test("parent payment pages use real database helpers instead of static payment a
   const form = readFileSync(paymentFormPath, "utf8");
   const receiptPage = readFileSync(receiptPagePath, "utf8");
   const historyPage = readFileSync(historyPagePath, "utf8");
+  const historyTable = readFileSync(historyTablePath, "utf8");
   const parentPortalData = readFileSync(parentPortalDataPath, "utf8");
 
   assert.match(payPage, /await requireRole\("parent"\)/);
@@ -66,6 +69,9 @@ test("parent payment pages use real database helpers instead of static payment a
   assert.match(receiptPage, /getParentReceiptData/);
   assert.match(receiptPage, /searchParams: Promise<\{ receiptId\?: string \}>/);
   assert.match(historyPage, /getParentPaymentHistoryData\(session\.userId\)/);
+  assert.match(historyPage, /ParentPaymentHistoryTable/);
+  assert.match(historyTable, /DashboardTableControls/);
+  assert.match(historyTable, /parent-payment-history\.csv/);
   assert.doesNotMatch(parentPortalData, /export const payableFees/);
   assert.doesNotMatch(parentPortalData, /export const paymentMethods/);
   assert.doesNotMatch(parentPortalData, /export const historyRows/);
@@ -73,6 +79,7 @@ test("parent payment pages use real database helpers instead of static payment a
 
 test("parent dashboard reflects real payment summary and recent payment rows", () => {
   const dashboard = readFileSync(parentDashboardPath, "utf8");
+  const dashboardTable = readFileSync(parentDashboardTablePath, "utf8");
   const records = readFileSync(parentRecordsPath, "utf8");
 
   assert.match(records, /async function getParentPaymentSummary/);
@@ -81,9 +88,11 @@ test("parent dashboard reflects real payment summary and recent payment rows", (
   assert.match(records, /LEFT JOIN payment_allocations pa/);
   assert.match(records, /paid_this_month/);
   assert.match(dashboard, /data\.outstandingBalance/);
-  assert.match(dashboard, /data\.recentPayments\.length > 0/);
   assert.match(dashboard, /Recent payment activity/);
-  assert.match(dashboard, /No payment records yet/);
+  assert.match(dashboard, /ParentRecentPaymentsTable/);
+  assert.match(dashboardTable, /DashboardTableControls/);
+  assert.match(dashboardTable, /parent-recent-payments\.csv/);
+  assert.match(dashboardTable, /No payment records yet/);
 });
 
 test("checklist marks Phase 5 payments and receipts backend complete", () => {

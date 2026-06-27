@@ -15,7 +15,6 @@ const parentStudentProfilePath = "app/parent/(portal)/student-profile/page.tsx";
 const parentStudentProfileViewPath = "app/parent/(portal)/student-profile/student-profile-view.tsx";
 const parentSelectedStudentProfilePath = "app/parent/(portal)/students/[studentId]/page.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
-const adminModalsPath = "app/admin/_components/admin-modals.tsx";
 const parentShellPath = "app/parent/_components/parent-shell.tsx";
 const parentPortalDataPath = "app/parent/_data/parent-portal-data.ts";
 const checklistPath = "docs/CHECKLIST.md";
@@ -87,19 +86,22 @@ test("parent registration attempts guardian linking after creating parent profil
 test("admin and parent pages use database helpers instead of mock student arrays", () => {
   const adminStudentsPage = readFileSync(adminStudentsPagePath, "utf8");
   const adminStudentForm = readFileSync(adminStudentFormPath, "utf8");
+  const adminStudentsTable = readFileSync("app/admin/(dashboard)/students/students-table.tsx", "utf8");
   const adminParentsPage = readFileSync(adminParentsPagePath, "utf8");
   const parentDashboard = readFileSync(parentDashboardPath, "utf8");
 
   assert.doesNotMatch(adminStudentsPage, /"use client";/);
   assert.match(adminStudentsPage, /getAdminStudentPageData/);
   assert.match(adminStudentsPage, /StudentEnrollmentForm/);
-  assert.match(adminStudentsPage, /href=\{`\/admin\/students\/\$\{row\.id\}`\}/);
+  assert.match(adminStudentsPage, /StudentsTable/);
+  assert.match(adminStudentsTable, /href=\{`\/admin\/students\/\$\{row\.id\}`\}/);
   assert.doesNotMatch(adminStudentsPage, /href="\/admin\/student-profile"/);
   assert.match(adminStudentForm, /createStudentAction/);
   assert.match(adminStudentForm, /<form action=\{createStudentAction\}/);
   assert.doesNotMatch(adminStudentsPage, /studentRows|studentsKpis/);
 
   assert.match(adminParentsPage, /getAdminParentsPageData/);
+  assert.match(adminParentsPage, /ParentsTable/);
   assert.doesNotMatch(adminParentsPage, /parentRows|parentKpis/);
 
   assert.match(parentDashboard, /getParentDashboardData/);
@@ -126,14 +128,13 @@ test("admin student enrollment form filters sections by selected grade", () => {
 
 test("admin header enrollment action opens the database-backed student form", () => {
   const shell = readFileSync(adminShellPath, "utf8");
-  const modals = readFileSync(adminModalsPath, "utf8");
 
+  assert.equal(existsSync("app/admin/_components/admin-modals.tsx"), false);
   assert.match(shell, /href="\/admin\/students#add-student"/);
   assert.match(shell, /Add student/);
   assert.doesNotMatch(shell, /openModal\("enroll"\)/);
   assert.doesNotMatch(shell, /data-modal-trigger="enroll"/);
-  assert.doesNotMatch(modals, /activeModal === "enroll"/);
-  assert.doesNotMatch(modals, /Add \/ enroll student/);
+  assert.doesNotMatch(shell, /AdminModals/);
 });
 
 test("parent portal removes dead enrollment wizard and keeps student reference linking", () => {

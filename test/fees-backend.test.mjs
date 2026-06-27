@@ -6,9 +6,13 @@ const feeRecordsPath = "lib/fees/records.ts";
 const feeActionsPath = "app/admin/fees/actions.ts";
 const feeFormsPath = "app/admin/fees/fee-management-forms.tsx";
 const tuitionPagePath = "app/admin/(dashboard)/tuition/page.tsx";
+const tuitionTablePath = "app/admin/(dashboard)/tuition/tuition-report-table.tsx";
 const otherFeesPagePath = "app/admin/(dashboard)/other-fees/page.tsx";
+const otherFeesTablePath = "app/admin/(dashboard)/other-fees/other-fees-table.tsx";
 const adminDashboardPagePath = "app/admin/(dashboard)/dashboard/page.tsx";
+const adminDashboardRecentTablesPath = "app/admin/(dashboard)/dashboard/dashboard-recent-tables.tsx";
 const parentFeesPagePath = "app/parent/(portal)/fees/page.tsx";
+const parentFeesTablePath = "app/parent/(portal)/fees/fees-table.tsx";
 const parentPortalDataPath = "app/parent/_data/parent-portal-data.ts";
 const checklistPath = "docs/CHECKLIST.md";
 
@@ -47,7 +51,9 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.equal(existsSync(feeFormsPath), true);
   const forms = readFileSync(feeFormsPath, "utf8");
   const tuitionPage = readFileSync(tuitionPagePath, "utf8");
+  const tuitionTable = readFileSync(tuitionTablePath, "utf8");
   const otherFeesPage = readFileSync(otherFeesPagePath, "utf8");
+  const otherFeesTable = readFileSync(otherFeesTablePath, "utf8");
 
   assert.match(forms, /createFeeTypeAction\.bind\(null, category, redirectPath\)/);
   assert.match(forms, /assignStudentFeeAction\.bind\(null, category, redirectPath\)/);
@@ -62,32 +68,42 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
 
   assert.match(tuitionPage, /getAdminFeeSetupData\(session\.userId, "tuition"\)/);
   assert.match(tuitionPage, /<FeeManagementForms category="tuition" redirectPath="\/admin\/tuition" data=\{feeSetup\} \/>/);
+  assert.match(tuitionPage, /TuitionReportTable/);
+  assert.match(tuitionTable, /DashboardTableControls/);
+  assert.match(tuitionTable, /admin-tuition-report\.csv/);
   assert.match(otherFeesPage, /getAdminFeeSetupData\(session\.userId, "other"\)/);
   assert.match(otherFeesPage, /<FeeManagementForms category="other" redirectPath="\/admin\/other-fees" data=\{feeSetup\} \/>/);
+  assert.match(otherFeesPage, /OtherFeesTable/);
+  assert.match(otherFeesTable, /DashboardTableControls/);
+  assert.match(otherFeesTable, /admin-other-fees\.csv/);
   assert.doesNotMatch(otherFeesPage, /Add fee type pending/);
 });
 
 test("admin dashboard shows assigned fees before payment records exist", () => {
   const helper = readFileSync("lib/admin/real-data.ts", "utf8");
   const dashboard = readFileSync(adminDashboardPagePath, "utf8");
+  const dashboardRecentTables = readFileSync(adminDashboardRecentTablesPath, "utf8");
 
   assert.match(helper, /async function getRecentFeeAssignments/);
   assert.match(helper, /FROM student_fee_assignments sfa/);
   assert.match(helper, /ORDER BY sfa\.created_at DESC, sfa\.id DESC/);
-  assert.match(dashboard, /Recent fee assignments/);
-  assert.match(dashboard, /data\.recentFeeAssignments\.length > 0/);
-  assert.match(dashboard, /No fee assignments yet/);
+  assert.match(dashboardRecentTables, /Recent fee assignments/);
+  assert.match(dashboard, /DashboardRecentTables/);
+  assert.match(dashboardRecentTables, /No fee assignments yet/);
   assert.match(dashboard, /Assigned balances appear below/);
 });
 
 test("parent fees page reads real balances instead of static fee summary", () => {
   const page = readFileSync(parentFeesPagePath, "utf8");
+  const feesTable = readFileSync(parentFeesTablePath, "utf8");
   const parentPortalData = readFileSync(parentPortalDataPath, "utf8");
 
   assert.match(page, /await requireRole\("parent"\)/);
   assert.match(page, /getParentFeePageData\(session\.userId\)/);
   assert.match(page, /data\.metrics\.map/);
-  assert.match(page, /data\.rows\.map/);
+  assert.match(page, /ParentFeesTable/);
+  assert.match(feesTable, /DashboardTableControls/);
+  assert.match(feesTable, /parent-fee-summary\.csv/);
   assert.match(page, /data\.hasPayableFees/);
   assert.match(page, /Pay fees/);
   assert.match(page, /No balance due/);

@@ -6,7 +6,6 @@ import { useState } from "react";
 import {
   Database,
   Menu,
-  MonitorCog,
   LogOut,
   Plus,
   ReceiptText,
@@ -16,7 +15,6 @@ import {
   X,
 } from "lucide-react";
 
-import { AdminModalId, AdminModals } from "./admin-modals";
 import { logoutAction } from "@/app/auth/actions";
 import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
@@ -37,7 +35,6 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<AdminModalId | null>(null);
   const selectedStudentProfilePath = /^\/admin\/students\/\d+$/.test(pathname);
   const meta = selectedStudentProfilePath
     ? pageMeta["/admin/student-profile"]
@@ -54,9 +51,6 @@ export function AdminShell({
   const canAddStudents = canUseAdminHeaderAction(schoolContext.staffRole, "add_student");
   const canRecordPayments = canUseAdminHeaderAction(schoolContext.staffRole, "record_payment");
   const logout = logoutAction.bind(null, "admin");
-
-  const openModal = (modal: AdminModalId) => setActiveModal(modal);
-  const closeModal = () => setActiveModal(null);
 
   return (
     <div className="min-h-[100svh] overflow-x-hidden bg-[#f7f8fa] text-[#0f1117]">
@@ -208,9 +202,9 @@ export function AdminShell({
             ) : null}
           </div>
           <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
-            <AdminButton data-modal-trigger="reminder" onClick={() => openModal("reminder")}><Send className="size-4" />Send reminders</AdminButton>
+            <AdminButton disabled><Send className="size-4" />Reminders future</AdminButton>
             {canRecordPayments ? (
-              <AdminButton data-modal-trigger="payment" onClick={() => openModal("payment")}><Plus className="size-4" />Record payment</AdminButton>
+              <AdminButton disabled><Plus className="size-4" />Manual payment future</AdminButton>
             ) : null}
             {canAddStudents ? (
               <Link
@@ -227,11 +221,6 @@ export function AdminShell({
         <main className="min-w-0 max-w-full px-4 py-5 sm:py-6 lg:px-6">{children}</main>
       </div>
 
-      <AdminModals activeModal={activeModal} onClose={closeModal} />
-      <div className="pointer-events-none fixed bottom-5 right-6 hidden items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-[11px] text-[#9ba3b8] shadow-sm backdrop-blur xl:flex">
-        <MonitorCog className="size-3.5" />
-        UI prototype
-      </div>
     </div>
   );
 }

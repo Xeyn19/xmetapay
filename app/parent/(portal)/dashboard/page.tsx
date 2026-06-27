@@ -12,10 +12,10 @@ import {
   ParentButton,
   ParentCard,
   ParentField,
-  ParentTable,
   StatusPill,
   parentControlClass,
 } from "../../_components/parent-ui";
+import { ParentRecentPaymentsTable } from "./parent-recent-payments-table";
 
 export default async function ParentDashboardPage() {
   const session = await requireRole("parent");
@@ -93,33 +93,7 @@ export default async function ParentDashboardPage() {
       </div>
 
       <ParentCard title="Recent payment activity" icon={CalendarClock} bodyClassName="p-0">
-        <ParentTable
-          headers={[
-            { label: "Ref #", className: "w-[20%]" },
-            { label: "Student", className: "w-[22%]" },
-            { label: "Description", className: "w-[26%]" },
-            { label: "Amount", className: "w-[16%]" },
-            { label: "Status", className: "w-[16%]" },
-          ]}
-        >
-          {data.recentPayments.length > 0 ? (
-            data.recentPayments.map((payment) => (
-              <tr key={payment.referenceNumber}>
-                <td className="font-mono text-[11px] text-[#6b6b6b]">{payment.referenceNumber}</td>
-                <td className="font-medium">{payment.studentName}</td>
-                <td>{payment.description}</td>
-                <td className="font-semibold">{payment.amount}</td>
-                <td><StatusPill tone={payment.status === "Paid" ? "green" : "amber"}>{payment.status}</StatusPill></td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={5} className="text-center text-[#6b6b6b]">
-                No payment records yet.
-              </td>
-            </tr>
-          )}
-        </ParentTable>
+        <ParentRecentPaymentsTable rows={data.recentPayments} />
       </ParentCard>
     </>
   );

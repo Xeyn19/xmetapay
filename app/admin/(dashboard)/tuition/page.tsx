@@ -1,4 +1,4 @@
-import { Calculator, ClipboardList, Download, Receipt, Send } from "lucide-react";
+import { Calculator, ClipboardList, Receipt } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
@@ -7,15 +7,14 @@ import { getAdminFeeSetupData } from "@/lib/fees/records";
 import { FeeManagementForms } from "@/app/admin/fees/fee-management-forms";
 
 import {
-  AdminButton,
   AdminTable,
   AlertBanner,
   BarList,
   DashboardCard,
   KpiCard,
   KpiGrid,
-  StatusPill,
 } from "../../_components/admin-ui";
+import { TuitionReportTable, type TuitionReportRow } from "./tuition-report-table";
 
 export default async function TuitionPage() {
   const session = await requireRole("admin");
@@ -24,6 +23,10 @@ export default async function TuitionPage() {
     getAdminTuitionPageRealData(session.userId),
     getAdminFeeSetupData(session.userId, "tuition"),
   ]);
+  const tuitionReportRecords: TuitionReportRow[] = data.rows.map((row) => ({
+    ...row,
+    balance: row.due - row.paid,
+  }));
 
   return (
     <>
@@ -42,62 +45,10 @@ export default async function TuitionPage() {
       <DashboardCard
         title={`Tuition report - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
         icon={Receipt}
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <AdminButton disabled>
-              <Send className="size-4" />
-              Reminders pending
-            </AdminButton>
-            <AdminButton tone="dark" disabled>
-              <Download className="size-4" />
-              Export pending
-            </AdminButton>
-          </div>
-        }
         bodyClassName="p-0"
         className="mb-[18px]"
       >
-        <AdminTable
-          headers={[
-            { label: "Student name", className: "w-[20%]" },
-            { label: "Grade", className: "w-[10%]" },
-            { label: "Section", className: "w-[10%]" },
-            { label: "Fee due", className: "w-[12%]" },
-            { label: "Paid", className: "w-[11%]" },
-            { label: "Balance", className: "w-[11%]" },
-            { label: "Last payment", className: "w-[13%]" },
-            { label: "Status", className: "w-[13%]" },
-          ]}
-        >
-          {data.rows.length > 0 ? (
-            data.rows.map((row) => {
-            const balance = row.due - row.paid;
-            const statusLabel = row.status.charAt(0).toUpperCase() + row.status.slice(1);
-            return (
-              <tr key={`${row.student}-${row.grade}`}>
-                <td className="font-bold">{row.student}</td>
-                <td>{row.grade}</td>
-                <td>{row.section}</td>
-                <td>P{row.due.toLocaleString()}</td>
-                <td className="font-semibold text-[#2e7d32]">P{row.paid.toLocaleString()}</td>
-                <td className={balance > 0 ? "font-semibold text-[#c62828]" : "text-[#9ba3b8]"}>
-                  P{balance.toLocaleString()}
-                </td>
-                <td className="font-mono text-[11px] text-[#5a6070]">{row.lastPayment}</td>
-                <td>
-                  <StatusPill tone={row.status as "paid" | "partial" | "unpaid"}>{statusLabel}</StatusPill>
-                </td>
-              </tr>
-            );
-            })
-          ) : (
-            <tr>
-              <td colSpan={8} className="text-center text-[#5a6070]">
-                No tuition fee assignments yet.
-              </td>
-            </tr>
-          )}
-        </AdminTable>
+        <TuitionReportTable rows={tuitionReportRecords} />
       </DashboardCard>
 
       <div className="grid gap-[18px] xl:grid-cols-2">
