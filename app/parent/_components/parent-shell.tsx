@@ -22,6 +22,15 @@ export function ParentShell({
   const meta = getParentMeta(pathname, context);
   const Settings = settingsIcon;
   const logout = logoutAction.bind(null, "parent");
+  const navSections = parentNavSections.map((section) => ({
+    ...section,
+    items: section.items.map((item) => ({
+      ...item,
+      badge: item.href === "/parent/fees" && context.payableFeeCount > 0
+        ? String(context.payableFeeCount)
+        : item.badge,
+    })),
+  }));
 
   return (
     <div className="min-h-[100svh] overflow-x-hidden bg-[#f8f8f7] text-[#1a1a1a]">
@@ -81,7 +90,7 @@ export function ParentShell({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2.5 py-2.5">
-          {parentNavSections.map((section) => (
+          {navSections.map((section) => (
             <div key={section.label}>
               <div className="px-2 py-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9e9e9e]">
                 {section.label}
@@ -184,7 +193,7 @@ function getParentMeta(pathname: string, context: ParentPortalContext) {
   if (pathname === "/parent/pay-tuition") {
     return {
       title: page.title,
-      subtitle: context.primaryStudentName ? `${context.primaryStudentName} - local payment flow pending` : "Local payment flow pending",
+      subtitle: context.primaryStudentName ? `${context.primaryStudentName} - assigned fee payment` : page.subtitle,
     };
   }
 
