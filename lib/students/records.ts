@@ -73,6 +73,7 @@ export type ParentPortalContext = {
   schoolYearName: string | null;
   primaryStudentName: string | null;
   primaryStudentReference: string | null;
+  payableFeeCount: number;
 };
 
 export type ParentLinkedStudent = {
@@ -189,7 +190,16 @@ export async function getParentPortalContext(parentUserId: number, fallbackName 
     const [rows] = await pool.execute<ParentPortalContextRow[]>(
       `SELECT u.name AS parent_name, u.email, u.phone, pp.relationship,
          sc.name AS school_name, sy.name AS school_year_name,
-         st.first_name, st.middle_name, st.last_name, st.student_reference
+         st.first_name, st.middle_name, st.last_name, st.student_reference,
+         (
+           SELECT COUNT(DISTINCT sfa_count.id)
+           FROM student_guardians sg_count
+           JOIN students st_count ON st_count.id = sg_count.student_id
+           JOIN student_fee_assignments sfa_count ON sfa_count.student_id = st_count.id
+           WHERE sg_count.parent_user_id = u.id
+             AND sfa_count.status IN ('open', 'partial')
+             AND sfa_count.amount_due > sfa_count.amount_paid
+         ) AS payable_fee_count
        FROM users u
        LEFT JOIN parent_profiles pp ON pp.user_id = u.id
        LEFT JOIN student_guardians sg ON sg.parent_user_id = u.id
@@ -670,6 +680,7 @@ function parentContextFromRow(row: ParentPortalContextRow | null | undefined, fa
     schoolYearName: row?.school_year_name ?? null,
     primaryStudentName: studentName,
     primaryStudentReference: row?.student_reference ?? null,
+    payableFeeCount: Number(row?.payable_fee_count ?? 0),
   };
 }
 
@@ -773,6 +784,7 @@ type ParentPortalContextRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string | null;
   student_reference: string | null;
+  payable_fee_count: number | string | null;
 };
 
 type ParentStudentProfileRow = RowDataPacket & {

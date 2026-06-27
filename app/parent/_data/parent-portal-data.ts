@@ -81,7 +81,7 @@ export const parentNavSections: ParentNavSection[] = [
   {
     label: "Payments",
     items: [
-      { label: "Fee summary", href: "/parent/fees", icon: Receipt, badge: "2" },
+      { label: "Fee summary", href: "/parent/fees", icon: Receipt },
       { label: "Pay tuition", href: "/parent/pay-tuition", icon: CreditCard },
       { label: "Payment history", href: "/parent/history", icon: History },
     ],
