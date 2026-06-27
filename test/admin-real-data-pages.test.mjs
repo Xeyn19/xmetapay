@@ -6,6 +6,15 @@ const helperPath = "lib/admin/real-data.ts";
 const adminStudentProfileSelectorPath = "app/admin/(dashboard)/student-profile/admin-student-profile-view.tsx";
 const adminSelectedStudentProfilePath = "app/admin/(dashboard)/students/[studentId]/page.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
+const tableControlsPath = "app/_components/table-controls.tsx";
+const adminTableComponentPaths = [
+  "app/admin/(dashboard)/dashboard/dashboard-recent-tables.tsx",
+  "app/admin/(dashboard)/tuition/tuition-report-table.tsx",
+  "app/admin/(dashboard)/collections/collections-table.tsx",
+  "app/admin/(dashboard)/other-fees/other-fees-table.tsx",
+  "app/admin/(dashboard)/students/students-table.tsx",
+  "app/admin/(dashboard)/parents/parents-table.tsx",
+];
 const adminPages = [
   "app/admin/(dashboard)/dashboard/page.tsx",
   "app/admin/(dashboard)/tuition/page.tsx",
@@ -98,6 +107,7 @@ test("admin finance pages show empty or pending states when records do not exist
   const pageText = [
     ...adminPages.map((pagePath) => readFileSync(pagePath, "utf8")),
     readFileSync(adminStudentProfileSelectorPath, "utf8"),
+    ...adminTableComponentPaths.map((componentPath) => readFileSync(componentPath, "utf8")),
   ].join("\n");
 
   assert.match(pageText, /No tuition fee assignments yet/);
@@ -109,4 +119,30 @@ test("admin finance pages show empty or pending states when records do not exist
   assert.match(pageText, /No store transactions yet/);
   assert.match(pageText, /Export pending/);
   assert.match(pageText, /Record payment pending/);
+});
+
+test("admin real-data tables use working search filters and CSV export controls", () => {
+  assert.equal(existsSync(tableControlsPath), true);
+  const controls = readFileSync(tableControlsPath, "utf8");
+  const shell = readFileSync(adminShellPath, "utf8");
+
+  assert.match(controls, /export function DashboardTableControls/);
+  assert.match(controls, /exportRowsToCsv/);
+  assert.match(controls, /filterByQuery/);
+  assert.match(controls, /Export CSV/);
+
+  for (const componentPath of adminTableComponentPaths) {
+    assert.equal(existsSync(componentPath), true, `${componentPath} should exist`);
+    const component = readFileSync(componentPath, "utf8");
+
+    assert.match(component, /"use client";/, `${componentPath} should be client-side for table controls`);
+    assert.match(component, /DashboardTableControls/, `${componentPath} should render working table controls`);
+    assert.match(component, /exportRowsToCsv/, `${componentPath} should export visible rows`);
+    assert.match(component, /filterByQuery/, `${componentPath} should filter visible rows`);
+    assert.doesNotMatch(component, /readOnly|Export pending|Filter pending/, `${componentPath} should not keep placeholder controls`);
+  }
+
+  assert.match(shell, /Reminders future/);
+  assert.match(shell, /Manual payment future/);
+  assert.doesNotMatch(shell, /AdminModals|data-modal-trigger|openModal/);
 });
