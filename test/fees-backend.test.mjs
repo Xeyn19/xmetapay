@@ -88,13 +88,15 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(page, /getParentFeePageData\(session\.userId\)/);
   assert.match(page, /data\.metrics\.map/);
   assert.match(page, /data\.rows\.map/);
-  assert.match(page, /Payment pending/);
+  assert.match(page, /data\.hasPayableFees/);
+  assert.match(page, /Pay fees/);
+  assert.match(page, /No balance due/);
   assert.doesNotMatch(page, /feeSummary/);
   assert.doesNotMatch(parentPortalData, /export const feeSummary/);
   assert.doesNotMatch(parentPortalData, /Fee backend pending/);
 });
 
-test("checklist marks Phase 4 fees backend complete while payments stay pending", () => {
+test("checklist marks Phase 4 fees backend complete before Phase 5 payment work", () => {
   const checklist = readFileSync(checklistPath, "utf8");
 
   assert.match(checklist, /- \[x\] Add backend helpers for `fee_types` and `student_fee_assignments`\./);
@@ -102,5 +104,5 @@ test("checklist marks Phase 4 fees backend complete while payments stay pending"
   assert.match(checklist, /- \[x\] Assign fees to students\./);
   assert.match(checklist, /- \[x\] Replace parent fee summary mock rows with database rows\./);
   assert.match(checklist, /- \[x\] Calculate open, partial, and paid balances from database values\./);
-  assert.match(checklist, /Payment creation, receipt generation/);
+  assert.match(checklist, /Parent local test payments, fee allocations, receipts, and payment history are implemented\./);
 });

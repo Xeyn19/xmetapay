@@ -1,6 +1,6 @@
 # XMETA Pay Project Flowcharts
 
-This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, and future payment, wallet, store, and report phases.
+This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, and future wallet, store, and report phases.
 
 Related documents:
 
@@ -35,18 +35,22 @@ Implemented:
 - Parent-to-student linking through `student_reference`.
 - Parent dashboard reads linked students through `student_guardians`.
 - Parent-side mock enrollment wizard has been removed; the parent portal links existing school-created students only.
-
-Next:
-
 - Fees and tuition backend.
 - Parent fee summary from MySQL.
 - Admin tuition report from MySQL.
+- Parent local test payment flow.
+- Payment allocation to fee balances.
+- Parent receipt and payment history from MySQL.
+- Admin collections reads parent-created payment records.
+
+Next:
+
+- Wallet and allowance backend.
 
 Future:
 
-- Payments, allocations, and receipts.
 - Wallet, allowance, and store/canteen transactions.
-- Notifications and report exports.
+- Real payment gateway integration, refunds, admin manual payment recording, notifications, and report exports.
 
 ## Whole Project Overview
 
@@ -69,9 +73,9 @@ flowchart TD
   J --> L["Parent dashboard shows linked student"]
   K --> M["Parent can try link-by-reference later"]
 
-  L --> N["Future: parent views fees"]
-  N --> O["Future: parent pays fees"]
-  O --> P["Future: receipt and payment history"]
+  L --> N["Parent views assigned fees"]
+  N --> O["Parent records local test payment"]
+  O --> P["Receipt and payment history are created"]
   L --> Q["Future: wallet top-up and allowance"]
   Q --> R["Future: store/canteen spending"]
 
@@ -366,11 +370,9 @@ Database touchpoints:
 - `auth_sessions`
 - `xmetapay_session` HttpOnly cookie containing only the raw random token
 
-## Future Fees And Tuition Flow
+## Fees And Tuition Flow
 
-Future.
-
-This is the next major backend phase after the current student/guardian foundation.
+Implemented.
 
 ```mermaid
 flowchart TD
@@ -392,26 +394,27 @@ Database touchpoints:
 - `student_guardians`
 - `school_years`
 
-## Future Payment And Receipt Flow
+## Payment And Receipt Flow
 
-Future.
-
-For local MVP testing, payments can be recorded without a real payment gateway first. Real gateway integration can come later.
+Implemented for local MVP testing. Payments are recorded as paid immediately without a real payment gateway. Real gateway integration, refunds, and admin manual payment recording can come later.
 
 ```mermaid
 flowchart TD
-  A["Parent selects fee items"] --> B["Create payments row with pending status"]
-  B --> C["Local test payment is confirmed"]
-  C --> D["Update payment status to paid"]
-  D --> E["Create payment_allocations rows"]
-  E --> F["Update student_fee_assignments amount_paid"]
-  F --> G{"Balance fully paid?"}
-  G -->|Yes| H["Mark fee assignment paid"]
-  G -->|No| I["Mark fee assignment partial"]
-  H --> J["Create receipt"]
-  I --> J
-  J --> K["Parent sees payment history and receipt"]
-  K --> L["Admin sees collections report"]
+  A["Parent opens /parent/pay-tuition"] --> B["Read payable fee assignments through student_guardians"]
+  B --> C["Parent selects one student's payable fee items"]
+  C --> D["Parent chooses local test payment method"]
+  D --> E["Server action requires parent session"]
+  E --> F["Lock selected student_fee_assignments"]
+  F --> G["Create payments row with paid status"]
+  G --> H["Create payment_allocations rows"]
+  H --> I["Update student_fee_assignments amount_paid"]
+  I --> J{"Balance fully paid?"}
+  J -->|Yes| K["Mark fee assignment paid"]
+  J -->|No| L["Mark fee assignment partial"]
+  K --> M["Create receipts row"]
+  L --> M
+  M --> N["Parent sees real receipt and payment history"]
+  N --> O["Admin dashboard and collections read the same payment records"]
 ```
 
 Database touchpoints:

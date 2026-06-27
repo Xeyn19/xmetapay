@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, History, Plus, Wallet } from "lucide-react";
+import { CreditCard, History, Landmark, Plus, Smartphone, Wallet } from "lucide-react";
 
 import { MethodCard, ParentButton, ParentCard, ParentTable, StatusPill } from "../../_components/parent-ui";
-import { paymentMethods, walletQuickAmounts, walletTransactions } from "../../_data/parent-portal-data";
+import { walletQuickAmounts, walletTransactions } from "../../_data/parent-portal-data";
+
+const walletTopUpMethods = [
+  { id: "card", title: "Debit / credit card", desc: "Wallet top-up backend pending", icon: CreditCard },
+  { id: "online_banking", title: "Online banking", desc: "Wallet top-up backend pending", icon: Landmark },
+  { id: "gcash", title: "GCash or Maya", desc: "Wallet top-up backend pending", icon: Smartphone },
+];
 
 export default function WalletPage() {
   const [amount, setAmount] = useState(200);
-  const [method, setMethod] = useState("wallet");
+  const [method, setMethod] = useState("card");
 
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
@@ -33,11 +39,11 @@ export default function WalletPage() {
           ))}
         </div>
         <div className="grid gap-3">
-          {paymentMethods.slice(1).map((item) => (
+          {walletTopUpMethods.map((item) => (
             <MethodCard key={item.id} selected={method === item.id} onClick={() => setMethod(item.id)} icon={item.icon} title={item.title} desc={item.desc} />
           ))}
         </div>
-        <ParentButton tone="primary" className="mt-4 w-full"><CreditCard className="size-4" />Top-up P{amount}</ParentButton>
+        <ParentButton tone="primary" className="mt-4 w-full" disabled><CreditCard className="size-4" />Top-up pending</ParentButton>
       </ParentCard>
 
       <ParentCard title="Wallet transaction history" icon={History} className="xl:col-span-2" bodyClassName="p-0">
