@@ -12,6 +12,7 @@ import {
   ParentButton,
   ParentCard,
   ParentField,
+  ParentTable,
   StatusPill,
   parentControlClass,
 } from "../../_components/parent-ui";
@@ -83,7 +84,7 @@ export default async function ParentDashboardPage() {
         </ParentCard>
         <ParentCard title="Fees and balances" icon={CalendarClock}>
           <div className="grid gap-3 text-[13px] leading-5 text-[#6b6b6b]">
-            <p>Fee balances will appear here after the tuition and fee backend is connected.</p>
+            <p>Current outstanding balance: <span className="font-semibold text-[#c62828]">{data.outstandingBalance}</span></p>
             <Link href="/parent/fees" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
               View fee summary
             </Link>
@@ -91,10 +92,34 @@ export default async function ParentDashboardPage() {
         </ParentCard>
       </div>
 
-      <ParentCard title="Recent activity" icon={CalendarClock}>
-        <div className="text-[13px] leading-5 text-[#6b6b6b]">
-          Payment and wallet activity will appear here after the payment and allowance phases are implemented.
-        </div>
+      <ParentCard title="Recent payment activity" icon={CalendarClock} bodyClassName="p-0">
+        <ParentTable
+          headers={[
+            { label: "Ref #", className: "w-[20%]" },
+            { label: "Student", className: "w-[22%]" },
+            { label: "Description", className: "w-[26%]" },
+            { label: "Amount", className: "w-[16%]" },
+            { label: "Status", className: "w-[16%]" },
+          ]}
+        >
+          {data.recentPayments.length > 0 ? (
+            data.recentPayments.map((payment) => (
+              <tr key={payment.referenceNumber}>
+                <td className="font-mono text-[11px] text-[#6b6b6b]">{payment.referenceNumber}</td>
+                <td className="font-medium">{payment.studentName}</td>
+                <td>{payment.description}</td>
+                <td className="font-semibold">{payment.amount}</td>
+                <td><StatusPill tone={payment.status === "Paid" ? "green" : "amber"}>{payment.status}</StatusPill></td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={5} className="text-center text-[#6b6b6b]">
+                No payment records yet.
+              </td>
+            </tr>
+          )}
+        </ParentTable>
       </ParentCard>
     </>
   );

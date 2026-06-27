@@ -53,15 +53,15 @@ export const parentPageMeta: Record<string, ParentPageMeta> = {
   },
   "/parent/pay-tuition": {
     title: "Pay tuition & fees",
-    subtitle: "Local payment flow pending",
+    subtitle: "Pay assigned balances for one student at a time",
   },
   "/parent/receipt": {
     title: "Payment complete",
-    subtitle: "Receipt records will appear after payments are connected",
+    subtitle: "Database-backed payment receipt",
   },
   "/parent/history": {
     title: "Payment history",
-    subtitle: "All transactions - SY 2025-2026",
+    subtitle: "Recorded school fee payments",
   },
   "/parent/wallet": {
     title: "Wallet & allowance top-up",
@@ -122,21 +122,6 @@ export const outstandingFees = [
 
 export const recentActivity = [
   ["Pending", "Linked student", "Payment and wallet activity pending", "-", "Backend", "Pending"],
-];
-
-export const payableFees = [
-  { id: "tuition", title: "Tuition payment", desc: "Payment recording will connect in Phase 5", amount: 0, defaultSelected: false },
-  { id: "other-fees", title: "Other school fees", desc: "Payment recording will connect in Phase 5", amount: 0, defaultSelected: false },
-];
-
-export const paymentMethods = [
-  { id: "wallet", title: "XMETA wallet", desc: "Use linked family wallet", icon: Wallet },
-  { id: "card", title: "Debit / credit card", desc: "Visa, Mastercard, or local card", icon: CreditCard },
-  { id: "online", title: "Online banking", desc: "Bank transfer and e-wallet channels", icon: Receipt },
-];
-
-export const historyRows = [
-  ["Pending", "Pending", "Linked student", "Payment history will appear after Phase 5", "-", "Backend", "Pending"],
 ];
 
 export const walletTransactions = [

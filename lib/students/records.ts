@@ -59,6 +59,8 @@ export type ParentDashboardData = {
     accent?: boolean;
   }>;
   linkedStudents: ParentLinkedStudent[];
+  recentPayments: ParentDashboardPayment[];
+  outstandingBalance: string;
 };
 
 export type ParentPortalContext = {
@@ -79,6 +81,14 @@ export type ParentLinkedStudent = {
   initials: string;
   fullName: string;
   meta: string;
+  status: string;
+};
+
+export type ParentDashboardPayment = {
+  referenceNumber: string;
+  studentName: string;
+  description: string;
+  amount: string;
   status: string;
 };
 
@@ -152,16 +162,24 @@ export async function getAdminParentsPageData(adminUserId: number): Promise<Admi
 
 export async function getParentDashboardData(parentUserId: number): Promise<ParentDashboardData> {
   try {
-    const linkedStudents = await getParentLinkedStudents(parentUserId);
+    const [linkedStudents, summary, recentPayments] = await Promise.all([
+      getParentLinkedStudents(parentUserId),
+      getParentPaymentSummary(parentUserId),
+      getParentRecentPayments(parentUserId),
+    ]);
 
     return {
       linkedStudents,
-      metrics: parentMetrics(linkedStudents),
+      recentPayments,
+      outstandingBalance: money(summary.outstanding),
+      metrics: parentMetrics(linkedStudents, summary),
     };
   } catch {
     return {
       linkedStudents: [],
-      metrics: parentMetrics([]),
+      recentPayments: [],
+      outstandingBalance: "Pending",
+      metrics: parentMetrics([], { paidThisMonth: 0, outstanding: 0, paymentCount: 0 }),
     };
   }
 }
@@ -479,6 +497,68 @@ async function getParentLinkedStudents(parentUserId: number) {
   });
 }
 
+async function getParentPaymentSummary(parentUserId: number) {
+  const [rows] = await pool.execute<ParentPaymentSummaryRow[]>(
+    `SELECT
+       COALESCE(SUM(GREATEST(sfa.amount_due - sfa.amount_paid, 0)), 0) AS outstanding,
+       COALESCE((
+         SELECT SUM(p.amount)
+         FROM payments p
+         JOIN students pst ON pst.id = p.student_id
+         JOIN student_guardians psg ON psg.student_id = pst.id AND psg.parent_user_id = :parentUserId
+         WHERE p.payer_user_id = :parentUserId
+           AND p.status = 'paid'
+           AND DATE_FORMAT(COALESCE(p.paid_at, p.created_at), '%Y-%m') = DATE_FORMAT(CURRENT_DATE(), '%Y-%m')
+       ), 0) AS paid_this_month,
+       COALESCE((
+         SELECT COUNT(*)
+         FROM payments p
+         JOIN students pst ON pst.id = p.student_id
+         JOIN student_guardians psg ON psg.student_id = pst.id AND psg.parent_user_id = :parentUserId
+         WHERE p.payer_user_id = :parentUserId
+       ), 0) AS payment_count
+     FROM student_guardians sg
+     JOIN students st ON st.id = sg.student_id
+     LEFT JOIN student_fee_assignments sfa ON sfa.student_id = st.id AND sfa.status <> 'cancelled'
+     WHERE sg.parent_user_id = :parentUserId`,
+    { parentUserId },
+  );
+  const row = rows[0];
+
+  return {
+    outstanding: decimalValue(row?.outstanding),
+    paidThisMonth: decimalValue(row?.paid_this_month),
+    paymentCount: Number(row?.payment_count ?? 0),
+  };
+}
+
+async function getParentRecentPayments(parentUserId: number) {
+  const [rows] = await pool.execute<ParentRecentPaymentRow[]>(
+    `SELECT p.reference_number, p.amount, p.status,
+       st.first_name, st.middle_name, st.last_name,
+       COALESCE(GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '), 'School fee payment') AS description
+     FROM payments p
+     JOIN students st ON st.id = p.student_id
+     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
+     LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
+     LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     WHERE p.payer_user_id = :parentUserId
+     GROUP BY p.id, p.reference_number, p.amount, p.status, st.first_name, st.middle_name, st.last_name
+     ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC
+     LIMIT 5`,
+    { parentUserId },
+  );
+
+  return rows.map((row) => ({
+    referenceNumber: row.reference_number,
+    studentName: fullName(row.first_name, row.middle_name, row.last_name),
+    description: row.description,
+    amount: money(row.amount),
+    status: labelForStatus(row.status),
+  }));
+}
+
 function emptyAdminStudentData(warning: string): AdminStudentPageData {
   return {
     ready: false,
@@ -515,7 +595,10 @@ function parentKpis(rows: AdminParentRow[]): AdminParentsPageData["kpis"] {
   ];
 }
 
-function parentMetrics(linkedStudents: ParentLinkedStudent[]): ParentDashboardData["metrics"] {
+function parentMetrics(
+  linkedStudents: ParentLinkedStudent[],
+  summary: { paidThisMonth: number; outstanding: number; paymentCount: number },
+): ParentDashboardData["metrics"] {
   return [
     {
       label: "Linked students",
@@ -523,8 +606,8 @@ function parentMetrics(linkedStudents: ParentLinkedStudent[]): ParentDashboardDa
       note: linkedStudents.length > 0 ? "Database-backed guardian links" : "Link a student reference",
       accent: true,
     },
-    { label: "Fee records", value: "Ready", note: "Assigned balances from school records", tone: "blue" },
-    { label: "Payments", value: "Next", note: "Phase 5 will add receipts", tone: "green" },
+    { label: "Paid this month", value: summary.paymentCount > 0 ? money(summary.paidThisMonth) : "Pending", note: "Recorded school fee payments", tone: "green" },
+    { label: "Outstanding", value: linkedStudents.length > 0 ? money(summary.outstanding) : "Pending", note: "Open and partial assigned fees", tone: "red" },
     { label: "Wallets", value: "Next", note: "Phase 6 will add allowance", tone: "orange" },
   ];
 }
@@ -552,6 +635,19 @@ function labelForStatus(status: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function decimalValue(value: number | string | null | undefined) {
+  return Number(value ?? 0);
+}
+
+function money(value: number | string | null | undefined) {
+  const amount = decimalValue(value);
+
+  return `P${amount.toLocaleString("en-US", {
+    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function firstNameFor(name: string) {
@@ -648,6 +744,22 @@ type ParentStudentSqlRow = RowDataPacket & {
   grade_name: string;
   section_name: string;
   status: string;
+};
+
+type ParentPaymentSummaryRow = RowDataPacket & {
+  outstanding: number | string;
+  paid_this_month: number | string;
+  payment_count: number;
+};
+
+type ParentRecentPaymentRow = RowDataPacket & {
+  reference_number: string;
+  amount: number | string;
+  status: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  description: string;
 };
 
 type ParentPortalContextRow = RowDataPacket & {

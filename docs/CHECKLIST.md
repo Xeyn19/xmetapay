@@ -19,7 +19,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Auth uses database-backed `auth_sessions` with hashed tokens and logout revocation.
 - [x] Admin dashboard pages use MySQL-backed reads where tables exist, with honest pending/empty states where feature data is not created yet.
 - [x] Student, enrollment, and guardian-linking backend is implemented.
-- [ ] Payment creation, receipt generation, wallet top-up, store spending, notification sending, and export workflows are not implemented yet.
+- [x] Parent local test payments, fee allocations, receipts, and payment history are implemented.
+- [ ] Wallet top-up, store spending, notification sending, report exports, real payment gateways, refunds, and admin manual payment recording are not implemented yet.
 
 ## Completed Foundation Step
 
@@ -81,13 +82,13 @@ Done when: admin and parent fee screens show real balances from MySQL.
 
 ## Phase 5: Payments And Receipts Backend
 
-- [ ] Add backend helpers for `payments`, `payment_allocations`, and `receipts`.
-- [ ] Create a safe local payment flow that records payments without real payment gateway integration.
-- [ ] Allocate payments to selected fee balances.
-- [ ] Update fee assignment status after payment.
-- [ ] Generate receipt records after successful payment.
-- [ ] Show parent payment history from database records.
-- [ ] Show admin collections log from database records.
+- [x] Add backend helpers for `payments`, `payment_allocations`, and `receipts`.
+- [x] Create a safe local payment flow that records payments without real payment gateway integration.
+- [x] Allocate payments to selected fee balances.
+- [x] Update fee assignment status after payment.
+- [x] Generate receipt records after successful payment.
+- [x] Show parent payment history from database records.
+- [x] Show admin collections log from database records.
 
 Done when: a parent can record a local test payment and both portals show the result.
 

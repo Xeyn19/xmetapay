@@ -242,13 +242,14 @@
         <p>
           A browser-viewable process map for how the school/admin portal and
           parent portal work together from registration to student linking, with
-          future fees, payments, wallet, store, and report flows.
+          fees, payments, receipts, and future wallet, store, and report flows.
         </p>
         <div class="meta">
           <span class="pill admin">Admin/school portal</span>
           <span class="pill parent">Parent portal</span>
           <span class="pill">Student linking</span>
-          <span class="pill future">Future payments and wallet</span>
+          <span class="pill">Payments and receipts</span>
+          <span class="pill future">Future wallet and store</span>
         </div>
         <div class="links">
           <a href="PROJECT_FLOWCHARTS.md">Markdown version</a>
@@ -266,17 +267,16 @@
           <div class="card">
             <strong>Implemented</strong>
             Auth, logout, protected redirects, manual school setup, admin role permissions, student
-            creation, enrollment, and parent-student linking. Parent-side mock
-            enrollment has been removed.
+            creation, enrollment, parent-student linking, fees, local test payments, receipts,
+            and payment history. Parent-side mock enrollment has been removed.
           </div>
           <div class="card">
             <strong>Next</strong>
-            Fees and tuition backend, including parent fee summaries and admin
-            tuition reports from MySQL.
+            Wallet and allowance backend.
           </div>
           <div class="card">
             <strong>Future</strong>
-            Payments, receipts, wallet top-ups, store/canteen spending,
+            Store/canteen spending, real payment gateways, refunds, admin manual payment recording,
             notifications, and report exports.
           </div>
         </div>
@@ -309,9 +309,9 @@ flowchart TD
   J --> L["Parent dashboard shows linked student"]
   K --> M["Parent can try link-by-reference later"]
 
-  L --> N["Future: parent views fees"]
-  N --> O["Future: parent pays fees"]
-  O --> P["Future: receipt and payment history"]
+  L --> N["Parent views assigned fees"]
+  N --> O["Parent records local test payment"]
+  O --> P["Receipt and payment history are created"]
   L --> Q["Future: wallet top-up and allowance"]
   Q --> R["Future: store/canteen spending"]
 
@@ -547,12 +547,12 @@ flowchart TD
       </section>
 
       <section>
-        <h2>Future Backend Phases</h2>
+        <h2>Finance Backend Flows</h2>
 
         <h3>Fees And Tuition</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
-            <button type="button" data-diagram-download="svg" data-file-name="future-fees-tuition.svg">Download SVG</button>
+            <button type="button" data-diagram-download="svg" data-file-name="fees-tuition.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
@@ -570,22 +570,25 @@ flowchart TD
         <h3>Payment And Receipt</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
-            <button type="button" data-diagram-download="svg" data-file-name="future-payment-receipt.svg">Download SVG</button>
+            <button type="button" data-diagram-download="svg" data-file-name="payment-receipt.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent selects fee items"] --> B["Create payments row with pending status"]
-  B --> C["Local test payment is confirmed"]
-  C --> D["Update payment status to paid"]
-  D --> E["Create payment_allocations rows"]
-  E --> F["Update student_fee_assignments amount_paid"]
-  F --> G{"Balance fully paid?"}
-  G -->|Yes| H["Mark fee assignment paid"]
-  G -->|No| I["Mark fee assignment partial"]
-  H --> J["Create receipt"]
-  I --> J
-  J --> K["Parent sees payment history and receipt"]
-  K --> L["Admin sees collections report"]
+  A["Parent opens /parent/pay-tuition"] --> B["Read payable fee assignments through student_guardians"]
+  B --> C["Parent selects one student's payable fee items"]
+  C --> D["Parent chooses local test payment method"]
+  D --> E["Server action requires parent session"]
+  E --> F["Lock selected student_fee_assignments"]
+  F --> G["Create payments row with paid status"]
+  G --> H["Create payment_allocations rows"]
+  H --> I["Update student_fee_assignments amount_paid"]
+  I --> J{"Balance fully paid?"}
+  J -->|Yes| K["Mark fee assignment paid"]
+  J -->|No| L["Mark fee assignment partial"]
+  K --> M["Create receipts row"]
+  L --> M
+  M --> N["Parent sees real receipt and payment history"]
+  N --> O["Admin dashboard and collections read the same payment records"]
           </pre>
         </div>
 

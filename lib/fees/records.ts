@@ -24,6 +24,7 @@ export type ParentFeePageData = {
     accent?: boolean;
   }>;
   rows: ParentFeeRow[];
+  hasPayableFees: boolean;
   warning: string | null;
 };
 
@@ -98,9 +99,10 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
 
     return {
       warning: null,
+      hasPayableFees: rows.some((row) => decimalValue(row.amount_due) > decimalValue(row.amount_paid) && row.status !== "cancelled"),
       metrics: [
         { label: "Total billed", value: rows.length > 0 ? money(totals.billed) : "Pending", note: rows.length > 0 ? `${rows.length} assigned fees` : "No assigned fees yet", accent: true },
-        { label: "Paid", value: rows.length > 0 ? money(totals.paid) : "Pending", note: "Payment records connect in Phase 5", tone: "green" },
+        { label: "Paid", value: rows.length > 0 ? money(totals.paid) : "Pending", note: "Recorded payment allocations", tone: "green" },
         { label: "Outstanding", value: rows.length > 0 ? money(totals.outstanding) : "Pending", note: rows.length > 0 ? "Open and partial balances" : "Balances pending", tone: "red" },
         { label: "Next due date", value: nextDue ? formatDate(nextDue) : "Pending", note: nextDue ? "Earliest assigned due date" : "No due dates yet", tone: "blue" },
       ],
@@ -121,6 +123,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
   } catch {
     return {
       warning: "Fee records are unavailable. Confirm MySQL/XAMPP and the full schema are ready.",
+      hasPayableFees: false,
       metrics: [
         { label: "Total billed", value: "Pending", note: "Fee records unavailable", accent: true },
         { label: "Paid", value: "Pending", note: "Payment records pending", tone: "green" },
