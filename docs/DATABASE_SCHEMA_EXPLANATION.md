@@ -270,6 +270,8 @@ Main purpose:
 
 Each store transaction should connect to a wallet transaction so spending affects the wallet ledger.
 
+Implementation status: these tables already exist in the full schema and are ready for Phase 6B. The next backend step is the admin/finance write flow that records a purchase, decreases the wallet balance, inserts a `wallet_transactions` purchase row, and links it to a `store_transactions` row.
+
 ## Notification Table
 
 ### `notification_logs`

@@ -1,6 +1,6 @@
 # XMETA Pay Project Flowcharts
 
-This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, and future store and report phases.
+This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, the next Phase 6B store/canteen purchase flow, and future report phases.
 
 Related documents:
 
@@ -47,12 +47,11 @@ Implemented:
 
 Next:
 
-- Store/canteen spending backend.
+- Phase 6B store/canteen purchase recording.
 
 Future:
 
-- Store/canteen transactions.
-- Real payment gateway integration, refunds, admin manual payment recording, notifications, and report exports.
+- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, notifications, and report exports.
 
 ## Whole Project Overview
 
@@ -79,7 +78,7 @@ flowchart TD
   N --> O["Parent records local test payment"]
   O --> P["Receipt and payment history are created"]
   L --> Q["Parent tops up allowance wallet"]
-  Q --> R["Future: store/canteen spending"]
+  Q --> R["Next Phase 6B: admin or finance records store purchase"]
 
   P --> S["Admin sees collections and reports"]
   R --> T["Admin sees wallet and store reports"]
@@ -429,7 +428,7 @@ Database touchpoints:
 
 ## Wallet, Allowance, And Store Flow
 
-Wallet top-up is implemented for local MVP testing. Store/canteen spending is future.
+Wallet top-up is implemented for local MVP testing. Store/canteen purchase recording is the next planned Phase 6B step.
 
 Wallets should be separate from tuition payments so allowance and store/canteen spending can be tracked clearly.
 
@@ -444,8 +443,15 @@ flowchart TD
   G --> H["Create receipt row"]
   H --> I["Parent sees receipt and wallet history"]
   I --> J["Admin sees allowance ledger update"]
-  J --> K["Future: student spends at canteen or school store"]
-  K --> L["Future: create purchase wallet transaction and store transaction"]
+  J --> K["Next Phase 6B: admin or finance creates store merchant"]
+  K --> L["Admin or finance records local test purchase"]
+  L --> M{"Wallet has enough balance?"}
+  M -->|No| N["Reject purchase with friendly error"]
+  M -->|Yes| O["Decrease wallet balance"]
+  O --> P["Create wallet_transactions row with type purchase"]
+  P --> Q["Create store_transactions row"]
+  Q --> R["Parent sees spending in wallet history"]
+  Q --> S["Admin sees store transaction report"]
 ```
 
 Database touchpoints:
@@ -455,6 +461,11 @@ Database touchpoints:
 - `store_merchants`
 - `store_transactions`
 - `payments`
+
+Role rule:
+
+- `school_administrator` and `finance_officer` can record store purchases.
+- `registrar` cannot record store purchases because store spending is a finance operation.
 
 ## Practical Testing Flow
 
