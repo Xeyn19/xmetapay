@@ -100,7 +100,7 @@ export function ParentPaymentForm({ rows }: { rows: ParentPayableFee[] }) {
             ))}
           </div>
           <p className="mt-3 text-xs leading-5 text-[#6b6b6b]">
-            XMETA wallet payments will be enabled in the wallet phase.
+            XMETA wallet fee payments are future work. Wallet top-up is available from the wallet page.
           </p>
         </ParentCard>
       </div>

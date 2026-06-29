@@ -12,6 +12,7 @@ const adminTableComponentPaths = [
   "app/admin/(dashboard)/tuition/tuition-report-table.tsx",
   "app/admin/(dashboard)/collections/collections-table.tsx",
   "app/admin/(dashboard)/other-fees/other-fees-table.tsx",
+  "app/admin/(dashboard)/allowance/allowance-table.tsx",
   "app/admin/(dashboard)/students/students-table.tsx",
   "app/admin/(dashboard)/parents/parents-table.tsx",
 ];
@@ -57,7 +58,7 @@ test("admin real-data helper reads supported MySQL schema tables with admin scho
   assert.match(helper, /FROM store_merchants|JOIN store_merchants/);
   assert.match(helper, /FROM store_transactions|JOIN store_transactions/);
   assert.match(helper, /Pending/);
-  assert.match(helper, /No payment records yet|No store transactions yet|Wallet backend pending/);
+  assert.match(helper, /No payment records yet|No store transactions yet|No wallet records yet/);
 });
 
 test("admin student profile route lists students and selected route loads exact profile", () => {

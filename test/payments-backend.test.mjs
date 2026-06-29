@@ -65,7 +65,7 @@ test("parent payment pages use real database helpers instead of static payment a
   assert.match(form, /createParentPaymentAction/);
   assert.match(form, /name="feeAssignmentId"/);
   assert.match(form, /name="channel"/);
-  assert.match(form, /XMETA wallet payments will be enabled in the wallet phase/);
+  assert.match(form, /XMETA wallet fee payments are future work/);
   assert.match(receiptPage, /getParentReceiptData/);
   assert.match(receiptPage, /searchParams: Promise<\{ receiptId\?: string \}>/);
   assert.match(historyPage, /getParentPaymentHistoryData\(session\.userId\)/);
