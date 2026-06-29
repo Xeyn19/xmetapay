@@ -250,7 +250,8 @@ Dashboard calculation note:
 
 - Current allowance balance comes from `wallets.balance`.
 - Admin allowance total balance should count each wallet once.
-- Wallet transaction rows should be used for ledger history, monthly spend, and store purchase reporting.
+- Wallet transaction rows should be used for full wallet ledger history, parent dashboard wallet activity, selected student profile wallet activity, monthly spend, and store purchase reporting.
+- Store purchases should not be mixed into parent payment history because they do not create fee payment or receipt records.
 - Do not sum `wallets.balance` after joining directly to `wallet_transactions`, because one wallet can have many transaction rows and the balance would be duplicated.
 
 ## Store And Canteen Tables
@@ -273,7 +274,7 @@ Main purpose:
 
 - Record the merchant, student, wallet transaction, amount, and purchase timestamp.
 - Store a unique transaction reference number.
-- Support admin store reports and parent spending history.
+- Support admin store reports, parent dashboard store snapshots, selected student profile spending snapshots, and full parent wallet spending history.
 
 Each store transaction should connect to a wallet transaction so spending affects the wallet ledger.
 
@@ -309,7 +310,7 @@ The schema supports this practical backend flow:
 9. Parent or admin records payments in `payments`.
 10. Payments are allocated to balances through `payment_allocations`.
 11. Receipts are created in `receipts`.
-12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed.
+12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
 13. Notifications and reminders are recorded in `notification_logs`.
 
 ## Relationship Summary
@@ -323,7 +324,7 @@ The schema supports this practical backend flow:
 - `payments` records money received.
 - `payment_allocations` applies payment money to student balances.
 - `receipts` documents paid payments.
-- `wallets` and `wallet_transactions` track student allowance balances.
+- `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, and full wallet ledger history.
 - `store_transactions` records wallet spending at school merchants.
 - `notification_logs` records communication history.
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, Plus, Users } from "lucide-react";
+import { CalendarClock, Plus, Users, Wallet } from "lucide-react";
 
 import { linkParentStudentAction } from "@/app/parent/student-link/actions";
 import { requireRole } from "@/lib/auth/session";
@@ -16,6 +16,7 @@ import {
   parentControlClass,
 } from "../../_components/parent-ui";
 import { ParentRecentPaymentsTable } from "./parent-recent-payments-table";
+import { ParentWalletActivityTable } from "../_components/parent-wallet-activity-table";
 
 export default async function ParentDashboardPage() {
   const session = await requireRole("parent");
@@ -94,6 +95,20 @@ export default async function ParentDashboardPage() {
 
       <ParentCard title="Recent payment activity" icon={CalendarClock} bodyClassName="p-0">
         <ParentRecentPaymentsTable rows={data.recentPayments} />
+      </ParentCard>
+
+      <ParentCard
+        title="Recent wallet activity"
+        icon={Wallet}
+        bodyClassName="p-0"
+        className="mt-5"
+        action={(
+          <Link href="/parent/wallet" className="inline-flex min-h-10 items-center justify-center rounded-[10px] border border-black/15 bg-white px-3 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
+            View full history
+          </Link>
+        )}
+      >
+        <ParentWalletActivityTable rows={data.walletActivity} />
       </ParentCard>
     </>
   );

@@ -13,6 +13,7 @@ import {
   StatusPill,
   parentControlClass,
 } from "../../_components/parent-ui";
+import { ParentWalletActivityTable } from "../_components/parent-wallet-activity-table";
 
 type StudentProfile = NonNullable<ParentStudentProfileData["student"]>;
 
@@ -107,6 +108,24 @@ export function StudentProfileView({ student }: { student: StudentProfile }) {
           <Link href="/parent/fees"><ParentButton>View fee summary</ParentButton></Link>
           <Link href="/parent/pay-tuition"><ParentButton tone="primary">Pay outstanding fees</ParentButton></Link>
         </div>
+      </ParentCard>
+
+      <ParentCard
+        title="Recent wallet activity"
+        icon={Wallet}
+        bodyClassName="p-0"
+        className="mt-5"
+        action={(
+          <Link href="/parent/wallet">
+            <ParentButton>View full history</ParentButton>
+          </Link>
+        )}
+      >
+        <ParentWalletActivityTable
+          rows={student.walletActivity}
+          csvFilename={`parent-${student.id}-wallet-activity.csv`}
+          showStudent={false}
+        />
       </ParentCard>
     </>
   );

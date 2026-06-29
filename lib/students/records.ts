@@ -3,6 +3,7 @@ import "server-only";
 import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { labelForChannel } from "@/lib/payments/records";
 import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
 
 type Queryable = Pick<Pool | PoolConnection, "execute">;
@@ -60,6 +61,7 @@ export type ParentDashboardData = {
   }>;
   linkedStudents: ParentLinkedStudent[];
   recentPayments: ParentDashboardPayment[];
+  walletActivity: ParentWalletActivity[];
   outstandingBalance: string;
 };
 
@@ -93,6 +95,20 @@ export type ParentDashboardPayment = {
   status: string;
 };
 
+export type ParentWalletActivity = {
+  id: number;
+  date: string;
+  studentName: string;
+  description: string;
+  amount: string;
+  balanceAfter: string;
+  channel: string;
+  status: string;
+  tone: "green" | "amber" | "red" | "muted";
+};
+
+export type ParentDashboardWalletActivity = ParentWalletActivity;
+
 export type ParentStudentProfileData = {
   context: ParentPortalContext;
   student: {
@@ -106,6 +122,7 @@ export type ParentStudentProfileData = {
     studentDetails: Array<{ label: string; value: string }>;
     guardianDetails: Array<{ label: string; value: string }>;
     walletDetails: Array<{ label: string; value: string }>;
+    walletActivity: ParentWalletActivity[];
   } | null;
 };
 
@@ -164,15 +181,17 @@ export async function getAdminParentsPageData(adminUserId: number): Promise<Admi
 
 export async function getParentDashboardData(parentUserId: number): Promise<ParentDashboardData> {
   try {
-    const [linkedStudents, summary, recentPayments] = await Promise.all([
+    const [linkedStudents, summary, recentPayments, walletActivity] = await Promise.all([
       getParentLinkedStudents(parentUserId),
       getParentPaymentSummary(parentUserId),
       getParentRecentPayments(parentUserId),
+      getParentRecentWalletActivity(parentUserId, { limit: 5 }),
     ]);
 
     return {
       linkedStudents,
       recentPayments,
+      walletActivity,
       outstandingBalance: money(summary.outstanding),
       metrics: parentMetrics(linkedStudents, summary),
     };
@@ -180,6 +199,7 @@ export async function getParentDashboardData(parentUserId: number): Promise<Pare
     return {
       linkedStudents: [],
       recentPayments: [],
+      walletActivity: [],
       outstandingBalance: "Pending",
       metrics: parentMetrics([], { paidThisMonth: 0, outstanding: 0, paymentCount: 0, walletBalance: 0, walletCount: 0 }),
     };
@@ -276,6 +296,7 @@ export async function getParentStudentProfileData(
       return { context, student: null };
     }
 
+    const walletActivity = await getParentRecentWalletActivity(parentUserId, { studentId: row.id, limit: 10 });
     const fullStudentName = fullName(row.first_name, row.middle_name, row.last_name);
     const gradeSection = [row.grade_name, row.section_name !== "-" ? row.section_name : null].filter(Boolean).join(" - ");
     const enrollmentLabel = labelForStatus(row.enrollment_status);
@@ -319,6 +340,7 @@ export async function getParentStudentProfileData(
           { label: "Last top-up", value: row.last_top_up_at ? formatDateTime(row.last_top_up_at) : "No top-up yet" },
           { label: "Status", value: row.wallet_status === "not_started" ? "Ready for top-up" : labelForStatus(row.wallet_status) },
         ],
+        walletActivity,
       },
     };
   } catch {
@@ -608,6 +630,47 @@ async function getParentRecentPayments(parentUserId: number) {
   }));
 }
 
+async function getParentRecentWalletActivity(
+  parentUserId: number,
+  { studentId, limit }: { studentId?: number; limit: number },
+) {
+  const selectedStudentClause = typeof studentId === "number" ? "AND st.id = :studentId" : "";
+  const [rows] = await pool.execute<ParentRecentWalletActivityRow[]>(
+    `SELECT wt.id, wt.type, wt.amount, wt.balance_after, wt.description, wt.created_at,
+       p.channel, p.status,
+       st.first_name, st.middle_name, st.last_name
+     FROM wallet_transactions wt
+     JOIN wallets w ON w.id = wt.wallet_id
+     JOIN students st ON st.id = w.student_id
+     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     LEFT JOIN payments p ON p.id = wt.payment_id
+     WHERE 1 = 1
+       ${selectedStudentClause}
+     ORDER BY wt.created_at DESC, wt.id DESC
+     LIMIT :limit`,
+    typeof studentId === "number" ? { parentUserId, studentId, limit } : { parentUserId, limit },
+  );
+
+  return rows.map((row) => {
+    const rawAmount = decimalValue(row.amount);
+    const isCredit = rawAmount > 0;
+    const isPurchase = row.type === "purchase";
+    const status = row.status ? labelForStatus(row.status) : "Recorded";
+
+    return {
+      id: row.id,
+      date: formatDateTime(row.created_at),
+      studentName: fullName(row.first_name, row.middle_name, row.last_name),
+      description: row.description ?? labelForWalletType(row.type),
+      amount: `${isCredit ? "+" : "-"}${money(Math.abs(rawAmount))}`,
+      balanceAfter: money(row.balance_after),
+      channel: isPurchase ? "Store wallet" : row.channel ? labelForChannel(row.channel) : "Wallet",
+      status,
+      tone: walletActivityTone(row.type, status),
+    };
+  });
+}
+
 function emptyAdminStudentData(warning: string): AdminStudentPageData {
   return {
     ready: false,
@@ -689,6 +752,33 @@ function labelForStatus(status: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function labelForWalletType(type: string) {
+  const labels: Record<string, string> = {
+    adjustment: "Wallet adjustment",
+    purchase: "Store purchase",
+    reversal: "Wallet reversal",
+    top_up: "Wallet top-up",
+  };
+
+  return labels[type] ?? labelForStatus(type);
+}
+
+function walletActivityTone(type: string, status: string): ParentWalletActivity["tone"] {
+  if (type === "purchase") {
+    return "red";
+  }
+
+  if (status === "Pending") {
+    return "amber";
+  }
+
+  if (status === "Failed" || status === "Cancelled") {
+    return "red";
+  }
+
+  return type === "top_up" ? "green" : "muted";
 }
 
 function decimalValue(value: number | string | null | undefined) {
@@ -833,6 +923,20 @@ type ParentRecentPaymentRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string;
   description: string;
+};
+
+type ParentRecentWalletActivityRow = RowDataPacket & {
+  id: number;
+  type: string;
+  amount: number | string;
+  balance_after: number | string;
+  description: string | null;
+  created_at: Date | string;
+  channel: string | null;
+  status: string | null;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
 };
 
 type ParentPortalContextRow = RowDataPacket & {

@@ -8,6 +8,9 @@ const storePagePath = "app/admin/(dashboard)/store-transactions/page.tsx";
 const storeFormsPath = "app/admin/(dashboard)/store-transactions/store-forms.tsx";
 const storeTablePath = "app/admin/(dashboard)/store-transactions/store-transactions-table.tsx";
 const walletRecordsPath = "lib/wallets/records.ts";
+const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
+const parentWalletActivityTablePath = "app/parent/(portal)/_components/parent-wallet-activity-table.tsx";
+const paymentRecordsPath = "lib/payments/records.ts";
 const adminRealDataPath = "lib/admin/real-data.ts";
 const checklistPath = "docs/CHECKLIST.md";
 const flowchartsPath = "docs/PROJECT_FLOWCHARTS.md";
@@ -84,11 +87,18 @@ test("admin store transaction page exposes merchant and purchase forms plus work
 
 test("parent wallet history labels store purchases as spending", () => {
   const walletRecords = readFileSync(walletRecordsPath, "utf8");
+  const parentDashboard = readFileSync(parentDashboardPath, "utf8");
+  const walletActivityTable = readFileSync(parentWalletActivityTablePath, "utf8");
+  const paymentRecords = readFileSync(paymentRecordsPath, "utf8");
   const adminRealData = readFileSync(adminRealDataPath, "utf8");
 
   assert.match(walletRecords, /labelForWalletType/);
   assert.match(walletRecords, /purchase: "Store purchase"/);
   assert.match(walletRecords, /row\.type === "purchase"/);
+  assert.match(parentDashboard, /Recent wallet activity/);
+  assert.match(walletActivityTable, /Channel/);
+  assert.match(walletActivityTable, /parent-wallet-activity\.csv/);
+  assert.doesNotMatch(paymentRecords, /store_transactions/);
   assert.match(adminRealData, /CASE WHEN wt\.type = 'purchase'/);
 });
 
@@ -102,9 +112,11 @@ test("docs and visual plans mark Phase 6B store transactions complete after impl
   assert.match(checklist, /- \[x\] Add admin\/finance purchase recording for `store_transactions`\./);
   assert.match(checklist, /- \[x\] Decrease student wallet balance through a `wallet_transactions` purchase row\./);
   assert.match(checklist, /- \[x\] Show store purchases in parent wallet history, not parent payment history\./);
+  assert.match(checklist, /- \[x\] Show recent wallet\/store activity on the parent dashboard\./);
   assert.match(checklist, /- \[x\] Add store purchase write flow\./);
-  assert.match(flowcharts, /Store\/canteen purchase recording is implemented for local MVP testing/);
-  assert.match(visualFlowcharts, /store purchase recording, and admin allowance totals/);
-  assert.match(visualSchema, /wallet top-up and Phase 6B store purchase recording/);
+  assert.match(flowcharts, /Parent dashboard recent wallet\/store activity snapshot from MySQL/);
+  assert.match(flowcharts, /Parent payment history stays payment-only/);
+  assert.match(visualFlowcharts, /parent dashboard wallet activity/);
+  assert.match(visualSchema, /parent dashboard wallet activity/);
   assert.match(visualSchema, /Admin allowance total balance sums current wallet balances once per wallet/);
 });
