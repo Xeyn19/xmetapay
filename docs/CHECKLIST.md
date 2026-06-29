@@ -95,17 +95,35 @@ Done when: a parent can record a local test payment and both portals show the re
 
 ## Phase 6: Wallet, Store, And Reports
 
+### Phase 6A: Wallet top-up
+
 - [x] Add backend helpers for `wallets` and `wallet_transactions`.
 - [x] Create student wallets lazily when the parent tops up allowance.
 - [x] Record local allowance top-ups.
-- [ ] Add `store_merchants` and `store_transactions` for canteen/store spending.
 - [x] Admin allowance and store pages read database tables and show pending/empty states when no rows exist.
 - [x] Add parent wallet top-up write flow.
+- [x] Show parent wallet history and admin allowance records from MySQL.
+
+Done when: wallet balances and top-up history come from MySQL.
+
+### Phase 6B: Store/canteen transactions
+
+- [ ] Add admin/finance merchant setup for `store_merchants`.
+- [ ] Add admin/finance purchase recording for `store_transactions`.
+- [ ] Decrease student wallet balance through a `wallet_transactions` purchase row.
+- [ ] Show store purchases in parent wallet/history screens.
+- [ ] Show store transactions in admin store reports with working filters/export.
 - [ ] Add store purchase write flow.
+
+Done when: a parent can top up a wallet, admin/finance can record a local test store purchase, and both portals show the same wallet/store activity.
+
+### Future Phase 6C+
+
 - [ ] Add report queries for tuition, collections, wallet, and store summaries.
 - [ ] Add `notification_logs` after reminders are ready.
+- [ ] Add cashier/POS portal, item catalog, refunds, and real-time purchase notifications.
 
-Done when: wallet balances and top-up history come from MySQL; store transactions and report exports remain later work.
+Done when: reports and notification flows are generated from the operational MySQL records.
 
 ## Safe Testing Checklist
 

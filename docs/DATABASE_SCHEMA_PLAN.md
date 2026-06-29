@@ -674,6 +674,8 @@ flowchart TD
 
 ### Parent Wallet and Allowance Flow
 
+Wallet top-up is implemented now. Store/canteen purchases use the same wallet tables and are the next planned Phase 6B write flow.
+
 ```mermaid
 flowchart TD
   A["Parent opens wallet page"] --> B["Load student wallets"]
@@ -682,10 +684,10 @@ flowchart TD
   D --> E["Payment succeeds"]
   E --> F["Increase wallet balance"]
   F --> G["Create wallet top_up transaction"]
-  G --> H["Student buys from canteen or store"]
+  G --> H["Next Phase 6B: admin or finance records canteen/store purchase"]
   H --> I["Create wallet purchase transaction"]
   I --> J["Create store transaction"]
-  J --> K["Admin sees allowance and store reports"]
+  J --> K["Parent and admin see wallet/store history"]
 ```
 
 ## Suggested Implementation Order
