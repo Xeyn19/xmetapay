@@ -21,7 +21,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Student, enrollment, and guardian-linking backend is implemented.
 - [x] Parent local test payments, fee allocations, receipts, and payment history are implemented.
 - [x] Parent local wallet top-up and wallet transaction history are implemented.
-- [ ] Store spending, notification sending, report exports, real payment gateways, refunds, and admin manual payment recording are not implemented yet.
+- [x] Store spending backend is implemented through admin/finance local test purchase recording.
+- [ ] Notification sending, report exports, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
 
 ## Completed Foundation Step
 
@@ -108,12 +109,12 @@ Done when: wallet balances and top-up history come from MySQL.
 
 ### Phase 6B: Store/canteen transactions
 
-- [ ] Add admin/finance merchant setup for `store_merchants`.
-- [ ] Add admin/finance purchase recording for `store_transactions`.
-- [ ] Decrease student wallet balance through a `wallet_transactions` purchase row.
-- [ ] Show store purchases in parent wallet/history screens.
-- [ ] Show store transactions in admin store reports with working filters/export.
-- [ ] Add store purchase write flow.
+- [x] Add admin/finance merchant setup for `store_merchants`.
+- [x] Add admin/finance purchase recording for `store_transactions`.
+- [x] Decrease student wallet balance through a `wallet_transactions` purchase row.
+- [x] Show store purchases in parent wallet/history screens.
+- [x] Show store transactions in admin store reports with working filters/export.
+- [x] Add store purchase write flow.
 
 Done when: a parent can top up a wallet, admin/finance can record a local test store purchase, and both portals show the same wallet/store activity.
 

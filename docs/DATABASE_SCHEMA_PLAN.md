@@ -674,7 +674,7 @@ flowchart TD
 
 ### Parent Wallet and Allowance Flow
 
-Wallet top-up is implemented now. Store/canteen purchases use the same wallet tables and are the next planned Phase 6B write flow.
+Wallet top-up and store/canteen purchase recording are implemented now. Store purchases use the same wallet ledger as allowance top-ups.
 
 ```mermaid
 flowchart TD
@@ -684,7 +684,7 @@ flowchart TD
   D --> E["Payment succeeds"]
   E --> F["Increase wallet balance"]
   F --> G["Create wallet top_up transaction"]
-  G --> H["Next Phase 6B: admin or finance records canteen/store purchase"]
+  G --> H["Admin or finance records canteen/store purchase"]
   H --> I["Create wallet purchase transaction"]
   I --> J["Create store transaction"]
   J --> K["Parent and admin see wallet/store history"]

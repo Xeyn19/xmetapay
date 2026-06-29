@@ -333,7 +333,7 @@
             <tr>
               <td>Store</td>
               <td><code>store_merchants</code>, <code>store_transactions</code></td>
-              <td>Ready schema for Phase 6B canteen and school store spending logs.</td>
+              <td>Implemented Phase 6B tables for canteen and school store spending logs.</td>
             </tr>
             <tr>
               <td>Notifications</td>
@@ -703,7 +703,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-wallet-allowance-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up. <strong>Next:</strong> Phase 6B store purchase recording with existing store tables.</p>
+          <p><strong>Implemented:</strong> wallet top-up. Phase 6B store purchase recording is implemented with existing store tables.</p>
           <pre class="mermaid">
 flowchart TD
   A["Parent opens wallet page"] --> B["Load student wallets"]
@@ -712,7 +712,7 @@ flowchart TD
   D --> E["Payment succeeds"]
   E --> F["Increase wallet balance"]
   F --> G["Create wallet top_up transaction"]
-  G --> H["Next Phase 6B: admin or finance records canteen/store purchase"]
+  G --> H["Admin or finance records canteen/store purchase"]
   H --> I["Create wallet purchase transaction"]
   I --> J["Create store transaction"]
   J --> K["Parent and admin see wallet/store history"]
@@ -730,7 +730,7 @@ flowchart TD
           <li>Add fee tables.</li>
           <li>Add payment and receipt tables.</li>
           <li>Add wallet and wallet transaction tables.</li>
-          <li>Add store merchant and store transaction tables. These already exist in the schema and are ready for the Phase 6B write flow.</li>
+          <li>Add store merchant and store transaction tables. These already exist in the schema and support the implemented Phase 6B write flow.</li>
           <li>Add notification logs when reminders are implemented.</li>
           <li>Build reports from operational query views instead of separate report storage tables.</li>
         </ol>

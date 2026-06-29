@@ -242,7 +242,7 @@
         <p>
           A browser-viewable process map for how the school/admin portal and
           parent portal work together from registration to student linking, with
-          fees, payments, receipts, wallet top-ups, the next Phase 6B store flow, and future reports.
+          fees, payments, receipts, wallet top-ups, store/canteen purchase recording, and future reports.
         </p>
         <div class="meta">
           <span class="pill admin">Admin/school portal</span>
@@ -250,7 +250,7 @@
           <span class="pill">Student linking</span>
           <span class="pill">Payments and receipts</span>
           <span class="pill">Wallet top-up</span>
-          <span class="pill future">Next: store purchase recording</span>
+          <span class="pill">Store purchase recording</span>
         </div>
         <div class="links">
           <a href="PROJECT_FLOWCHARTS.md">Markdown version</a>
@@ -273,7 +273,7 @@
           </div>
           <div class="card">
             <strong>Next</strong>
-            Phase 6B store/canteen purchase recording from the admin/finance side.
+            Report exports, notifications, and production payment/cashier features.
           </div>
           <div class="card">
             <strong>Future</strong>
@@ -314,7 +314,7 @@ flowchart TD
   N --> O["Parent records local test payment"]
   O --> P["Receipt and payment history are created"]
   L --> Q["Parent tops up allowance wallet"]
-  Q --> R["Next Phase 6B: admin or finance records store purchase"]
+  Q --> R["Admin or finance records store purchase"]
 
   P --> S["Admin sees collections and reports"]
   R --> T["Admin sees wallet and store reports"]
@@ -598,7 +598,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="wallet-topup-store-phase-6b.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up. <strong>Next:</strong> store purchase recording.</p>
+          <p><strong>Implemented:</strong> wallet top-up. Implemented: store purchase recording.</p>
           <pre class="mermaid">
 flowchart TD
   A["Parent opens wallet page"] --> B["Read linked students through student_guardians"]
@@ -610,7 +610,7 @@ flowchart TD
   G --> H["Create receipt row"]
   H --> I["Parent sees receipt and wallet history"]
   I --> J["Admin sees allowance ledger update"]
-  J --> K["Next Phase 6B: admin or finance creates store merchant"]
+  J --> K["Admin or finance creates store merchant"]
   K --> L["Admin or finance records local test purchase"]
   L --> M{"Wallet has enough balance?"}
   M -->|No| N["Reject purchase with friendly error"]
