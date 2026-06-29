@@ -642,16 +642,23 @@ async function getPaymentSummary(schoolId: number) {
 
 async function getWalletSummary(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<WalletSummaryRow[]>(
-    `SELECT COUNT(w.id) AS wallet_count,
-       COALESCE(SUM(w.balance), 0) AS total_balance,
-       COUNT(CASE WHEN w.balance > 0 AND w.balance < 50 THEN 1 END) AS low_wallets,
-       COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS monthly_spend,
-       COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS store_spend
-     FROM students st
-     LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
-     LEFT JOIN wallets w ON w.student_id = st.id
-     LEFT JOIN wallet_transactions wt ON wt.wallet_id = w.id AND wt.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
-     WHERE st.school_id = :schoolId`,
+    `SELECT COUNT(wallet_id) AS wallet_count,
+       COALESCE(SUM(balance), 0) AS total_balance,
+       COUNT(CASE WHEN balance > 0 AND balance < 50 THEN 1 END) AS low_wallets,
+       COALESCE(SUM(monthly_spend), 0) AS monthly_spend,
+       COALESCE(SUM(store_spend), 0) AS store_spend
+     FROM (
+       SELECT w.id AS wallet_id,
+         w.balance,
+         COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS monthly_spend,
+         COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS store_spend
+       FROM students st
+       LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
+       LEFT JOIN wallets w ON w.student_id = st.id
+       LEFT JOIN wallet_transactions wt ON wt.wallet_id = w.id AND wt.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
+       WHERE st.school_id = :schoolId
+       GROUP BY w.id, w.balance
+     ) wallet_rows`,
     { schoolId, schoolYearId },
   );
   const row = rows[0];

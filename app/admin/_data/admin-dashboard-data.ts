@@ -61,7 +61,7 @@ export type Kpi = {
 export const pageMeta: Record<string, PageMeta> = {
   "/admin/dashboard": {
     title: "Dashboard",
-    subtitle: "Brentwood Academy - SY 2025-2026 - May 19, 2025",
+    subtitle: "School dashboard - SY 2025-2026",
   },
   "/admin/school-setup": {
     title: "School setup",

@@ -122,8 +122,10 @@ test("docs and checklist mark wallet top-up and store transactions complete with
   assert.match(checklist, /- \[x\] Record local allowance top-ups\./);
   assert.match(checklist, /- \[x\] Add parent wallet top-up write flow\./);
   assert.match(checklist, /- \[x\] Add store purchase write flow\./);
+  assert.match(checklist, /Calculate admin allowance total balance from one row per wallet/);
   assert.match(flowcharts, /Parent local wallet top-up flow/);
   assert.match(flowcharts, /Store\/canteen purchase recording is implemented for local MVP testing/);
+  assert.match(flowcharts, /Admin allowance `Total balance` should sum the current `wallets\.balance` once per wallet/);
   assert.match(visualFlowcharts, /Wallet top-up/);
-  assert.match(visualFlowcharts, /Implemented: store purchase recording/);
+  assert.match(visualFlowcharts, /Accurate wallet totals/);
 });

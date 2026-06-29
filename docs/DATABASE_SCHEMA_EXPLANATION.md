@@ -246,6 +246,13 @@ Main purpose:
 
 This table provides an audit trail for all wallet changes.
 
+Dashboard calculation note:
+
+- Current allowance balance comes from `wallets.balance`.
+- Admin allowance total balance should count each wallet once.
+- Wallet transaction rows should be used for ledger history, monthly spend, and store purchase reporting.
+- Do not sum `wallets.balance` after joining directly to `wallet_transactions`, because one wallet can have many transaction rows and the balance would be duplicated.
+
 ## Store And Canteen Tables
 
 ### `store_merchants`
@@ -302,7 +309,7 @@ The schema supports this practical backend flow:
 9. Parent or admin records payments in `payments`.
 10. Payments are allocated to balances through `payment_allocations`.
 11. Receipts are created in `receipts`.
-12. Student wallets and store activity are tracked through wallet and store tables.
+12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed.
 13. Notifications and reminders are recorded in `notification_logs`.
 
 ## Relationship Summary

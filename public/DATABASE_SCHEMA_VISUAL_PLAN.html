@@ -265,7 +265,7 @@
             <strong>Parent portal</strong>
             Registration, login, student linking by reference, linked enrolled
             student access, fee viewing, tuition payment, receipts, history,
-            and wallet top-up.
+            wallet top-up, and wallet store-spending history.
           </div>
           <div class="card">
             <strong>Auth foundation</strong>
@@ -328,7 +328,7 @@
             <tr>
               <td>Wallet</td>
               <td><code>wallets</code>, <code>wallet_transactions</code></td>
-              <td>Student allowance balance, top-ups, purchases, and adjustments.</td>
+              <td>Student allowance balance, top-ups, purchases, and adjustments. Current totals sum each wallet once.</td>
             </tr>
             <tr>
               <td>Store</td>
@@ -703,7 +703,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-wallet-allowance-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up. Phase 6B store purchase recording is implemented with existing store tables.</p>
+          <p><strong>Implemented:</strong> wallet top-up and Phase 6B store purchase recording. Admin allowance total balance sums current wallet balances once per wallet.</p>
           <pre class="mermaid">
 flowchart TD
   A["Parent opens wallet page"] --> B["Load student wallets"]
@@ -715,8 +715,10 @@ flowchart TD
   G --> H["Admin or finance records canteen/store purchase"]
   H --> I["Create wallet purchase transaction"]
   I --> J["Create store transaction"]
-  J --> K["Parent and admin see wallet/store history"]
+  J --> K["Parent sees wallet history and admin sees store reports"]
+  K --> L["Admin allowance total sums each wallet balance once"]
           </pre>
+          <p>Wallet transaction rows explain top-ups and purchases. Current balance totals should come from <code>wallets.balance</code>, grouped by wallet, so one wallet with multiple transactions is not counted multiple times.</p>
         </div>
       </section>
 

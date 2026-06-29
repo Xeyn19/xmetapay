@@ -104,15 +104,16 @@ Done when: a parent can record a local test payment and both portals show the re
 - [x] Admin allowance and store pages read database tables and show pending/empty states when no rows exist.
 - [x] Add parent wallet top-up write flow.
 - [x] Show parent wallet history and admin allowance records from MySQL.
+- [x] Calculate admin allowance total balance from one row per wallet, not from joined transaction rows.
 
-Done when: wallet balances and top-up history come from MySQL.
+Done when: wallet balances, top-up history, and admin allowance totals come from MySQL and do not double-count wallets with multiple transactions.
 
 ### Phase 6B: Store/canteen transactions
 
 - [x] Add admin/finance merchant setup for `store_merchants`.
 - [x] Add admin/finance purchase recording for `store_transactions`.
 - [x] Decrease student wallet balance through a `wallet_transactions` purchase row.
-- [x] Show store purchases in parent wallet/history screens.
+- [x] Show store purchases in parent wallet history, not parent payment history.
 - [x] Show store transactions in admin store reports with working filters/export.
 - [x] Add store purchase write flow.
 

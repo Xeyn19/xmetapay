@@ -44,10 +44,12 @@ Implemented:
 - Admin collections reads parent-created payment records.
 - Parent local wallet top-up flow.
 - Wallet balances and wallet transaction history from MySQL.
+- Admin allowance total balance is calculated from the current `wallets.balance` values, counting each wallet once.
+- Store/canteen purchase recording through student wallets.
 
 Next:
 
-- Store/canteen purchase recording through student wallets.
+- Report query polish for tuition, collections, wallet, and store summaries.
 
 Future:
 
@@ -452,6 +454,7 @@ flowchart TD
   P --> Q["Create store_transactions row"]
   Q --> R["Parent sees spending in wallet history"]
   Q --> S["Admin sees store transaction report"]
+  S --> T["Admin allowance total sums each wallet balance once"]
 ```
 
 Database touchpoints:
@@ -461,6 +464,12 @@ Database touchpoints:
 - `store_merchants`
 - `store_transactions`
 - `payments`
+
+Data accuracy rule:
+
+- Admin allowance `Total balance` should sum the current `wallets.balance` once per wallet.
+- Wallet transaction rows are used for top-up and purchase history, monthly spend, and store reports.
+- Do not calculate total wallet balance by summing joined wallet/transaction rows, because a wallet with multiple transactions would be counted more than once.
 
 Role rule:
 

@@ -22,11 +22,12 @@ export function ParentShell({
   const meta = getParentMeta(pathname, context);
   const Settings = settingsIcon;
   const logout = logoutAction.bind(null, "parent");
+  const hasPayableFees = context.payableFeeCount > 0;
   const navSections = parentNavSections.map((section) => ({
     ...section,
     items: section.items.map((item) => ({
       ...item,
-      badge: item.href === "/parent/fees" && context.payableFeeCount > 0
+      badge: item.href === "/parent/fees" && hasPayableFees
         ? String(context.payableFeeCount)
         : item.badge,
     })),
@@ -57,7 +58,6 @@ export function ParentShell({
         id="parent-sidebar"
         role="dialog"
         aria-modal="true"
-        aria-hidden={!open}
         aria-label="Parent navigation"
       >
         <div className="border-b border-black/[0.08] px-[18px] pb-4 pt-5">
@@ -147,10 +147,21 @@ export function ParentShell({
             <p className="mt-0.5 text-xs leading-5 text-[#6b6b6b]">{meta.subtitle}</p>
           </div>
           <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:w-auto">
-            <Link href="/parent/pay-tuition" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30">
-              <Wallet className="size-4" />
-              Pay fees
-            </Link>
+            {hasPayableFees ? (
+              <Link href="/parent/pay-tuition" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30">
+                <Wallet className="size-4" />
+                Pay fees
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-black/10 bg-[#f2f1ef] px-3.5 text-[13px] font-medium text-[#6b6b6b] disabled:pointer-events-none disabled:opacity-70"
+              >
+                <Wallet className="size-4" />
+                No fees due
+              </button>
+            )}
           </div>
         </header>
         <main className="min-w-0 max-w-full px-4 py-5 sm:py-6 lg:px-7 lg:py-7">{children}</main>

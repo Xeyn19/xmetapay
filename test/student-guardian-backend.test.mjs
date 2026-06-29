@@ -170,7 +170,10 @@ test("parent portal shell and profile use real database-backed identity", () => 
   assert.match(parentShell, /context\.parentName/);
   assert.match(parentShell, /context\.parentInitials/);
   assert.match(parentShell, /context\.relationshipLabel/);
+  assert.match(parentShell, /const hasPayableFees = context\.payableFeeCount > 0/);
   assert.match(parentShell, /context\.payableFeeCount > 0/);
+  assert.match(parentShell, /hasPayableFees \? \(/);
+  assert.match(parentShell, /No fees due/);
   assert.match(parentShell, /Parent portal/);
   assert.match(parentShell, /Student-linked access/);
   assert.doesNotMatch(parentShell, /context\.schoolName/);
