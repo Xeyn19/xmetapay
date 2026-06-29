@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refresh Project Docs"
+  short_description: "Refresh XMETA Pay docs and visual plans"
+  default_prompt: "Use $refresh-project-docs to update docs/, PROJECT_FLOWCHARTS_VISUAL.html, and DATABASE_SCHEMA_VISUAL_PLAN.html from the current XMETA Pay project state."
