@@ -101,9 +101,10 @@ test("docs and visual plans mark Phase 6B store transactions complete after impl
   assert.match(checklist, /- \[x\] Add admin\/finance merchant setup for `store_merchants`\./);
   assert.match(checklist, /- \[x\] Add admin\/finance purchase recording for `store_transactions`\./);
   assert.match(checklist, /- \[x\] Decrease student wallet balance through a `wallet_transactions` purchase row\./);
-  assert.match(checklist, /- \[x\] Show store purchases in parent wallet\/history screens\./);
+  assert.match(checklist, /- \[x\] Show store purchases in parent wallet history, not parent payment history\./);
   assert.match(checklist, /- \[x\] Add store purchase write flow\./);
   assert.match(flowcharts, /Store\/canteen purchase recording is implemented for local MVP testing/);
-  assert.match(visualFlowcharts, /Implemented: store purchase recording/);
-  assert.match(visualSchema, /Phase 6B store purchase recording is implemented/);
+  assert.match(visualFlowcharts, /store purchase recording, and admin allowance totals/);
+  assert.match(visualSchema, /wallet top-up and Phase 6B store purchase recording/);
+  assert.match(visualSchema, /Admin allowance total balance sums current wallet balances once per wallet/);
 });

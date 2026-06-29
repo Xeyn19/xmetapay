@@ -251,6 +251,7 @@
           <span class="pill">Payments and receipts</span>
           <span class="pill">Wallet top-up</span>
           <span class="pill">Store purchase recording</span>
+          <span class="pill">Accurate wallet totals</span>
         </div>
         <div class="links">
           <a href="PROJECT_FLOWCHARTS.md">Markdown version</a>
@@ -269,11 +270,11 @@
             <strong>Implemented</strong>
             Auth, logout, protected redirects, manual school setup, admin role permissions, student
             creation, enrollment, parent-student linking, fees, local test payments, receipts,
-            payment history, and wallet top-ups. Parent-side mock enrollment has been removed.
+            payment history, wallet top-ups, store purchases, and accurate wallet totals. Parent-side mock enrollment has been removed.
           </div>
           <div class="card">
             <strong>Next</strong>
-            Report exports, notifications, and production payment/cashier features.
+            Report query polish for tuition, collections, wallet, and store summaries.
           </div>
           <div class="card">
             <strong>Future</strong>
@@ -598,7 +599,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="wallet-topup-store-phase-6b.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up. Implemented: store purchase recording.</p>
+          <p><strong>Implemented:</strong> wallet top-up, store purchase recording, and admin allowance totals that count each wallet balance once.</p>
           <pre class="mermaid">
 flowchart TD
   A["Parent opens wallet page"] --> B["Read linked students through student_guardians"]
@@ -619,8 +620,9 @@ flowchart TD
   P --> Q["Create store_transactions row"]
   Q --> R["Parent sees spending in wallet history"]
   Q --> S["Admin sees store transaction report"]
+  S --> T["Admin allowance total sums each wallet balance once"]
           </pre>
-          <p>Registrar users cannot record store purchases because this is a finance operation.</p>
+          <p>Registrar users cannot record store purchases because this is a finance operation. Admin allowance total balance comes from current <code>wallets.balance</code> values, not duplicated joined transaction rows.</p>
         </div>
       </section>
 

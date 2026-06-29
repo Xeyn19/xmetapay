@@ -56,6 +56,8 @@ test("admin real-data helper reads supported MySQL schema tables with admin scho
   assert.match(helper, /FROM payment_allocations|JOIN payment_allocations/);
   assert.match(helper, /FROM wallets|JOIN wallets|LEFT JOIN wallets/);
   assert.match(helper, /FROM wallet_transactions|JOIN wallet_transactions|LEFT JOIN wallet_transactions/);
+  assert.match(helper, /FROM \(\s+SELECT w\.id AS wallet_id,/);
+  assert.match(helper, /GROUP BY w\.id, w\.balance/);
   assert.match(helper, /FROM store_merchants|JOIN store_merchants/);
   assert.match(helper, /FROM store_transactions|JOIN store_transactions/);
   assert.match(helper, /Pending/);
@@ -146,5 +148,7 @@ test("admin real-data tables use working search filters and CSV export controls"
 
   assert.match(shell, /Reminders future/);
   assert.match(shell, /Manual payment future/);
+  assert.match(shell, /subtitle === "School dashboard - SY 2025-2026"/);
+  assert.doesNotMatch(shell, /Brentwood Academy/);
   assert.doesNotMatch(shell, /AdminModals|data-modal-trigger|openModal/);
 });

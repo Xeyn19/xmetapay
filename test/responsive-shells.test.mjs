@@ -14,6 +14,7 @@ test("admin and parent shells expose accessible mobile drawer controls", () => {
     assert.match(source, new RegExp(`id="${drawerId}"`), `${name} drawer should have a stable id`);
     assert.match(source, /aria-modal="true"/, `${name} drawer should be announced as a modal on mobile`);
     assert.match(source, /role="dialog"/, `${name} drawer should expose dialog semantics`);
+    assert.doesNotMatch(source, /aria-hidden=\{!(sidebarOpen|open)\}/, `${name} desktop sidebar controls should stay accessible`);
   });
 });
 

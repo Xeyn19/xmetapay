@@ -84,7 +84,6 @@ export function AdminShell({
         id="admin-sidebar"
         role="dialog"
         aria-modal="true"
-        aria-hidden={!sidebarOpen}
         aria-label="Admin navigation"
       >
         <div className="border-b border-white/[0.07] px-4 pb-3.5 pt-[18px]">
@@ -228,7 +227,7 @@ export function AdminShell({
 function dashboardSubtitle(subtitle: string, schoolContext: AdminSchoolContext) {
   const schoolYear = schoolContext.activeSchoolYear?.name ?? "School year pending";
 
-  if (subtitle.includes("Brentwood Academy")) {
+  if (subtitle === "School dashboard - SY 2025-2026") {
     return `${schoolContext.schoolName} - ${schoolYear}`;
   }
 
