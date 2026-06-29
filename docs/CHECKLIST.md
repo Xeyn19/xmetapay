@@ -114,10 +114,12 @@ Done when: wallet balances, top-up history, and admin allowance totals come from
 - [x] Add admin/finance purchase recording for `store_transactions`.
 - [x] Decrease student wallet balance through a `wallet_transactions` purchase row.
 - [x] Show store purchases in parent wallet history, not parent payment history.
+- [x] Show recent wallet/store activity on the parent dashboard.
+- [x] Show selected-student wallet/store activity on the parent student profile.
 - [x] Show store transactions in admin store reports with working filters/export.
 - [x] Add store purchase write flow.
 
-Done when: a parent can top up a wallet, admin/finance can record a local test store purchase, and both portals show the same wallet/store activity.
+Done when: a parent can top up a wallet, admin/finance can record a local test store purchase, the parent dashboard and selected student profile show recent wallet/store activity, and both portals show the same wallet/store ledger data.
 
 ### Future Phase 6C+
 

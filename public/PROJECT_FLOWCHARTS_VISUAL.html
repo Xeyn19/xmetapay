@@ -599,7 +599,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="wallet-topup-store-phase-6b.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up, store purchase recording, and admin allowance totals that count each wallet balance once.</p>
+          <p><strong>Implemented:</strong> wallet top-up, store purchase recording, parent dashboard wallet activity, selected student profile wallet activity, and admin allowance totals that count each wallet balance once.</p>
           <pre class="mermaid">
 flowchart TD
   A["Parent opens wallet page"] --> B["Read linked students through student_guardians"]
@@ -610,6 +610,8 @@ flowchart TD
   F --> G["Create wallet_transactions row with type top_up"]
   G --> H["Create receipt row"]
   H --> I["Parent sees receipt and wallet history"]
+  H --> I2["Parent dashboard shows recent wallet activity"]
+  H --> I3["Selected student profile shows that student's wallet activity"]
   I --> J["Admin sees allowance ledger update"]
   J --> K["Admin or finance creates store merchant"]
   K --> L["Admin or finance records local test purchase"]
@@ -619,10 +621,12 @@ flowchart TD
   O --> P["Create wallet_transactions row with type purchase"]
   P --> Q["Create store_transactions row"]
   Q --> R["Parent sees spending in wallet history"]
+  Q --> R2["Parent dashboard shows recent store spending"]
+  Q --> R3["Selected student profile shows that student's store spending"]
   Q --> S["Admin sees store transaction report"]
   S --> T["Admin allowance total sums each wallet balance once"]
           </pre>
-          <p>Registrar users cannot record store purchases because this is a finance operation. Admin allowance total balance comes from current <code>wallets.balance</code> values, not duplicated joined transaction rows.</p>
+          <p>Registrar users cannot record store purchases because this is a finance operation. Parent payment history stays payment-only; store purchases appear in wallet history, the dashboard wallet activity snapshot, and the selected student profile wallet activity snapshot. Admin allowance total balance comes from current <code>wallets.balance</code> values, not duplicated joined transaction rows.</p>
         </div>
       </section>
 

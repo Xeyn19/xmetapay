@@ -5,7 +5,7 @@
 XMETA Pay uses one MySQL database for two connected portals:
 
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
-- Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, and wallet store-spending history.
+- Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
 Related role guide: `ADMIN_ROLES.md` explains the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
 
@@ -447,7 +447,8 @@ Dashboard calculation note:
 
 - `wallets.balance` stores the current student allowance balance.
 - Admin allowance total balance should sum one row per wallet.
-- `wallet_transactions` should drive wallet history, monthly spend, and store spending reports.
+- `wallet_transactions` should drive full wallet history, parent dashboard wallet activity, selected student profile wallet activity, monthly spend, and store spending reports.
+- Store purchases stay out of parent payment history because they are wallet ledger events, not payment records.
 - Avoid summing `wallets.balance` after joining to `wallet_transactions`, because multiple ledger rows for the same wallet can duplicate the displayed total.
 
 ### Store And Canteen
@@ -694,8 +695,10 @@ flowchart TD
   G --> H["Admin or finance records canteen/store purchase"]
   H --> I["Create wallet purchase transaction"]
   I --> J["Create store transaction"]
-  J --> K["Parent sees wallet history and admin sees store reports"]
-  K --> L["Admin allowance total sums each wallet balance once"]
+  J --> K["Parent sees wallet history and dashboard wallet activity"]
+  K --> L["Selected student profile shows that student's wallet activity"]
+  L --> M["Admin sees store reports"]
+  M --> N["Admin allowance total sums each wallet balance once"]
 ```
 
 ## Suggested Implementation Order

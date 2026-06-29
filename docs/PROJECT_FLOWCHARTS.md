@@ -44,6 +44,8 @@ Implemented:
 - Admin collections reads parent-created payment records.
 - Parent local wallet top-up flow.
 - Wallet balances and wallet transaction history from MySQL.
+- Parent dashboard recent wallet/store activity snapshot from MySQL.
+- Parent selected student profile recent wallet/store activity from MySQL.
 - Admin allowance total balance is calculated from the current `wallets.balance` values, counting each wallet once.
 - Store/canteen purchase recording through student wallets.
 
@@ -444,6 +446,8 @@ flowchart TD
   F --> G["Create wallet_transactions row with type top_up"]
   G --> H["Create receipt row"]
   H --> I["Parent sees receipt and wallet history"]
+  H --> I2["Parent dashboard shows recent wallet activity"]
+  H --> I3["Selected student profile shows that student's wallet activity"]
   I --> J["Admin sees allowance ledger update"]
   J --> K["Admin or finance creates store merchant"]
   K --> L["Admin or finance records local test purchase"]
@@ -453,6 +457,8 @@ flowchart TD
   O --> P["Create wallet_transactions row with type purchase"]
   P --> Q["Create store_transactions row"]
   Q --> R["Parent sees spending in wallet history"]
+  Q --> R2["Parent dashboard shows recent store spending"]
+  Q --> R3["Selected student profile shows that student's store spending"]
   Q --> S["Admin sees store transaction report"]
   S --> T["Admin allowance total sums each wallet balance once"]
 ```
@@ -468,7 +474,8 @@ Database touchpoints:
 Data accuracy rule:
 
 - Admin allowance `Total balance` should sum the current `wallets.balance` once per wallet.
-- Wallet transaction rows are used for top-up and purchase history, monthly spend, and store reports.
+- Wallet transaction rows are used for top-up history, store purchase history, monthly spend, parent dashboard wallet activity, selected student profile wallet activity, and store reports.
+- Parent payment history stays payment-only; store purchases appear in wallet history, the dashboard wallet activity snapshot, and the selected student profile wallet activity snapshot.
 - Do not calculate total wallet balance by summing joined wallet/transaction rows, because a wallet with multiple transactions would be counted more than once.
 
 Role rule:

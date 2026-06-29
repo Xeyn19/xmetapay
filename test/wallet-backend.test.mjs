@@ -7,6 +7,7 @@ const walletActionsPath = "app/parent/wallet/actions.ts";
 const walletPagePath = "app/parent/(portal)/wallet/page.tsx";
 const walletFormPath = "app/parent/(portal)/wallet/wallet-top-up-form.tsx";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
+const parentWalletActivityTablePath = "app/parent/(portal)/_components/parent-wallet-activity-table.tsx";
 const parentStudentProfileViewPath = "app/parent/(portal)/student-profile/student-profile-view.tsx";
 const adminAllowanceTablePath = "app/admin/(dashboard)/allowance/allowance-table.tsx";
 const adminAllowancePagePath = "app/admin/(dashboard)/allowance/page.tsx";
@@ -77,6 +78,7 @@ test("parent wallet page uses real wallet data and no static placeholder rows", 
 test("parent dashboard and student profile expose real wallet details", () => {
   const records = readFileSync(parentRecordsPath, "utf8");
   const dashboard = readFileSync(parentDashboardPath, "utf8");
+  const walletActivityTable = readFileSync(parentWalletActivityTablePath, "utf8");
   const profileView = readFileSync(parentStudentProfileViewPath, "utf8");
 
   assert.match(records, /wallet_balance/);
@@ -84,8 +86,24 @@ test("parent dashboard and student profile expose real wallet details", () => {
   assert.match(records, /walletDetails/);
   assert.match(records, /LEFT JOIN wallets w ON w\.student_id = st\.id/);
   assert.match(records, /Top up allowance to create a wallet/);
+  assert.match(records, /async function getParentRecentWalletActivity\(\s*parentUserId: number,/);
+  assert.match(records, /FROM wallet_transactions wt/);
+  assert.match(records, /JOIN student_guardians sg ON sg\.student_id = st\.id AND sg\.parent_user_id = :parentUserId/);
+  assert.match(records, /selectedStudentClause = typeof studentId === "number" \? "AND st\.id = :studentId" : ""/);
+  assert.match(records, /getParentRecentWalletActivity\(parentUserId, \{ studentId: row\.id, limit: 10 \}\)/);
+  assert.match(records, /walletActivity/);
   assert.match(dashboard, /getParentDashboardData/);
+  assert.match(dashboard, /Recent wallet activity/);
+  assert.match(dashboard, /ParentWalletActivityTable/);
+  assert.match(dashboard, /data\.walletActivity/);
+  assert.match(walletActivityTable, /DashboardTableControls/);
+  assert.match(walletActivityTable, /parent-wallet-activity\.csv/);
+  assert.match(walletActivityTable, /showStudent/);
+  assert.match(walletActivityTable, /No wallet activity yet/);
   assert.match(profileView, /student\.walletDetails/);
+  assert.match(profileView, /ParentWalletActivityTable/);
+  assert.match(profileView, /rows=\{student\.walletActivity\}/);
+  assert.match(profileView, /showStudent=\{false\}/);
   assert.doesNotMatch(records, /Phase 6 will add allowance/);
   assert.doesNotMatch(profileView, /Wallet backend pending/);
 });
