@@ -1,27 +1,42 @@
-import { Clock, Download, Store } from "lucide-react";
+import { Clock, Store } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminStoreTransactionsPageRealData } from "@/lib/admin/real-data";
+import { getAdminStoreSetupData } from "@/lib/stores/records";
 
 import {
-  AdminButton,
-  AdminTable,
   AlertBanner,
   BarList,
   DashboardCard,
   KpiCard,
   KpiGrid,
 } from "../../_components/admin-ui";
+import { StoreManagementForms } from "./store-forms";
+import { StoreTransactionsTable, type StoreTransactionRow } from "./store-transactions-table";
 
 export default async function StoreTransactionsPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/store-transactions");
-  const data = await getAdminStoreTransactionsPageRealData(session.userId);
+  const [data, storeSetup] = await Promise.all([
+    getAdminStoreTransactionsPageRealData(session.userId),
+    getAdminStoreSetupData(session.userId),
+  ]);
+  const rows: StoreTransactionRow[] = data.rows.map(([ref, student, grade, merchant, amount, fee, time]) => ({
+    ref,
+    student,
+    grade,
+    merchant,
+    amount,
+    fee,
+    time,
+  }));
 
   return (
     <>
       {data.warning ? <AlertBanner tone="warn" icon={Store}>{data.warning}</AlertBanner> : null}
+      {storeSetup.warning ? <AlertBanner tone="warn" icon={Store}>{storeSetup.warning}</AlertBanner> : null}
+      <StoreManagementForms data={storeSetup} />
       <KpiGrid>
         {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
@@ -40,40 +55,9 @@ export default async function StoreTransactionsPage() {
       <DashboardCard
         title="Store transaction log"
         icon={Store}
-        action={<AdminButton tone="dark" disabled><Download className="size-4" />Export pending</AdminButton>}
         bodyClassName="p-0"
       >
-        <AdminTable
-          headers={[
-            { label: "Ref #", className: "w-[10%]" },
-            { label: "Student", className: "w-[20%]" },
-            { label: "Grade", className: "w-[10%]" },
-            { label: "Store", className: "w-[16%]" },
-            { label: "Amount", className: "w-[14%]" },
-            { label: "Txn fee", className: "w-[12%]" },
-            { label: "Time", className: "w-[18%]" },
-          ]}
-        >
-          {data.rows.length > 0 ? (
-            data.rows.map(([ref, student, grade, store, amount, fee, time]) => (
-              <tr key={ref}>
-                <td className="font-mono text-[11px] text-[#5a6070]">{ref}</td>
-                <td className="font-bold">{student}</td>
-                <td>{grade}</td>
-                <td>{store}</td>
-                <td className="font-bold">{amount}</td>
-                <td className="font-mono text-[11px] text-[#5a6070]">{fee}</td>
-                <td className="font-mono text-[11px] text-[#5a6070]">{time}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={7} className="text-center text-[#5a6070]">
-                No store transactions yet.
-              </td>
-            </tr>
-          )}
-        </AdminTable>
+        <StoreTransactionsTable rows={rows} />
       </DashboardCard>
     </>
   );

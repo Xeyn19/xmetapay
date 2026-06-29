@@ -1,6 +1,6 @@
 # XMETA Pay Project Flowcharts
 
-This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, the next Phase 6B store/canteen purchase flow, and future report phases.
+This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, store/canteen purchase recording, and future report phases.
 
 Related documents:
 
@@ -47,7 +47,7 @@ Implemented:
 
 Next:
 
-- Phase 6B store/canteen purchase recording.
+- Store/canteen purchase recording through student wallets.
 
 Future:
 
@@ -78,7 +78,7 @@ flowchart TD
   N --> O["Parent records local test payment"]
   O --> P["Receipt and payment history are created"]
   L --> Q["Parent tops up allowance wallet"]
-  Q --> R["Next Phase 6B: admin or finance records store purchase"]
+  Q --> R["Admin or finance records store purchase"]
 
   P --> S["Admin sees collections and reports"]
   R --> T["Admin sees wallet and store reports"]
@@ -428,7 +428,7 @@ Database touchpoints:
 
 ## Wallet, Allowance, And Store Flow
 
-Wallet top-up is implemented for local MVP testing. Store/canteen purchase recording is the next planned Phase 6B step.
+Wallet top-up is implemented for local MVP testing. Store/canteen purchase recording is implemented for local MVP testing.
 
 Wallets should be separate from tuition payments so allowance and store/canteen spending can be tracked clearly.
 
@@ -443,7 +443,7 @@ flowchart TD
   G --> H["Create receipt row"]
   H --> I["Parent sees receipt and wallet history"]
   I --> J["Admin sees allowance ledger update"]
-  J --> K["Next Phase 6B: admin or finance creates store merchant"]
+  J --> K["Admin or finance creates store merchant"]
   K --> L["Admin or finance records local test purchase"]
   L --> M{"Wallet has enough balance?"}
   M -->|No| N["Reject purchase with friendly error"]

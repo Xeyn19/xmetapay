@@ -13,6 +13,7 @@ const adminTableComponentPaths = [
   "app/admin/(dashboard)/collections/collections-table.tsx",
   "app/admin/(dashboard)/other-fees/other-fees-table.tsx",
   "app/admin/(dashboard)/allowance/allowance-table.tsx",
+  "app/admin/(dashboard)/store-transactions/store-transactions-table.tsx",
   "app/admin/(dashboard)/students/students-table.tsx",
   "app/admin/(dashboard)/parents/parents-table.tsx",
 ];

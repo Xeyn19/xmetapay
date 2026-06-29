@@ -112,7 +112,7 @@ test("payment history, receipts, and admin collections label wallet top-ups", ()
   }
 });
 
-test("docs and checklist mark Phase 6A wallet top-up complete while store remains future", () => {
+test("docs and checklist mark wallet top-up and store transactions complete with later phases still future", () => {
   const checklist = readFileSync(checklistPath, "utf8");
   const flowcharts = readFileSync(flowchartsPath, "utf8");
   const visualFlowcharts = readFileSync(visualFlowchartsPath, "utf8");
@@ -121,9 +121,9 @@ test("docs and checklist mark Phase 6A wallet top-up complete while store remain
   assert.match(checklist, /- \[x\] Create student wallets lazily when the parent tops up allowance\./);
   assert.match(checklist, /- \[x\] Record local allowance top-ups\./);
   assert.match(checklist, /- \[x\] Add parent wallet top-up write flow\./);
-  assert.match(checklist, /- \[ \] Add store purchase write flow\./);
+  assert.match(checklist, /- \[x\] Add store purchase write flow\./);
   assert.match(flowcharts, /Parent local wallet top-up flow/);
-  assert.match(flowcharts, /Store\/canteen spending is future/);
+  assert.match(flowcharts, /Store\/canteen purchase recording is implemented for local MVP testing/);
   assert.match(visualFlowcharts, /Wallet top-up/);
-  assert.match(visualFlowcharts, /Future: create purchase wallet transaction and store transaction/);
+  assert.match(visualFlowcharts, /Implemented: store purchase recording/);
 });

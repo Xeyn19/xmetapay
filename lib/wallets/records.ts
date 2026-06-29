@@ -123,6 +123,7 @@ async function getParentWalletTransactions(parentUserId: number) {
 
   return rows.map((row) => {
     const amount = decimalValue(row.amount);
+    const isPurchase = row.type === "purchase";
     const signedAmount = row.type === "top_up" || amount > 0 ? `+${money(Math.abs(amount))}` : `-${money(Math.abs(amount))}`;
     const status = row.status ? labelForStatus(row.status) : "Recorded";
 
@@ -130,10 +131,10 @@ async function getParentWalletTransactions(parentUserId: number) {
       id: row.id,
       date: formatDateTime(row.created_at),
       studentName: fullName(row.first_name, row.middle_name, row.last_name),
-      description: row.description ?? labelForWalletType(row.type),
+      description: isPurchase ? row.description ?? "Store purchase" : row.description ?? labelForWalletType(row.type),
       amount: signedAmount,
       balanceAfter: money(row.balance_after),
-      channel: row.channel ? labelForChannel(row.channel) : "Wallet",
+      channel: isPurchase ? "Store wallet" : row.channel ? labelForChannel(row.channel) : "Wallet",
       status,
       tone: status === "Paid" || status === "Recorded" ? "green" : status === "Pending" ? "amber" : "red",
     } satisfies ParentWalletTransaction;
