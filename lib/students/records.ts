@@ -105,6 +105,7 @@ export type ParentStudentProfileData = {
     stats: Array<{ label: string; value: string }>;
     studentDetails: Array<{ label: string; value: string }>;
     guardianDetails: Array<{ label: string; value: string }>;
+    walletDetails: Array<{ label: string; value: string }>;
   } | null;
 };
 
@@ -180,7 +181,7 @@ export async function getParentDashboardData(parentUserId: number): Promise<Pare
       linkedStudents: [],
       recentPayments: [],
       outstandingBalance: "Pending",
-      metrics: parentMetrics([], { paidThisMonth: 0, outstanding: 0, paymentCount: 0 }),
+      metrics: parentMetrics([], { paidThisMonth: 0, outstanding: 0, paymentCount: 0, walletBalance: 0, walletCount: 0 }),
     };
   }
 }
@@ -237,6 +238,18 @@ export async function getParentStudentProfileData(
          COALESCE(gl.name, 'Not enrolled') AS grade_name,
          COALESCE(sec.name, '-') AS section_name,
          COALESCE(e.status, 'pending') AS enrollment_status,
+         COALESCE(w.balance, 0) AS wallet_balance,
+         COALESCE(w.status, 'not_started') AS wallet_status,
+         COALESCE((
+           SELECT SUM(CASE WHEN wt_spend.type = 'purchase' AND wt_spend.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN ABS(wt_spend.amount) ELSE 0 END)
+           FROM wallet_transactions wt_spend
+           WHERE wt_spend.wallet_id = w.id
+         ), 0) AS monthly_spend,
+         (
+           SELECT MAX(wt_topup.created_at)
+           FROM wallet_transactions wt_topup
+           WHERE wt_topup.wallet_id = w.id AND wt_topup.type = 'top_up'
+         ) AS last_top_up_at,
          u.name AS parent_name, u.email, u.phone, u.status AS parent_status,
          pp.relationship
        FROM student_guardians sg
@@ -248,6 +261,7 @@ export async function getParentStudentProfileData(
        LEFT JOIN school_years sy ON sy.id = e.school_year_id
        LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
        LEFT JOIN sections sec ON sec.id = e.section_id
+       LEFT JOIN wallets w ON w.student_id = st.id
        WHERE sg.parent_user_id = :parentUserId
        ${selectedStudentClause}
        ORDER BY sg.is_primary DESC, st.last_name ASC, st.first_name ASC,
@@ -298,6 +312,12 @@ export async function getParentStudentProfileData(
           { label: "Mobile", value: row.phone ?? "Not on file" },
           { label: "Email", value: row.email },
           { label: "Portal access", value: labelForStatus(row.parent_status) },
+        ],
+        walletDetails: [
+          { label: "Current balance", value: money(row.wallet_balance) },
+          { label: "Monthly spend", value: money(row.monthly_spend) },
+          { label: "Last top-up", value: row.last_top_up_at ? formatDateTime(row.last_top_up_at) : "No top-up yet" },
+          { label: "Status", value: row.wallet_status === "not_started" ? "Ready for top-up" : labelForStatus(row.wallet_status) },
         ],
       },
     };
@@ -526,7 +546,19 @@ async function getParentPaymentSummary(parentUserId: number) {
          JOIN students pst ON pst.id = p.student_id
          JOIN student_guardians psg ON psg.student_id = pst.id AND psg.parent_user_id = :parentUserId
          WHERE p.payer_user_id = :parentUserId
-       ), 0) AS payment_count
+       ), 0) AS payment_count,
+       COALESCE((
+         SELECT SUM(w.balance)
+         FROM wallets w
+         JOIN students wst ON wst.id = w.student_id
+         JOIN student_guardians wsg ON wsg.student_id = wst.id AND wsg.parent_user_id = :parentUserId
+       ), 0) AS wallet_balance,
+       COALESCE((
+         SELECT COUNT(*)
+         FROM wallets w
+         JOIN students wst ON wst.id = w.student_id
+         JOIN student_guardians wsg ON wsg.student_id = wst.id AND wsg.parent_user_id = :parentUserId
+       ), 0) AS wallet_count
      FROM student_guardians sg
      JOIN students st ON st.id = sg.student_id
      LEFT JOIN student_fee_assignments sfa ON sfa.student_id = st.id AND sfa.status <> 'cancelled'
@@ -539,6 +571,8 @@ async function getParentPaymentSummary(parentUserId: number) {
     outstanding: decimalValue(row?.outstanding),
     paidThisMonth: decimalValue(row?.paid_this_month),
     paymentCount: Number(row?.payment_count ?? 0),
+    walletBalance: decimalValue(row?.wallet_balance),
+    walletCount: Number(row?.wallet_count ?? 0),
   };
 }
 
@@ -546,13 +580,18 @@ async function getParentRecentPayments(parentUserId: number) {
   const [rows] = await pool.execute<ParentRecentPaymentRow[]>(
     `SELECT p.reference_number, p.amount, p.status,
        st.first_name, st.middle_name, st.last_name,
-       COALESCE(GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '), 'School fee payment') AS description
+       COALESCE(
+         GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
+         MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
+         'School fee payment'
+       ) AS description
      FROM payments p
      JOIN students st ON st.id = p.student_id
      JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
      LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
      LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
      LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
      WHERE p.payer_user_id = :parentUserId
      GROUP BY p.id, p.reference_number, p.amount, p.status, st.first_name, st.middle_name, st.last_name
      ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC
@@ -607,7 +646,7 @@ function parentKpis(rows: AdminParentRow[]): AdminParentsPageData["kpis"] {
 
 function parentMetrics(
   linkedStudents: ParentLinkedStudent[],
-  summary: { paidThisMonth: number; outstanding: number; paymentCount: number },
+  summary: { paidThisMonth: number; outstanding: number; paymentCount: number; walletBalance: number; walletCount: number },
 ): ParentDashboardData["metrics"] {
   return [
     {
@@ -618,7 +657,12 @@ function parentMetrics(
     },
     { label: "Paid this month", value: summary.paymentCount > 0 ? money(summary.paidThisMonth) : "Pending", note: "Recorded school fee payments", tone: "green" },
     { label: "Outstanding", value: linkedStudents.length > 0 ? money(summary.outstanding) : "Pending", note: "Open and partial assigned fees", tone: "red" },
-    { label: "Wallets", value: "Next", note: "Phase 6 will add allowance", tone: "orange" },
+    {
+      label: "Wallets",
+      value: linkedStudents.length > 0 ? money(summary.walletBalance) : "Pending",
+      note: summary.walletCount > 0 ? `${summary.walletCount} allowance wallet${summary.walletCount === 1 ? "" : "s"}` : "Top up allowance to create a wallet",
+      tone: "orange",
+    },
   ];
 }
 
@@ -710,6 +754,22 @@ function formatDate(value: Date | string | null) {
   return value;
 }
 
+function formatDateTime(value: Date | string) {
+  const parsed = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+
+  return parsed.toLocaleString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 type GradeOptionRow = RowDataPacket & {
   id: number;
   name: string;
@@ -761,6 +821,8 @@ type ParentPaymentSummaryRow = RowDataPacket & {
   outstanding: number | string;
   paid_this_month: number | string;
   payment_count: number;
+  wallet_balance: number | string;
+  wallet_count: number;
 };
 
 type ParentRecentPaymentRow = RowDataPacket & {
@@ -800,6 +862,10 @@ type ParentStudentProfileRow = RowDataPacket & {
   grade_name: string;
   section_name: string;
   enrollment_status: string;
+  wallet_balance: number | string;
+  wallet_status: string;
+  monthly_spend: number | string;
+  last_top_up_at: Date | string | null;
   parent_name: string;
   email: string;
   phone: string | null;

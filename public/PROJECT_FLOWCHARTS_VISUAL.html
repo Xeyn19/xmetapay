@@ -242,14 +242,15 @@
         <p>
           A browser-viewable process map for how the school/admin portal and
           parent portal work together from registration to student linking, with
-          fees, payments, receipts, and future wallet, store, and report flows.
+          fees, payments, receipts, wallet top-ups, and future store and report flows.
         </p>
         <div class="meta">
           <span class="pill admin">Admin/school portal</span>
           <span class="pill parent">Parent portal</span>
           <span class="pill">Student linking</span>
           <span class="pill">Payments and receipts</span>
-          <span class="pill future">Future wallet and store</span>
+          <span class="pill">Wallet top-up</span>
+          <span class="pill future">Future store and reports</span>
         </div>
         <div class="links">
           <a href="PROJECT_FLOWCHARTS.md">Markdown version</a>
@@ -268,11 +269,11 @@
             <strong>Implemented</strong>
             Auth, logout, protected redirects, manual school setup, admin role permissions, student
             creation, enrollment, parent-student linking, fees, local test payments, receipts,
-            and payment history. Parent-side mock enrollment has been removed.
+            payment history, and wallet top-ups. Parent-side mock enrollment has been removed.
           </div>
           <div class="card">
             <strong>Next</strong>
-            Wallet and allowance backend.
+            Store/canteen spending backend.
           </div>
           <div class="card">
             <strong>Future</strong>
@@ -312,7 +313,7 @@ flowchart TD
   L --> N["Parent views assigned fees"]
   N --> O["Parent records local test payment"]
   O --> P["Receipt and payment history are created"]
-  L --> Q["Future: wallet top-up and allowance"]
+  L --> Q["Parent tops up allowance wallet"]
   Q --> R["Future: store/canteen spending"]
 
   P --> S["Admin sees collections and reports"]
@@ -595,20 +596,21 @@ flowchart TD
         <h3>Wallet, Allowance, And Store</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
-            <button type="button" data-diagram-download="svg" data-file-name="future-wallet-store.svg">Download SVG</button>
+            <button type="button" data-diagram-download="svg" data-file-name="wallet-topup-store-future.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Wallet exists for student"] --> B["Parent chooses top-up amount"]
-  B --> C["Create payment for wallet top-up"]
-  C --> D["Payment succeeds"]
-  D --> E["Increase wallet balance"]
-  E --> F["Create wallet_transactions row with type top_up"]
-  F --> G["Student spends at canteen or school store"]
-  G --> H["Create wallet_transactions row with type purchase"]
-  H --> I["Create store_transactions row"]
-  I --> J["Parent sees wallet history"]
-  I --> K["Admin sees store and allowance reports"]
+  A["Parent opens wallet page"] --> B["Read linked students through student_guardians"]
+  B --> C["Create or reuse wallet for selected student"]
+  C --> D["Parent chooses local test channel and top-up amount"]
+  D --> E["Create paid payment row"]
+  E --> F["Increase wallet balance"]
+  F --> G["Create wallet_transactions row with type top_up"]
+  G --> H["Create receipt row"]
+  H --> I["Parent sees receipt and wallet history"]
+  I --> J["Admin sees allowance ledger update"]
+  J --> K["Future: student spends at canteen or school store"]
+  K --> L["Future: create purchase wallet transaction and store transaction"]
           </pre>
         </div>
       </section>

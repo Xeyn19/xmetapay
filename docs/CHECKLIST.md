@@ -20,7 +20,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Admin dashboard pages use MySQL-backed reads where tables exist, with honest pending/empty states where feature data is not created yet.
 - [x] Student, enrollment, and guardian-linking backend is implemented.
 - [x] Parent local test payments, fee allocations, receipts, and payment history are implemented.
-- [ ] Wallet top-up, store spending, notification sending, report exports, real payment gateways, refunds, and admin manual payment recording are not implemented yet.
+- [x] Parent local wallet top-up and wallet transaction history are implemented.
+- [ ] Store spending, notification sending, report exports, real payment gateways, refunds, and admin manual payment recording are not implemented yet.
 
 ## Completed Foundation Step
 
@@ -94,16 +95,17 @@ Done when: a parent can record a local test payment and both portals show the re
 
 ## Phase 6: Wallet, Store, And Reports
 
-- [ ] Add backend helpers for `wallets` and `wallet_transactions`.
-- [ ] Create one wallet per student.
-- [ ] Record local allowance top-ups.
+- [x] Add backend helpers for `wallets` and `wallet_transactions`.
+- [x] Create student wallets lazily when the parent tops up allowance.
+- [x] Record local allowance top-ups.
 - [ ] Add `store_merchants` and `store_transactions` for canteen/store spending.
 - [x] Admin allowance and store pages read database tables and show pending/empty states when no rows exist.
-- [ ] Add wallet top-up and store purchase write flows.
+- [x] Add parent wallet top-up write flow.
+- [ ] Add store purchase write flow.
 - [ ] Add report queries for tuition, collections, wallet, and store summaries.
 - [ ] Add `notification_logs` after reminders are ready.
 
-Done when: wallet balances, store transactions, and reports come from MySQL.
+Done when: wallet balances and top-up history come from MySQL; store transactions and report exports remain later work.
 
 ## Safe Testing Checklist
 

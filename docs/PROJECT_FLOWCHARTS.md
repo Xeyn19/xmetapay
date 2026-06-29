@@ -1,6 +1,6 @@
 # XMETA Pay Project Flowcharts
 
-This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, and future wallet, store, and report phases.
+This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, and future store and report phases.
 
 Related documents:
 
@@ -42,14 +42,16 @@ Implemented:
 - Payment allocation to fee balances.
 - Parent receipt and payment history from MySQL.
 - Admin collections reads parent-created payment records.
+- Parent local wallet top-up flow.
+- Wallet balances and wallet transaction history from MySQL.
 
 Next:
 
-- Wallet and allowance backend.
+- Store/canteen spending backend.
 
 Future:
 
-- Wallet, allowance, and store/canteen transactions.
+- Store/canteen transactions.
 - Real payment gateway integration, refunds, admin manual payment recording, notifications, and report exports.
 
 ## Whole Project Overview
@@ -76,7 +78,7 @@ flowchart TD
   L --> N["Parent views assigned fees"]
   N --> O["Parent records local test payment"]
   O --> P["Receipt and payment history are created"]
-  L --> Q["Future: wallet top-up and allowance"]
+  L --> Q["Parent tops up allowance wallet"]
   Q --> R["Future: store/canteen spending"]
 
   P --> S["Admin sees collections and reports"]
@@ -425,24 +427,25 @@ Database touchpoints:
 - `student_fee_assignments`
 - `student_guardians`
 
-## Future Wallet, Allowance, And Store Flow
+## Wallet, Allowance, And Store Flow
 
-Future.
+Wallet top-up is implemented for local MVP testing. Store/canteen spending is future.
 
 Wallets should be separate from tuition payments so allowance and store/canteen spending can be tracked clearly.
 
 ```mermaid
 flowchart TD
-  A["Wallet exists for student"] --> B["Parent chooses top-up amount"]
-  B --> C["Create payment for wallet top-up"]
-  C --> D["Payment succeeds"]
-  D --> E["Increase wallet balance"]
-  E --> F["Create wallet_transactions row with type top_up"]
-  F --> G["Student spends at canteen or school store"]
-  G --> H["Create wallet_transactions row with type purchase"]
-  H --> I["Create store_transactions row"]
-  I --> J["Parent sees wallet history"]
-  I --> K["Admin sees store and allowance reports"]
+  A["Parent opens wallet page"] --> B["Read linked students through student_guardians"]
+  B --> C["Create or reuse wallet for selected student"]
+  C --> D["Parent chooses local test channel and top-up amount"]
+  D --> E["Create paid payment row"]
+  E --> F["Increase wallet balance"]
+  F --> G["Create wallet_transactions row with type top_up"]
+  G --> H["Create receipt row"]
+  H --> I["Parent sees receipt and wallet history"]
+  I --> J["Admin sees allowance ledger update"]
+  J --> K["Future: student spends at canteen or school store"]
+  K --> L["Future: create purchase wallet transaction and store transaction"]
 ```
 
 Database touchpoints:

@@ -215,7 +215,7 @@ export async function getAdminDashboardRealData(adminUserId: number): Promise<Ad
         {
           label: "Wallets",
           value: walletSummary.walletCount > 0 ? money(walletSummary.totalBalance) : "Pending",
-          note: walletSummary.walletCount > 0 ? `${walletSummary.walletCount} wallet records` : "Wallet backend pending",
+          note: walletSummary.walletCount > 0 ? `${walletSummary.walletCount} wallet records` : "No wallet records yet",
           tone: "green",
           icon: Wallet,
         },
@@ -340,7 +340,7 @@ export async function getAdminAllowancePageRealData(adminUserId: number): Promis
     return {
       warning: null,
       kpis: [
-        { label: "Wallet records", value: String(summary.walletCount), note: summary.walletCount > 0 ? "Real wallet rows" : "Wallet backend pending", tone: "orange", icon: Wallet },
+        { label: "Wallet records", value: String(summary.walletCount), note: summary.walletCount > 0 ? "Real wallet rows" : "Top up allowance to create wallets", tone: "orange", icon: Wallet },
         { label: "Total balance", value: summary.walletCount > 0 ? money(summary.totalBalance) : "Pending", note: "Available student balances", tone: "green", icon: Wallet },
         { label: "Low balance", value: String(summary.lowWallets), note: "Below P50", tone: "red", noteTone: summary.lowWallets > 0 ? "warn" : "default", icon: Activity },
         { label: "Monthly spend", value: summary.monthlySpend > 0 ? money(summary.monthlySpend) : "Pending", note: "Purchase transactions", tone: "blue", icon: Store },
@@ -730,12 +730,17 @@ async function getRecentPayments(schoolId: number) {
   const [rows] = await pool.execute<PaymentRow[]>(
     `SELECT p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name,
-       COALESCE(GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '), 'Payment') AS fee_name
+       COALESCE(
+         GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
+         MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
+         'Payment'
+       ) AS fee_name
      FROM payments p
      JOIN students st ON st.id = p.student_id
      LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
      LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
      LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
      WHERE p.school_id = :schoolId
      GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name
@@ -832,7 +837,11 @@ async function getCollectionRows(schoolId: number) {
     `SELECT p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name,
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
-       COALESCE(GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '), 'Payment') AS fee_name
+       COALESCE(
+         GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
+         MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
+         'Payment'
+       ) AS fee_name
      FROM payments p
      JOIN students st ON st.id = p.student_id
      LEFT JOIN enrollments e ON e.student_id = st.id
@@ -840,6 +849,7 @@ async function getCollectionRows(schoolId: number) {
      LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
      LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
      LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
      WHERE p.school_id = :schoolId
      GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name, gl.name
@@ -1081,7 +1091,7 @@ function emptyDashboard(warning: string | null): AdminDashboardRealData {
       { label: "Total enrolled", value: "0", note: "School setup pending", tone: "blue", icon: Users },
       { label: "Collected", value: "Pending", note: "Payment records pending", tone: "orange", icon: CreditCard },
       { label: "Outstanding", value: "Pending", note: "Fee assignments pending", tone: "red", icon: Activity },
-      { label: "Wallets", value: "Pending", note: "Wallet backend pending", tone: "green", icon: Wallet },
+      { label: "Wallets", value: "Pending", note: "No wallet records yet", tone: "green", icon: Wallet },
     ],
     tuitionByGrade: [],
     monthlySummary: pendingSummary(),
@@ -1136,7 +1146,7 @@ function emptyAllowance(warning: string | null): AllowancePageRealData {
   return {
     warning,
     kpis: [
-      { label: "Wallet records", value: "0", note: "Wallet backend pending", tone: "orange", icon: Wallet },
+      { label: "Wallet records", value: "0", note: "Top up allowance to create wallets", tone: "orange", icon: Wallet },
       { label: "Total balance", value: "Pending", note: "Available student balances", tone: "green", icon: Wallet },
       { label: "Low balance", value: "0", note: "Below P50", tone: "red", icon: Activity },
       { label: "Monthly spend", value: "Pending", note: "Purchase transactions", tone: "blue", icon: Store },

@@ -1,0 +1,129 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import test from "node:test";
+
+const walletRecordsPath = "lib/wallets/records.ts";
+const walletActionsPath = "app/parent/wallet/actions.ts";
+const walletPagePath = "app/parent/(portal)/wallet/page.tsx";
+const walletFormPath = "app/parent/(portal)/wallet/wallet-top-up-form.tsx";
+const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
+const parentStudentProfileViewPath = "app/parent/(portal)/student-profile/student-profile-view.tsx";
+const adminAllowanceTablePath = "app/admin/(dashboard)/allowance/allowance-table.tsx";
+const adminAllowancePagePath = "app/admin/(dashboard)/allowance/page.tsx";
+const paymentRecordsPath = "lib/payments/records.ts";
+const parentRecordsPath = "lib/students/records.ts";
+const adminRealDataPath = "lib/admin/real-data.ts";
+const parentPortalDataPath = "app/parent/_data/parent-portal-data.ts";
+const checklistPath = "docs/CHECKLIST.md";
+const flowchartsPath = "docs/PROJECT_FLOWCHARTS.md";
+const visualFlowchartsPath = "public/PROJECT_FLOWCHARTS_VISUAL.html";
+
+test("wallet records helper reads linked student wallets and transactions through guardian scope", () => {
+  assert.equal(existsSync(walletRecordsPath), true);
+  const helper = readFileSync(walletRecordsPath, "utf8");
+
+  assert.match(helper, /import "server-only";/);
+  assert.match(helper, /export async function getParentWalletPageData\(parentUserId: number\)/);
+  assert.match(helper, /FROM student_guardians sg/);
+  assert.match(helper, /sg\.parent_user_id = :parentUserId/);
+  assert.match(helper, /LEFT JOIN wallets w ON w\.student_id = st\.id/);
+  assert.match(helper, /FROM wallet_transactions wt/);
+  assert.match(helper, /LEFT JOIN payments p ON p\.id = wt\.payment_id/);
+  assert.match(helper, /Wallet top-up/);
+});
+
+test("wallet top-up action creates paid payment, wallet transaction, receipt, and updates balance", () => {
+  assert.equal(existsSync(walletActionsPath), true);
+  const action = readFileSync(walletActionsPath, "utf8");
+
+  assert.match(action, /"use server";/);
+  assert.match(action, /export async function createWalletTopUpAction\(formData: FormData\)/);
+  assert.match(action, /await requireRole\("parent"\)/);
+  assert.match(action, /student_guardians sg/);
+  assert.match(action, /sg\.parent_user_id = :parentUserId/);
+  assert.match(action, /INSERT INTO wallets/);
+  assert.match(action, /ON DUPLICATE KEY UPDATE/);
+  assert.match(action, /FOR UPDATE/);
+  assert.match(action, /wallet\.status !== "active"/);
+  assert.match(action, /maxTopUpAmount = 10000/);
+  assert.match(action, /INSERT INTO payments/);
+  assert.match(action, /'paid'/);
+  assert.match(action, /UPDATE wallets/);
+  assert.match(action, /INSERT INTO wallet_transactions/);
+  assert.match(action, /'top_up'/);
+  assert.match(action, /INSERT INTO receipts/);
+  assert.match(action, /redirect\(`\/parent\/receipt\?receiptId=\$\{receiptId\}`\)/);
+});
+
+test("parent wallet page uses real wallet data and no static placeholder rows", () => {
+  const page = readFileSync(walletPagePath, "utf8");
+  const form = readFileSync(walletFormPath, "utf8");
+  const parentPortalData = readFileSync(parentPortalDataPath, "utf8");
+
+  assert.match(page, /await requireRole\("parent"\)/);
+  assert.match(page, /getParentWalletPageData\(session\.userId\)/);
+  assert.match(page, /WalletTopUpForm wallets=\{data\.wallets\}/);
+  assert.match(page, /data\.transactions\.map/);
+  assert.match(page, /No wallet transactions yet/);
+  assert.match(form, /createWalletTopUpAction/);
+  assert.match(form, /name="studentId"/);
+  assert.match(form, /name="amount"/);
+  assert.match(form, /name="channel"/);
+  assert.match(form, /max="10000"/);
+  assert.doesNotMatch(page, /walletTransactions|walletQuickAmounts/);
+  assert.doesNotMatch(parentPortalData, /walletTransactions|walletQuickAmounts/);
+});
+
+test("parent dashboard and student profile expose real wallet details", () => {
+  const records = readFileSync(parentRecordsPath, "utf8");
+  const dashboard = readFileSync(parentDashboardPath, "utf8");
+  const profileView = readFileSync(parentStudentProfileViewPath, "utf8");
+
+  assert.match(records, /wallet_balance/);
+  assert.match(records, /wallet_count/);
+  assert.match(records, /walletDetails/);
+  assert.match(records, /LEFT JOIN wallets w ON w\.student_id = st\.id/);
+  assert.match(records, /Top up allowance to create a wallet/);
+  assert.match(dashboard, /getParentDashboardData/);
+  assert.match(profileView, /student\.walletDetails/);
+  assert.doesNotMatch(records, /Phase 6 will add allowance/);
+  assert.doesNotMatch(profileView, /Wallet backend pending/);
+});
+
+test("admin allowance page uses working controls for real wallet rows", () => {
+  const page = readFileSync(adminAllowancePagePath, "utf8");
+  const table = readFileSync(adminAllowanceTablePath, "utf8");
+
+  assert.match(page, /AllowanceTable/);
+  assert.match(table, /DashboardTableControls/);
+  assert.match(table, /admin-allowance-wallets\.csv/);
+  assert.match(table, /filterByQuery/);
+  assert.doesNotMatch(page, /Export pending/);
+});
+
+test("payment history, receipts, and admin collections label wallet top-ups", () => {
+  const paymentRecords = readFileSync(paymentRecordsPath, "utf8");
+  const parentRecords = readFileSync(parentRecordsPath, "utf8");
+  const adminRealData = readFileSync(adminRealDataPath, "utf8");
+
+  for (const source of [paymentRecords, parentRecords, adminRealData]) {
+    assert.match(source, /LEFT JOIN wallet_transactions wt ON wt\.payment_id = p\.id/);
+    assert.match(source, /MAX\(CASE WHEN wt\.type = 'top_up' THEN 'Wallet top-up' END\)/);
+  }
+});
+
+test("docs and checklist mark Phase 6A wallet top-up complete while store remains future", () => {
+  const checklist = readFileSync(checklistPath, "utf8");
+  const flowcharts = readFileSync(flowchartsPath, "utf8");
+  const visualFlowcharts = readFileSync(visualFlowchartsPath, "utf8");
+
+  assert.match(checklist, /- \[x\] Add backend helpers for `wallets` and `wallet_transactions`\./);
+  assert.match(checklist, /- \[x\] Create student wallets lazily when the parent tops up allowance\./);
+  assert.match(checklist, /- \[x\] Record local allowance top-ups\./);
+  assert.match(checklist, /- \[x\] Add parent wallet top-up write flow\./);
+  assert.match(checklist, /- \[ \] Add store purchase write flow\./);
+  assert.match(flowcharts, /Parent local wallet top-up flow/);
+  assert.match(flowcharts, /Store\/canteen spending is future/);
+  assert.match(visualFlowcharts, /Wallet top-up/);
+  assert.match(visualFlowcharts, /Future: create purchase wallet transaction and store transaction/);
+});

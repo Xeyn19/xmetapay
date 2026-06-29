@@ -98,12 +98,7 @@ export function StudentProfileView({ student }: { student: StudentProfile }) {
         <ParentCard title="Student details" icon={IdCard}><DetailRows rows={student.studentDetails} /></ParentCard>
         <ParentCard title="Parent / guardian" icon={Users}><DetailRows rows={student.guardianDetails} /></ParentCard>
         <ParentCard title="Allowance wallet" icon={Wallet} action={<Link href="/parent/wallet"><ParentButton tone="primary"><Plus className="size-4" />Top-up</ParentButton></Link>}>
-          <DetailRows rows={[
-            { label: "Current balance", value: "Pending" },
-            { label: "Monthly spend", value: "Pending" },
-            { label: "Last top-up", value: "Pending" },
-            { label: "Status", value: "Wallet backend pending" },
-          ]} />
+          <DetailRows rows={student.walletDetails} />
         </ParentCard>
       </div>
 

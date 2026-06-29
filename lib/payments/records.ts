@@ -87,7 +87,11 @@ export async function getParentReceiptData(
       `SELECT r.id AS receipt_id, r.receipt_number, r.issued_at,
          p.id AS payment_id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
          st.student_reference, st.first_name, st.middle_name, st.last_name,
-         COALESCE(GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '), 'School fee payment') AS paid_items
+         COALESCE(
+           GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
+           MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
+           'School fee payment'
+         ) AS paid_items
        FROM receipts r
        JOIN payments p ON p.id = r.payment_id
        JOIN students st ON st.id = p.student_id
@@ -95,6 +99,7 @@ export async function getParentReceiptData(
        LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
        LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
        LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+       LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
        WHERE p.payer_user_id = :parentUserId
          ${selectedReceiptClause}
        GROUP BY r.id, r.receipt_number, r.issued_at, p.id, p.reference_number, p.amount, p.channel,
@@ -141,7 +146,11 @@ export async function getParentPaymentHistoryData(parentUserId: number): Promise
     const [rows] = await pool.execute<ParentPaymentHistoryRow[]>(
       `SELECT r.id AS receipt_id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
          st.first_name, st.middle_name, st.last_name,
-         COALESCE(GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '), 'School fee payment') AS description
+         COALESCE(
+           GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
+           MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
+           'School fee payment'
+         ) AS description
        FROM payments p
        JOIN students st ON st.id = p.student_id
        JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
@@ -149,6 +158,7 @@ export async function getParentPaymentHistoryData(parentUserId: number): Promise
        LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
        LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
        LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+       LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
        WHERE p.payer_user_id = :parentUserId
        GROUP BY r.id, p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
          st.first_name, st.middle_name, st.last_name
