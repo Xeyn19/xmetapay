@@ -121,7 +121,7 @@ test("admin finance pages show empty or pending states when records do not exist
   assert.match(pageText, /No other fee types yet/);
   assert.match(pageText, /No wallet records yet/);
   assert.match(pageText, /No store transactions yet/);
-  assert.match(pageText, /Export pending/);
+  assert.doesNotMatch(pageText, /Export pending/);
   assert.match(pageText, /Record payment pending/);
 });
 

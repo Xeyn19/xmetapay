@@ -48,14 +48,15 @@ Implemented:
 - Parent selected student profile recent wallet/store activity from MySQL.
 - Admin allowance total balance is calculated from the current `wallets.balance` values, counting each wallet once.
 - Store/canteen purchase recording through student wallets.
+- Admin CSV report exports for monthly revenue, collections, outstanding balances, and wallet/store activity.
 
 Next:
 
-- Report query polish for tuition, collections, wallet, and store summaries.
+- Notification history and reminder workflow.
 
 Future:
 
-- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, notifications, and report exports.
+- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, notification sending, and PDF report packages.
 
 ## Whole Project Overview
 
@@ -482,6 +483,43 @@ Role rule:
 
 - `school_administrator` and `finance_officer` can record store purchases.
 - `registrar` cannot record store purchases because store spending is a finance operation.
+
+## Report CSV Export Flow
+
+Implemented for admin/school reporting. CSV exports are generated from current operational MySQL records instead of storing separate report rows.
+
+```mermaid
+flowchart TD
+  A["Admin opens /admin/reports"] --> B["Require admin session"]
+  B --> C{"Staff role can access reports?"}
+  C -->|No| D["Redirect to admin dashboard"]
+  C -->|Yes| E["Show report KPIs and CSV download links"]
+  E --> F["Admin clicks report export"]
+  F --> G["GET /admin/reports/export?type=..."]
+  G --> H["Resolve school_id and active school_year_id"]
+  H --> I{"Report type"}
+  I -->|monthly-revenue| J["Query paid payment totals by month"]
+  I -->|collections| K["Query payment records"]
+  I -->|outstanding-balances| L["Query student fee assignment balances"]
+  I -->|wallet-store| M["Query wallet top-ups and store purchases"]
+  J --> N["Return escaped CSV download"]
+  K --> N
+  L --> N
+  M --> N
+```
+
+Current CSV reports:
+
+- Monthly revenue
+- Collections
+- Outstanding balances
+- Wallet and store activity
+
+Future reporting:
+
+- PDF report packages
+- Scheduled report delivery
+- Notification-based report alerts
 
 ## Practical Testing Flow
 

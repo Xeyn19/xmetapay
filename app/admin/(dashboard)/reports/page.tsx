@@ -5,7 +5,6 @@ import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminReportsPageRealData } from "@/lib/admin/real-data";
 
 import {
-  AdminButton,
   AlertBanner,
   BarList,
   DashboardCard,
@@ -31,7 +30,7 @@ export default async function ReportsPage() {
         <DashboardCard
           title="Monthly revenue trend"
           icon={BarChart3}
-          action={<AdminButton tone="dark" disabled><Download className="size-4" />Export pending</AdminButton>}
+          action={<ReportDownloadLink href="/admin/reports/export?type=monthly-revenue">Export CSV</ReportDownloadLink>}
         >
           {data.monthlyRevenue.length > 0 ? (
             <BarList rows={data.monthlyRevenue} />
@@ -61,7 +60,7 @@ export default async function ReportsPage() {
                       <div className="mt-0.5 text-[11px] text-[#5a6070]">{report.desc}</div>
                     </div>
                   </div>
-                  <AdminButton tone="dark" disabled><Download className="size-4" />{report.format}</AdminButton>
+                  <ReportDownloadLink href={report.href}>{report.format}</ReportDownloadLink>
                 </div>
               );
             })}
@@ -69,6 +68,18 @@ export default async function ReportsPage() {
         </DashboardCard>
       </div>
     </>
+  );
+}
+
+function ReportDownloadLink({ href, children }: { href: string; children: string }) {
+  return (
+    <a
+      href={href}
+      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#0f1117] bg-[#0f1117] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#2d3348] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+    >
+      <Download className="size-4" />
+      {children}
+    </a>
   );
 }
 

@@ -280,6 +280,19 @@ Each store transaction should connect to a wallet transaction so spending affect
 
 Implementation status: these tables already exist in the full schema and the Phase 6B admin/finance write flow records local test purchases. A store purchase decreases the wallet balance, inserts a `wallet_transactions` purchase row, and links it to a `store_transactions` row.
 
+## Report Export Queries
+
+Reports are generated from operational tables rather than stored in separate report tables.
+
+Current implemented CSV exports:
+
+- Monthly revenue from paid `payments`.
+- Collections from `payments` and linked `students`.
+- Outstanding balances from `student_fee_assignments`, `fee_types`, and enrollment context.
+- Wallet and store activity from `wallet_transactions`, `wallets`, `store_transactions`, and `store_merchants`.
+
+PDF packages, scheduled reports, and notification-driven report delivery are future features.
+
 ## Notification Table
 
 ### `notification_logs`
@@ -311,7 +324,8 @@ The schema supports this practical backend flow:
 10. Payments are allocated to balances through `payment_allocations`.
 11. Receipts are created in `receipts`.
 12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
-13. Notifications and reminders are recorded in `notification_logs`.
+13. Admin downloads CSV reports from existing operational tables.
+14. Notifications and reminders are recorded in `notification_logs` when reminder workflows are implemented.
 
 ## Relationship Summary
 
@@ -326,6 +340,7 @@ The schema supports this practical backend flow:
 - `receipts` documents paid payments.
 - `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, and full wallet ledger history.
 - `store_transactions` records wallet spending at school merchants.
+- Report CSV exports read from operational tables and do not require separate report storage tables.
 - `notification_logs` records communication history.
 
 ## Safety Notes
