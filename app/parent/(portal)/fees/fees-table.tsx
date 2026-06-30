@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 import type { ParentFeeRow } from "@/lib/fees/records";
 
 import { ParentTable, StatusPill } from "../../_components/parent-ui";
@@ -41,6 +41,17 @@ export function ParentFeesTable({ rows }: { rows: ParentFeeRow[] }) {
             setStatus("all");
           }}
           onExport={() => exportRowsToCsv("parent-fee-summary.csv", filteredRows, [
+            { label: "Student", value: (row) => row.studentName },
+            { label: "Reference", value: (row) => row.studentReference },
+            { label: "Fee", value: (row) => row.feeName },
+            { label: "Category", value: (row) => row.category },
+            { label: "Billed", value: (row) => row.amountDue },
+            { label: "Paid", value: (row) => row.amountPaid },
+            { label: "Balance", value: (row) => row.balance },
+            { label: "Due date", value: (row) => row.dueDate },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("parent-fee-summary.pdf", "Fee summary", filteredRows, [
             { label: "Student", value: (row) => row.studentName },
             { label: "Reference", value: (row) => row.studentReference },
             { label: "Fee", value: (row) => row.feeName },

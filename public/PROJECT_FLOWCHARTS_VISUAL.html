@@ -242,7 +242,7 @@
         <p>
           A browser-viewable process map for how the school/admin portal and
           parent portal work together from registration to student linking, with
-          fees, payments, receipts, wallet top-ups, store/canteen purchase recording, and future reports.
+          fees, payments, receipts, wallet top-ups, store/canteen purchase recording, and reports.
         </p>
         <div class="meta">
           <span class="pill admin">Admin/school portal</span>
@@ -270,7 +270,7 @@
             <strong>Implemented</strong>
             Auth, logout, protected redirects, manual school setup, admin role permissions, student
             creation, enrollment, parent-student linking, fees, local test payments, receipts,
-            payment history, wallet top-ups, store purchases, CSV report exports, and accurate wallet totals. Parent-side mock enrollment has been removed.
+            payment history, wallet top-ups, store purchases, CSV/PDF report exports, visible-row table CSV/PDF exports, and accurate wallet totals. Parent-side mock enrollment has been removed.
           </div>
           <div class="card">
             <strong>Next</strong>
@@ -279,7 +279,7 @@
           <div class="card">
             <strong>Future</strong>
             Cashier/POS portal, item catalog, real payment gateways, refunds, admin manual fee
-            payment recording, notification sending, and PDF report packages.
+            payment recording, notification sending, and scheduled report delivery.
           </div>
         </div>
       </section>
@@ -631,31 +631,54 @@ flowchart TD
       </section>
 
       <section>
-        <h2>Report CSV Exports</h2>
+        <h2>Report CSV And PDF Exports</h2>
         <div class="diagram-card">
           <div class="diagram-actions">
-            <button type="button" data-diagram-download="svg" data-file-name="admin-report-csv-exports.svg">Download SVG</button>
+            <button type="button" data-diagram-download="svg" data-file-name="admin-report-csv-pdf-exports.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> protected admin CSV exports for monthly revenue, collections, outstanding balances, and wallet/store activity.</p>
+          <p><strong>Implemented:</strong> protected admin CSV and PDF exports for monthly revenue, collections, outstanding balances, and wallet/store activity.</p>
           <pre class="mermaid">
 flowchart TD
   A["Admin opens reports page"] --> B["Require admin session"]
   B --> C{"Can access reports?"}
   C -->|No| D["Redirect to admin dashboard"]
-  C -->|Yes| E["Show CSV download links"]
-  E --> F["GET /admin/reports/export?type=..."]
-  F --> G["Resolve school and active school year"]
-  G --> H{"Report type"}
-  H -->|monthly-revenue| I["Query paid payments by month"]
-  H -->|collections| J["Query payment records"]
-  H -->|outstanding-balances| K["Query assigned fee balances"]
-  H -->|wallet-store| L["Query wallet top-ups and store purchases"]
-  I --> M["Return escaped CSV"]
-  J --> M
-  K --> M
-  L --> M
+  C -->|Yes| E["Show CSV and PDF download links"]
+  E --> F["GET /admin/reports/export?type=...&format=..."]
+  F --> G{"Format?"}
+  G -->|CSV or omitted| H["Return escaped CSV"]
+  G -->|PDF| I["Render server-side PDF"]
+  H --> J["Resolve school and active school year"]
+  I --> J
+  J --> K{"Report type"}
+  K -->|monthly-revenue| L["Query paid payments by month"]
+  K -->|collections| M["Query payment records"]
+  K -->|outstanding-balances| N["Query assigned fee balances"]
+  K -->|wallet-store| O["Query wallet top-ups and store purchases"]
+  L --> P["Download selected report format"]
+  M --> P
+  N --> P
+  O --> P
           </pre>
-          <p>CSV reports read from operational MySQL tables. PDF packages, scheduled delivery, notifications, gateways, refunds, cashier/POS, and item catalogs remain future work.</p>
+          <p>CSV and PDF reports read from operational MySQL tables. Scheduled delivery, notifications, gateways, refunds, cashier/POS, and item catalogs remain future work.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Real-Data Table Exports</h2>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="real-data-table-csv-pdf-exports.svg">Download SVG</button>
+          </div>
+          <p><strong>Implemented:</strong> admin and parent real-data tables export currently visible filtered rows as CSV or PDF.</p>
+          <pre class="mermaid">
+flowchart TD
+  A["User opens a real-data table"] --> B["Page loads MySQL-backed rows"]
+  B --> C["User searches or filters rows"]
+  C --> D["Visible rows update"]
+  D --> E{"Export format?"}
+  E -->|CSV| F["Download visible rows as CSV"]
+  E -->|PDF| G["Download visible rows as PDF"]
+          </pre>
         </div>
       </section>
 

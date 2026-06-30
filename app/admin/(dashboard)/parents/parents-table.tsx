@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 import type { AdminParentRow } from "@/lib/students/records";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
@@ -40,6 +40,15 @@ export function ParentsTable({ rows }: { rows: AdminParentRow[] }) {
             setStatus("all");
           }}
           onExport={() => exportRowsToCsv("admin-parent-contacts.csv", filteredRows, [
+            { label: "Parent name", value: (row) => row.parentName },
+            { label: "Students", value: (row) => row.students },
+            { label: "Grade", value: (row) => row.grade },
+            { label: "Contact number", value: (row) => row.contact },
+            { label: "Email address", value: (row) => row.email },
+            { label: "Relationship", value: (row) => row.relationship },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-parent-contacts.pdf", "Parent contacts", filteredRows, [
             { label: "Parent name", value: (row) => row.parentName },
             { label: "Students", value: (row) => row.students },
             { label: "Grade", value: (row) => row.grade },

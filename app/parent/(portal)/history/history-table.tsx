@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 import type { ParentPaymentHistoryData } from "@/lib/payments/records";
 
 import { ParentTable, StatusPill } from "../../_components/parent-ui";
@@ -44,6 +44,15 @@ export function ParentPaymentHistoryTable({ rows }: { rows: PaymentHistoryRow[] 
             setChannel("all");
           }}
           onExport={() => exportRowsToCsv("parent-payment-history.csv", filteredRows, [
+            { label: "Reference", value: (row) => row.referenceNumber },
+            { label: "Date", value: (row) => row.paidAt },
+            { label: "Student", value: (row) => row.studentName },
+            { label: "Description", value: (row) => row.description },
+            { label: "Amount", value: (row) => row.amount },
+            { label: "Channel", value: (row) => row.channel },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("parent-payment-history.pdf", "Payment history", filteredRows, [
             { label: "Reference", value: (row) => row.referenceNumber },
             { label: "Date", value: (row) => row.paidAt },
             { label: "Student", value: (row) => row.studentName },

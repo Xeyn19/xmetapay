@@ -1,5 +1,7 @@
 import "server-only";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
@@ -19,38 +21,79 @@ type CsvColumn<T> = {
   value: (row: T) => string | number | null | undefined;
 };
 
+export type ReportExportFormat = "csv" | "pdf";
+
+export type AdminReportExportData = {
+  title: string;
+  filenameBase: string;
+  contextLines: string[];
+  columns: string[];
+  rows: string[][];
+};
+
 export function isReportExportType(value: string | null): value is ReportExportType {
   return reportExportTypes.includes(value as ReportExportType);
 }
 
+export function isReportExportFormat(value: string | null): value is ReportExportFormat {
+  return value === "csv" || value === "pdf";
+}
+
 export async function getAdminReportExport(adminUserId: number, type: ReportExportType) {
+  const report = await getAdminReportExportData(adminUserId, type);
+
+  return {
+    filename: `${report.filenameBase}.csv`,
+    csv: toCsv(report),
+  };
+}
+
+export async function getAdminReportExportData(adminUserId: number, type: ReportExportType): Promise<AdminReportExportData> {
   const setup = await getResolvedAdminSchoolSetup(adminUserId);
 
   if (!setup.schoolId || !setup.schoolYearId) {
     return {
-      filename: `xmetapay-${type}.csv`,
-      csv: toCsv([{ message: setup.warning ?? "School setup is incomplete." }], [
-        { label: "Message", value: (row) => row.message },
-      ]),
+      title: reportTitle(type),
+      filenameBase: `xmetapay-${type}`,
+      contextLines: ["School setup incomplete"],
+      columns: ["Message"],
+      rows: [[setup.warning ?? "School setup is incomplete."]],
     };
   }
 
+  const contextLines = [
+    `School ID: ${setup.schoolId}`,
+    setup.schoolYearName ? `School year: ${setup.schoolYearName}` : "School year: Active year",
+  ];
+
   if (type === "monthly-revenue") {
-    return monthlyRevenueExport(setup.schoolId);
+    return monthlyRevenueExport(setup.schoolId, contextLines);
   }
 
   if (type === "collections") {
-    return collectionsExport(setup.schoolId);
+    return collectionsExport(setup.schoolId, contextLines);
   }
 
   if (type === "outstanding-balances") {
-    return outstandingBalancesExport(setup.schoolId, setup.schoolYearId);
+    return outstandingBalancesExport(setup.schoolId, setup.schoolYearId, contextLines);
   }
 
-  return walletStoreExport(setup.schoolId, setup.schoolYearId);
+  return walletStoreExport(setup.schoolId, setup.schoolYearId, contextLines);
 }
 
-async function monthlyRevenueExport(schoolId: number) {
+export async function getAdminReportPdf(report: AdminReportExportData) {
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "pt",
+    format: "a4",
+  });
+
+  renderPdfReport(doc, report);
+
+  return Buffer.from(doc.output("arraybuffer"));
+}
+
+async function monthlyRevenueExport(schoolId: number, contextLines: string[]): Promise<AdminReportExportData> {
   const [rows] = await pool.execute<MonthlyRevenueExportRow[]>(
     `SELECT DATE_FORMAT(COALESCE(p.paid_at, p.created_at), '%Y-%m') AS month,
        COUNT(*) AS paid_payment_count,
@@ -62,17 +105,20 @@ async function monthlyRevenueExport(schoolId: number) {
     { schoolId },
   );
 
-  return {
-    filename: "xmetapay-monthly-revenue.csv",
-    csv: toCsv(rows, [
+  return reportData(
+    "Monthly revenue",
+    "xmetapay-monthly-revenue",
+    contextLines,
+    rows,
+    [
       { label: "Month", value: (row) => row.month },
       { label: "Paid payment count", value: (row) => row.paid_payment_count },
       { label: "Paid amount", value: (row) => decimal(row.paid_amount) },
-    ]),
-  };
+    ],
+  );
 }
 
-async function collectionsExport(schoolId: number) {
+async function collectionsExport(schoolId: number, contextLines: string[]): Promise<AdminReportExportData> {
   const [rows] = await pool.execute<CollectionsExportRow[]>(
     `SELECT p.reference_number, p.channel, p.status, p.amount, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name
@@ -83,20 +129,27 @@ async function collectionsExport(schoolId: number) {
     { schoolId },
   );
 
-  return {
-    filename: "xmetapay-collections.csv",
-    csv: toCsv(rows, [
+  return reportData(
+    "Collections report",
+    "xmetapay-collections",
+    contextLines,
+    rows,
+    [
       { label: "Reference", value: (row) => row.reference_number },
       { label: "Student", value: (row) => fullName(row.first_name, row.middle_name, row.last_name) },
       { label: "Channel", value: (row) => label(row.channel) },
       { label: "Status", value: (row) => label(row.status) },
       { label: "Amount", value: (row) => decimal(row.amount) },
       { label: "Paid or created date", value: (row) => formatDateTime(row.paid_at ?? row.created_at) },
-    ]),
-  };
+    ],
+  );
 }
 
-async function outstandingBalancesExport(schoolId: number, schoolYearId: number) {
+async function outstandingBalancesExport(
+  schoolId: number,
+  schoolYearId: number,
+  contextLines: string[],
+): Promise<AdminReportExportData> {
   const [rows] = await pool.execute<OutstandingBalancesExportRow[]>(
     `SELECT sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
        ft.name AS fee_name, ft.category,
@@ -114,9 +167,12 @@ async function outstandingBalancesExport(schoolId: number, schoolYearId: number)
     { schoolId, schoolYearId },
   );
 
-  return {
-    filename: "xmetapay-outstanding-balances.csv",
-    csv: toCsv(rows, [
+  return reportData(
+    "Outstanding balances",
+    "xmetapay-outstanding-balances",
+    contextLines,
+    rows,
+    [
       { label: "Student reference", value: (row) => row.student_reference },
       { label: "Student", value: (row) => fullName(row.first_name, row.middle_name, row.last_name) },
       { label: "Grade", value: (row) => row.grade_name },
@@ -128,11 +184,11 @@ async function outstandingBalancesExport(schoolId: number, schoolYearId: number)
       { label: "Balance", value: (row) => decimal(Number(row.amount_due) - Number(row.amount_paid)) },
       { label: "Due date", value: (row) => formatDate(row.due_date) },
       { label: "Status", value: (row) => label(row.status) },
-    ]),
-  };
+    ],
+  );
 }
 
-async function walletStoreExport(schoolId: number, schoolYearId: number) {
+async function walletStoreExport(schoolId: number, schoolYearId: number, contextLines: string[]): Promise<AdminReportExportData> {
   const [rows] = await pool.execute<WalletStoreExportRow[]>(
     `SELECT wt.type, wt.amount, wt.balance_after, wt.description, wt.created_at,
        p.reference_number AS payment_reference, p.channel, p.status AS payment_status,
@@ -155,9 +211,12 @@ async function walletStoreExport(schoolId: number, schoolYearId: number) {
     { schoolId, schoolYearId },
   );
 
-  return {
-    filename: "xmetapay-wallet-store.csv",
-    csv: toCsv(rows, [
+  return reportData(
+    "Wallet and store report",
+    "xmetapay-wallet-store",
+    contextLines,
+    rows,
+    [
       { label: "Date", value: (row) => formatDateTime(row.created_at) },
       { label: "Student reference", value: (row) => row.student_reference },
       { label: "Student", value: (row) => fullName(row.first_name, row.middle_name, row.last_name) },
@@ -170,21 +229,97 @@ async function walletStoreExport(schoolId: number, schoolYearId: number) {
       { label: "Status", value: (row) => row.payment_status ? label(row.payment_status) : "Recorded" },
       { label: "Amount", value: (row) => decimal(row.amount) },
       { label: "Balance after", value: (row) => decimal(row.balance_after) },
-    ]),
+    ],
+  );
+}
+
+function reportData<T>(
+  title: string,
+  filenameBase: string,
+  contextLines: string[],
+  rows: T[],
+  columns: CsvColumn<T>[],
+): AdminReportExportData {
+  return {
+    title,
+    filenameBase,
+    contextLines,
+    columns: columns.map((column) => column.label),
+    rows: rows.map((row) => columns.map((column) => cleanCell(column.value(row)))),
   };
 }
 
-function toCsv<T>(rows: T[], columns: CsvColumn<T>[]) {
+function toCsv(report: AdminReportExportData) {
   return [
-    columns.map((column) => csvCell(column.label)).join(","),
-    ...rows.map((row) => columns.map((column) => csvCell(column.value(row))).join(",")),
+    report.columns.map((column) => csvCell(column)).join(","),
+    ...report.rows.map((row) => row.map((value) => csvCell(value)).join(",")),
   ].join("\r\n");
 }
 
 function csvCell(value: string | number | null | undefined) {
-  const text = String(value ?? "");
+  const text = cleanCell(value);
 
   return `"${text.replaceAll("\"", "\"\"")}"`;
+}
+
+function cleanCell(value: string | number | null | undefined) {
+  return String(value ?? "");
+}
+
+function renderPdfReport(doc: jsPDF, report: AdminReportExportData) {
+  const generatedAt = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const context = [...report.contextLines, `Generated: ${generatedAt}`];
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor("#0f1117");
+  doc.text("XMETA Pay", 30, 34);
+  doc.setFontSize(13);
+  doc.text(report.title, 30, 52);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor("#5a6070");
+  doc.text(context.join("  |  "), 30, 66);
+
+  autoTable(doc, {
+    head: [report.columns],
+    body: report.rows.length > 0
+      ? report.rows
+      : [[
+          "No records yet",
+          ...Array.from({ length: Math.max(report.columns.length - 1, 0) }, () => ""),
+        ]],
+    margin: { left: 30, right: 30 },
+    startY: 82,
+    styles: {
+      cellPadding: 3,
+      fontSize: report.columns.length > 8 ? 6 : 7,
+      overflow: "linebreak",
+    },
+    headStyles: {
+      fillColor: [230, 74, 25],
+      textColor: [255, 255, 255],
+    },
+  });
+}
+
+function reportTitle(type: ReportExportType) {
+  if (type === "monthly-revenue") {
+    return "Monthly revenue";
+  }
+
+  if (type === "collections") {
+    return "Collections report";
+  }
+
+  if (type === "outstanding-balances") {
+    return "Outstanding balances";
+  }
+
+  return "Wallet and store report";
 }
 
 function decimal(value: number | string | null | undefined) {

@@ -284,14 +284,16 @@ Implementation status: these tables already exist in the full schema and the Pha
 
 Reports are generated from operational tables rather than stored in separate report tables.
 
-Current implemented CSV exports:
+Current implemented CSV and PDF report exports:
 
 - Monthly revenue from paid `payments`.
 - Collections from `payments` and linked `students`.
 - Outstanding balances from `student_fee_assignments`, `fee_types`, and enrollment context.
 - Wallet and store activity from `wallet_transactions`, `wallets`, `store_transactions`, and `store_merchants`.
 
-PDF packages, scheduled reports, and notification-driven report delivery are future features.
+Scheduled reports and notification-driven report delivery are future features.
+
+Real-data dashboard tables also support visible-row CSV and PDF exports in the browser. Those table exports use the rows already loaded for the signed-in admin or parent after search/filter controls are applied, so they do not require extra database tables.
 
 ## Notification Table
 
@@ -324,7 +326,7 @@ The schema supports this practical backend flow:
 10. Payments are allocated to balances through `payment_allocations`.
 11. Receipts are created in `receipts`.
 12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
-13. Admin downloads CSV reports from existing operational tables.
+13. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens can export visible filtered rows as CSV or PDF.
 14. Notifications and reminders are recorded in `notification_logs` when reminder workflows are implemented.
 
 ## Relationship Summary
@@ -340,7 +342,7 @@ The schema supports this practical backend flow:
 - `receipts` documents paid payments.
 - `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, and full wallet ledger history.
 - `store_transactions` records wallet spending at school merchants.
-- Report CSV exports read from operational tables and do not require separate report storage tables.
+- Report CSV and PDF exports read from operational tables and do not require separate report storage tables.
 - `notification_logs` records communication history.
 
 ## Safety Notes

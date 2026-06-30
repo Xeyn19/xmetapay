@@ -72,6 +72,8 @@ test("parent payment pages use real database helpers instead of static payment a
   assert.match(historyPage, /ParentPaymentHistoryTable/);
   assert.match(historyTable, /DashboardTableControls/);
   assert.match(historyTable, /parent-payment-history\.csv/);
+  assert.match(historyTable, /parent-payment-history\.pdf/);
+  assert.match(historyTable, /exportRowsToPdf/);
   assert.doesNotMatch(parentPortalData, /export const payableFees/);
   assert.doesNotMatch(parentPortalData, /export const paymentMethods/);
   assert.doesNotMatch(parentPortalData, /export const historyRows/);
@@ -92,6 +94,8 @@ test("parent dashboard reflects real payment summary and recent payment rows", (
   assert.match(dashboard, /ParentRecentPaymentsTable/);
   assert.match(dashboardTable, /DashboardTableControls/);
   assert.match(dashboardTable, /parent-recent-payments\.csv/);
+  assert.match(dashboardTable, /parent-recent-payments\.pdf/);
+  assert.match(dashboardTable, /exportRowsToPdf/);
   assert.match(dashboardTable, /No payment records yet/);
 });
 

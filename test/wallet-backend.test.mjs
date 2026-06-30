@@ -64,8 +64,10 @@ test("parent wallet page uses real wallet data and no static placeholder rows", 
   assert.match(page, /await requireRole\("parent"\)/);
   assert.match(page, /getParentWalletPageData\(session\.userId\)/);
   assert.match(page, /WalletTopUpForm wallets=\{data\.wallets\}/);
-  assert.match(page, /data\.transactions\.map/);
-  assert.match(page, /No wallet transactions yet/);
+  assert.match(page, /ParentWalletActivityTable/);
+  assert.match(page, /rows=\{data\.transactions\}/);
+  assert.match(page, /parent-wallet-transactions\.csv/);
+  assert.match(page, /parent-wallet-transactions\.pdf/);
   assert.match(form, /createWalletTopUpAction/);
   assert.match(form, /name="studentId"/);
   assert.match(form, /name="amount"/);
@@ -98,6 +100,8 @@ test("parent dashboard and student profile expose real wallet details", () => {
   assert.match(dashboard, /data\.walletActivity/);
   assert.match(walletActivityTable, /DashboardTableControls/);
   assert.match(walletActivityTable, /parent-wallet-activity\.csv/);
+  assert.match(walletActivityTable, /parent-wallet-activity\.pdf/);
+  assert.match(walletActivityTable, /exportRowsToPdf/);
   assert.match(walletActivityTable, /showStudent/);
   assert.match(walletActivityTable, /No wallet activity yet/);
   assert.match(profileView, /student\.walletDetails/);
@@ -115,6 +119,8 @@ test("admin allowance page uses working controls for real wallet rows", () => {
   assert.match(page, /AllowanceTable/);
   assert.match(table, /DashboardTableControls/);
   assert.match(table, /admin-allowance-wallets\.csv/);
+  assert.match(table, /admin-allowance-wallets\.pdf/);
+  assert.match(table, /exportRowsToPdf/);
   assert.match(table, /filterByQuery/);
   assert.doesNotMatch(page, /Export pending/);
 });

@@ -125,15 +125,19 @@ test("admin finance pages show empty or pending states when records do not exist
   assert.match(pageText, /Record payment pending/);
 });
 
-test("admin real-data tables use working search filters and CSV export controls", () => {
+test("admin real-data tables use working search filters plus CSV and PDF export controls", () => {
   assert.equal(existsSync(tableControlsPath), true);
   const controls = readFileSync(tableControlsPath, "utf8");
   const shell = readFileSync(adminShellPath, "utf8");
 
   assert.match(controls, /export function DashboardTableControls/);
+  assert.match(controls, /import jsPDF from "jspdf"/);
+  assert.match(controls, /import autoTable from "jspdf-autotable"/);
   assert.match(controls, /exportRowsToCsv/);
+  assert.match(controls, /exportRowsToPdf/);
   assert.match(controls, /filterByQuery/);
   assert.match(controls, /Export CSV/);
+  assert.match(controls, /Export PDF/);
 
   for (const componentPath of adminTableComponentPaths) {
     assert.equal(existsSync(componentPath), true, `${componentPath} should exist`);
@@ -142,6 +146,8 @@ test("admin real-data tables use working search filters and CSV export controls"
     assert.match(component, /"use client";/, `${componentPath} should be client-side for table controls`);
     assert.match(component, /DashboardTableControls/, `${componentPath} should render working table controls`);
     assert.match(component, /exportRowsToCsv/, `${componentPath} should export visible rows`);
+    assert.match(component, /exportRowsToPdf/, `${componentPath} should export visible rows to PDF`);
+    assert.match(component, /onExportPdf/, `${componentPath} should wire PDF export controls`);
     assert.match(component, /filterByQuery/, `${componentPath} should filter visible rows`);
     assert.doesNotMatch(component, /readOnly|Export pending|Filter pending/, `${componentPath} should not keep placeholder controls`);
   }

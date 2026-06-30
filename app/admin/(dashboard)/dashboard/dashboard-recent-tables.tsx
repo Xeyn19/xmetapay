@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 
 import { AdminTable, DashboardCard } from "../../_components/admin-ui";
 import { History, Receipt } from "lucide-react";
@@ -61,6 +61,14 @@ function RecentFeeAssignmentsTable({ rows }: { rows: RecentFeeAssignmentRow[] })
             setStatus("all");
           }}
           onExport={() => exportRowsToCsv("admin-recent-fee-assignments.csv", filteredRows, [
+            { label: "Assigned", value: (row) => row.time },
+            { label: "Student", value: (row) => row.student },
+            { label: "Grade", value: (row) => row.grade },
+            { label: "Fee type", value: (row) => row.feeType },
+            { label: "Balance", value: (row) => row.balance },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-recent-fee-assignments.pdf", "Recent fee assignments", filteredRows, [
             { label: "Assigned", value: (row) => row.time },
             { label: "Student", value: (row) => row.student },
             { label: "Grade", value: (row) => row.grade },
@@ -134,6 +142,14 @@ function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
             setChannel("all");
           }}
           onExport={() => exportRowsToCsv("admin-recent-payments.csv", filteredRows, [
+            { label: "Time", value: (row) => row.time },
+            { label: "Student", value: (row) => row.student },
+            { label: "Type", value: (row) => row.type },
+            { label: "Amount", value: (row) => row.amount },
+            { label: "Channel", value: (row) => row.channel },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-recent-payments.pdf", "Recent payment activity", filteredRows, [
             { label: "Time", value: (row) => row.time },
             { label: "Student", value: (row) => row.student },
             { label: "Type", value: (row) => row.type },

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ClipboardList } from "lucide-react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 
 import { StatusPill } from "../../_components/admin-ui";
 
@@ -42,6 +42,13 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
             setStatus("all");
           }}
           onExport={() => exportRowsToCsv("admin-other-fees.csv", filteredItems, [
+            { label: "Fee type", value: (item) => item.name },
+            { label: "Description", value: (item) => item.desc },
+            { label: "Default amount", value: (item) => item.amount },
+            { label: "Collected", value: (item) => item.collected },
+            { label: "Status", value: (item) => item.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-other-fees.pdf", "Other fees", filteredItems, [
             { label: "Fee type", value: (item) => item.name },
             { label: "Description", value: (item) => item.desc },
             { label: "Default amount", value: (item) => item.amount },

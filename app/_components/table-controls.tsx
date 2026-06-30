@@ -1,6 +1,8 @@
 "use client";
 
-import { Download, RotateCcw, Search } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Download, FileText, RotateCcw, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,7 @@ export function DashboardTableControls({
   filters = [],
   onClear,
   onExport,
+  onExportPdf,
   exportDisabled,
   tone = "admin",
 }: {
@@ -35,6 +38,7 @@ export function DashboardTableControls({
   }>;
   onClear: () => void;
   onExport: () => void;
+  onExportPdf?: () => void;
   exportDisabled: boolean;
   tone?: "admin" | "parent";
 }) {
@@ -99,6 +103,23 @@ export function DashboardTableControls({
         <Download className="size-4" />
         Export CSV
       </button>
+      {onExportPdf ? (
+        <button
+          type="button"
+          onClick={onExportPdf}
+          disabled={exportDisabled}
+          className={cn(
+            "inline-flex min-h-11 items-center justify-center gap-1.5 border bg-white px-3.5 transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60",
+            buttonClass,
+            isParent
+              ? "border-[#e64a19] text-[#e64a19] hover:bg-[#fff3ee]"
+              : "border-[#0f1117] text-[#0f1117] hover:bg-[#f2f1ef]",
+          )}
+        >
+          <FileText className="size-4" />
+          Export PDF
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -137,6 +158,46 @@ export function exportRowsToCsv<T>(filename: string, rows: T[], columns: ExportC
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+export function exportRowsToPdf<T>(filename: string, title: string, rows: T[], columns: ExportColumn<T>[]) {
+  const doc = new jsPDF({ orientation: columns.length > 6 ? "landscape" : "portrait" });
+  const generatedAt = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("XMETA Pay", 14, 16);
+  doc.setFontSize(12);
+  doc.text(title, 14, 24);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text(`Generated: ${generatedAt}`, 14, 30);
+
+  autoTable(doc, {
+    head: [columns.map((column) => column.label)],
+    body: rows.length > 0
+      ? rows.map((row) => columns.map((column) => String(column.value(row) ?? "")))
+      : [[
+          "No records yet",
+          ...Array.from({ length: Math.max(columns.length - 1, 0) }, () => ""),
+        ]],
+    margin: { left: 14, right: 14 },
+    startY: 36,
+    styles: {
+      cellPadding: 2,
+      fontSize: columns.length > 8 ? 6 : 7,
+      overflow: "linebreak",
+    },
+    headStyles: {
+      fillColor: [230, 74, 25],
+      textColor: [255, 255, 255],
+    },
+  });
+
+  doc.save(filename);
 }
 
 function csvCell(value: string | number | null | undefined) {

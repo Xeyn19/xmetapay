@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 import type { AdminStudentRow } from "@/lib/students/records";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
@@ -41,6 +41,16 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
             setStatus("all");
           }}
           onExport={() => exportRowsToCsv("admin-students.csv", filteredStudents, [
+            { label: "Reference", value: (student) => student.studentReference },
+            { label: "Full name", value: (student) => student.fullName },
+            { label: "Grade", value: (student) => student.grade },
+            { label: "Section", value: (student) => student.section },
+            { label: "Parent or guardian", value: (student) => student.guardians },
+            { label: "Contact", value: (student) => student.guardianContact },
+            { label: "Enrollment status", value: (student) => student.enrollmentStatus },
+            { label: "Student status", value: (student) => student.studentStatus },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-students.pdf", "Enrolled students", filteredStudents, [
             { label: "Reference", value: (student) => student.studentReference },
             { label: "Full name", value: (student) => student.fullName },
             { label: "Grade", value: (student) => student.grade },

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
 
@@ -46,6 +46,16 @@ export function CollectionsTable({ rows }: { rows: CollectionRow[] }) {
             setChannel("all");
           }}
           onExport={() => exportRowsToCsv("admin-collections.csv", filteredRows, [
+            { label: "Reference", value: (row) => row.ref },
+            { label: "Student", value: (row) => row.student },
+            { label: "Grade", value: (row) => row.grade },
+            { label: "Fee type", value: (row) => row.fee },
+            { label: "Amount", value: (row) => row.amount },
+            { label: "Date and time", value: (row) => row.date },
+            { label: "Channel", value: (row) => row.channel },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-collections.pdf", "Collections log", filteredRows, [
             { label: "Reference", value: (row) => row.ref },
             { label: "Student", value: (row) => row.student },
             { label: "Grade", value: (row) => row.grade },

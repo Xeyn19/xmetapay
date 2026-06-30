@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 import type { ParentWalletActivity } from "@/lib/students/records";
 
 import { ParentTable, StatusPill } from "../../_components/parent-ui";
@@ -10,10 +10,14 @@ import { ParentTable, StatusPill } from "../../_components/parent-ui";
 export function ParentWalletActivityTable({
   rows,
   csvFilename = "parent-wallet-activity.csv",
+  pdfFilename = "parent-wallet-activity.pdf",
+  exportTitle = "Wallet activity",
   showStudent = true,
 }: {
   rows: ParentWalletActivity[];
   csvFilename?: string;
+  pdfFilename?: string;
+  exportTitle?: string;
   showStudent?: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -67,6 +71,15 @@ export function ParentWalletActivityTable({
             setChannel("all");
           }}
           onExport={() => exportRowsToCsv(csvFilename, filteredRows, [
+            ...(showStudent ? [{ label: "Student", value: (row: ParentWalletActivity) => row.studentName }] : []),
+            { label: "Date", value: (row) => row.date },
+            { label: "Description", value: (row) => row.description },
+            { label: "Channel", value: (row) => row.channel },
+            { label: "Amount", value: (row) => row.amount },
+            { label: "Balance after", value: (row) => row.balanceAfter },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf(pdfFilename, exportTitle, filteredRows, [
             ...(showStudent ? [{ label: "Student", value: (row: ParentWalletActivity) => row.studentName }] : []),
             { label: "Date", value: (row) => row.date },
             { label: "Description", value: (row) => row.description },

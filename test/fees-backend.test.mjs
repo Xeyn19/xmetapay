@@ -71,11 +71,15 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(tuitionPage, /TuitionReportTable/);
   assert.match(tuitionTable, /DashboardTableControls/);
   assert.match(tuitionTable, /admin-tuition-report\.csv/);
+  assert.match(tuitionTable, /admin-tuition-report\.pdf/);
+  assert.match(tuitionTable, /exportRowsToPdf/);
   assert.match(otherFeesPage, /getAdminFeeSetupData\(session\.userId, "other"\)/);
   assert.match(otherFeesPage, /<FeeManagementForms category="other" redirectPath="\/admin\/other-fees" data=\{feeSetup\} \/>/);
   assert.match(otherFeesPage, /OtherFeesTable/);
   assert.match(otherFeesTable, /DashboardTableControls/);
   assert.match(otherFeesTable, /admin-other-fees\.csv/);
+  assert.match(otherFeesTable, /admin-other-fees\.pdf/);
+  assert.match(otherFeesTable, /exportRowsToPdf/);
   assert.doesNotMatch(otherFeesPage, /Add fee type pending/);
 });
 
@@ -104,6 +108,8 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(page, /ParentFeesTable/);
   assert.match(feesTable, /DashboardTableControls/);
   assert.match(feesTable, /parent-fee-summary\.csv/);
+  assert.match(feesTable, /parent-fee-summary\.pdf/);
+  assert.match(feesTable, /exportRowsToPdf/);
   assert.match(page, /data\.hasPayableFees/);
   assert.match(page, /Pay fees/);
   assert.match(page, /No balance due/);
