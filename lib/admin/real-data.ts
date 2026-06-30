@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   Activity,
+  BarChart3,
   Calculator,
   ClipboardList,
   CreditCard,
@@ -115,7 +116,7 @@ export type ReportsPageRealData = {
   warning: string | null;
   kpis: AdminRealKpi[];
   monthlyRevenue: BarRow[];
-  reports: Array<{ name: string; desc: string; format: string; icon: LucideIcon }>;
+  reports: Array<{ name: string; desc: string; format: string; href: string; icon: LucideIcon }>;
 };
 
 export type AdminStudentProfileRealData = {
@@ -409,7 +410,7 @@ export async function getAdminReportsPageRealData(adminUserId: number): Promise<
         { label: "Store spend", value: store.transactionCount > 0 ? money(store.amount) : "Pending", note: "Store transactions", tone: "blue", icon: Store },
       ],
       monthlyRevenue,
-      reports: reportPlaceholders(),
+      reports: reportDownloads(),
     };
   } catch {
     return emptyReports("Report data is unavailable. Confirm MySQL/XAMPP and reporting tables are ready.");
@@ -1187,7 +1188,7 @@ function emptyReports(warning: string | null): ReportsPageRealData {
       { label: "Store spend", value: "Pending", note: "Store transactions", tone: "blue", icon: Store },
     ],
     monthlyRevenue: [],
-    reports: reportPlaceholders(),
+    reports: reportDownloads(),
   };
 }
 
@@ -1202,11 +1203,12 @@ function pendingSummary(): SummaryRow[] {
   ];
 }
 
-function reportPlaceholders() {
+function reportDownloads() {
   return [
-    { name: "Collections report", desc: "Export backend pending", format: "Pending", icon: FileSpreadsheet },
-    { name: "Outstanding balances", desc: "Export backend pending", format: "Pending", icon: Receipt },
-    { name: "Wallet and store report", desc: "Export backend pending", format: "Pending", icon: Store },
+    { name: "Monthly revenue", desc: "Paid payment totals grouped by month", format: "CSV", href: "/admin/reports/export?type=monthly-revenue", icon: BarChart3 },
+    { name: "Collections report", desc: "Payment references, channels, statuses, and dates", format: "CSV", href: "/admin/reports/export?type=collections", icon: FileSpreadsheet },
+    { name: "Outstanding balances", desc: "Assigned fees, paid amounts, balances, and due dates", format: "CSV", href: "/admin/reports/export?type=outstanding-balances", icon: Receipt },
+    { name: "Wallet and store report", desc: "Wallet top-ups, store purchases, and balances after", format: "CSV", href: "/admin/reports/export?type=wallet-store", icon: Store },
   ];
 }
 

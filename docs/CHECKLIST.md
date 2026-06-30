@@ -22,7 +22,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Parent local test payments, fee allocations, receipts, and payment history are implemented.
 - [x] Parent local wallet top-up and wallet transaction history are implemented.
 - [x] Store spending backend is implemented through admin/finance local test purchase recording.
-- [ ] Notification sending, report exports, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
+- [x] Admin CSV report exports are implemented from operational MySQL records.
+- [ ] Notification sending, PDF report packages, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
 
 ## Completed Foundation Step
 
@@ -121,13 +122,20 @@ Done when: wallet balances, top-up history, and admin allowance totals come from
 
 Done when: a parent can top up a wallet, admin/finance can record a local test store purchase, the parent dashboard and selected student profile show recent wallet/store activity, and both portals show the same wallet/store ledger data.
 
-### Future Phase 6C+
+### Phase 6C: Report CSV exports
 
-- [ ] Add report queries for tuition, collections, wallet, and store summaries.
-- [ ] Add `notification_logs` after reminders are ready.
-- [ ] Add cashier/POS portal, item catalog, refunds, and real-time purchase notifications.
+- [x] Add report queries for monthly revenue, collections, outstanding balances, and wallet/store summaries.
+- [x] Add protected admin CSV export route for report downloads.
+- [x] Replace disabled report export buttons with working CSV download links.
 
-Done when: reports and notification flows are generated from the operational MySQL records.
+Done when: school administrators and finance officers can download CSV reports generated from operational MySQL records.
+
+### Future Phase 6D+
+
+- [ ] Use `notification_logs` for reminder history after reminders are ready.
+- [ ] Add PDF report packages, notification sending, cashier/POS portal, item catalog, refunds, and real-time purchase notifications.
+
+Done when: notification flows and advanced report packages are generated from the operational MySQL records.
 
 ## Safe Testing Checklist
 

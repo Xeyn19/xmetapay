@@ -522,7 +522,7 @@ CREATE TABLE notification_logs (
 );
 ```
 
-Reports should usually be generated from query views over payments, fee assignments, wallets, and store transactions instead of storing separate report rows. CSV/PDF exports can be generated from those queries.
+Reports are generated from query views over payments, fee assignments, wallets, and store transactions instead of storing separate report rows. CSV exports are implemented for monthly revenue, collections, outstanding balances, and wallet/store activity; PDF report packages can be added later.
 
 ## Indexing Strategy
 
@@ -643,7 +643,8 @@ flowchart TD
   E --> F["Open collections log"]
   F --> G["Review payment records and receipts"]
   G --> H["Open reports page"]
-  H --> I["Export CSV or PDF from report query"]
+  H --> I["Download CSV reports from report query"]
+  I --> J["PDF report packages remain future"]
 ```
 
 ## Step-by-Step Parent Flowcharts
@@ -712,7 +713,8 @@ flowchart TD
 7. Add wallet tables: `wallets`, `wallet_transactions`.
 8. Add store tables: `store_merchants`, `store_transactions`.
 9. Add notification logs after fee/payment reminders are implemented.
-10. Build report queries from existing operational tables instead of adding report storage tables.
+10. Build CSV report queries from existing operational tables instead of adding report storage tables.
+11. Use `notification_logs` after fee/payment reminders are implemented.
 
 ## MySQL/XAMPP Notes
 

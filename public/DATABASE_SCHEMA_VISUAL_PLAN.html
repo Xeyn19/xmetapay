@@ -259,7 +259,7 @@
           <div class="card">
             <strong>Admin/school portal</strong>
             School setup, student records, parent directory, tuition,
-            collections, allowance, store transactions, and reports.
+            collections, allowance, store transactions, and CSV reports.
           </div>
           <div class="card">
             <strong>Parent portal</strong>
@@ -336,9 +336,14 @@
               <td>Implemented Phase 6B tables for canteen and school store spending logs.</td>
             </tr>
             <tr>
+              <td>Reports</td>
+              <td>Operational query views</td>
+              <td>Implemented CSV exports for monthly revenue, collections, outstanding balances, and wallet/store activity. No separate report storage table is required.</td>
+            </tr>
+            <tr>
               <td>Notifications</td>
               <td><code>notification_logs</code></td>
-              <td>Payment reminders, receipts, low-wallet alerts, and enrollment updates.</td>
+              <td>Future payment reminders, receipts, low-wallet alerts, and enrollment updates.</td>
             </tr>
           </tbody>
         </table>
@@ -650,7 +655,8 @@ flowchart TD
   E --> F["Open collections log"]
   F --> G["Review payment records and receipts"]
   G --> H["Open reports page"]
-  H --> I["Export CSV or PDF from report query"]
+  H --> I["Download CSV reports from operational queries"]
+  I --> J["PDF report packages remain future"]
           </pre>
         </div>
       </section>
@@ -735,8 +741,8 @@ flowchart TD
           <li>Add payment and receipt tables.</li>
           <li>Add wallet and wallet transaction tables.</li>
           <li>Add store merchant and store transaction tables. These already exist in the schema and support the implemented Phase 6B write flow.</li>
-          <li>Add notification logs when reminders are implemented.</li>
-          <li>Build reports from operational query views instead of separate report storage tables.</li>
+          <li>Build CSV reports from operational query views instead of separate report storage tables.</li>
+          <li>Use notification logs when reminders are implemented.</li>
         </ol>
         <div class="note">
           No real credentials, database passwords, session secrets, seed users,
