@@ -4,7 +4,8 @@ import { requireRole } from "@/lib/auth/session";
 import { getParentWalletPageData } from "@/lib/wallets/records";
 import type { ParentWalletSummary } from "@/lib/wallets/records";
 
-import { ParentAlert, ParentCard, ParentTable, StatusPill } from "../../_components/parent-ui";
+import { ParentAlert, ParentCard, StatusPill } from "../../_components/parent-ui";
+import { ParentWalletActivityTable } from "../_components/parent-wallet-activity-table";
 import { WalletTopUpForm } from "./wallet-top-up-form";
 
 export default async function WalletPage() {
@@ -47,39 +48,12 @@ export default async function WalletPage() {
         </ParentCard>
 
         <ParentCard title="Wallet transaction history" icon={History} className="xl:col-span-2" bodyClassName="p-0">
-          <ParentTable
-            headers={[
-              { label: "Date", className: "w-[16%]" },
-              { label: "Student", className: "w-[18%]" },
-              { label: "Description", className: "w-[22%]" },
-              { label: "Amount", className: "w-[11%]" },
-              { label: "Balance after", className: "w-[13%]" },
-              { label: "Channel", className: "w-[11%]" },
-              { label: "Status", className: "w-[9%]" },
-            ]}
-          >
-            {data.transactions.length > 0 ? (
-              data.transactions.map((transaction) => (
-                <tr key={transaction.id}>
-                  <td>{transaction.date}</td>
-                  <td className="font-medium">{transaction.studentName}</td>
-                  <td>{transaction.description}</td>
-                  <td className={transaction.amount.startsWith("+") ? "font-semibold text-[#2e7d32]" : "font-semibold text-[#c62828]"}>
-                    {transaction.amount}
-                  </td>
-                  <td>{transaction.balanceAfter}</td>
-                  <td>{transaction.channel}</td>
-                  <td><StatusPill tone={transaction.tone}>{transaction.status}</StatusPill></td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="text-center text-[#6b6b6b]">
-                  No wallet transactions yet.
-                </td>
-              </tr>
-            )}
-          </ParentTable>
+          <ParentWalletActivityTable
+            rows={data.transactions}
+            csvFilename="parent-wallet-transactions.csv"
+            pdfFilename="parent-wallet-transactions.pdf"
+            exportTitle="Wallet transaction history"
+          />
         </ParentCard>
       </div>
     </>

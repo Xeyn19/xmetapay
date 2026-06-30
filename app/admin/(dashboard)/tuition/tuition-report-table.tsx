@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
 
@@ -47,6 +47,16 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
             setGrade("all");
           }}
           onExport={() => exportRowsToCsv("admin-tuition-report.csv", filteredRows, [
+            { label: "Student name", value: (row) => row.student },
+            { label: "Grade", value: (row) => row.grade },
+            { label: "Section", value: (row) => row.section },
+            { label: "Fee due", value: (row) => row.due },
+            { label: "Paid", value: (row) => row.paid },
+            { label: "Balance", value: (row) => row.balance },
+            { label: "Last payment", value: (row) => row.lastPayment },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-tuition-report.pdf", "Tuition report", filteredRows, [
             { label: "Student name", value: (row) => row.student },
             { label: "Grade", value: (row) => row.grade },
             { label: "Section", value: (row) => row.section },

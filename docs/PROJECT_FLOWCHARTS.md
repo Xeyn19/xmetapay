@@ -48,7 +48,8 @@ Implemented:
 - Parent selected student profile recent wallet/store activity from MySQL.
 - Admin allowance total balance is calculated from the current `wallets.balance` values, counting each wallet once.
 - Store/canteen purchase recording through student wallets.
-- Admin CSV report exports for monthly revenue, collections, outstanding balances, and wallet/store activity.
+- Admin CSV and PDF report exports for monthly revenue, collections, outstanding balances, and wallet/store activity.
+- Admin and parent real-data tables can export the currently visible filtered rows as CSV or PDF.
 
 Next:
 
@@ -56,7 +57,7 @@ Next:
 
 Future:
 
-- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, notification sending, and PDF report packages.
+- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, notification sending, and scheduled report delivery.
 
 ## Whole Project Overview
 
@@ -484,31 +485,35 @@ Role rule:
 - `school_administrator` and `finance_officer` can record store purchases.
 - `registrar` cannot record store purchases because store spending is a finance operation.
 
-## Report CSV Export Flow
+## Report CSV And PDF Export Flow
 
-Implemented for admin/school reporting. CSV exports are generated from current operational MySQL records instead of storing separate report rows.
+Implemented for admin/school reporting. CSV and PDF exports are generated from current operational MySQL records instead of storing separate report rows.
 
 ```mermaid
 flowchart TD
   A["Admin opens /admin/reports"] --> B["Require admin session"]
   B --> C{"Staff role can access reports?"}
   C -->|No| D["Redirect to admin dashboard"]
-  C -->|Yes| E["Show report KPIs and CSV download links"]
+  C -->|Yes| E["Show report KPIs and CSV/PDF download links"]
   E --> F["Admin clicks report export"]
-  F --> G["GET /admin/reports/export?type=..."]
-  G --> H["Resolve school_id and active school_year_id"]
-  H --> I{"Report type"}
-  I -->|monthly-revenue| J["Query paid payment totals by month"]
-  I -->|collections| K["Query payment records"]
-  I -->|outstanding-balances| L["Query student fee assignment balances"]
-  I -->|wallet-store| M["Query wallet top-ups and store purchases"]
-  J --> N["Return escaped CSV download"]
-  K --> N
-  L --> N
-  M --> N
+  F --> G["GET /admin/reports/export?type=...&format=..."]
+  G --> H{"Format?"}
+  H -->|CSV or omitted| I["Return escaped CSV download"]
+  H -->|PDF| J["Render server-side PDF with jsPDF"]
+  I --> K["Resolve school_id and active school_year_id"]
+  J --> K
+  K --> L{"Report type"}
+  L -->|monthly-revenue| M["Query paid payment totals by month"]
+  L -->|collections| N["Query payment records"]
+  L -->|outstanding-balances| O["Query student fee assignment balances"]
+  L -->|wallet-store| P["Query wallet top-ups and store purchases"]
+  M --> Q["Download selected report format"]
+  N --> Q
+  O --> Q
+  P --> Q
 ```
 
-Current CSV reports:
+Current CSV/PDF reports:
 
 - Monthly revenue
 - Collections
@@ -517,9 +522,24 @@ Current CSV reports:
 
 Future reporting:
 
-- PDF report packages
 - Scheduled report delivery
 - Notification-based report alerts
+
+## Real-Data Table Export Flow
+
+Implemented for admin and parent screens that already use database-backed tables. These exports use the currently visible rows after search and filters are applied.
+
+```mermaid
+flowchart TD
+  A["User opens a real-data table"] --> B["Page loads MySQL-backed rows"]
+  B --> C["User searches or filters the table"]
+  C --> D["Visible rows update in the browser"]
+  D --> E{"Export format?"}
+  E -->|CSV| F["Download visible rows as CSV"]
+  E -->|PDF| G["Download visible rows as PDF"]
+```
+
+Current table export screens include admin dashboard recent activity, tuition, collections, other fees, allowance, store transactions, enrolled students, parent contacts, parent fee summary, parent payment history, parent dashboard recent payments, and parent wallet activity.
 
 ## Practical Testing Flow
 

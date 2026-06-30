@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
 
@@ -43,6 +43,15 @@ export function AllowanceTable({ rows }: { rows: AllowanceRow[] }) {
             setStatus("all");
           }}
           onExport={() => exportRowsToCsv("admin-allowance-wallets.csv", filteredRows, [
+            { label: "Student", value: (row) => row.student },
+            { label: "Grade", value: (row) => row.grade },
+            { label: "Current balance", value: (row) => row.balance },
+            { label: "Last top-up", value: (row) => row.lastTopUp },
+            { label: "Month spend", value: (row) => row.monthSpend },
+            { label: "Total top-ups", value: (row) => row.totalTopUps },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-allowance-wallets.pdf", "Allowance wallets", filteredRows, [
             { label: "Student", value: (row) => row.student },
             { label: "Grade", value: (row) => row.grade },
             { label: "Current balance", value: (row) => row.balance },

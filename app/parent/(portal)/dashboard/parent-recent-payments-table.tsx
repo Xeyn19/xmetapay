@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 import type { ParentDashboardPayment } from "@/lib/students/records";
 
 import { ParentTable, StatusPill } from "../../_components/parent-ui";
@@ -35,6 +35,13 @@ export function ParentRecentPaymentsTable({ rows }: { rows: ParentDashboardPayme
             setStatus("all");
           }}
           onExport={() => exportRowsToCsv("parent-recent-payments.csv", filteredRows, [
+            { label: "Reference", value: (row) => row.referenceNumber },
+            { label: "Student", value: (row) => row.studentName },
+            { label: "Description", value: (row) => row.description },
+            { label: "Amount", value: (row) => row.amount },
+            { label: "Status", value: (row) => row.status },
+          ])}
+          onExportPdf={() => exportRowsToPdf("parent-recent-payments.pdf", "Recent payments", filteredRows, [
             { label: "Reference", value: (row) => row.referenceNumber },
             { label: "Student", value: (row) => row.studentName },
             { label: "Description", value: (row) => row.description },

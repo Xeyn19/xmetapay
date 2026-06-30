@@ -116,7 +116,7 @@ export type ReportsPageRealData = {
   warning: string | null;
   kpis: AdminRealKpi[];
   monthlyRevenue: BarRow[];
-  reports: Array<{ name: string; desc: string; format: string; href: string; icon: LucideIcon }>;
+  reports: Array<{ name: string; desc: string; csvHref: string; pdfHref: string; icon: LucideIcon }>;
 };
 
 export type AdminStudentProfileRealData = {
@@ -1205,10 +1205,34 @@ function pendingSummary(): SummaryRow[] {
 
 function reportDownloads() {
   return [
-    { name: "Monthly revenue", desc: "Paid payment totals grouped by month", format: "CSV", href: "/admin/reports/export?type=monthly-revenue", icon: BarChart3 },
-    { name: "Collections report", desc: "Payment references, channels, statuses, and dates", format: "CSV", href: "/admin/reports/export?type=collections", icon: FileSpreadsheet },
-    { name: "Outstanding balances", desc: "Assigned fees, paid amounts, balances, and due dates", format: "CSV", href: "/admin/reports/export?type=outstanding-balances", icon: Receipt },
-    { name: "Wallet and store report", desc: "Wallet top-ups, store purchases, and balances after", format: "CSV", href: "/admin/reports/export?type=wallet-store", icon: Store },
+    {
+      name: "Monthly revenue",
+      desc: "Paid payment totals grouped by month",
+      csvHref: "/admin/reports/export?type=monthly-revenue",
+      pdfHref: "/admin/reports/export?type=monthly-revenue&format=pdf",
+      icon: BarChart3,
+    },
+    {
+      name: "Collections report",
+      desc: "Payment references, channels, statuses, and dates",
+      csvHref: "/admin/reports/export?type=collections",
+      pdfHref: "/admin/reports/export?type=collections&format=pdf",
+      icon: FileSpreadsheet,
+    },
+    {
+      name: "Outstanding balances",
+      desc: "Assigned fees, paid amounts, balances, and due dates",
+      csvHref: "/admin/reports/export?type=outstanding-balances",
+      pdfHref: "/admin/reports/export?type=outstanding-balances&format=pdf",
+      icon: Receipt,
+    },
+    {
+      name: "Wallet and store report",
+      desc: "Wallet top-ups, store purchases, and balances after",
+      csvHref: "/admin/reports/export?type=wallet-store",
+      pdfHref: "/admin/reports/export?type=wallet-store&format=pdf",
+      icon: Store,
+    },
   ];
 }
 

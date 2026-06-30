@@ -81,6 +81,8 @@ test("admin store transaction page exposes merchant and purchase forms plus work
   assert.match(table, /"use client";/);
   assert.match(table, /DashboardTableControls/);
   assert.match(table, /admin-store-transactions\.csv/);
+  assert.match(table, /admin-store-transactions\.pdf/);
+  assert.match(table, /exportRowsToPdf/);
   assert.match(table, /filterByQuery/);
   assert.doesNotMatch(page, /Export pending/);
 });
@@ -98,6 +100,8 @@ test("parent wallet history labels store purchases as spending", () => {
   assert.match(parentDashboard, /Recent wallet activity/);
   assert.match(walletActivityTable, /Channel/);
   assert.match(walletActivityTable, /parent-wallet-activity\.csv/);
+  assert.match(walletActivityTable, /parent-wallet-activity\.pdf/);
+  assert.match(walletActivityTable, /exportRowsToPdf/);
   assert.doesNotMatch(paymentRecords, /store_transactions/);
   assert.match(adminRealData, /CASE WHEN wt\.type = 'purchase'/);
 });

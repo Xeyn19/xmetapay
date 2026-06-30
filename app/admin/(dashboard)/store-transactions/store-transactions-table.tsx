@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
 
 import { AdminTable } from "../../_components/admin-ui";
 
@@ -43,6 +43,15 @@ export function StoreTransactionsTable({ rows }: { rows: StoreTransactionRow[] }
             setMerchant("all");
           }}
           onExport={() => exportRowsToCsv("admin-store-transactions.csv", filteredRows, [
+            { label: "Ref #", value: (row) => row.ref },
+            { label: "Student", value: (row) => row.student },
+            { label: "Grade", value: (row) => row.grade },
+            { label: "Store", value: (row) => row.merchant },
+            { label: "Amount", value: (row) => row.amount },
+            { label: "Txn fee", value: (row) => row.fee },
+            { label: "Time", value: (row) => row.time },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-store-transactions.pdf", "Store transactions", filteredRows, [
             { label: "Ref #", value: (row) => row.ref },
             { label: "Student", value: (row) => row.student },
             { label: "Grade", value: (row) => row.grade },

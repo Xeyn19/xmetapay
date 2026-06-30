@@ -259,7 +259,7 @@
           <div class="card">
             <strong>Admin/school portal</strong>
             School setup, student records, parent directory, tuition,
-            collections, allowance, store transactions, and CSV reports.
+            collections, allowance, store transactions, and CSV/PDF reports.
           </div>
           <div class="card">
             <strong>Parent portal</strong>
@@ -338,7 +338,7 @@
             <tr>
               <td>Reports</td>
               <td>Operational query views</td>
-              <td>Implemented CSV exports for monthly revenue, collections, outstanding balances, and wallet/store activity. No separate report storage table is required.</td>
+              <td>Implemented CSV and PDF exports for monthly revenue, collections, outstanding balances, and wallet/store activity. Real-data dashboard tables can also export visible filtered rows as CSV or PDF. No separate report storage table is required.</td>
             </tr>
             <tr>
               <td>Notifications</td>
@@ -655,8 +655,8 @@ flowchart TD
   E --> F["Open collections log"]
   F --> G["Review payment records and receipts"]
   G --> H["Open reports page"]
-  H --> I["Download CSV reports from operational queries"]
-  I --> J["PDF report packages remain future"]
+  H --> I["Download CSV and PDF reports from operational queries"]
+  I --> J["Scheduled delivery and notifications remain future"]
           </pre>
         </div>
       </section>
@@ -741,7 +741,7 @@ flowchart TD
           <li>Add payment and receipt tables.</li>
           <li>Add wallet and wallet transaction tables.</li>
           <li>Add store merchant and store transaction tables. These already exist in the schema and support the implemented Phase 6B write flow.</li>
-          <li>Build CSV reports from operational query views instead of separate report storage tables.</li>
+          <li>Build CSV/PDF reports from operational query views and CSV/PDF visible-row table exports from loaded dashboard rows instead of separate report storage tables.</li>
           <li>Use notification logs when reminders are implemented.</li>
         </ol>
         <div class="note">

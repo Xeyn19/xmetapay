@@ -30,7 +30,12 @@ export default async function ReportsPage() {
         <DashboardCard
           title="Monthly revenue trend"
           icon={BarChart3}
-          action={<ReportDownloadLink href="/admin/reports/export?type=monthly-revenue">Export CSV</ReportDownloadLink>}
+          action={
+            <div className="flex flex-wrap gap-2">
+              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue">CSV</ReportDownloadLink>
+              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=pdf">PDF</ReportDownloadLink>
+            </div>
+          }
         >
           {data.monthlyRevenue.length > 0 ? (
             <BarList rows={data.monthlyRevenue} />
@@ -60,7 +65,10 @@ export default async function ReportsPage() {
                       <div className="mt-0.5 text-[11px] text-[#5a6070]">{report.desc}</div>
                     </div>
                   </div>
-                  <ReportDownloadLink href={report.href}>{report.format}</ReportDownloadLink>
+                  <div className="flex flex-wrap gap-2">
+                    <ReportDownloadLink href={report.csvHref}>CSV</ReportDownloadLink>
+                    <ReportDownloadLink href={report.pdfHref}>PDF</ReportDownloadLink>
+                  </div>
                 </div>
               );
             })}
