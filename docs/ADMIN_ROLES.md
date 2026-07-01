@@ -50,7 +50,7 @@ For the MVP, this matching uses the exact school name from admin registration. A
 5. Parents link to those students by `student_reference`.
 6. A finance officer works on tuition, collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented.
 
-Payment reminder history is a finance action. School administrators and finance officers can create queued `in_app` reminder log rows for linked parents with open or partial balances. Registrars cannot log reminders because they do not have access to finance pages. Real email and SMS notification delivery is still future work.
+Payment reminder history is a finance action. School administrators and finance officers can create queued `in_app` reminder log rows for linked parents with open or partial balances. The reminder action is idempotent for the same school, linked parent, and student on the same calendar day, so repeated clicks do not create duplicate same-day reminder rows. Registrars cannot log reminders because they do not have access to finance pages. Real email and SMS notification delivery is still future work.
 
 ## Database Source
 

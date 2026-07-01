@@ -308,7 +308,7 @@ Main purpose:
 - Track status: queued, sent, or failed.
 - Connect notifications to a school, recipient user, and optionally a student.
 
-Current implementation: school administrators and finance officers can log queued in-app payment reminders for linked parents with open or partial balances. The tuition page shows recent reminder history, and the admin dashboard activity feed reads the same table. This table is for audit and history. It does not send notifications by itself; real email/SMS delivery remains future work.
+Current implementation: school administrators and finance officers can log queued in-app payment reminders for linked parents with open or partial balances. The action logs at most one queued in-app `payment_reminder` per school, linked parent, student, and calendar day. The tuition page shows recent reminder history, and the admin dashboard activity feed reads the same table. This table is for audit and history. It does not send notifications by itself; real email/SMS delivery remains future work.
 
 ## Main Data Flow
 

@@ -24,7 +24,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Store spending backend is implemented through admin/finance local test purchase recording.
 - [x] Admin CSV and PDF report exports are implemented from operational MySQL records.
 - [x] Real-data admin and parent tables can export currently visible filtered rows as CSV and PDF.
-- [x] Queued in-app payment reminder history is recorded in `notification_logs`.
+- [x] Queued in-app payment reminder history is recorded in `notification_logs` once per day for the same school, linked parent, and student.
 - [ ] Real notification sending, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
 
 ## Completed Foundation Step
@@ -139,10 +139,11 @@ Done when: school administrators and finance officers can download CSV and PDF r
 
 - [x] Use `notification_logs` for queued in-app payment reminder history.
 - [x] Let school administrators and finance officers log reminders for linked parents with open or partial balances.
+- [x] Prevent same-day duplicate reminder rows for the same school, parent, and student.
 - [x] Show recent reminder history on the tuition page and activity feed.
 - [ ] Add real email/SMS sending, scheduled notifications, cashier/POS portal, item catalog, refunds, real payment gateways, and real-time purchase notifications.
 
-Done when: payment reminder history is generated from operational fee balances, while real delivery channels remain clearly labeled future.
+Done when: payment reminder history is generated from operational fee balances, same-day clicks do not create duplicate reminder rows, while real delivery channels remain clearly labeled future.
 
 ## Safe Testing Checklist
 

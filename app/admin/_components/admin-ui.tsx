@@ -95,6 +95,7 @@ export function DashboardCard({
   icon: Icon,
   action,
   children,
+  id,
   className,
   bodyClassName,
 }: {
@@ -102,11 +103,12 @@ export function DashboardCard({
   icon?: LucideIcon;
   action?: ReactNode;
   children: ReactNode;
+  id?: string;
   className?: string;
   bodyClassName?: string;
 }) {
   return (
-    <section className={cn("overflow-hidden rounded-xl border border-black/[0.07] bg-white", className)}>
+    <section id={id} className={cn("overflow-hidden rounded-xl border border-black/[0.07] bg-white", className)}>
       <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:px-[18px]">
         <h2 className="flex min-w-0 items-center gap-2 text-[13px] font-bold leading-5 text-[#0f1117]">
           {Icon ? <Icon className="size-[17px] shrink-0 text-[#e64a19]" /> : null}

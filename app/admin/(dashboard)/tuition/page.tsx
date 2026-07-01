@@ -5,10 +5,9 @@ import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminTuitionPageRealData } from "@/lib/admin/real-data";
 import { getAdminFeeSetupData } from "@/lib/fees/records";
 import { FeeManagementForms } from "@/app/admin/fees/fee-management-forms";
-import { logPaymentRemindersAction } from "@/app/admin/reminders/actions";
+import { PaymentReminderForm } from "./payment-reminder-form";
 
 import {
-  AdminButton,
   AdminTable,
   AlertBanner,
   BarList,
@@ -45,20 +44,14 @@ export default async function TuitionPage() {
       </DashboardCard>
 
       <DashboardCard
+        id="payment-reminders"
         title="Payment reminders"
         icon={Send}
-        className="mb-[18px]"
+        className="mb-[18px] scroll-mt-24"
         bodyClassName="p-0"
-        action={(
-          <form action={logPaymentRemindersAction}>
-            <AdminButton type="submit" tone="primary">
-              <Send className="size-4" />
-              Log reminders
-            </AdminButton>
-          </form>
-        )}
+        action={<PaymentReminderForm />}
       >
-        <div id="payment-reminders" className="border-b border-black/[0.07] px-[18px] py-3 text-[12.5px] leading-5 text-[#5a6070]">
+        <div className="border-b border-black/[0.07] px-[18px] py-3 text-[12.5px] leading-5 text-[#5a6070]">
           Creates queued in-app reminder history for linked parents with open or partial balances. Real email and SMS delivery are still future.
         </div>
         <AdminTable
