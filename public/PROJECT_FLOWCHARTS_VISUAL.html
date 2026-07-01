@@ -670,7 +670,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="payment-reminder-history-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> queued in-app payment reminder history for linked parents with open or partial balances.</p>
+          <p><strong>Implemented:</strong> queued in-app payment reminder history for linked parents with open or partial balances, with same-day duplicate prevention.</p>
           <pre class="mermaid">
 flowchart TD
   A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
@@ -678,14 +678,16 @@ flowchart TD
   C -->|No| D["Redirect to admin dashboard"]
   C -->|Yes| E["Click Log reminders"]
   E --> F["Find linked parents with open or partial balances"]
-  F --> G{"Any eligible balances?"}
-  G -->|No| H["Show no reminders logged"]
-  G -->|Yes| I["Insert queued in-app payment_reminder rows"]
-  I --> J["Show reminder history on tuition page"]
-  J --> K["Dashboard activity feed updates"]
-  K --> L["Email and SMS delivery remain future"]
+  F --> G["Exclude reminders already logged today for the same school, parent, and student"]
+  G --> H{"Any new reminder targets?"}
+  H -->|No open balances| I["Show no reminders logged"]
+  H -->|Already reminded today| J["Show reminders already logged today"]
+  H -->|Yes| K["Insert queued in-app payment_reminder rows"]
+  K --> L["Show reminder history on tuition page"]
+  L --> M["Dashboard activity feed updates"]
+  M --> N["Email and SMS delivery remain future"]
           </pre>
-          <p>Reminder rows are stored in <code>notification_logs</code> with <code>type = payment_reminder</code>, <code>channel = in_app</code>, and <code>status = queued</code>. Registrars cannot log reminders.</p>
+          <p>Reminder rows are stored in <code>notification_logs</code> with <code>type = payment_reminder</code>, <code>channel = in_app</code>, and <code>status = queued</code>. The same school, linked parent, and student can only receive one queued in-app reminder per calendar day. Registrars cannot log reminders.</p>
         </div>
       </section>
 

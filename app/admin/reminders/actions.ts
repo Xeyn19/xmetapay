@@ -10,7 +10,20 @@ import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
 
-export async function logPaymentRemindersAction() {
+export type ReminderActionState = {
+  status: "idle" | "success" | "info" | "error";
+  title: string;
+  description: string;
+  submittedAt: number;
+};
+
+export async function logPaymentRemindersAction(
+  _prevState: ReminderActionState,
+  _formData: FormData,
+): Promise<ReminderActionState> {
+  void _prevState;
+  void _formData;
+
   const context = await requireReminderContext();
   let connection: PoolConnection | null = null;
 
@@ -31,10 +44,18 @@ export async function logPaymentRemindersAction() {
        JOIN students st ON st.id = sfa.student_id
        JOIN student_guardians sg ON sg.student_id = st.id
        JOIN users u ON u.id = sg.parent_user_id AND u.status = 'active'
+       LEFT JOIN notification_logs existing_reminder
+         ON existing_reminder.school_id = :schoolId
+        AND existing_reminder.recipient_user_id = sg.parent_user_id
+        AND existing_reminder.student_id = st.id
+        AND existing_reminder.type = 'payment_reminder'
+        AND existing_reminder.channel = 'in_app'
+        AND DATE(existing_reminder.created_at) = CURRENT_DATE
        WHERE st.school_id = :schoolId
          AND sfa.school_year_id = :schoolYearId
          AND sfa.status IN ('open', 'partial')
          AND sfa.amount_due > sfa.amount_paid
+         AND existing_reminder.id IS NULL
        GROUP BY st.id, sg.parent_user_id, st.first_name, st.middle_name, st.last_name, u.name
        ORDER BY open_balance DESC, st.last_name ASC, st.first_name ASC
        LIMIT 100`,
@@ -45,7 +66,14 @@ export async function logPaymentRemindersAction() {
     );
 
     if (rows.length === 0) {
-      throw new ReminderValidationError("No linked parents currently have open or partial balances.");
+      const eligibleCount = await countEligibleReminderTargets(connection, context.schoolId, context.schoolYearId);
+
+      throw new ReminderValidationError(
+        eligibleCount > 0
+          ? "Each linked parent with an open balance already has a reminder for today."
+          : "No linked parents currently have open or partial balances.",
+        eligibleCount > 0 ? "Reminders already logged today" : "No reminders logged",
+      );
     }
 
     for (const row of rows) {
@@ -61,7 +89,11 @@ export async function logPaymentRemindersAction() {
     }
 
     await connection.commit();
-    await toast(
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/admin/tuition");
+
+    return actionToast(
+      "success",
       "Payment reminders logged",
       `${rows.length} in-app reminder ${rows.length === 1 ? "record was" : "records were"} queued for linked parents.`,
     );
@@ -70,8 +102,9 @@ export async function logPaymentRemindersAction() {
       await connection.rollback().catch(() => undefined);
     }
 
-    await toast(
-      "Reminders not logged",
+    return actionToast(
+      error instanceof ReminderValidationError ? "info" : "error",
+      error instanceof ReminderValidationError ? error.title : "Reminders not logged",
       error instanceof ReminderValidationError
         ? error.message
         : "Unable to create reminder history. Check MySQL/XAMPP and try again.",
@@ -79,10 +112,28 @@ export async function logPaymentRemindersAction() {
   } finally {
     connection?.release();
   }
+}
 
-  revalidatePath("/admin/dashboard");
-  revalidatePath("/admin/tuition");
-  redirect("/admin/tuition#payment-reminders");
+async function countEligibleReminderTargets(connection: PoolConnection, schoolId: number, schoolYearId: number) {
+  const [rows] = await connection.execute<CountRow[]>(
+    `SELECT COUNT(*) AS total
+     FROM (
+       SELECT st.id AS student_id, sg.parent_user_id
+       FROM student_fee_assignments sfa
+       JOIN fee_types ft ON ft.id = sfa.fee_type_id
+       JOIN students st ON st.id = sfa.student_id
+       JOIN student_guardians sg ON sg.student_id = st.id
+       JOIN users u ON u.id = sg.parent_user_id AND u.status = 'active'
+       WHERE st.school_id = :schoolId
+         AND sfa.school_year_id = :schoolYearId
+         AND sfa.status IN ('open', 'partial')
+         AND sfa.amount_due > sfa.amount_paid
+       GROUP BY st.id, sg.parent_user_id
+     ) eligible_targets`,
+    { schoolId, schoolYearId },
+  );
+
+  return Number(rows[0]?.total ?? 0);
 }
 
 async function requireReminderContext() {
@@ -115,7 +166,24 @@ async function toast(title: string, description: string) {
   });
 }
 
-class ReminderValidationError extends Error {}
+function actionToast(status: ReminderActionState["status"], title: string, description: string): ReminderActionState {
+  return {
+    status,
+    title,
+    description,
+    submittedAt: Date.now(),
+  };
+}
+
+class ReminderValidationError extends Error {
+  constructor(message: string, readonly title = "Reminders not logged") {
+    super(message);
+  }
+}
+
+type CountRow = RowDataPacket & {
+  total: number;
+};
 
 type ReminderCandidateRow = RowDataPacket & {
   student_id: number;

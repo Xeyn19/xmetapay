@@ -1,21 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import type { AuthFlashToast } from "@/lib/auth/session";
 
 export function FlashToast({ toast: flashToast }: { toast: AuthFlashToast | null }) {
-  const shownToast = useRef("");
-  const toastKey = flashToast ? `${flashToast.role}:${flashToast.title}:${flashToast.description}` : "";
-
   useEffect(() => {
-    if (!flashToast || shownToast.current === toastKey) {
+    if (!flashToast) {
       return;
     }
 
     const timeout = window.setTimeout(() => {
-      shownToast.current = toastKey;
       toast.success(flashToast.title, {
         description: flashToast.description,
       });
@@ -23,7 +19,7 @@ export function FlashToast({ toast: flashToast }: { toast: AuthFlashToast | null
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [flashToast, toastKey]);
+  }, [flashToast]);
 
   return null;
 }

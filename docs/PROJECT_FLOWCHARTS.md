@@ -537,12 +537,14 @@ flowchart TD
   C -->|No| D["Redirect to admin dashboard"]
   C -->|Yes| E["Click Log reminders"]
   E --> F["Find linked parents with open or partial fee balances"]
-  F --> G{"Any eligible balances?"}
-  G -->|No| H["Show no reminders logged"]
-  G -->|Yes| I["Insert queued in-app payment_reminder rows in notification_logs"]
-  I --> J["Show reminder history on tuition page"]
-  J --> K["Dashboard activity feed shows recent reminder activity"]
-  K --> L["Real email/SMS delivery remains future"]
+  F --> G["Exclude same-day reminders already logged for the same school, parent, and student"]
+  G --> H{"Any new reminder targets?"}
+  H -->|No open balances| I["Show no reminders logged"]
+  H -->|Already reminded today| J["Show reminders already logged today"]
+  H -->|Yes| K["Insert queued in-app payment_reminder rows in notification_logs"]
+  K --> L["Show reminder history on tuition page"]
+  L --> M["Dashboard activity feed shows recent reminder activity"]
+  M --> N["Real email/SMS delivery remains future"]
 ```
 
 Current reminder rules:
@@ -550,6 +552,7 @@ Current reminder rules:
 - Only `school_administrator` and `finance_officer` can log payment reminders.
 - `registrar` cannot log reminders because reminders are tied to finance balances.
 - Reminder candidates must have a linked parent through `student_guardians`.
+- The same school, linked parent, and student can receive only one queued in-app reminder per calendar day.
 - Reminder rows use `type = payment_reminder`, `channel = in_app`, and `status = queued`.
 
 ## Real-Data Table Export Flow

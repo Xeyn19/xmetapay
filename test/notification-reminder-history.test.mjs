@@ -4,6 +4,7 @@ import test from "node:test";
 
 const reminderActionsPath = "app/admin/reminders/actions.ts";
 const tuitionPagePath = "app/admin/(dashboard)/tuition/page.tsx";
+const tuitionReminderFormPath = "app/admin/(dashboard)/tuition/payment-reminder-form.tsx";
 const realDataPath = "lib/admin/real-data.ts";
 const permissionsPath = "lib/admin/permissions.ts";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
@@ -32,15 +33,38 @@ test("admin payment reminder action writes queued notification log rows", () => 
   assert.match(actions, /INSERT INTO notification_logs/);
   assert.match(actions, /'payment_reminder', 'in_app', 'queued'/);
   assert.match(actions, /No linked parents currently have open or partial balances/);
+  assert.match(actions, /return actionToast\(/);
+  assert.doesNotMatch(actions, /redirect\("\/admin\/tuition#payment-reminders"\)/);
+});
+
+test("payment reminder action skips same-day duplicate reminder logs", () => {
+  const actions = readFileSync(reminderActionsPath, "utf8");
+
+  assert.match(actions, /LEFT JOIN notification_logs existing_reminder/);
+  assert.match(actions, /existing_reminder\.school_id = :schoolId/);
+  assert.match(actions, /existing_reminder\.recipient_user_id = sg\.parent_user_id/);
+  assert.match(actions, /existing_reminder\.student_id = st\.id/);
+  assert.match(actions, /existing_reminder\.type = 'payment_reminder'/);
+  assert.match(actions, /existing_reminder\.channel = 'in_app'/);
+  assert.match(actions, /DATE\(existing_reminder\.created_at\) = CURRENT_DATE/);
+  assert.match(actions, /existing_reminder\.id IS NULL/);
+  assert.match(actions, /Reminders already logged today/);
+  assert.match(actions, /Each linked parent with an open balance already has a reminder for today\./);
 });
 
 test("tuition page exposes real reminder logging and reminder history", () => {
   const page = readFileSync(tuitionPagePath, "utf8");
+  const form = readFileSync(tuitionReminderFormPath, "utf8");
   const realData = readFileSync(realDataPath, "utf8");
 
-  assert.match(page, /logPaymentRemindersAction/);
+  assert.match(page, /<PaymentReminderForm \/>/);
+  assert.match(form, /useActionState\(logPaymentRemindersAction, initialReminderActionState\)/);
+  assert.match(form, /toast\.success/);
+  assert.match(form, /toast\.error/);
   assert.match(page, /id="payment-reminders"/);
-  assert.match(page, /Log reminders/);
+  assert.match(page, /<DashboardCard\s+id="payment-reminders"/);
+  assert.match(page, /className="mb-\[18px\] scroll-mt-24"/);
+  assert.match(form, /Log reminders/);
   assert.match(page, /Real email and SMS delivery are still future/);
   assert.match(page, /data\.reminderRows/);
   assert.match(realData, /reminderRows: Array/);
@@ -101,5 +125,6 @@ test("docs and visual plans mark reminder history current and notification sendi
   assert.match(combinedDocs, /payment reminder/i);
   assert.match(combinedDocs, /reminder history/i);
   assert.match(combinedDocs, /queued in-app/i);
+  assert.match(combinedDocs, /once per day|same-day/i);
   assert.match(combinedDocs, /email and SMS delivery.*future|future.*email and SMS delivery/i);
 });

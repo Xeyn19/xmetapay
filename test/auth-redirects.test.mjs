@@ -175,12 +175,9 @@ test("home page redirects already-authenticated users to the correct dashboard",
   assert.match(homePage, /Choose where you want to continue/);
 });
 
-test("flash toast is not marked shown before the browser toast is emitted", () => {
-  const shownAssignmentIndex = flashToast.indexOf("shownToast.current = toastKey");
-  const successIndex = flashToast.indexOf("toast.success");
-
-  assert.notEqual(shownAssignmentIndex, -1);
-  assert.notEqual(successIndex, -1);
-  assert.ok(shownAssignmentIndex < successIndex);
-  assert.match(flashToast, /window\.setTimeout\(\(\) => \{\s*shownToast\.current = toastKey;\s*toast\.success/);
+test("flash toast allows repeated identical server-action messages", () => {
+  assert.doesNotMatch(flashToast, /useRef/);
+  assert.doesNotMatch(flashToast, /shownToast\.current === toastKey/);
+  assert.match(flashToast, /toast\.success\(flashToast\.title/);
+  assert.match(flashToast, /fetch\("\/auth\/flash-toast", \{ method: "DELETE" \}\)/);
 });
