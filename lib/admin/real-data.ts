@@ -45,6 +45,7 @@ export type BarRow = {
 };
 
 export type TimelineRow = {
+  id: number;
   title: string;
   detail: string;
   time: string;
@@ -68,6 +69,7 @@ export type TuitionPageRealData = {
   rows: TuitionRow[];
   outstandingByGrade: BarRow[];
   otherFeeSummary: Array<[string, string, string, string]>;
+  reminderRows: Array<[number, string, string, string, string, string, string]>;
 };
 
 export type TuitionRow = {
@@ -247,11 +249,12 @@ export async function getAdminTuitionPageRealData(adminUserId: number): Promise<
   }
 
   try {
-    const [rows, feeSummary, outstandingByGrade, otherFeeSummary] = await Promise.all([
+    const [rows, feeSummary, outstandingByGrade, otherFeeSummary, reminderRows] = await Promise.all([
       getTuitionRows(setup.schoolId, setup.schoolYearId),
       getFeeSummary(setup.schoolId, setup.schoolYearId, "tuition"),
       getOutstandingByGrade(setup.schoolId, setup.schoolYearId),
       getOtherFeeSummary(setup.schoolId, setup.schoolYearId),
+      getRecentReminderRows(setup.schoolId, setup.schoolYearId),
     ]);
     const hasRows = rows.length > 0;
 
@@ -266,6 +269,7 @@ export async function getAdminTuitionPageRealData(adminUserId: number): Promise<
       rows,
       outstandingByGrade,
       otherFeeSummary,
+      reminderRows,
     };
   } catch {
     return emptyTuition("Tuition data is unavailable. Confirm MySQL/XAMPP and fee assignment tables are ready.");
@@ -769,7 +773,7 @@ async function getRecentPayments(schoolId: number) {
 
 async function getActivityFeed(schoolId: number) {
   const [rows] = await pool.execute<NotificationRow[]>(
-    `SELECT type, channel, status, created_at, sent_at
+    `SELECT id, type, channel, status, created_at, sent_at
      FROM notification_logs
      WHERE school_id = :schoolId
      ORDER BY created_at DESC, id DESC
@@ -781,11 +785,47 @@ async function getActivityFeed(schoolId: number) {
     const tone: TimelineRow["tone"] = row.status === "failed" ? "orange" : row.status === "sent" ? "green" : "gray";
 
     return {
+      id: row.id,
       title: labelForStatus(row.type),
       detail: `${labelForStatus(row.channel)} - ${labelForStatus(row.status)}`,
       time: formatDateTime(row.sent_at ?? row.created_at),
       tone,
     };
+  });
+}
+
+async function getRecentReminderRows(schoolId: number, schoolYearId: number) {
+  const [rows] = await pool.execute<ReminderHistoryRow[]>(
+    `SELECT nl.id AS notification_id, nl.created_at, nl.channel, nl.status,
+       COALESCE(u.name, 'Parent pending') AS parent_name,
+       COALESCE(st.first_name, '') AS first_name,
+       st.middle_name,
+       COALESCE(st.last_name, '') AS last_name,
+       COALESCE(gl.name, 'Not enrolled') AS grade_name
+     FROM notification_logs nl
+     LEFT JOIN users u ON u.id = nl.recipient_user_id
+     LEFT JOIN students st ON st.id = nl.student_id
+     LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
+     LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
+     WHERE nl.school_id = :schoolId
+       AND nl.type = 'payment_reminder'
+     ORDER BY nl.created_at DESC, nl.id DESC
+     LIMIT 8`,
+    { schoolId, schoolYearId },
+  );
+
+  return rows.map((row) => {
+    const notificationId = row.notification_id;
+
+    return [
+      notificationId,
+      formatDateTime(row.created_at),
+      fullName(row.first_name, row.middle_name, row.last_name) || "Student pending",
+      row.parent_name,
+      row.grade_name,
+      labelForStatus(row.channel),
+      labelForStatus(row.status),
+    ] as TuitionPageRealData["reminderRows"][number];
   });
 }
 
@@ -1121,6 +1161,7 @@ function emptyTuition(warning: string | null): TuitionPageRealData {
     rows: [],
     outstandingByGrade: [],
     otherFeeSummary: [],
+    reminderRows: [],
   };
 }
 
@@ -1410,11 +1451,24 @@ type PaymentRow = RowDataPacket & {
 };
 
 type NotificationRow = RowDataPacket & {
+  id: number;
   type: string;
   channel: string;
   status: "queued" | "sent" | "failed";
   created_at: Date | string;
   sent_at: Date | string | null;
+};
+
+type ReminderHistoryRow = RowDataPacket & {
+  notification_id: number;
+  created_at: Date | string;
+  channel: string;
+  status: string;
+  parent_name: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  grade_name: string;
 };
 
 type TuitionSqlRow = RowDataPacket & {

@@ -343,7 +343,7 @@
             <tr>
               <td>Notifications</td>
               <td><code>notification_logs</code></td>
-              <td>Future payment reminders, receipts, low-wallet alerts, and enrollment updates.</td>
+              <td>Implemented queued in-app payment reminder history. Real email/SMS delivery, receipts, low-wallet alerts, and enrollment-update notifications remain future.</td>
             </tr>
           </tbody>
         </table>
@@ -656,7 +656,8 @@ flowchart TD
   F --> G["Review payment records and receipts"]
   G --> H["Open reports page"]
   H --> I["Download CSV and PDF reports from operational queries"]
-  I --> J["Scheduled delivery and notifications remain future"]
+  I --> J["Reminder history uses notification_logs"]
+  J --> K["Scheduled delivery and email/SMS notifications remain future"]
           </pre>
         </div>
       </section>
@@ -742,7 +743,7 @@ flowchart TD
           <li>Add wallet and wallet transaction tables.</li>
           <li>Add store merchant and store transaction tables. These already exist in the schema and support the implemented Phase 6B write flow.</li>
           <li>Build CSV/PDF reports from operational query views and CSV/PDF visible-row table exports from loaded dashboard rows instead of separate report storage tables.</li>
-          <li>Use notification logs when reminders are implemented.</li>
+          <li>Use notification logs for implemented queued in-app payment reminder history; add real email/SMS delivery later.</li>
         </ol>
         <div class="note">
           No real credentials, database passwords, session secrets, seed users,

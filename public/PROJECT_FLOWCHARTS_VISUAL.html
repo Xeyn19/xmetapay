@@ -251,6 +251,7 @@
           <span class="pill">Payments and receipts</span>
           <span class="pill">Wallet top-up</span>
           <span class="pill">Store purchase recording</span>
+          <span class="pill">Reminder history</span>
           <span class="pill">Accurate wallet totals</span>
         </div>
         <div class="links">
@@ -270,16 +271,16 @@
             <strong>Implemented</strong>
             Auth, logout, protected redirects, manual school setup, admin role permissions, student
             creation, enrollment, parent-student linking, fees, local test payments, receipts,
-            payment history, wallet top-ups, store purchases, CSV/PDF report exports, visible-row table CSV/PDF exports, and accurate wallet totals. Parent-side mock enrollment has been removed.
+            payment history, wallet top-ups, store purchases, CSV/PDF report exports, visible-row table CSV/PDF exports, queued in-app reminder history, and accurate wallet totals. Parent-side mock enrollment has been removed.
           </div>
           <div class="card">
             <strong>Next</strong>
-            Notification history and reminder workflow.
+            Admin manual fee payment recording or real notification delivery.
           </div>
           <div class="card">
             <strong>Future</strong>
             Cashier/POS portal, item catalog, real payment gateways, refunds, admin manual fee
-            payment recording, notification sending, and scheduled report delivery.
+            payment recording, email/SMS notification sending, and scheduled report delivery.
           </div>
         </div>
       </section>
@@ -660,6 +661,31 @@ flowchart TD
   O --> P
           </pre>
           <p>CSV and PDF reports read from operational MySQL tables. Scheduled delivery, notifications, gateways, refunds, cashier/POS, and item catalogs remain future work.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Payment Reminder History</h2>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="payment-reminder-history-flow.svg">Download SVG</button>
+          </div>
+          <p><strong>Implemented:</strong> queued in-app payment reminder history for linked parents with open or partial balances.</p>
+          <pre class="mermaid">
+flowchart TD
+  A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
+  B --> C{"Can access finance?"}
+  C -->|No| D["Redirect to admin dashboard"]
+  C -->|Yes| E["Click Log reminders"]
+  E --> F["Find linked parents with open or partial balances"]
+  F --> G{"Any eligible balances?"}
+  G -->|No| H["Show no reminders logged"]
+  G -->|Yes| I["Insert queued in-app payment_reminder rows"]
+  I --> J["Show reminder history on tuition page"]
+  J --> K["Dashboard activity feed updates"]
+  K --> L["Email and SMS delivery remain future"]
+          </pre>
+          <p>Reminder rows are stored in <code>notification_logs</code> with <code>type = payment_reminder</code>, <code>channel = in_app</code>, and <code>status = queued</code>. Registrars cannot log reminders.</p>
         </div>
       </section>
 

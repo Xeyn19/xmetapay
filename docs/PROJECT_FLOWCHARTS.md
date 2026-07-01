@@ -1,6 +1,6 @@
 # XMETA Pay Project Flowcharts
 
-This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, store/canteen purchase recording, and future report phases.
+This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, store/canteen purchase recording, report exports, and queued in-app reminder history.
 
 Related documents:
 
@@ -50,14 +50,15 @@ Implemented:
 - Store/canteen purchase recording through student wallets.
 - Admin CSV and PDF report exports for monthly revenue, collections, outstanding balances, and wallet/store activity.
 - Admin and parent real-data tables can export the currently visible filtered rows as CSV or PDF.
+- Queued in-app payment reminder history through `notification_logs`.
 
 Next:
 
-- Notification history and reminder workflow.
+- Admin manual fee payment recording or real notification delivery.
 
 Future:
 
-- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, notification sending, and scheduled report delivery.
+- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, email/SMS notification sending, and scheduled report delivery.
 
 ## Whole Project Overview
 
@@ -524,6 +525,32 @@ Future reporting:
 
 - Scheduled report delivery
 - Notification-based report alerts
+
+## Payment Reminder History Flow
+
+Implemented for local MVP tracking. This records queued in-app reminder history only; it does not send real email or SMS yet.
+
+```mermaid
+flowchart TD
+  A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
+  B --> C{"Can access finance?"}
+  C -->|No| D["Redirect to admin dashboard"]
+  C -->|Yes| E["Click Log reminders"]
+  E --> F["Find linked parents with open or partial fee balances"]
+  F --> G{"Any eligible balances?"}
+  G -->|No| H["Show no reminders logged"]
+  G -->|Yes| I["Insert queued in-app payment_reminder rows in notification_logs"]
+  I --> J["Show reminder history on tuition page"]
+  J --> K["Dashboard activity feed shows recent reminder activity"]
+  K --> L["Real email/SMS delivery remains future"]
+```
+
+Current reminder rules:
+
+- Only `school_administrator` and `finance_officer` can log payment reminders.
+- `registrar` cannot log reminders because reminders are tied to finance balances.
+- Reminder candidates must have a linked parent through `student_guardians`.
+- Reminder rows use `type = payment_reminder`, `channel = in_app`, and `status = queued`.
 
 ## Real-Data Table Export Flow
 

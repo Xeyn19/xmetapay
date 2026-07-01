@@ -499,7 +499,7 @@ CREATE TABLE store_transactions (
 
 #### `notification_logs`
 
-Stores reminders and payment notifications sent to parents.
+Stores reminder and notification history for parents.
 
 ```sql
 CREATE TABLE notification_logs (
@@ -522,7 +522,9 @@ CREATE TABLE notification_logs (
 );
 ```
 
-Reports are generated from query views over payments, fee assignments, wallets, and store transactions instead of storing separate report rows. CSV and PDF report exports are implemented for monthly revenue, collections, outstanding balances, and wallet/store activity. Real-data admin and parent table screens can also export currently visible filtered rows as CSV or PDF without adding report storage tables. Scheduled delivery and notification-based report alerts can be added later.
+Implementation status: queued in-app payment reminder history is implemented. School administrators and finance officers can create `payment_reminder` rows for linked parents with open or partial balances. Those rows use `channel = 'in_app'` and `status = 'queued'`. Real email/SMS delivery, scheduling, and notification-based report alerts can be added later.
+
+Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. CSV and PDF report exports are implemented for monthly revenue, collections, outstanding balances, and wallet/store activity. Real-data admin and parent table screens can also export currently visible filtered rows as CSV or PDF without adding report storage tables. Scheduled delivery and notification-based report alerts can be added later.
 
 ## Indexing Strategy
 
@@ -644,7 +646,8 @@ flowchart TD
   F --> G["Review payment records and receipts"]
   G --> H["Open reports page"]
   H --> I["Download CSV and PDF reports from report query"]
-  I --> J["Scheduled delivery and notifications remain future"]
+  I --> J["Reminder history uses notification_logs"]
+  J --> K["Scheduled delivery and email/SMS notifications remain future"]
 ```
 
 ## Step-by-Step Parent Flowcharts
@@ -712,9 +715,9 @@ flowchart TD
 6. Add payment and receipt tables: `payments`, `payment_allocations`, `receipts`.
 7. Add wallet tables: `wallets`, `wallet_transactions`.
 8. Add store tables: `store_merchants`, `store_transactions`.
-9. Add notification logs after fee/payment reminders are implemented.
+9. Use notification logs for queued in-app payment reminder history.
 10. Build CSV and PDF report exports from existing operational queries, plus visible-row table exports from loaded dashboard data, instead of adding report storage tables.
-11. Use `notification_logs` after fee/payment reminders are implemented.
+11. Add real notification delivery, scheduling, and report alerts later.
 
 ## MySQL/XAMPP Notes
 

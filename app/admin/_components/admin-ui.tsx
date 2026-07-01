@@ -215,7 +215,7 @@ export function SummaryRows({
 export function Timeline({
   items,
 }: {
-  items: Array<{ title: string; detail: string; time: string; tone: "orange" | "green" | "gray" }>;
+  items: Array<{ id: number; title: string; detail: string; time: string; tone: "orange" | "green" | "gray" }>;
 }) {
   const dot = {
     orange: "bg-[#e64a19]",
@@ -225,7 +225,7 @@ export function Timeline({
   return (
     <div className="space-y-3.5">
       {items.map((item, index) => (
-        <div key={item.title} className="flex gap-3.5">
+        <div key={item.id} className="flex gap-3.5">
           <div className="flex flex-col items-center">
             <span className={cn("mt-1 size-2.5 rounded-full", dot[item.tone])} />
             {index < items.length - 1 ? <span className="my-1 w-px flex-1 bg-black/[0.07]" /> : null}

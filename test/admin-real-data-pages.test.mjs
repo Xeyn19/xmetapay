@@ -152,7 +152,8 @@ test("admin real-data tables use working search filters plus CSV and PDF export 
     assert.doesNotMatch(component, /readOnly|Export pending|Filter pending/, `${componentPath} should not keep placeholder controls`);
   }
 
-  assert.match(shell, /Reminders future/);
+  assert.match(shell, /\/admin\/tuition#payment-reminders/);
+  assert.doesNotMatch(shell, /Reminders future/);
   assert.match(shell, /Manual payment future/);
   assert.match(shell, /subtitle === "School dashboard - SY 2025-2026"/);
   assert.doesNotMatch(shell, /Brentwood Academy/);

@@ -50,6 +50,7 @@ export function AdminShell({
   const canManageSetup = canManageSchoolSetup(schoolContext.staffRole);
   const canAddStudents = canUseAdminHeaderAction(schoolContext.staffRole, "add_student");
   const canRecordPayments = canUseAdminHeaderAction(schoolContext.staffRole, "record_payment");
+  const canSendReminders = canUseAdminHeaderAction(schoolContext.staffRole, "send_reminder");
   const logout = logoutAction.bind(null, "admin");
 
   return (
@@ -201,7 +202,15 @@ export function AdminShell({
             ) : null}
           </div>
           <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
-            <AdminButton disabled><Send className="size-4" />Reminders future</AdminButton>
+            {canSendReminders ? (
+              <Link
+                href="/admin/tuition#payment-reminders"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3.5 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+              >
+                <Send className="size-4" />
+                Reminders
+              </Link>
+            ) : null}
             {canRecordPayments ? (
               <AdminButton disabled><Plus className="size-4" />Manual payment future</AdminButton>
             ) : null}
