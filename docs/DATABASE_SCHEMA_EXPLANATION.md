@@ -291,7 +291,7 @@ Current implemented CSV and PDF report exports:
 - Outstanding balances from `student_fee_assignments`, `fee_types`, and enrollment context.
 - Wallet and store activity from `wallet_transactions`, `wallets`, `store_transactions`, and `store_merchants`.
 
-Scheduled reports and notification-driven report delivery are future features.
+Scheduled reports and notification-driven report delivery are future features. Queued in-app payment reminder history is implemented separately through `notification_logs`.
 
 Real-data dashboard tables also support visible-row CSV and PDF exports in the browser. Those table exports use the rows already loaded for the signed-in admin or parent after search/filter controls are applied, so they do not require extra database tables.
 
@@ -299,7 +299,7 @@ Real-data dashboard tables also support visible-row CSV and PDF exports in the b
 
 ### `notification_logs`
 
-Stores reminders and system notifications.
+Stores reminders and system notification history.
 
 Main purpose:
 
@@ -308,7 +308,7 @@ Main purpose:
 - Track status: queued, sent, or failed.
 - Connect notifications to a school, recipient user, and optionally a student.
 
-This table is for audit and history. It does not send notifications by itself.
+Current implementation: school administrators and finance officers can log queued in-app payment reminders for linked parents with open or partial balances. The tuition page shows recent reminder history, and the admin dashboard activity feed reads the same table. This table is for audit and history. It does not send notifications by itself; real email/SMS delivery remains future work.
 
 ## Main Data Flow
 
@@ -327,7 +327,7 @@ The schema supports this practical backend flow:
 11. Receipts are created in `receipts`.
 12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
 13. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens can export visible filtered rows as CSV or PDF.
-14. Notifications and reminders are recorded in `notification_logs` when reminder workflows are implemented.
+14. Queued in-app payment reminder history is recorded in `notification_logs`; real notification delivery remains future work.
 
 ## Relationship Summary
 

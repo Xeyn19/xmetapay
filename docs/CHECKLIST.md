@@ -24,7 +24,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Store spending backend is implemented through admin/finance local test purchase recording.
 - [x] Admin CSV and PDF report exports are implemented from operational MySQL records.
 - [x] Real-data admin and parent tables can export currently visible filtered rows as CSV and PDF.
-- [ ] Notification sending, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
+- [x] Queued in-app payment reminder history is recorded in `notification_logs`.
+- [ ] Real notification sending, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
 
 ## Completed Foundation Step
 
@@ -134,12 +135,14 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 
 Done when: school administrators and finance officers can download CSV and PDF reports generated from operational MySQL records, and real-data table screens can export their filtered visible rows in both formats.
 
-### Future Phase 6D+
+### Phase 6D: Notification reminder history
 
-- [ ] Use `notification_logs` for reminder history after reminders are ready.
-- [ ] Add notification sending, cashier/POS portal, item catalog, refunds, real payment gateways, and real-time purchase notifications.
+- [x] Use `notification_logs` for queued in-app payment reminder history.
+- [x] Let school administrators and finance officers log reminders for linked parents with open or partial balances.
+- [x] Show recent reminder history on the tuition page and activity feed.
+- [ ] Add real email/SMS sending, scheduled notifications, cashier/POS portal, item catalog, refunds, real payment gateways, and real-time purchase notifications.
 
-Done when: notification flows and advanced report delivery are generated from the operational MySQL records.
+Done when: payment reminder history is generated from operational fee balances, while real delivery channels remain clearly labeled future.
 
 ## Safe Testing Checklist
 

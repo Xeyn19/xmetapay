@@ -121,7 +121,7 @@ export function canUseAdminHeaderAction(
     return canAccessFinance(role);
   }
 
-  return Boolean(normalizeAdminStaffRole(role));
+  return canAccessFinance(role);
 }
 
 export function filterAdminNavSectionsForStaffRole<
