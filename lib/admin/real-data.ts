@@ -93,10 +93,15 @@ export type OtherFeesPageRealData = {
   kpis: AdminRealKpi[];
   items: Array<{
     name: string;
-    desc: string;
+    meta: string;
     amount: string;
     status: string;
+    assignedCount: number;
+    paidCount: number;
+    paidLabel: string;
+    totalBilled: string;
     collected: string;
+    outstanding: string;
   }>;
 };
 
@@ -317,10 +322,10 @@ export async function getAdminOtherFeesPageRealData(adminUserId: number): Promis
     return {
       warning: null,
       kpis: [
-        { label: "Active fee types", value: String(items.filter((item) => item.status === "Active").length), note: setup.schoolYearName ?? "Active school year", tone: "orange", icon: ClipboardList },
-        { label: "Billed total", value: items.length > 0 ? money(summary.amountDue) : "Pending", note: "Non-tuition fee assignments", tone: "blue", icon: Calculator },
+        { label: "Total billed", value: items.length > 0 ? money(summary.amountDue) : "Pending", note: setup.schoolYearName ?? "Non-tuition fee items", tone: "orange", icon: Calculator },
         { label: "Collected", value: items.length > 0 ? money(summary.amountPaid) : "Pending", note: items.length > 0 ? percent(summary.amountPaid, summary.amountDue) : "Collection pending", tone: "green", noteTone: items.length > 0 ? "up" : "default", icon: CreditCard },
-        { label: "Open balance", value: items.length > 0 ? money(summary.openBalance) : "Pending", note: "For follow-up", tone: "red", noteTone: summary.openBalance > 0 ? "danger" : "default", icon: Activity },
+        { label: "Outstanding", value: items.length > 0 ? money(summary.openBalance) : "Pending", note: "Across active fee assignments", tone: "red", noteTone: summary.openBalance > 0 ? "danger" : "default", icon: Activity },
+        { label: "Active fee types", value: String(items.filter((item) => item.status === "Active").length), note: setup.schoolYearName ?? "Active school year", tone: "blue", icon: ClipboardList },
       ],
       items,
     };
@@ -921,7 +926,11 @@ async function getCollectionRows(schoolId: number) {
 async function getOtherFeeItems(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<OtherFeeItemRow[]>(
     `SELECT ft.name, ft.category, ft.default_amount, ft.status,
-       COALESCE(SUM(sfa.amount_paid), 0) AS collected
+       COUNT(sfa.id) AS assigned_count,
+       COALESCE(SUM(CASE WHEN sfa.status = 'paid' THEN 1 ELSE 0 END), 0) AS paid_count,
+       COALESCE(SUM(sfa.amount_due), 0) AS billed,
+       COALESCE(SUM(sfa.amount_paid), 0) AS collected,
+       COALESCE(SUM(GREATEST(sfa.amount_due - sfa.amount_paid, 0)), 0) AS outstanding
      FROM fee_types ft
      LEFT JOIN student_fee_assignments sfa ON sfa.fee_type_id = ft.id AND sfa.school_year_id = :schoolYearId
      WHERE ft.school_id = :schoolId AND ft.school_year_id = :schoolYearId AND ft.category = 'other'
@@ -932,10 +941,17 @@ async function getOtherFeeItems(schoolId: number, schoolYearId: number) {
 
   return rows.map((row) => ({
     name: row.name,
-    desc: "Real fee type from MySQL",
+    meta: `Default ${money(row.default_amount)} per student`,
     amount: money(row.default_amount),
     status: labelForStatus(row.status),
+    assignedCount: Number(row.assigned_count ?? 0),
+    paidCount: Number(row.paid_count ?? 0),
+    paidLabel: Number(row.assigned_count ?? 0) > 0
+      ? `${Number(row.paid_count ?? 0)} / ${Number(row.assigned_count ?? 0)} paid`
+      : "No assignments yet",
+    totalBilled: money(row.billed),
     collected: money(row.collected),
+    outstanding: money(row.outstanding),
   }));
 }
 
@@ -1182,10 +1198,10 @@ function emptyOtherFees(warning: string | null): OtherFeesPageRealData {
   return {
     warning,
     kpis: [
-      { label: "Active fee types", value: "0", note: "Fee setup pending", tone: "orange", icon: ClipboardList },
-      { label: "Billed total", value: "Pending", note: "Non-tuition fee assignments", tone: "blue", icon: Calculator },
+      { label: "Total billed", value: "Pending", note: "Non-tuition fee assignments", tone: "orange", icon: Calculator },
       { label: "Collected", value: "Pending", note: "Collection pending", tone: "green", icon: CreditCard },
-      { label: "Open balance", value: "Pending", note: "For follow-up", tone: "red", icon: Activity },
+      { label: "Outstanding", value: "Pending", note: "For follow-up", tone: "red", icon: Activity },
+      { label: "Active fee types", value: "0", note: "Fee setup pending", tone: "blue", icon: ClipboardList },
     ],
     items: [],
   };
@@ -1494,7 +1510,11 @@ type OtherFeeItemRow = RowDataPacket & {
   category: string;
   default_amount: number | string;
   status: string;
+  assigned_count: number | string;
+  paid_count: number | string;
+  billed: number | string;
   collected: number | string;
+  outstanding: number | string;
 };
 
 type AllowanceSqlRow = RowDataPacket & {

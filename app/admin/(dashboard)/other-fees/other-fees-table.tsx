@@ -17,10 +17,15 @@ import { StatusPill } from "../../_components/admin-ui";
 
 export type OtherFeeRow = {
   name: string;
-  desc: string;
+  meta: string;
   amount: string;
   status: string;
+  assignedCount: number;
+  paidCount: number;
+  paidLabel: string;
+  totalBilled: string;
   collected: string;
+  outstanding: string;
 };
 
 export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
@@ -52,16 +57,22 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
           }}
           onExport={() => exportRowsToCsv("admin-other-fees.csv", filteredItems, [
             { label: "Fee type", value: (item) => item.name },
-            { label: "Description", value: (item) => item.desc },
+            { label: "Description", value: (item) => item.meta },
             { label: "Default amount", value: (item) => item.amount },
+            { label: "Total billed", value: (item) => item.totalBilled },
             { label: "Collected", value: (item) => item.collected },
+            { label: "Outstanding", value: (item) => item.outstanding },
+            { label: "Paid count", value: (item) => item.paidLabel },
             { label: "Status", value: (item) => item.status },
           ])}
           onExportPdf={() => exportRowsToPdf("admin-other-fees.pdf", "Other fees", filteredItems, [
             { label: "Fee type", value: (item) => item.name },
-            { label: "Description", value: (item) => item.desc },
+            { label: "Description", value: (item) => item.meta },
             { label: "Default amount", value: (item) => item.amount },
+            { label: "Total billed", value: (item) => item.totalBilled },
             { label: "Collected", value: (item) => item.collected },
+            { label: "Outstanding", value: (item) => item.outstanding },
+            { label: "Paid count", value: (item) => item.paidLabel },
             { label: "Status", value: (item) => item.status },
           ])}
           exportDisabled={filteredItems.length === 0}
@@ -69,26 +80,40 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
       </div>
       <div className="divide-y divide-black/[0.07]">
         {filteredItems.length > 0 ? (
-          pagination.pageRows.map((item) => (
-            <div key={item.name} className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 transition hover:bg-[#f7f8fa]">
-              <div className="flex items-center gap-2.5">
-                <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-[#fbe9e7] text-[#e64a19]">
-                  <ClipboardList className="size-4" />
-                </span>
-                <div>
-                  <div className="text-[13px] font-bold text-[#0f1117]">{item.name}</div>
-                  <div className="mt-0.5 text-[11px] text-[#5a6070]">{item.desc}</div>
+          pagination.pageRows.map((item) => {
+            const assignmentTone = item.assignedCount === 0
+              ? "bg-[#eff1f5] text-[#5a6070]"
+              : item.paidCount >= item.assignedCount
+                ? "bg-[#e8f5e9] text-[#2e7d32]"
+                : "bg-[#fff3e0] text-[#f57c00]";
+            const statusTone = item.status === "Active" ? "active" : "inactive";
+
+            return (
+              <div key={item.name} className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 transition hover:bg-[#f7f8fa]">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-[#fbe9e7] text-[#e64a19]">
+                    <ClipboardList className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-[13px] font-bold text-[#0f1117]">{item.name}</div>
+                    <div className="mt-0.5 truncate text-[11px] text-[#5a6070]">{item.meta}</div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-3 text-right sm:gap-5">
+                  <div>
+                    <div className="text-sm font-bold">{item.totalBilled}</div>
+                    <div className="text-[11px] text-[#5a6070]">Collected {item.collected}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10.5px] font-bold leading-5 ${assignmentTone}`}>
+                      {item.paidLabel}
+                    </span>
+                    <StatusPill tone={statusTone}>{item.status}</StatusPill>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-5 text-right">
-                <div>
-                  <div className="text-sm font-bold">{item.amount}</div>
-                  <div className="text-[11px] text-[#5a6070]">Collected {item.collected}</div>
-                </div>
-                <StatusPill tone="active">{item.status}</StatusPill>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="px-[18px] py-8 text-center text-[12.5px] text-[#5a6070]">
             {items.length === 0 ? "No other fee types yet." : "No other fee types match the current filters."}

@@ -9,6 +9,7 @@ const tuitionPagePath = "app/admin/(dashboard)/tuition/page.tsx";
 const tuitionTablePath = "app/admin/(dashboard)/tuition/tuition-report-table.tsx";
 const otherFeesPagePath = "app/admin/(dashboard)/other-fees/page.tsx";
 const otherFeesTablePath = "app/admin/(dashboard)/other-fees/other-fees-table.tsx";
+const otherFeesModalPath = "app/admin/(dashboard)/other-fees/other-fees-management-modal.tsx";
 const adminDashboardPagePath = "app/admin/(dashboard)/dashboard/page.tsx";
 const adminDashboardRecentTablesPath = "app/admin/(dashboard)/dashboard/dashboard-recent-tables.tsx";
 const parentFeesPagePath = "app/parent/(portal)/fees/page.tsx";
@@ -49,7 +50,9 @@ test("admin fee actions are protected and validate finance writes", () => {
 
 test("admin tuition and other-fees pages expose database-backed fee forms", () => {
   assert.equal(existsSync(feeFormsPath), true);
+  assert.equal(existsSync(otherFeesModalPath), true);
   const forms = readFileSync(feeFormsPath, "utf8");
+  const otherFeesModal = readFileSync(otherFeesModalPath, "utf8");
   const tuitionPage = readFileSync(tuitionPagePath, "utf8");
   const tuitionTable = readFileSync(tuitionTablePath, "utf8");
   const otherFeesPage = readFileSync(otherFeesPagePath, "utf8");
@@ -74,13 +77,36 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(tuitionTable, /admin-tuition-report\.pdf/);
   assert.match(tuitionTable, /exportRowsToPdf/);
   assert.match(otherFeesPage, /getAdminFeeSetupData\(session\.userId, "other"\)/);
+  assert.match(otherFeesPage, /OtherFeesManagementModal/);
   assert.match(otherFeesPage, /<FeeManagementForms category="other" redirectPath="\/admin\/other-fees" data=\{feeSetup\} \/>/);
+  assert.doesNotMatch(otherFeesPage, /Other fee setup/);
+  assert.match(otherFeesModal, /"use client";/);
+  assert.match(otherFeesModal, /role="dialog"/);
+  assert.match(otherFeesModal, /Add fee type/);
+  assert.match(otherFeesModal, /Create other-fee types and assign them to enrolled students/);
   assert.match(otherFeesPage, /OtherFeesTable/);
   assert.match(otherFeesTable, /DashboardTableControls/);
   assert.match(otherFeesTable, /admin-other-fees\.csv/);
   assert.match(otherFeesTable, /admin-other-fees\.pdf/);
   assert.match(otherFeesTable, /exportRowsToPdf/);
+  assert.match(otherFeesTable, /paidLabel/);
+  assert.match(otherFeesTable, /totalBilled/);
   assert.doesNotMatch(otherFeesPage, /Add fee type pending/);
+});
+
+test("other fees real data includes paid assignment counts and screenshot-style totals", () => {
+  const helper = readFileSync("lib/admin/real-data.ts", "utf8");
+
+  assert.match(helper, /COUNT\(sfa\.id\) AS assigned_count/);
+  assert.match(helper, /sfa\.status = 'paid'/);
+  assert.match(helper, /AS paid_count/);
+  assert.match(helper, /COALESCE\(SUM\(sfa\.amount_due\), 0\) AS billed/);
+  assert.match(helper, /GREATEST\(sfa\.amount_due - sfa\.amount_paid, 0\)/);
+  assert.match(helper, /paidLabel/);
+  assert.match(helper, /No assignments yet/);
+  assert.match(helper, /Total billed/);
+  assert.match(helper, /Outstanding/);
+  assert.match(helper, /Active fee types/);
 });
 
 test("admin dashboard shows assigned fees before payment records exist", () => {
