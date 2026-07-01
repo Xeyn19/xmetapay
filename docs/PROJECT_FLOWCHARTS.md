@@ -49,7 +49,7 @@ Implemented:
 - Admin allowance total balance is calculated from the current `wallets.balance` values, counting each wallet once.
 - Store/canteen purchase recording through student wallets.
 - Admin CSV and PDF report exports for monthly revenue, collections, outstanding balances, and wallet/store activity.
-- Admin and parent real-data tables can export the currently visible filtered rows as CSV or PDF.
+- Admin and parent real-data tables paginate on screen and can export filtered rows as CSV or PDF.
 - Queued in-app payment reminder history through `notification_logs`.
 
 Next:
@@ -557,16 +557,17 @@ Current reminder rules:
 
 ## Real-Data Table Export Flow
 
-Implemented for admin and parent screens that already use database-backed tables. These exports use the currently visible rows after search and filters are applied.
+Implemented for admin and parent screens that already use database-backed tables. Tables paginate on screen, while CSV/PDF exports use the filtered rows after search and filters are applied.
 
 ```mermaid
 flowchart TD
   A["User opens a real-data table"] --> B["Page loads MySQL-backed rows"]
   B --> C["User searches or filters the table"]
   C --> D["Visible rows update in the browser"]
-  D --> E{"Export format?"}
-  E -->|CSV| F["Download visible rows as CSV"]
-  E -->|PDF| G["Download visible rows as PDF"]
+  D --> E["User pages through filtered rows"]
+  E --> F{"Export format?"}
+  F -->|CSV| G["Download filtered rows as CSV"]
+  F -->|PDF| H["Download filtered rows as PDF"]
 ```
 
 Current table export screens include admin dashboard recent activity, tuition, collections, other fees, allowance, store transactions, enrolled students, parent contacts, parent fee summary, parent payment history, parent dashboard recent payments, and parent wallet activity.

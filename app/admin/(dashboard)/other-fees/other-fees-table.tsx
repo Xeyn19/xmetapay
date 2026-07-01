@@ -3,7 +3,15 @@
 import { useMemo, useState } from "react";
 import { ClipboardList } from "lucide-react";
 
-import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 
 import { StatusPill } from "../../_components/admin-ui";
 
@@ -26,6 +34,7 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
     ),
     [items, query, status],
   );
+  const pagination = usePaginatedRows(filteredItems, `${query}|${status}`);
 
   return (
     <>
@@ -60,7 +69,7 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
       </div>
       <div className="divide-y divide-black/[0.07]">
         {filteredItems.length > 0 ? (
-          filteredItems.map((item) => (
+          pagination.pageRows.map((item) => (
             <div key={item.name} className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 transition hover:bg-[#f7f8fa]">
               <div className="flex items-center gap-2.5">
                 <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-[#fbe9e7] text-[#e64a19]">
@@ -86,6 +95,16 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
           </div>
         )}
       </div>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
     </>
   );
 }

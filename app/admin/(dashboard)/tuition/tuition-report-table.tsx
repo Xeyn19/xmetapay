@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
 
@@ -29,6 +37,7 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
     ),
     [grade, query, rows, status],
   );
+  const pagination = usePaginatedRows(filteredRows, `${query}|${status}|${grade}`);
 
   return (
     <>
@@ -82,7 +91,7 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
         ]}
       >
         {filteredRows.length > 0 ? (
-          filteredRows.map((row) => {
+          pagination.pageRows.map((row) => {
             const statusLabel = row.status.charAt(0).toUpperCase() + row.status.slice(1);
 
             return (
@@ -110,6 +119,16 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
           </tr>
         )}
       </AdminTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
     </>
   );
 }

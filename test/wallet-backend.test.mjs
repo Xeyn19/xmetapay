@@ -99,6 +99,9 @@ test("parent dashboard and student profile expose real wallet details", () => {
   assert.match(dashboard, /ParentWalletActivityTable/);
   assert.match(dashboard, /data\.walletActivity/);
   assert.match(walletActivityTable, /DashboardTableControls/);
+  assert.match(walletActivityTable, /usePaginatedRows/);
+  assert.match(walletActivityTable, /DashboardTablePagination/);
+  assert.match(walletActivityTable, /pagination\.pageRows\.map/);
   assert.match(walletActivityTable, /parent-wallet-activity\.csv/);
   assert.match(walletActivityTable, /parent-wallet-activity\.pdf/);
   assert.match(walletActivityTable, /exportRowsToPdf/);
@@ -118,6 +121,9 @@ test("admin allowance page uses working controls for real wallet rows", () => {
 
   assert.match(page, /AllowanceTable/);
   assert.match(table, /DashboardTableControls/);
+  assert.match(table, /usePaginatedRows/);
+  assert.match(table, /DashboardTablePagination/);
+  assert.match(table, /pagination\.pageRows\.map/);
   assert.match(table, /admin-allowance-wallets\.csv/);
   assert.match(table, /admin-allowance-wallets\.pdf/);
   assert.match(table, /exportRowsToPdf/);

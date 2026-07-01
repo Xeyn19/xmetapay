@@ -5,6 +5,7 @@ import test from "node:test";
 const reminderActionsPath = "app/admin/reminders/actions.ts";
 const tuitionPagePath = "app/admin/(dashboard)/tuition/page.tsx";
 const tuitionReminderFormPath = "app/admin/(dashboard)/tuition/payment-reminder-form.tsx";
+const tuitionReminderHistoryTablePath = "app/admin/(dashboard)/tuition/payment-reminder-history-table.tsx";
 const realDataPath = "lib/admin/real-data.ts";
 const permissionsPath = "lib/admin/permissions.ts";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
@@ -55,12 +56,16 @@ test("payment reminder action skips same-day duplicate reminder logs", () => {
 test("tuition page exposes real reminder logging and reminder history", () => {
   const page = readFileSync(tuitionPagePath, "utf8");
   const form = readFileSync(tuitionReminderFormPath, "utf8");
+  const historyTable = readFileSync(tuitionReminderHistoryTablePath, "utf8");
   const realData = readFileSync(realDataPath, "utf8");
 
   assert.match(page, /<PaymentReminderForm \/>/);
+  assert.match(page, /<PaymentReminderHistoryTable rows=\{data\.reminderRows\} \/>/);
   assert.match(form, /useActionState\(logPaymentRemindersAction, initialReminderActionState\)/);
   assert.match(form, /toast\.success/);
   assert.match(form, /toast\.error/);
+  assert.match(historyTable, /usePaginatedRows\(rows, "payment-reminders"\)/);
+  assert.match(historyTable, /DashboardTablePagination/);
   assert.match(page, /id="payment-reminders"/);
   assert.match(page, /<DashboardCard\s+id="payment-reminders"/);
   assert.match(page, /className="mb-\[18px\] scroll-mt-24"/);
@@ -76,14 +81,14 @@ test("tuition page exposes real reminder logging and reminder history", () => {
 });
 
 test("tuition reminder history uses stable notification ids as React keys", () => {
-  const page = readFileSync(tuitionPagePath, "utf8");
+  const historyTable = readFileSync(tuitionReminderHistoryTablePath, "utf8");
   const realData = readFileSync(realDataPath, "utf8");
 
   assert.match(realData, /nl\.id AS notification_id/);
   assert.match(realData, /notificationId/);
-  assert.match(page, /notificationId/);
-  assert.match(page, /<tr key=\{notificationId\}>/);
-  assert.doesNotMatch(page, /key=\{`\$\{created\}-\$\{student\}-\$\{parent\}`\}/);
+  assert.match(historyTable, /notificationId/);
+  assert.match(historyTable, /<tr key=\{notificationId\}>/);
+  assert.doesNotMatch(historyTable, /key=\{`\$\{created\}-\$\{student\}-\$\{parent\}`\}/);
 });
 
 test("admin activity feed timeline uses stable notification ids as React keys", () => {

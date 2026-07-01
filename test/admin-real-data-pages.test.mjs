@@ -77,6 +77,9 @@ test("admin student profile route lists students and selected route loads exact 
   assert.doesNotMatch(profilePage, /AdminStudentProfileView/);
   assert.match(selector, /Choose a student profile/);
   assert.match(selector, /href=\{student\.profileHref\}/);
+  assert.match(selector, /usePaginatedRows\(students, "all-students"\)/);
+  assert.match(selector, /DashboardTablePagination/);
+  assert.match(selector, /pagination\.pageRows\.map/);
   assert.match(selectedProfile, /params: Promise<\{ studentId: string \}>/);
   assert.match(selectedProfile, /await params/);
   assert.match(selectedProfile, /Number\(studentId\)/);
@@ -136,6 +139,16 @@ test("admin real-data tables use working search filters plus CSV and PDF export 
   assert.match(controls, /exportRowsToCsv/);
   assert.match(controls, /exportRowsToPdf/);
   assert.match(controls, /filterByQuery/);
+  assert.match(controls, /export const DEFAULT_TABLE_PAGE_SIZE = 10/);
+  assert.match(controls, /export const TABLE_PAGE_SIZE_OPTIONS = \[5, 10, 25\] as const/);
+  assert.match(controls, /export function DashboardTablePagination/);
+  assert.match(controls, /export function usePaginatedRows/);
+  assert.match(controls, /Showing \{startItem\}-\{endItem\} of \{totalItems\}/);
+  assert.match(controls, /Page \{page\} of \{pageCount\}/);
+  assert.match(controls, /Prev/);
+  assert.match(controls, /Next/);
+  assert.match(controls, /requestedPage = paginationState\.resetKey === resetKey \? paginationState\.page : 1/);
+  assert.match(controls, /setPageSize = \(nextPageSize: number\)/);
   assert.match(controls, /Export CSV/);
   assert.match(controls, /Export PDF/);
 
@@ -145,10 +158,13 @@ test("admin real-data tables use working search filters plus CSV and PDF export 
 
     assert.match(component, /"use client";/, `${componentPath} should be client-side for table controls`);
     assert.match(component, /DashboardTableControls/, `${componentPath} should render working table controls`);
-    assert.match(component, /exportRowsToCsv/, `${componentPath} should export visible rows`);
-    assert.match(component, /exportRowsToPdf/, `${componentPath} should export visible rows to PDF`);
+    assert.match(component, /usePaginatedRows/, `${componentPath} should paginate filtered rows`);
+    assert.match(component, /DashboardTablePagination/, `${componentPath} should render pagination controls`);
+    assert.match(component, /pageRows\.map/, `${componentPath} should render the current page of rows`);
+    assert.match(component, /exportRowsToCsv/, `${componentPath} should export filtered rows`);
+    assert.match(component, /exportRowsToPdf/, `${componentPath} should export filtered rows to PDF`);
     assert.match(component, /onExportPdf/, `${componentPath} should wire PDF export controls`);
-    assert.match(component, /filterByQuery/, `${componentPath} should filter visible rows`);
+    assert.match(component, /filterByQuery/, `${componentPath} should filter rows before pagination`);
     assert.doesNotMatch(component, /readOnly|Export pending|Filter pending/, `${componentPath} should not keep placeholder controls`);
   }
 

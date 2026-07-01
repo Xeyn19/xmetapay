@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 import type { ParentFeeRow } from "@/lib/fees/records";
 
 import { ParentTable, StatusPill } from "../../_components/parent-ui";
@@ -22,6 +30,7 @@ export function ParentFeesTable({ rows }: { rows: ParentFeeRow[] }) {
     ),
     [category, query, rows, status],
   );
+  const pagination = usePaginatedRows(filteredRows, `${query}|${category}|${status}`);
 
   return (
     <>
@@ -77,7 +86,7 @@ export function ParentFeesTable({ rows }: { rows: ParentFeeRow[] }) {
         ]}
       >
         {filteredRows.length > 0 ? (
-          filteredRows.map((row) => (
+          pagination.pageRows.map((row) => (
             <tr key={row.id}>
               <td>
                 <div className="font-semibold text-[#1a1a1a]">{row.studentName}</div>
@@ -102,6 +111,17 @@ export function ParentFeesTable({ rows }: { rows: ParentFeeRow[] }) {
           </tr>
         )}
       </ParentTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+        tone="parent"
+      />
     </>
   );
 }

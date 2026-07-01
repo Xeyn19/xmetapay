@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 import type { ParentDashboardPayment } from "@/lib/students/records";
 
 import { ParentTable, StatusPill } from "../../_components/parent-ui";
@@ -18,6 +26,7 @@ export function ParentRecentPaymentsTable({ rows }: { rows: ParentDashboardPayme
     ),
     [query, rows, status],
   );
+  const pagination = usePaginatedRows(filteredRows, `${query}|${status}`);
 
   return (
     <>
@@ -61,7 +70,7 @@ export function ParentRecentPaymentsTable({ rows }: { rows: ParentDashboardPayme
         ]}
       >
         {filteredRows.length > 0 ? (
-          filteredRows.map((payment) => (
+          pagination.pageRows.map((payment) => (
             <tr key={payment.referenceNumber}>
               <td className="font-mono text-[11px] text-[#6b6b6b]">{payment.referenceNumber}</td>
               <td className="font-medium">{payment.studentName}</td>
@@ -78,6 +87,17 @@ export function ParentRecentPaymentsTable({ rows }: { rows: ParentDashboardPayme
           </tr>
         )}
       </ParentTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+        tone="parent"
+      />
     </>
   );
 }

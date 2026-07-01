@@ -5,6 +5,7 @@ import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminTuitionPageRealData } from "@/lib/admin/real-data";
 import { getAdminFeeSetupData } from "@/lib/fees/records";
 import { FeeManagementForms } from "@/app/admin/fees/fee-management-forms";
+import { PaymentReminderHistoryTable } from "./payment-reminder-history-table";
 import { PaymentReminderForm } from "./payment-reminder-form";
 
 import {
@@ -54,35 +55,7 @@ export default async function TuitionPage() {
         <div className="border-b border-black/[0.07] px-[18px] py-3 text-[12.5px] leading-5 text-[#5a6070]">
           Creates queued in-app reminder history for linked parents with open or partial balances. Real email and SMS delivery are still future.
         </div>
-        <AdminTable
-          headers={[
-            { label: "Created", className: "w-[16%]" },
-            { label: "Student", className: "w-[21%]" },
-            { label: "Parent", className: "w-[21%]" },
-            { label: "Grade", className: "w-[14%]" },
-            { label: "Channel", className: "w-[14%]" },
-            { label: "Status", className: "w-[14%]" },
-          ]}
-        >
-          {data.reminderRows.length > 0 ? (
-            data.reminderRows.map(([notificationId, created, student, parent, grade, channel, status]) => (
-              <tr key={notificationId}>
-                <td className="font-mono text-[11px] text-[#5a6070]">{created}</td>
-                <td className="font-bold">{student}</td>
-                <td>{parent}</td>
-                <td>{grade}</td>
-                <td>{channel}</td>
-                <td className="font-semibold text-[#e64a19]">{status}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={6} className="text-center text-[#5a6070]">
-                No payment reminder history yet.
-              </td>
-            </tr>
-          )}
-        </AdminTable>
+        <PaymentReminderHistoryTable rows={data.reminderRows} />
       </DashboardCard>
 
       <DashboardCard

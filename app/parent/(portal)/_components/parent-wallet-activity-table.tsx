@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 import type { ParentWalletActivity } from "@/lib/students/records";
 
 import { ParentTable, StatusPill } from "../../_components/parent-ui";
@@ -34,6 +42,7 @@ export function ParentWalletActivityTable({
     ),
     [channel, query, rows, status],
   );
+  const pagination = usePaginatedRows(filteredRows, `${query}|${status}|${channel}`);
   const headers = showStudent
     ? [
       { label: "Date", className: "w-[14%]" },
@@ -93,7 +102,7 @@ export function ParentWalletActivityTable({
       </div>
       <ParentTable headers={headers}>
         {filteredRows.length > 0 ? (
-          filteredRows.map((activity) => (
+          pagination.pageRows.map((activity) => (
             <tr key={activity.id}>
               <td className="text-[12px] text-[#6b6b6b]">{activity.date}</td>
               {showStudent ? <td className="font-medium">{activity.studentName}</td> : null}
@@ -114,6 +123,17 @@ export function ParentWalletActivityTable({
           </tr>
         )}
       </ParentTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+        tone="parent"
+      />
     </>
   );
 }

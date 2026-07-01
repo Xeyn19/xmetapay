@@ -245,6 +245,9 @@ test("parent profile fallback shows selector instead of first linked student det
   assert.doesNotMatch(parentProfile, /getParentStudentProfileData\(session\.userId, session\.name\)/);
   assert.match(parentProfileView, /Choose a student profile/);
   assert.match(parentProfileView, /href=\{student\.profileHref\}/);
+  assert.match(parentProfileView, /usePaginatedRows\(students, "linked-students"\)/);
+  assert.match(parentProfileView, /DashboardTablePagination/);
+  assert.match(parentProfileView, /pagination\.pageRows\.map/);
 });
 
 test("backend checklist tracks completed student and guardian linking slice", () => {

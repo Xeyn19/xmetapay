@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 import type { AdminParentRow } from "@/lib/students/records";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
@@ -22,6 +30,7 @@ export function ParentsTable({ rows }: { rows: AdminParentRow[] }) {
     ),
     [query, relationship, rows, status],
   );
+  const pagination = usePaginatedRows(filteredRows, `${query}|${relationship}|${status}`);
 
   return (
     <>
@@ -72,7 +81,7 @@ export function ParentsTable({ rows }: { rows: AdminParentRow[] }) {
         ]}
       >
         {filteredRows.length > 0 ? (
-          filteredRows.map((row) => (
+          pagination.pageRows.map((row) => (
             <tr key={`${row.parentName}-${row.email}-${row.students}`}>
               <td className="font-bold">{row.parentName}</td>
               <td>{row.students}</td>
@@ -93,6 +102,16 @@ export function ParentsTable({ rows }: { rows: AdminParentRow[] }) {
           </tr>
         )}
       </AdminTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
     </>
   );
 }

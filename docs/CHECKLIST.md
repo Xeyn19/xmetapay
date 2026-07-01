@@ -23,7 +23,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Parent local wallet top-up and wallet transaction history are implemented.
 - [x] Store spending backend is implemented through admin/finance local test purchase recording.
 - [x] Admin CSV and PDF report exports are implemented from operational MySQL records.
-- [x] Real-data admin and parent tables can export currently visible filtered rows as CSV and PDF.
+- [x] Real-data admin and parent tables can paginate on screen and export filtered rows as CSV and PDF.
 - [x] Queued in-app payment reminder history is recorded in `notification_logs` once per day for the same school, linked parent, and student.
 - [ ] Real notification sending, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
 
@@ -131,9 +131,9 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 - [x] Replace disabled report export buttons with working CSV download links.
 - [x] Add protected admin PDF export downloads for the same report data.
 - [x] Show separate CSV and PDF report buttons on the admin reports page.
-- [x] Add CSV and PDF visible-row exports to real-data admin and parent tables.
+- [x] Add pagination plus CSV and PDF filtered-row exports to real-data admin and parent tables.
 
-Done when: school administrators and finance officers can download CSV and PDF reports generated from operational MySQL records, and real-data table screens can export their filtered visible rows in both formats.
+Done when: school administrators and finance officers can download CSV and PDF reports generated from operational MySQL records, and real-data table screens can paginate on screen while exporting their filtered rows in both formats.
 
 ### Phase 6D: Notification reminder history
 
