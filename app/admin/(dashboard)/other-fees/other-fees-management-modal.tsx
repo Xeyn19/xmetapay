@@ -41,18 +41,18 @@ export function OtherFeesManagementModal({
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#0f1117]/45 px-3 py-6 backdrop-blur-sm sm:px-6">
+        <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-[#0f1117]/45 px-3 py-6 backdrop-blur-sm sm:px-6">
           <button
             type="button"
             aria-label="Close other fee setup"
-            className="absolute inset-0 cursor-default"
+            className="fixed inset-0 cursor-default"
             onClick={() => setOpen(false)}
           />
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="other-fees-modal-title"
-            className="relative w-full max-w-5xl overflow-hidden rounded-xl border border-black/[0.07] bg-white shadow-2xl"
+            className="relative flex max-h-[calc(100vh-48px)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-black/[0.07] bg-white shadow-2xl"
           >
             <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-[18px]">
               <div className="min-w-0">
@@ -76,7 +76,7 @@ export function OtherFeesManagementModal({
                 <X className="size-4" />
               </button>
             </div>
-            <div className="max-h-[calc(100vh-150px)] overflow-y-auto p-4 sm:p-[18px]">
+            <div className="overflow-y-auto p-4 sm:p-[18px]">
               {children}
             </div>
           </section>

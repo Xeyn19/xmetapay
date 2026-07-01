@@ -59,7 +59,7 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
             { label: "Fee type", value: (item) => item.name },
             { label: "Description", value: (item) => item.meta },
             { label: "Default amount", value: (item) => item.amount },
-            { label: "Total billed", value: (item) => item.totalBilled },
+            { label: "Assigned total", value: (item) => item.totalBilled },
             { label: "Collected", value: (item) => item.collected },
             { label: "Outstanding", value: (item) => item.outstanding },
             { label: "Paid count", value: (item) => item.paidLabel },
@@ -69,7 +69,7 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
             { label: "Fee type", value: (item) => item.name },
             { label: "Description", value: (item) => item.meta },
             { label: "Default amount", value: (item) => item.amount },
-            { label: "Total billed", value: (item) => item.totalBilled },
+            { label: "Assigned total", value: (item) => item.totalBilled },
             { label: "Collected", value: (item) => item.collected },
             { label: "Outstanding", value: (item) => item.outstanding },
             { label: "Paid count", value: (item) => item.paidLabel },
@@ -101,7 +101,10 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-3 text-right sm:gap-5">
                   <div>
-                    <div className="text-sm font-bold">{item.totalBilled}</div>
+                    <div className="text-sm font-bold">{item.amount}</div>
+                    <div className="text-[11px] text-[#5a6070]">
+                      {item.assignedCount > 0 ? `Assigned ${item.totalBilled}` : "Not assigned yet"}
+                    </div>
                     <div className="text-[11px] text-[#5a6070]">Collected {item.collected}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">

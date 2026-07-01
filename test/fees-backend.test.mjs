@@ -82,6 +82,8 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.doesNotMatch(otherFeesPage, /Other fee setup/);
   assert.match(otherFeesModal, /"use client";/);
   assert.match(otherFeesModal, /role="dialog"/);
+  assert.match(otherFeesModal, /z-\[200\]/);
+  assert.match(otherFeesModal, /place-items-center/);
   assert.match(otherFeesModal, /Add fee type/);
   assert.match(otherFeesModal, /Create other-fee types and assign them to enrolled students/);
   assert.match(otherFeesPage, /OtherFeesTable/);
@@ -90,7 +92,10 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(otherFeesTable, /admin-other-fees\.pdf/);
   assert.match(otherFeesTable, /exportRowsToPdf/);
   assert.match(otherFeesTable, /paidLabel/);
+  assert.match(otherFeesTable, /\{item\.amount\}/);
   assert.match(otherFeesTable, /totalBilled/);
+  assert.match(otherFeesTable, /Assigned \$/);
+  assert.match(otherFeesTable, /Not assigned yet/);
   assert.doesNotMatch(otherFeesPage, /Add fee type pending/);
 });
 
