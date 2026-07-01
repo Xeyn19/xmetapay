@@ -7,6 +7,7 @@ import { getAdminFeeSetupData } from "@/lib/fees/records";
 import { FeeManagementForms } from "@/app/admin/fees/fee-management-forms";
 
 import { AlertBanner, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
+import { OtherFeesManagementModal } from "./other-fees-management-modal";
 import { OtherFeesTable } from "./other-fees-table";
 
 export default async function OtherFeesPage() {
@@ -27,13 +28,14 @@ export default async function OtherFeesPage() {
         ))}
       </KpiGrid>
 
-      <DashboardCard title={`Other fee setup - ${feeSetup.activeSchoolYearName ?? "School year pending"}`} icon={ClipboardList} className="mb-[18px]">
-        <FeeManagementForms category="other" redirectPath="/admin/other-fees" data={feeSetup} />
-      </DashboardCard>
-
       <DashboardCard
         title={`Other school fees - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
         icon={ClipboardList}
+        action={
+          <OtherFeesManagementModal title={`Manage other fees - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}>
+            <FeeManagementForms category="other" redirectPath="/admin/other-fees" data={feeSetup} />
+          </OtherFeesManagementModal>
+        }
         bodyClassName="p-0"
       >
         <OtherFeesTable items={data.items} />
