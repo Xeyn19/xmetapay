@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { CreditCard, IdCard, Plus, Users, Wallet } from "lucide-react";
 
+import { DashboardTablePagination, usePaginatedRows } from "@/app/_components/table-controls";
 import { linkParentStudentAction } from "@/app/parent/student-link/actions";
 import type { ParentLinkedStudent, ParentStudentProfileData } from "@/lib/students/records";
 
@@ -37,10 +40,12 @@ export function StudentProfileEmptyState() {
 }
 
 export function StudentProfileSelector({ students }: { students: ParentLinkedStudent[] }) {
+  const pagination = usePaginatedRows(students, "linked-students");
+
   return (
     <ParentCard title="Choose a student profile" icon={IdCard} bodyClassName="p-0">
       <div className="divide-y divide-black/[0.08]">
-        {students.map((student) => (
+        {pagination.pageRows.map((student) => (
           <Link
             key={student.id}
             href={student.profileHref}
@@ -61,6 +66,17 @@ export function StudentProfileSelector({ students }: { students: ParentLinkedStu
           </Link>
         ))}
       </div>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+        tone="parent"
+      />
     </ParentCard>
   );
 }

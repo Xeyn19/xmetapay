@@ -338,7 +338,7 @@
             <tr>
               <td>Reports</td>
               <td>Operational query views</td>
-              <td>Implemented CSV and PDF exports for monthly revenue, collections, outstanding balances, and wallet/store activity. Real-data dashboard tables can also export visible filtered rows as CSV or PDF. No separate report storage table is required.</td>
+              <td>Implemented CSV and PDF exports for monthly revenue, collections, outstanding balances, and wallet/store activity. Real-data dashboard tables paginate loaded rows and export filtered rows as CSV or PDF. No separate report storage table is required.</td>
             </tr>
             <tr>
               <td>Notifications</td>
@@ -742,7 +742,7 @@ flowchart TD
           <li>Add payment and receipt tables.</li>
           <li>Add wallet and wallet transaction tables.</li>
           <li>Add store merchant and store transaction tables. These already exist in the schema and support the implemented Phase 6B write flow.</li>
-          <li>Build CSV/PDF reports from operational query views and CSV/PDF visible-row table exports from loaded dashboard rows instead of separate report storage tables.</li>
+          <li>Build CSV/PDF reports from operational query views and CSV/PDF filtered-row table exports from loaded dashboard rows instead of separate report storage tables.</li>
           <li>Use notification logs for implemented queued in-app payment reminder history with same-day duplicate prevention; add real email/SMS delivery later.</li>
         </ol>
         <div class="note">

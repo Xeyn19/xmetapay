@@ -71,6 +71,9 @@ test("parent payment pages use real database helpers instead of static payment a
   assert.match(historyPage, /getParentPaymentHistoryData\(session\.userId\)/);
   assert.match(historyPage, /ParentPaymentHistoryTable/);
   assert.match(historyTable, /DashboardTableControls/);
+  assert.match(historyTable, /usePaginatedRows/);
+  assert.match(historyTable, /DashboardTablePagination/);
+  assert.match(historyTable, /pagination\.pageRows\.map/);
   assert.match(historyTable, /parent-payment-history\.csv/);
   assert.match(historyTable, /parent-payment-history\.pdf/);
   assert.match(historyTable, /exportRowsToPdf/);
@@ -93,6 +96,9 @@ test("parent dashboard reflects real payment summary and recent payment rows", (
   assert.match(dashboard, /Recent payment activity/);
   assert.match(dashboard, /ParentRecentPaymentsTable/);
   assert.match(dashboardTable, /DashboardTableControls/);
+  assert.match(dashboardTable, /usePaginatedRows/);
+  assert.match(dashboardTable, /DashboardTablePagination/);
+  assert.match(dashboardTable, /pagination\.pageRows\.map/);
   assert.match(dashboardTable, /parent-recent-payments\.csv/);
   assert.match(dashboardTable, /parent-recent-payments\.pdf/);
   assert.match(dashboardTable, /exportRowsToPdf/);

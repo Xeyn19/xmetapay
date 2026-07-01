@@ -107,6 +107,9 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(page, /data\.metrics\.map/);
   assert.match(page, /ParentFeesTable/);
   assert.match(feesTable, /DashboardTableControls/);
+  assert.match(feesTable, /usePaginatedRows/);
+  assert.match(feesTable, /DashboardTablePagination/);
+  assert.match(feesTable, /pagination\.pageRows\.map/);
   assert.match(feesTable, /parent-fee-summary\.csv/);
   assert.match(feesTable, /parent-fee-summary\.pdf/);
   assert.match(feesTable, /exportRowsToPdf/);

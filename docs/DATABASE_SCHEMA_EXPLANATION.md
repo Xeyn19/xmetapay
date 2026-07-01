@@ -293,7 +293,7 @@ Current implemented CSV and PDF report exports:
 
 Scheduled reports and notification-driven report delivery are future features. Queued in-app payment reminder history is implemented separately through `notification_logs`.
 
-Real-data dashboard tables also support visible-row CSV and PDF exports in the browser. Those table exports use the rows already loaded for the signed-in admin or parent after search/filter controls are applied, so they do not require extra database tables.
+Real-data dashboard tables also support browser-side pagination plus CSV and PDF exports. Those table exports use the rows already loaded for the signed-in admin or parent after search/filter controls are applied, so they do not require extra database tables.
 
 ## Notification Table
 
@@ -326,7 +326,7 @@ The schema supports this practical backend flow:
 10. Payments are allocated to balances through `payment_allocations`.
 11. Receipts are created in `receipts`.
 12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
-13. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens can export visible filtered rows as CSV or PDF.
+13. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens paginate loaded rows and export filtered rows as CSV or PDF.
 14. Queued in-app payment reminder history is recorded in `notification_logs`; real notification delivery remains future work.
 
 ## Relationship Summary

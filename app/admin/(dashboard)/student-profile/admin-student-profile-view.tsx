@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { CreditCard, Edit, History, IdCard, Plus, Users, Wallet } from "lucide-react";
 
+import { DashboardTablePagination, usePaginatedRows } from "@/app/_components/table-controls";
 import type { AdminStudentProfileRealData, AdminStudentProfileSummary } from "@/lib/admin/real-data";
 
 import {
@@ -16,6 +19,8 @@ import {
 type StudentProfile = NonNullable<AdminStudentProfileRealData["student"]>;
 
 export function AdminStudentProfileSelector({ students }: { students: AdminStudentProfileSummary[] }) {
+  const pagination = usePaginatedRows(students, "all-students");
+
   return (
     <DashboardCard title="Choose a student profile" icon={IdCard} bodyClassName="p-0">
       <AdminTable
@@ -28,7 +33,7 @@ export function AdminStudentProfileSelector({ students }: { students: AdminStude
         ]}
       >
         {students.length > 0 ? (
-          students.map((student) => (
+          pagination.pageRows.map((student) => (
             <tr key={student.id}>
               <td>
                 <Link href={student.profileHref} className="flex min-w-0 items-center gap-2.5 font-bold text-[#e64a19] hover:underline">
@@ -56,6 +61,16 @@ export function AdminStudentProfileSelector({ students }: { students: AdminStude
           </tr>
         )}
       </AdminTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
     </DashboardCard>
   );
 }
@@ -69,6 +84,8 @@ export function AdminStudentProfileEmptyState() {
 }
 
 export function AdminStudentProfileView({ student }: { student: StudentProfile }) {
+  const transactionsPagination = usePaginatedRows(student.transactions, student.id.toString());
+
   return (
     <>
       <section className="relative mb-5 flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl bg-[#0f1117] px-6 py-5 text-white">
@@ -133,7 +150,7 @@ export function AdminStudentProfileView({ student }: { student: StudentProfile }
             ]}
           >
             {student.transactions.length > 0 ? (
-              student.transactions.map(([date, description, amount, channel, status]) => (
+              transactionsPagination.pageRows.map(([date, description, amount, channel, status]) => (
                 <tr key={`${date}-${description}`}>
                   <td className="font-mono text-[11px] text-[#5a6070]">{date}</td>
                   <td className="font-bold">{description}</td>
@@ -150,6 +167,16 @@ export function AdminStudentProfileView({ student }: { student: StudentProfile }
               </tr>
             )}
           </AdminTable>
+          <DashboardTablePagination
+            page={transactionsPagination.page}
+            pageSize={transactionsPagination.pageSize}
+            pageCount={transactionsPagination.pageCount}
+            totalItems={transactionsPagination.totalItems}
+            startItem={transactionsPagination.startItem}
+            endItem={transactionsPagination.endItem}
+            onPageChange={transactionsPagination.setPage}
+            onPageSizeChange={transactionsPagination.setPageSize}
+          />
         </DashboardCard>
       </div>
     </>

@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 
 import { AdminTable, DashboardCard } from "../../_components/admin-ui";
 import { History, Receipt } from "lucide-react";
@@ -47,6 +55,7 @@ function RecentFeeAssignmentsTable({ rows }: { rows: RecentFeeAssignmentRow[] })
     () => filterByQuery(rows.filter((row) => status === "all" || row.status === status), query, (row) => Object.values(row).join(" ")),
     [query, rows, status],
   );
+  const pagination = usePaginatedRows(filteredRows, `${query}|${status}`);
 
   return (
     <DashboardCard title="Recent fee assignments" icon={Receipt} bodyClassName="p-0">
@@ -90,7 +99,7 @@ function RecentFeeAssignmentsTable({ rows }: { rows: RecentFeeAssignmentRow[] })
         ]}
       >
         {filteredRows.length > 0 ? (
-          filteredRows.map((row) => (
+          pagination.pageRows.map((row) => (
             <tr key={`${row.time}-${row.student}-${row.feeType}`}>
               <td className="font-mono text-[11px] text-[#5a6070]">{row.time}</td>
               <td className="font-bold">{row.student}</td>
@@ -108,6 +117,16 @@ function RecentFeeAssignmentsTable({ rows }: { rows: RecentFeeAssignmentRow[] })
           </tr>
         )}
       </AdminTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
     </DashboardCard>
   );
 }
@@ -124,6 +143,7 @@ function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
     ),
     [channel, query, rows, status],
   );
+  const pagination = usePaginatedRows(filteredRows, `${query}|${status}|${channel}`);
 
   return (
     <DashboardCard title="Recent payment activity" icon={History} bodyClassName="p-0">
@@ -171,7 +191,7 @@ function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
         ]}
       >
         {filteredRows.length > 0 ? (
-          filteredRows.map((row) => (
+          pagination.pageRows.map((row) => (
             <tr key={`${row.time}-${row.student}-${row.amount}`}>
               <td className="font-mono text-[11px] text-[#5a6070]">{row.time}</td>
               <td className="font-bold">{row.student}</td>
@@ -189,6 +209,16 @@ function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
           </tr>
         )}
       </AdminTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
     </DashboardCard>
   );
 }

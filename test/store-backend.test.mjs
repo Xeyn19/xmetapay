@@ -80,6 +80,9 @@ test("admin store transaction page exposes merchant and purchase forms plus work
   assert.match(forms, /max="10000"/);
   assert.match(table, /"use client";/);
   assert.match(table, /DashboardTableControls/);
+  assert.match(table, /usePaginatedRows/);
+  assert.match(table, /DashboardTablePagination/);
+  assert.match(table, /pagination\.pageRows\.map/);
   assert.match(table, /admin-store-transactions\.csv/);
   assert.match(table, /admin-store-transactions\.pdf/);
   assert.match(table, /exportRowsToPdf/);

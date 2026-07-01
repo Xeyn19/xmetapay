@@ -2,7 +2,8 @@
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Download, FileText, RotateCcw, Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Download, FileText, RotateCcw, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,9 @@ export type ExportColumn<T> = {
   label: string;
   value: (row: T) => string | number | null | undefined;
 };
+
+export const DEFAULT_TABLE_PAGE_SIZE = 10;
+export const TABLE_PAGE_SIZE_OPTIONS = [5, 10, 25] as const;
 
 export function DashboardTableControls({
   query,
@@ -122,6 +126,135 @@ export function DashboardTableControls({
       ) : null}
     </div>
   );
+}
+
+export function DashboardTablePagination({
+  page,
+  pageSize,
+  pageCount,
+  totalItems,
+  startItem,
+  endItem,
+  onPageChange,
+  onPageSizeChange,
+  tone = "admin",
+}: {
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  totalItems: number;
+  startItem: number;
+  endItem: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  tone?: "admin" | "parent";
+}) {
+  if (totalItems === 0) {
+    return null;
+  }
+
+  const isParent = tone === "parent";
+  const controlClass = isParent
+    ? "rounded-[10px] border-black/15 bg-[#f8f8f7] text-[13px] text-[#1a1a1a] focus:border-[#e64a19] focus:ring-[#e64a19]/10"
+    : "rounded-lg border-black/15 bg-[#f7f8fa] text-[12.5px] text-[#0f1117] focus:border-[#e64a19] focus:ring-[#e64a19]/10";
+  const buttonClass = isParent
+    ? "rounded-[10px] text-[13px] font-medium text-[#6b6b6b]"
+    : "rounded-lg text-[12.5px] font-semibold text-[#5a6070]";
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.07] px-[18px] py-3">
+      <div className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-[#5a6070]"}>
+        Showing {startItem}-{endItem} of {totalItems}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-[#5a6070]"}>
+          Rows
+          <select
+            value={pageSize}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            className={cn("ml-2 min-h-9 border px-2 outline-none transition focus:ring-3", controlClass)}
+            aria-label="Rows per page"
+          >
+            {TABLE_PAGE_SIZE_OPTIONS.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </label>
+        <span className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-[#5a6070]"}>
+          Page {page} of {pageCount}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page <= 1}
+          className={cn(
+            "inline-flex min-h-9 items-center justify-center gap-1.5 border border-black/15 bg-white px-3 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50",
+            buttonClass,
+          )}
+        >
+          <ChevronLeft className="size-4" />
+          Prev
+        </button>
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= pageCount}
+          className={cn(
+            "inline-flex min-h-9 items-center justify-center gap-1.5 border border-black/15 bg-white px-3 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50",
+            buttonClass,
+          )}
+        >
+          Next
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function usePaginatedRows<T>(rows: T[], resetKey: string, initialPageSize = DEFAULT_TABLE_PAGE_SIZE) {
+  const [paginationState, setPaginationState] = useState({
+    page: 1,
+    pageSize: initialPageSize,
+    resetKey,
+  });
+  const pageSize = paginationState.pageSize;
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const requestedPage = paginationState.resetKey === resetKey ? paginationState.page : 1;
+  const safePage = clampPage(requestedPage, pageCount);
+  const startIndex = rows.length === 0 ? 0 : (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, rows.length);
+  const pageRows = useMemo(() => rows.slice(startIndex, endIndex), [endIndex, rows, startIndex]);
+  const setPage = (nextPage: number) => {
+    setPaginationState((current) => ({
+      ...current,
+      page: clampPage(nextPage, pageCount),
+      resetKey,
+    }));
+  };
+  const setPageSize = (nextPageSize: number) => {
+    setPaginationState({
+      page: 1,
+      pageSize: nextPageSize,
+      resetKey,
+    });
+  };
+
+  return {
+    page: safePage,
+    pageSize,
+    pageCount,
+    pageRows,
+    totalItems: rows.length,
+    startItem: rows.length === 0 ? 0 : startIndex + 1,
+    endItem: endIndex,
+    setPage,
+    setPageSize,
+  };
+}
+
+function clampPage(page: number, pageCount: number) {
+  return Math.min(Math.max(1, page), pageCount);
 }
 
 export function filterByQuery<T>(rows: T[], query: string, getSearchText: (row: T) => string) {

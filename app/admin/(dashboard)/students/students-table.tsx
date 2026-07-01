@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { DashboardTableControls, exportRowsToCsv, exportRowsToPdf, filterByQuery, toFilterOptions } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 import type { AdminStudentRow } from "@/lib/students/records";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
@@ -23,6 +31,7 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
     ),
     [grade, query, status, students],
   );
+  const pagination = usePaginatedRows(filteredStudents, `${query}|${grade}|${status}`);
 
   return (
     <>
@@ -75,7 +84,7 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
         ]}
       >
         {filteredStudents.length > 0 ? (
-          filteredStudents.map((row) => (
+          pagination.pageRows.map((row) => (
             <tr key={row.id}>
               <td className="font-mono text-[11px] text-[#5a6070]">{row.studentReference}</td>
               <td>
@@ -102,6 +111,16 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
           </tr>
         )}
       </AdminTable>
+      <DashboardTablePagination
+        page={pagination.page}
+        pageSize={pagination.pageSize}
+        pageCount={pagination.pageCount}
+        totalItems={pagination.totalItems}
+        startItem={pagination.startItem}
+        endItem={pagination.endItem}
+        onPageChange={pagination.setPage}
+        onPageSizeChange={pagination.setPageSize}
+      />
     </>
   );
 }
