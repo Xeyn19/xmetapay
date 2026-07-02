@@ -118,9 +118,22 @@ test("parent dashboard and student profile expose real wallet details", () => {
 test("admin allowance page uses working controls for real wallet rows", () => {
   const page = readFileSync(adminAllowancePagePath, "utf8");
   const table = readFileSync(adminAllowanceTablePath, "utf8");
+  const adminRealData = readFileSync(adminRealDataPath, "utf8");
 
   assert.match(page, /AllowanceTable/);
+  assert.match(page, /Student wallet balances/);
+  assert.match(page, /getAdminAllowancePageRealData/);
+  assert.match(adminRealData, /label: "Active wallets"/);
+  assert.match(adminRealData, /COUNT\(CASE WHEN wallet_status = 'active' THEN 1 END\) AS active_wallets/);
+  assert.match(adminRealData, /label: "Top-ups this month"/);
+  assert.match(adminRealData, /wt\.type = 'top_up'/);
+  assert.match(adminRealData, /monthly_top_ups/);
+  assert.match(adminRealData, /monthly_top_up_count/);
   assert.match(table, /DashboardTableControls/);
+  assert.match(table, /SegmentedTabs/);
+  assert.match(table, /All students/);
+  assert.match(table, /Low balance/);
+  assert.match(table, /Zero balance/);
   assert.match(table, /usePaginatedRows/);
   assert.match(table, /DashboardTablePagination/);
   assert.match(table, /pagination\.pageRows\.map/);
@@ -128,6 +141,7 @@ test("admin allowance page uses working controls for real wallet rows", () => {
   assert.match(table, /admin-allowance-wallets\.pdf/);
   assert.match(table, /exportRowsToPdf/);
   assert.match(table, /filterByQuery/);
+  assert.doesNotMatch(table, /toFilterOptions/);
   assert.doesNotMatch(page, /Export pending/);
 });
 
@@ -153,6 +167,7 @@ test("docs and checklist mark wallet top-up and store transactions complete with
   assert.match(checklist, /- \[x\] Add parent wallet top-up write flow\./);
   assert.match(checklist, /- \[x\] Add store purchase write flow\./);
   assert.match(checklist, /Calculate admin allowance total balance from one row per wallet/);
+  assert.match(flowcharts, /Top-ups this month/);
   assert.match(flowcharts, /Parent local wallet top-up flow/);
   assert.match(flowcharts, /Store\/canteen purchase recording is implemented for local MVP testing/);
   assert.match(flowcharts, /Admin allowance `Total balance` should sum the current `wallets\.balance` once per wallet/);

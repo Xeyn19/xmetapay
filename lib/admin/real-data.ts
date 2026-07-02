@@ -350,10 +350,10 @@ export async function getAdminAllowancePageRealData(adminUserId: number): Promis
     return {
       warning: null,
       kpis: [
-        { label: "Wallet records", value: String(summary.walletCount), note: summary.walletCount > 0 ? "Real wallet rows" : "Top up allowance to create wallets", tone: "orange", icon: Wallet },
-        { label: "Total balance", value: summary.walletCount > 0 ? money(summary.totalBalance) : "Pending", note: "Available student balances", tone: "green", icon: Wallet },
-        { label: "Low balance", value: String(summary.lowWallets), note: "Below P50", tone: "red", noteTone: summary.lowWallets > 0 ? "warn" : "default", icon: Activity },
-        { label: "Monthly spend", value: summary.monthlySpend > 0 ? money(summary.monthlySpend) : "Pending", note: "Purchase transactions", tone: "blue", icon: Store },
+        { label: "Active wallets", value: String(summary.activeWallets), note: summary.walletCount > 0 ? `${summary.walletCount} student wallet${summary.walletCount === 1 ? "" : "s"}` : "Top up allowance to create wallets", tone: "blue", icon: Wallet },
+        { label: "Total wallet balance", value: summary.walletCount > 0 ? money(summary.totalBalance) : "Pending", note: "Across all student wallets", tone: "orange", icon: Wallet },
+        { label: "Top-ups this month", value: summary.monthlyTopUps > 0 ? money(summary.monthlyTopUps) : "Pending", note: summary.monthlyTopUpCount > 0 ? `${summary.monthlyTopUpCount} top-up transaction${summary.monthlyTopUpCount === 1 ? "" : "s"}` : "No top-ups this month", tone: "green", icon: Activity },
+        { label: "Store spend this month", value: summary.monthlySpend > 0 ? money(summary.monthlySpend) : "Pending", note: "Purchase transactions", tone: "teal", icon: Store },
       ],
       rows,
     };
@@ -653,21 +653,27 @@ async function getPaymentSummary(schoolId: number) {
 async function getWalletSummary(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<WalletSummaryRow[]>(
     `SELECT COUNT(wallet_id) AS wallet_count,
+       COUNT(CASE WHEN wallet_status = 'active' THEN 1 END) AS active_wallets,
        COALESCE(SUM(balance), 0) AS total_balance,
        COUNT(CASE WHEN balance > 0 AND balance < 50 THEN 1 END) AS low_wallets,
        COALESCE(SUM(monthly_spend), 0) AS monthly_spend,
-       COALESCE(SUM(store_spend), 0) AS store_spend
+       COALESCE(SUM(store_spend), 0) AS store_spend,
+       COALESCE(SUM(monthly_top_ups), 0) AS monthly_top_ups,
+       COALESCE(SUM(monthly_top_up_count), 0) AS monthly_top_up_count
      FROM (
        SELECT w.id AS wallet_id,
          w.balance,
+         COALESCE(w.status, 'closed') AS wallet_status,
          COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS monthly_spend,
-         COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS store_spend
+         COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS store_spend,
+         COALESCE(SUM(CASE WHEN wt.type = 'top_up' THEN wt.amount ELSE 0 END), 0) AS monthly_top_ups,
+         COUNT(CASE WHEN wt.type = 'top_up' THEN 1 END) AS monthly_top_up_count
        FROM students st
        LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
        LEFT JOIN wallets w ON w.student_id = st.id
        LEFT JOIN wallet_transactions wt ON wt.wallet_id = w.id AND wt.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
        WHERE st.school_id = :schoolId
-       GROUP BY w.id, w.balance
+       GROUP BY w.id, w.balance, w.status
      ) wallet_rows`,
     { schoolId, schoolYearId },
   );
@@ -675,10 +681,13 @@ async function getWalletSummary(schoolId: number, schoolYearId: number) {
 
   return {
     walletCount: numberValue(row?.wallet_count),
+    activeWallets: numberValue(row?.active_wallets),
     totalBalance: decimalValue(row?.total_balance),
     lowWallets: numberValue(row?.low_wallets),
     monthlySpend: decimalValue(row?.monthly_spend),
     storeSpend: decimalValue(row?.store_spend),
+    monthlyTopUps: decimalValue(row?.monthly_top_ups),
+    monthlyTopUpCount: numberValue(row?.monthly_top_up_count),
   };
 }
 
@@ -1428,10 +1437,13 @@ type PaymentSummaryRow = RowDataPacket & {
 
 type WalletSummaryRow = RowDataPacket & {
   wallet_count: number;
+  active_wallets: number;
   total_balance: number | string;
   low_wallets: number;
   monthly_spend: number | string;
   store_spend: number | string;
+  monthly_top_ups: number | string;
+  monthly_top_up_count: number;
 };
 
 type GradeAmountRow = RowDataPacket & {

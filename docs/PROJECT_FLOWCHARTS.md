@@ -47,6 +47,7 @@ Implemented:
 - Parent dashboard recent wallet/store activity snapshot from MySQL.
 - Parent selected student profile recent wallet/store activity from MySQL.
 - Admin allowance total balance is calculated from the current `wallets.balance` values, counting each wallet once.
+- Admin allowance ledger shows real monthly top-up stats and segmented wallet-balance filters.
 - Store/canteen purchase recording through student wallets.
 - Admin CSV and PDF report exports for monthly revenue, collections, outstanding balances, and wallet/store activity.
 - Admin and parent real-data tables paginate on screen and can export filtered rows as CSV or PDF.
@@ -477,6 +478,7 @@ Database touchpoints:
 Data accuracy rule:
 
 - Admin allowance `Total balance` should sum the current `wallets.balance` once per wallet.
+- Admin allowance `Top-ups this month` should sum current-month wallet top-up ledger rows.
 - Wallet transaction rows are used for top-up history, store purchase history, monthly spend, parent dashboard wallet activity, selected student profile wallet activity, and store reports.
 - Parent payment history stays payment-only; store purchases appear in wallet history, the dashboard wallet activity snapshot, and the selected student profile wallet activity snapshot.
 - Do not calculate total wallet balance by summing joined wallet/transaction rows, because a wallet with multiple transactions would be counted more than once.

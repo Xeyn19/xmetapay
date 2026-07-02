@@ -328,7 +328,7 @@
             <tr>
               <td>Wallet</td>
               <td><code>wallets</code>, <code>wallet_transactions</code></td>
-              <td>Student allowance balance, top-ups, purchases, dashboard activity, selected profile activity, and adjustments. Current totals sum each wallet once.</td>
+              <td>Student allowance balance, top-ups, purchases, dashboard activity, selected profile activity, and adjustments. Current totals sum each wallet once; admin monthly top-up stats sum current-month top-up ledger rows.</td>
             </tr>
             <tr>
               <td>Store</td>
@@ -710,7 +710,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-wallet-allowance-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up, parent dashboard wallet activity, selected student profile wallet activity, and Phase 6B store purchase recording. Admin store actions use focused <code>Create merchant</code> and <code>Record purchase</code> modals above the transaction log. Admin allowance total balance sums current wallet balances once per wallet.</p>
+          <p><strong>Implemented:</strong> wallet top-up, parent dashboard wallet activity, selected student profile wallet activity, admin allowance monthly top-up stats, segmented allowance balance filters, and Phase 6B store purchase recording. Admin store actions use focused <code>Create merchant</code> and <code>Record purchase</code> modals above the transaction log. Admin allowance total balance sums current wallet balances once per wallet.</p>
           <pre class="mermaid">
 flowchart TD
   A["Parent opens wallet page"] --> B["Load student wallets"]
