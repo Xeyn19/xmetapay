@@ -69,6 +69,10 @@ test("admin store transaction page exposes merchant and purchase forms plus work
   assert.match(page, /getAdminStoreSetupData\(session\.userId\)/);
   assert.match(page, /StoreManagementForms data=\{storeSetup\}/);
   assert.match(page, /StoreTransactionsTable rows=\{rows\}/);
+  assert.ok(page.indexOf("<KpiGrid>") < page.indexOf('title="Spend by grade"'));
+  assert.ok(page.indexOf('title="Spend by grade"') < page.indexOf('title="Store transaction log"'));
+  assert.ok(page.indexOf('title="Store transaction log"') < page.indexOf("<StoreManagementForms data={storeSetup} />"));
+  assert.match(page, /className="mb-\[18px\]"[\s\S]*<StoreTransactionsTable rows=\{rows\} \/>/);
   assert.match(forms, /createStoreMerchantAction/);
   assert.match(forms, /recordStorePurchaseAction/);
   assert.match(forms, /name="name"/);
