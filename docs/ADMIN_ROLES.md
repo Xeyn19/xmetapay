@@ -8,7 +8,7 @@ This guide explains the three school/admin staff roles used by XMETA Pay. All th
 | --- | --- | --- | --- |
 | `school_administrator` | School owner and setup manager | Set up school records, manage students, view finance pages, view reports | No current admin dashboard restrictions |
 | `registrar` | Student and guardian records | View dashboard, add/enroll students, view student profiles, view parent contacts | Set up school records, use finance pages, view reports |
-| `finance_officer` | Fees, payments, allowance, reminders, and reports | View dashboard, tuition, collections, other fees, allowance, store transactions, reports, log queued payment reminders | Set up school records, add/enroll students, manage parent contacts |
+| `finance_officer` | Fees, payments, allowance, reminders, and reports | View dashboard, tuition, collections, other fees, allowance, store transactions, reports, log queued payment reminders, create store merchants, record wallet purchases | Set up school records, add/enroll students, manage parent contacts |
 
 ## Dashboard Access
 

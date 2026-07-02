@@ -279,7 +279,7 @@ Main purpose:
 
 Each store transaction should connect to a wallet transaction so spending affects the wallet ledger.
 
-Implementation status: these tables already exist in the full schema and the Phase 6B admin/finance write flow records local test purchases. A store purchase decreases the wallet balance, inserts a `wallet_transactions` purchase row, and links it to a `store_transactions` row.
+Implementation status: these tables already exist in the full schema and the Phase 6B admin/finance write flow records local test purchases. The admin Store transactions page exposes `Create merchant` and `Record purchase` as focused action modals above the real transaction log. A store purchase decreases the wallet balance, inserts a `wallet_transactions` purchase row, and links it to a `store_transactions` row.
 
 ## Report Export Queries
 

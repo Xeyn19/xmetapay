@@ -12,7 +12,8 @@ import {
   KpiCard,
   KpiGrid,
 } from "../../_components/admin-ui";
-import { StoreManagementForms } from "./store-forms";
+import { CreateStoreMerchantForm, RecordStorePurchaseForm } from "./store-forms";
+import { StoreActionModal } from "./store-action-modal";
 import { StoreTransactionsTable, type StoreTransactionRow } from "./store-transactions-table";
 
 export default async function StoreTransactionsPage() {
@@ -56,11 +57,33 @@ export default async function StoreTransactionsPage() {
         icon={Store}
         bodyClassName="p-0"
         className="mb-[18px]"
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <StoreActionModal
+              title="Record wallet purchase"
+              description="Choose a funded student wallet, select the merchant, then record the local store purchase."
+              triggerLabel="Record purchase"
+              triggerIcon="store"
+              triggerTone="dark"
+              size="wide"
+            >
+              <RecordStorePurchaseForm data={storeSetup} />
+            </StoreActionModal>
+            <StoreActionModal
+              title="Create store merchant"
+              description="Add a canteen, school store, or other merchant before recording purchases."
+              triggerLabel="Create merchant"
+              triggerIcon="plus"
+              triggerTone="outline"
+              size="small"
+            >
+              <CreateStoreMerchantForm data={storeSetup} />
+            </StoreActionModal>
+          </div>
+        }
       >
         <StoreTransactionsTable rows={rows} />
       </DashboardCard>
-
-      <StoreManagementForms data={storeSetup} />
     </>
   );
 }

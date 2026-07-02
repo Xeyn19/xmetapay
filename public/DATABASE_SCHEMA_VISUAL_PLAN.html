@@ -710,7 +710,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-wallet-allowance-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up, parent dashboard wallet activity, selected student profile wallet activity, and Phase 6B store purchase recording. Admin allowance total balance sums current wallet balances once per wallet.</p>
+          <p><strong>Implemented:</strong> wallet top-up, parent dashboard wallet activity, selected student profile wallet activity, and Phase 6B store purchase recording. Admin store actions use focused <code>Create merchant</code> and <code>Record purchase</code> modals above the transaction log. Admin allowance total balance sums current wallet balances once per wallet.</p>
           <pre class="mermaid">
 flowchart TD
   A["Parent opens wallet page"] --> B["Load student wallets"]

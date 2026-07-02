@@ -686,7 +686,7 @@ flowchart TD
 
 ### Parent Wallet and Allowance Flow
 
-Wallet top-up and store/canteen purchase recording are implemented now. Store purchases use the same wallet ledger as allowance top-ups.
+Wallet top-up and store/canteen purchase recording are implemented now. Store purchases use the same wallet ledger as allowance top-ups. In the admin Store transactions page, `Create merchant` and `Record purchase` open focused action modals above the real transaction log.
 
 ```mermaid
 flowchart TD
