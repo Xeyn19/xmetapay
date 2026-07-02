@@ -68,6 +68,8 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
 
   assert.match(forms, /createFeeTypeAction\.bind\(null, category, redirectPath\)/);
   assert.match(forms, /assignStudentFeeAction\.bind\(null, category, redirectPath\)/);
+  assert.match(forms, /export function FeeCreateTypeForm/);
+  assert.match(forms, /export function FeeAssignStudentsForm/);
   assert.match(forms, /name="defaultAmount"/);
   assert.match(forms, /FeeStudentChecklist/);
   assert.match(forms, /Assign \{label\} to selected students/);
@@ -79,9 +81,15 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(forms, /name="amountDue"/);
   assert.match(forms, /Custom amount/);
   assert.match(forms, /Leave blank to use fee default/);
-  assert.match(forms, /Only enter this if the selected students should pay a different amount/);
+  assert.match(forms, /Use only for a different charge/);
   assert.match(forms, /name="dueDate"/);
-  assert.match(forms, /Optional payment deadline for this assigned fee/);
+  assert.match(forms, /Optional payment deadline/);
+  assert.match(forms, /Choose fee/);
+  assert.match(forms, /Select students/);
+  assert.match(forms, /Optional overrides/);
+  assert.match(forms, /xl:grid-cols-\[0\.8fr_1\.2fr\]/);
+  assert.doesNotMatch(forms, /Amount due/);
+  assert.doesNotMatch(forms, /Use default/);
   assert.match(forms, /Current \{label\} types/);
   assert.match(forms, /data\.feeTypes\.map/);
   assert.match(forms, /No \{label\} types yet/);
@@ -94,15 +102,30 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(tuitionTable, /admin-tuition-report\.pdf/);
   assert.match(tuitionTable, /exportRowsToPdf/);
   assert.match(otherFeesPage, /getAdminFeeSetupData\(session\.userId, "other"\)/);
-  assert.match(otherFeesPage, /OtherFeesManagementModal/);
-  assert.match(otherFeesPage, /<FeeManagementForms category="other" redirectPath="\/admin\/other-fees" data=\{feeSetup\} \/>/);
+  assert.match(otherFeesPage, /OtherFeeActionModal/);
+  assert.match(otherFeesPage, /triggerLabel="Assign fee"/);
+  assert.match(otherFeesPage, /triggerLabel="Add fee type"/);
+  assert.match(otherFeesPage, /triggerIcon="receipt"/);
+  assert.match(otherFeesPage, /triggerIcon="plus"/);
+  assert.doesNotMatch(otherFeesPage, /triggerIcon=\{Receipt\}/);
+  assert.doesNotMatch(otherFeesPage, /triggerIcon=\{Plus\}/);
+  assert.match(otherFeesPage, /triggerTone="dark"/);
+  assert.match(otherFeesPage, /triggerTone="outline"/);
+  assert.match(otherFeesPage, /<FeeAssignStudentsForm category="other" redirectPath="\/admin\/other-fees" data=\{feeSetup\} \/>/);
+  assert.match(otherFeesPage, /<FeeCreateTypeForm category="other" redirectPath="\/admin\/other-fees" data=\{feeSetup\} \/>/);
+  assert.doesNotMatch(otherFeesPage, /<FeeManagementForms category="other"/);
   assert.doesNotMatch(otherFeesPage, /Other fee setup/);
   assert.match(otherFeesModal, /"use client";/);
+  assert.match(otherFeesModal, /useId/);
   assert.match(otherFeesModal, /role="dialog"/);
   assert.match(otherFeesModal, /z-\[200\]/);
   assert.match(otherFeesModal, /place-items-center/);
-  assert.match(otherFeesModal, /Add fee type/);
-  assert.match(otherFeesModal, /Create other-fee types and assign them to enrolled students/);
+  assert.match(otherFeesModal, /max-w-xl/);
+  assert.match(otherFeesModal, /max-w-4xl/);
+  assert.match(otherFeesModal, /100svh/);
+  assert.match(otherFeesModal, /triggerLabel/);
+  assert.match(otherFeesModal, /triggerTone/);
+  assert.match(otherFeesModal, /size/);
   assert.match(otherFeesPage, /OtherFeesTable/);
   assert.match(otherFeesTable, /DashboardTableControls/);
   assert.match(otherFeesTable, /admin-other-fees\.csv/);
@@ -114,6 +137,22 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(otherFeesTable, /Assigned \$/);
   assert.match(otherFeesTable, /Not assigned yet/);
   assert.doesNotMatch(otherFeesPage, /Add fee type pending/);
+
+  const createFormSection = forms.slice(
+    forms.indexOf("export function FeeCreateTypeForm"),
+    forms.indexOf("export function FeeAssignStudentsForm"),
+  );
+  const assignFormSection = forms.slice(
+    forms.indexOf("export function FeeAssignStudentsForm"),
+    forms.indexOf("function feeLabel"),
+  );
+  assert.doesNotMatch(createFormSection, /FeeStudentChecklist/);
+  assert.doesNotMatch(createFormSection, /name="amountDue"/);
+  assert.doesNotMatch(createFormSection, /name="dueDate"/);
+  assert.match(assignFormSection, /FeeStudentChecklist/);
+  assert.match(assignFormSection, /name="amountDue"/);
+  assert.match(assignFormSection, /name="dueDate"/);
+  assert.doesNotMatch(assignFormSection, /name="defaultAmount"/);
 });
 
 test("other fees real data includes paid assignment counts and screenshot-style totals", () => {
