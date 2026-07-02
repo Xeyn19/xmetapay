@@ -36,7 +36,6 @@ export default async function StoreTransactionsPage() {
     <>
       {data.warning ? <AlertBanner tone="warn" icon={Store}>{data.warning}</AlertBanner> : null}
       {storeSetup.warning ? <AlertBanner tone="warn" icon={Store}>{storeSetup.warning}</AlertBanner> : null}
-      <StoreManagementForms data={storeSetup} />
       <KpiGrid>
         {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
@@ -56,9 +55,12 @@ export default async function StoreTransactionsPage() {
         title="Store transaction log"
         icon={Store}
         bodyClassName="p-0"
+        className="mb-[18px]"
       >
         <StoreTransactionsTable rows={rows} />
       </DashboardCard>
+
+      <StoreManagementForms data={storeSetup} />
     </>
   );
 }
