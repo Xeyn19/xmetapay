@@ -560,8 +560,8 @@ flowchart TD
           <pre class="mermaid">
 flowchart TD
   A["Admin opens fees or tuition setup"] --> B["Create fee_types for active school year"]
-  B --> C["Select students or grade level"]
-  C --> D["Create student_fee_assignments"]
+  B --> C["Search and select one or more enrolled students"]
+  C --> D["Create student_fee_assignments and skip duplicates"]
   D --> E["Parent dashboard loads linked students"]
   E --> F["Parent opens fee summary"]
   F --> G["Read open, partial, and paid fee assignments"]

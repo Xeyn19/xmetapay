@@ -5,6 +5,7 @@ import test from "node:test";
 const feeRecordsPath = "lib/fees/records.ts";
 const feeActionsPath = "app/admin/fees/actions.ts";
 const feeFormsPath = "app/admin/fees/fee-management-forms.tsx";
+const feeStudentChecklistPath = "app/admin/fees/fee-student-checklist.tsx";
 const tuitionPagePath = "app/admin/(dashboard)/tuition/page.tsx";
 const tuitionTablePath = "app/admin/(dashboard)/tuition/tuition-report-table.tsx";
 const otherFeesPagePath = "app/admin/(dashboard)/other-fees/page.tsx";
@@ -41,7 +42,12 @@ test("admin fee actions are protected and validate finance writes", () => {
   assert.match(actions, /await requireRole\("admin"\)/);
   assert.match(actions, /canAccessFinance\(staffRole\)/);
   assert.match(actions, /INSERT INTO fee_types/);
-  assert.match(actions, /INSERT INTO student_fee_assignments/);
+  assert.match(actions, /INSERT IGNORE INTO student_fee_assignments/);
+  assert.match(actions, /idValues\(formData, "studentIds", "studentId"\)/);
+  assert.match(actions, /studentRows\.length !== studentIds\.length/);
+  assert.match(actions, /Custom amount must be greater than zero/);
+  assert.match(actions, /Assigned to \$\{assignedCount\} students/);
+  assert.match(actions, /were already assigned/);
   assert.match(actions, /default_amount/);
   assert.match(actions, /e\.status = 'enrolled'/);
   assert.match(actions, /ER_DUP_ENTRY/);
@@ -50,8 +56,10 @@ test("admin fee actions are protected and validate finance writes", () => {
 
 test("admin tuition and other-fees pages expose database-backed fee forms", () => {
   assert.equal(existsSync(feeFormsPath), true);
+  assert.equal(existsSync(feeStudentChecklistPath), true);
   assert.equal(existsSync(otherFeesModalPath), true);
   const forms = readFileSync(feeFormsPath, "utf8");
+  const studentChecklist = readFileSync(feeStudentChecklistPath, "utf8");
   const otherFeesModal = readFileSync(otherFeesModalPath, "utf8");
   const tuitionPage = readFileSync(tuitionPagePath, "utf8");
   const tuitionTable = readFileSync(tuitionTablePath, "utf8");
@@ -61,10 +69,19 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(forms, /createFeeTypeAction\.bind\(null, category, redirectPath\)/);
   assert.match(forms, /assignStudentFeeAction\.bind\(null, category, redirectPath\)/);
   assert.match(forms, /name="defaultAmount"/);
-  assert.match(forms, /name="studentId"/);
+  assert.match(forms, /FeeStudentChecklist/);
+  assert.match(forms, /Assign \{label\} to selected students/);
+  assert.match(studentChecklist, /name="studentIds"/);
+  assert.match(studentChecklist, /Search enrolled students/);
+  assert.match(studentChecklist, /Select visible/);
+  assert.match(studentChecklist, /Clear/);
   assert.match(forms, /name="feeTypeId"/);
   assert.match(forms, /name="amountDue"/);
+  assert.match(forms, /Custom amount/);
+  assert.match(forms, /Leave blank to use fee default/);
+  assert.match(forms, /Only enter this if the selected students should pay a different amount/);
   assert.match(forms, /name="dueDate"/);
+  assert.match(forms, /Optional payment deadline for this assigned fee/);
   assert.match(forms, /Current \{label\} types/);
   assert.match(forms, /data\.feeTypes\.map/);
   assert.match(forms, /No \{label\} types yet/);
@@ -157,7 +174,7 @@ test("checklist marks Phase 4 fees backend complete before Phase 5 payment work"
 
   assert.match(checklist, /- \[x\] Add backend helpers for `fee_types` and `student_fee_assignments`\./);
   assert.match(checklist, /- \[x\] Create tuition and other fee types for the active school year\./);
-  assert.match(checklist, /- \[x\] Assign fees to students\./);
+  assert.match(checklist, /- \[x\] Assign fees to one or more selected students\./);
   assert.match(checklist, /- \[x\] Replace parent fee summary mock rows with database rows\./);
   assert.match(checklist, /- \[x\] Calculate open, partial, and paid balances from database values\./);
   assert.match(checklist, /Parent local test payments, fee allocations, receipts, and payment history are implemented\./);

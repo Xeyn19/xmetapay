@@ -59,13 +59,18 @@ export async function assignStudentFeeAction(
   formData: FormData,
 ) {
   const context = await requireFinanceContext();
-  const studentId = idValue(formData, "studentId");
+  const studentIds = idValues(formData, "studentIds", "studentId");
   const feeTypeId = idValue(formData, "feeTypeId");
   const customAmount = amountValue(formData, "amountDue");
   const dueDate = value(formData, "dueDate") || null;
 
-  if (!studentId || !feeTypeId) {
-    await toast("Fee not assigned", "Choose a student and fee type.");
+  if (studentIds.length === 0 || !feeTypeId) {
+    await toast("Fee not assigned", "Choose at least one enrolled student and a fee type.");
+    redirect(redirectPath);
+  }
+
+  if (customAmount !== null && customAmount <= 0) {
+    await toast("Fee not assigned", "Custom amount must be greater than zero, or leave it blank to use the fee default.");
     redirect(redirectPath);
   }
 
@@ -93,22 +98,24 @@ export async function assignStudentFeeAction(
       redirect(redirectPath);
     }
 
-    const [studentRows] = await pool.execute<CountRow[]>(
-      `SELECT COUNT(*) AS total
+    const studentPlaceholders = placeholders("studentId", studentIds);
+    const studentParams = namedValues("studentId", studentIds);
+    const [studentRows] = await pool.execute<StudentIdRow[]>(
+      `SELECT st.id
        FROM students st
        JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
-       WHERE st.id = :studentId
+       WHERE st.id IN (${studentPlaceholders})
          AND st.school_id = :schoolId
          AND e.status = 'enrolled'`,
       {
-        studentId,
+        ...studentParams,
         schoolId: context.schoolId,
         schoolYearId: context.schoolYearId,
       },
     );
 
-    if (Number(studentRows[0]?.total ?? 0) !== 1) {
-      await toast("Fee not assigned", "Choose an enrolled student from this school.");
+    if (studentRows.length !== studentIds.length) {
+      await toast("Fee not assigned", "Choose only enrolled students from this school.");
       redirect(redirectPath);
     }
 
@@ -119,18 +126,34 @@ export async function assignStudentFeeAction(
       redirect(redirectPath);
     }
 
-    await pool.execute<ResultSetHeader>(
-      `INSERT INTO student_fee_assignments (student_id, fee_type_id, school_year_id, amount_due, amount_paid, due_date, status)
-       VALUES (:studentId, :feeTypeId, :schoolYearId, :amountDue, 0.00, :dueDate, 'open')`,
-      {
-        studentId,
-        feeTypeId,
-        schoolYearId: context.schoolYearId,
-        amountDue,
-        dueDate,
-      },
+    const insertValues = studentIds
+      .map((_, index) => `(:assignStudentId${index}, :feeTypeId, :schoolYearId, :amountDue, 0.00, :dueDate, 'open')`)
+      .join(", ");
+    const insertParams = {
+      ...namedValues("assignStudentId", studentIds),
+      feeTypeId,
+      schoolYearId: context.schoolYearId,
+      amountDue,
+      dueDate,
+    };
+    const [result] = await pool.execute<ResultSetHeader>(
+      `INSERT IGNORE INTO student_fee_assignments (student_id, fee_type_id, school_year_id, amount_due, amount_paid, due_date, status)
+       VALUES ${insertValues}`,
+      insertParams,
     );
-    await toast("Fee assigned", "The student balance is now visible in admin and parent fee screens.");
+    const assignedCount = result.affectedRows;
+    const skippedCount = studentIds.length - assignedCount;
+
+    if (assignedCount === 0) {
+      await toast("Fee already assigned", "All selected students already have this fee for the active school year.");
+    } else {
+      await toast(
+        "Fee assigned",
+        skippedCount > 0
+          ? `Assigned to ${assignedCount} students. ${skippedCount} were already assigned.`
+          : `Assigned to ${assignedCount} students. The balances are now visible in admin and parent fee screens.`,
+      );
+    }
   } catch (error) {
     await toast(
       "Fee not assigned",
@@ -193,6 +216,17 @@ function idValue(formData: FormData, key: string) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+function idValues(formData: FormData, key: string, fallbackKey?: string) {
+  const rawValues = formData.getAll(key);
+  const fallbackValue = fallbackKey ? formData.get(fallbackKey) : null;
+  const values = rawValues.length > 0 ? rawValues : fallbackValue ? [fallbackValue] : [];
+  const parsedValues = values
+    .map((fieldValue) => Number(typeof fieldValue === "string" ? fieldValue : ""))
+    .filter((parsed): parsed is number => Number.isInteger(parsed) && parsed > 0);
+
+  return [...new Set(parsedValues)];
+}
+
 function amountValue(formData: FormData, key: string) {
   const raw = value(formData, key);
 
@@ -209,11 +243,19 @@ function duplicateRecord(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ER_DUP_ENTRY";
 }
 
+function placeholders(prefix: string, values: number[]) {
+  return values.map((_, index) => `:${prefix}${index}`).join(", ");
+}
+
+function namedValues(prefix: string, values: number[]) {
+  return Object.fromEntries(values.map((currentValue, index) => [`${prefix}${index}`, currentValue]));
+}
+
 type FeeTypeRow = RowDataPacket & {
   id: number;
   default_amount: number | string;
 };
 
-type CountRow = RowDataPacket & {
-  total: number;
+type StudentIdRow = RowDataPacket & {
+  id: number;
 };

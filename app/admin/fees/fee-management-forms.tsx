@@ -1,6 +1,7 @@
 import { Plus, Receipt } from "lucide-react";
 
 import { assignStudentFeeAction, createFeeTypeAction } from "./actions";
+import { FeeStudentChecklist } from "./fee-student-checklist";
 import type { AdminFeeSetupData, FeeCategory } from "@/lib/fees/records";
 
 import { AdminButton, Field, fieldControlClass } from "../_components/admin-ui";
@@ -61,18 +62,11 @@ export function FeeManagementForms({
       <form action={assignAction} className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-4">
         <div className="mb-3 flex items-center gap-2 text-[13px] font-bold text-[#0f1117]">
           <Receipt className="size-4 text-[#e64a19]" />
-          Assign {label} to student
+          Assign {label} to selected students
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Field label="Student" required className="xl:col-span-2">
-            <select name="studentId" className={fieldControlClass} required disabled={!data.ready || data.students.length === 0}>
-              <option value="">{data.students.length > 0 ? "Choose enrolled student" : "No enrolled students"}</option>
-              {data.students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.name} - {student.meta}
-                </option>
-              ))}
-            </select>
+        <div className="grid gap-3 xl:grid-cols-4">
+          <Field label="Students" required className="xl:col-span-4">
+            <FeeStudentChecklist students={data.students} disabled={!data.ready || data.students.length === 0} />
           </Field>
           <Field label="Fee type" required className="xl:col-span-2">
             <select name="feeTypeId" className={fieldControlClass} required disabled={!data.ready || data.feeTypes.length === 0}>
@@ -84,11 +78,17 @@ export function FeeManagementForms({
               ))}
             </select>
           </Field>
-          <Field label="Amount due">
-            <input name="amountDue" type="number" min="0.01" step="0.01" className={fieldControlClass} placeholder="Use default" />
+          <Field label="Custom amount" className="xl:col-span-1">
+            <input name="amountDue" type="number" min="0.01" step="0.01" className={fieldControlClass} placeholder="Leave blank to use fee default" />
+            <p className="mt-1.5 text-[11.5px] leading-5 text-[#5a6070]">
+              Only enter this if the selected students should pay a different amount.
+            </p>
           </Field>
-          <Field label="Due date">
+          <Field label="Due date" className="xl:col-span-1">
             <input name="dueDate" type="date" className={fieldControlClass} />
+            <p className="mt-1.5 text-[11.5px] leading-5 text-[#5a6070]">
+              Optional payment deadline for this assigned fee.
+            </p>
           </Field>
         </div>
         <AdminButton type="submit" tone="dark" className="mt-3 w-full sm:w-auto" disabled={!data.ready || data.students.length === 0 || data.feeTypes.length === 0}>

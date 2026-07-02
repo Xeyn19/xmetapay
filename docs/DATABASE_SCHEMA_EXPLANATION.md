@@ -178,6 +178,7 @@ Main purpose:
 - Store how much a student owes for a fee.
 - Track how much has already been paid.
 - Track due dates and payment status: open, partial, paid, or cancelled.
+- Support selected-student bulk assignment while the unique key prevents duplicate fee charges for the same student, fee, and school year.
 - Support both admin tuition reports and parent fee summaries.
 
 This table is the main source for outstanding balances.
@@ -320,7 +321,7 @@ The schema supports this practical backend flow:
 4. Admin creates student records.
 5. Parent registers and can be linked to a student through `student_guardians`.
 6. Admin enrolls students for the active school year.
-7. Admin creates fee types and assigns fees to students.
+7. Admin creates fee types and assigns fees to one or more selected students.
 8. Parent views fee balances from `student_fee_assignments`.
 9. Parent or admin records payments in `payments`.
 10. Payments are allocated to balances through `payment_allocations`.

@@ -309,7 +309,7 @@ CREATE TABLE fee_types (
 
 #### `student_fee_assignments`
 
-Assigns fees to students and tracks balances.
+Assigns fees to students and tracks balances. The admin UI can assign one fee type to one or more selected enrolled students; the unique key prevents duplicate charges for the same student, fee type, and school year.
 
 ```sql
 CREATE TABLE student_fee_assignments (
