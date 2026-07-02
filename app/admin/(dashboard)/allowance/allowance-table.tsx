@@ -8,11 +8,10 @@ import {
   exportRowsToCsv,
   exportRowsToPdf,
   filterByQuery,
-  toFilterOptions,
   usePaginatedRows,
 } from "@/app/_components/table-controls";
 
-import { AdminTable, StatusPill } from "../../_components/admin-ui";
+import { AdminTable, SegmentedTabs, StatusPill } from "../../_components/admin-ui";
 
 export type AllowanceRow = {
   student: string;
@@ -24,9 +23,18 @@ export type AllowanceRow = {
   status: "Active" | "Low" | "No balance";
 };
 
+type WalletStatusFilter = "all" | "Active" | "Low" | "No balance";
+
+const statusTabs: Array<{ label: string; value: WalletStatusFilter }> = [
+  { label: "All students", value: "all" },
+  { label: "Active", value: "Active" },
+  { label: "Low balance", value: "Low" },
+  { label: "Zero balance", value: "No balance" },
+];
+
 export function AllowanceTable({ rows }: { rows: AllowanceRow[] }) {
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState<WalletStatusFilter>("all");
   const filteredRows = useMemo(
     () => filterByQuery(
       rows.filter((row) => status === "all" || row.status === status),
@@ -39,14 +47,22 @@ export function AllowanceTable({ rows }: { rows: AllowanceRow[] }) {
 
   return (
     <>
-      <div className="border-b border-black/[0.07] px-[18px] py-3">
+      <div className="space-y-3 border-b border-black/[0.07] px-[18px] py-3">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="text-[12.5px] font-semibold text-[#0f1117]">
+              Wallet status filter
+            </div>
+            <div className="mt-0.5 text-[11.5px] text-[#5a6070]">
+              Review all wallet balances or focus on students who may need a top-up.
+            </div>
+          </div>
+          <SegmentedTabs tabs={statusTabs} active={status} onChange={setStatus} />
+        </div>
         <DashboardTableControls
           query={query}
           onQueryChange={setQuery}
           searchPlaceholder="Search wallets..."
-          filters={[
-            { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
-          ]}
           onClear={() => {
             setQuery("");
             setStatus("all");

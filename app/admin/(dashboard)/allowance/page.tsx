@@ -35,7 +35,7 @@ export default async function AllowancePage() {
         ))}
       </KpiGrid>
       <DashboardCard
-        title="Student allowance wallet ledger"
+        title="Student wallet balances"
         icon={Wallet}
         bodyClassName="p-0"
       >

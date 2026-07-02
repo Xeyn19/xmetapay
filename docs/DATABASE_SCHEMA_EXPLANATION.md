@@ -251,6 +251,7 @@ Dashboard calculation note:
 
 - Current allowance balance comes from `wallets.balance`.
 - Admin allowance total balance should count each wallet once.
+- Admin allowance monthly top-up stats come from current-month `wallet_transactions` rows with `type = 'top_up'`.
 - Wallet transaction rows should be used for full wallet ledger history, parent dashboard wallet activity, selected student profile wallet activity, monthly spend, and store purchase reporting.
 - Store purchases should not be mixed into parent payment history because they do not create fee payment or receipt records.
 - Do not sum `wallets.balance` after joining directly to `wallet_transactions`, because one wallet can have many transaction rows and the balance would be duplicated.

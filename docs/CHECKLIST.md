@@ -108,6 +108,7 @@ Done when: a parent can record a local test payment and both portals show the re
 - [x] Add parent wallet top-up write flow.
 - [x] Show parent wallet history and admin allowance records from MySQL.
 - [x] Calculate admin allowance total balance from one row per wallet, not from joined transaction rows.
+- [x] Show admin allowance monthly top-up stats and segmented wallet-balance filters from real wallet data.
 
 Done when: wallet balances, top-up history, and admin allowance totals come from MySQL and do not double-count wallets with multiple transactions.
 
