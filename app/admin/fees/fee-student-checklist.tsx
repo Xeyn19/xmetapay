@@ -44,8 +44,8 @@ export function FeeStudentChecklist({
   const clearSelected = () => setSelectedIds([]);
 
   return (
-    <div className="space-y-2">
-      <label className="flex min-h-11 items-center gap-2 rounded-lg border border-black/15 bg-white px-3 py-2 text-[12.5px] text-[#0f1117] focus-within:border-[#e64a19] focus-within:ring-3 focus-within:ring-[#e64a19]/10">
+    <div className="space-y-2.5">
+      <label className="flex min-h-12 items-center gap-2 rounded-lg border border-black/15 bg-[#f7f8fa] px-3 py-2 text-[12.5px] text-[#0f1117] focus-within:border-[#e64a19] focus-within:ring-3 focus-within:ring-[#e64a19]/10">
         <Search className="size-4 shrink-0 text-[#9ba3b8]" />
         <input
           value={query}
@@ -84,11 +84,11 @@ export function FeeStudentChecklist({
         </div>
       </div>
 
-      <div className="max-h-64 overflow-y-auto rounded-lg border border-black/[0.07] bg-white">
+      <div className="max-h-[260px] min-h-[132px] overflow-y-auto rounded-lg border border-black/[0.07] bg-white">
         {filteredStudents.length > 0 ? (
           <div className="divide-y divide-black/[0.07]">
             {filteredStudents.map((student) => (
-              <label key={student.id} className="flex cursor-pointer items-start gap-3 px-3 py-2.5 transition hover:bg-[#f7f8fa]">
+              <label key={student.id} className="flex min-h-14 cursor-pointer items-center gap-3 px-3 py-2.5 transition hover:bg-[#f7f8fa]">
                 <input
                   type="checkbox"
                   name="studentIds"
@@ -96,11 +96,11 @@ export function FeeStudentChecklist({
                   checked={selectedSet.has(student.id)}
                   onChange={() => toggleStudent(student.id)}
                   disabled={disabled}
-                  className="mt-1 size-4 rounded border-black/20 text-[#e64a19] focus:ring-[#e64a19]/25"
+                  className="size-4 shrink-0 rounded border-black/20 text-[#e64a19] focus:ring-[#e64a19]/25"
                 />
                 <span className="min-w-0">
-                  <span className="block truncate text-[12.5px] font-bold text-[#0f1117]">{student.name}</span>
-                  <span className="mt-0.5 block truncate text-[11.5px] text-[#5a6070]">{student.meta}</span>
+                  <span className="block truncate text-[13px] font-bold text-[#0f1117]">{student.name}</span>
+                  <span className="mt-0.5 block truncate text-[11.5px] leading-5 text-[#5a6070]">{student.meta}</span>
                 </span>
               </label>
             ))}
@@ -113,7 +113,7 @@ export function FeeStudentChecklist({
       </div>
 
       <p className="text-[11.5px] leading-5 text-[#5a6070]">
-        Select one or more enrolled students. Duplicate fee assignments are skipped safely.
+        Select enrolled students. Duplicate assignments are skipped safely.
       </p>
     </div>
   );
