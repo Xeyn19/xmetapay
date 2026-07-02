@@ -4,7 +4,8 @@ import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminTuitionPageRealData } from "@/lib/admin/real-data";
 import { getAdminFeeSetupData } from "@/lib/fees/records";
-import { FeeManagementForms } from "@/app/admin/fees/fee-management-forms";
+import { FeeAssignStudentsForm, FeeCreateTypeForm } from "@/app/admin/fees/fee-management-forms";
+import { OtherFeeActionModal } from "@/app/admin/(dashboard)/other-fees/other-fees-management-modal";
 import { PaymentReminderHistoryTable } from "./payment-reminder-history-table";
 import { PaymentReminderForm } from "./payment-reminder-form";
 
@@ -40,10 +41,6 @@ export default async function TuitionPage() {
         ))}
       </KpiGrid>
 
-      <DashboardCard title={`Tuition setup - ${feeSetup.activeSchoolYearName ?? "School year pending"}`} icon={Calculator} className="mb-[18px]">
-        <FeeManagementForms category="tuition" redirectPath="/admin/tuition" data={feeSetup} />
-      </DashboardCard>
-
       <DashboardCard
         id="payment-reminders"
         title="Payment reminders"
@@ -63,6 +60,30 @@ export default async function TuitionPage() {
         icon={Receipt}
         bodyClassName="p-0"
         className="mb-[18px]"
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <OtherFeeActionModal
+              title={`Assign tuition fee - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
+              description="Choose one tuition fee, select enrolled students, then assign it safely."
+              triggerLabel="Assign fee"
+              triggerIcon="receipt"
+              triggerTone="dark"
+              size="wide"
+            >
+              <FeeAssignStudentsForm category="tuition" redirectPath="/admin/tuition" data={feeSetup} />
+            </OtherFeeActionModal>
+            <OtherFeeActionModal
+              title={`Add tuition fee type - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
+              description="Create reusable tuition fee types before assigning them to students."
+              triggerLabel="Add fee type"
+              triggerIcon="plus"
+              triggerTone="outline"
+              size="small"
+            >
+              <FeeCreateTypeForm category="tuition" redirectPath="/admin/tuition" data={feeSetup} />
+            </OtherFeeActionModal>
+          </div>
+        }
       >
         <TuitionReportTable rows={tuitionReportRecords} />
       </DashboardCard>

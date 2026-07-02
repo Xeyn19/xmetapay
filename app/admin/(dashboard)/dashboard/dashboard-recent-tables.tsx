@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import {
@@ -36,19 +37,21 @@ export type RecentPaymentRow = {
 export function DashboardRecentTables({
   feeAssignments,
   payments,
+  feeAssignmentAction,
 }: {
   feeAssignments: RecentFeeAssignmentRow[];
   payments: RecentPaymentRow[];
+  feeAssignmentAction?: ReactNode;
 }) {
   return (
     <div className="mb-[18px] grid gap-[18px] xl:grid-cols-[1fr_1fr]">
-      <RecentFeeAssignmentsTable rows={feeAssignments} />
+      <RecentFeeAssignmentsTable rows={feeAssignments} action={feeAssignmentAction} />
       <RecentPaymentsTable rows={payments} />
     </div>
   );
 }
 
-function RecentFeeAssignmentsTable({ rows }: { rows: RecentFeeAssignmentRow[] }) {
+function RecentFeeAssignmentsTable({ rows, action }: { rows: RecentFeeAssignmentRow[]; action?: ReactNode }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const filteredRows = useMemo(
@@ -58,7 +61,7 @@ function RecentFeeAssignmentsTable({ rows }: { rows: RecentFeeAssignmentRow[] })
   const pagination = usePaginatedRows(filteredRows, `${query}|${status}`);
 
   return (
-    <DashboardCard title="Recent fee assignments" icon={Receipt} bodyClassName="p-0">
+    <DashboardCard title="Recent fee assignments" icon={Receipt} bodyClassName="p-0" action={action}>
       <div className="border-b border-black/[0.07] px-[18px] py-3">
         <DashboardTableControls
           query={query}
