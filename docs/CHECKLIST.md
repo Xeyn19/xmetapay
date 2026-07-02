@@ -121,6 +121,7 @@ Done when: wallet balances, top-up history, and admin allowance totals come from
 - [x] Show selected-student wallet/store activity on the parent student profile.
 - [x] Show store transactions in admin store reports with working filters/export.
 - [x] Add store purchase write flow.
+- [x] Move `Create merchant` and `Record purchase` into focused action modals above the store transaction log.
 
 Done when: a parent can top up a wallet, admin/finance can record a local test store purchase, the parent dashboard and selected student profile show recent wallet/store activity, and both portals show the same wallet/store ledger data.
 

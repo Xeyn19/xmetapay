@@ -6,6 +6,7 @@ const storeActionsPath = "app/admin/store/actions.ts";
 const storeRecordsPath = "lib/stores/records.ts";
 const storePagePath = "app/admin/(dashboard)/store-transactions/page.tsx";
 const storeFormsPath = "app/admin/(dashboard)/store-transactions/store-forms.tsx";
+const storeActionModalPath = "app/admin/(dashboard)/store-transactions/store-action-modal.tsx";
 const storeTablePath = "app/admin/(dashboard)/store-transactions/store-transactions-table.tsx";
 const walletRecordsPath = "lib/wallets/records.ts";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
@@ -61,18 +62,36 @@ test("admin store records helper exposes merchants, wallets, and students for pu
 
 test("admin store transaction page exposes merchant and purchase forms plus working table controls", () => {
   assert.equal(existsSync(storeFormsPath), true);
+  assert.equal(existsSync(storeActionModalPath), true);
   assert.equal(existsSync(storeTablePath), true);
   const page = readFileSync(storePagePath, "utf8");
   const forms = readFileSync(storeFormsPath, "utf8");
+  const modal = readFileSync(storeActionModalPath, "utf8");
   const table = readFileSync(storeTablePath, "utf8");
 
   assert.match(page, /getAdminStoreSetupData\(session\.userId\)/);
-  assert.match(page, /StoreManagementForms data=\{storeSetup\}/);
+  assert.match(page, /StoreActionModal/);
+  assert.match(page, /triggerLabel="Record purchase"/);
+  assert.match(page, /triggerIcon="store"/);
+  assert.match(page, /RecordStorePurchaseForm data=\{storeSetup\}/);
+  assert.match(page, /triggerLabel="Create merchant"/);
+  assert.match(page, /triggerIcon="plus"/);
+  assert.match(page, /CreateStoreMerchantForm data=\{storeSetup\}/);
   assert.match(page, /StoreTransactionsTable rows=\{rows\}/);
   assert.ok(page.indexOf("<KpiGrid>") < page.indexOf('title="Spend by grade"'));
   assert.ok(page.indexOf('title="Spend by grade"') < page.indexOf('title="Store transaction log"'));
-  assert.ok(page.indexOf('title="Store transaction log"') < page.indexOf("<StoreManagementForms data={storeSetup} />"));
-  assert.match(page, /className="mb-\[18px\]"[\s\S]*<StoreTransactionsTable rows=\{rows\} \/>/);
+  assert.ok(page.indexOf("RecordStorePurchaseForm data={storeSetup}") < page.indexOf("<StoreTransactionsTable rows={rows} />"));
+  assert.doesNotMatch(page, /<StoreManagementForms data=\{storeSetup\} \/>/);
+  assert.match(page, /className="mb-\[18px\]"[\s\S]*RecordStorePurchaseForm data=\{storeSetup\}[\s\S]*<StoreTransactionsTable rows=\{rows\} \/>/);
+  assert.match(modal, /"use client";/);
+  assert.match(modal, /triggerIcon: "plus" \| "store"/);
+  assert.match(modal, /role="dialog"/);
+  assert.match(modal, /aria-modal="true"/);
+  assert.doesNotMatch(page, /triggerIcon=\{Store\}/);
+  assert.doesNotMatch(page, /triggerIcon=\{Plus\}/);
+  assert.match(forms, /export function StoreManagementForms/);
+  assert.match(forms, /export function CreateStoreMerchantForm/);
+  assert.match(forms, /export function RecordStorePurchaseForm/);
   assert.match(forms, /createStoreMerchantAction/);
   assert.match(forms, /recordStorePurchaseAction/);
   assert.match(forms, /name="name"/);

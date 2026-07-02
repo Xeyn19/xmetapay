@@ -435,7 +435,7 @@ Database touchpoints:
 
 ## Wallet, Allowance, And Store Flow
 
-Wallet top-up is implemented for local MVP testing. Store/canteen purchase recording is implemented for local MVP testing.
+Wallet top-up is implemented for local MVP testing. Store/canteen purchase recording is implemented for local MVP testing. In the admin Store transactions page, `Create merchant` and `Record purchase` are focused action modals above the real transaction log.
 
 Wallets should be separate from tuition payments so allowance and store/canteen spending can be tracked clearly.
 
