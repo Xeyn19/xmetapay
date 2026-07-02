@@ -1,7 +1,12 @@
 import { AlertCircle, Calculator, Siren } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
+import { getAdminStaffRole } from "@/lib/admin/access";
+import { canAccessFinance } from "@/lib/admin/permissions";
 import { getAdminDashboardRealData } from "@/lib/admin/real-data";
+import { getAdminFeeSetupData } from "@/lib/fees/records";
+import { FeeAssignStudentsForm, FeeCreateTypeForm } from "@/app/admin/fees/fee-management-forms";
+import { OtherFeeActionModal } from "@/app/admin/(dashboard)/other-fees/other-fees-management-modal";
 
 import {
   AlertBanner,
@@ -16,7 +21,12 @@ import { DashboardRecentTables } from "./dashboard-recent-tables";
 
 export default async function AdminDashboardPage() {
   const session = await requireRole("admin");
-  const data = await getAdminDashboardRealData(session.userId);
+  const [data, feeSetup, staffRole] = await Promise.all([
+    getAdminDashboardRealData(session.userId),
+    getAdminFeeSetupData(session.userId, "tuition"),
+    getAdminStaffRole(session.userId),
+  ]);
+  const canManageFinance = canAccessFinance(staffRole);
 
   return (
     <>
@@ -54,6 +64,30 @@ export default async function AdminDashboardPage() {
       <DashboardRecentTables
         feeAssignments={data.recentFeeAssignments.map(([time, student, grade, feeType, balance, status]) => ({ time, student, grade, feeType, balance, status }))}
         payments={data.recentPayments.map(([time, student, type, amount, channel, status]) => ({ time, student, type, amount, channel, status }))}
+        feeAssignmentAction={canManageFinance ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <OtherFeeActionModal
+              title={`Assign tuition fee - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
+              description="Choose one tuition fee, select enrolled students, then assign it safely."
+              triggerLabel="Assign fee"
+              triggerIcon="receipt"
+              triggerTone="dark"
+              size="wide"
+            >
+              <FeeAssignStudentsForm category="tuition" redirectPath="/admin/tuition" data={feeSetup} />
+            </OtherFeeActionModal>
+            <OtherFeeActionModal
+              title={`Add tuition fee type - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
+              description="Create reusable tuition fee types before assigning them to students."
+              triggerLabel="Add fee type"
+              triggerIcon="plus"
+              triggerTone="outline"
+              size="small"
+            >
+              <FeeCreateTypeForm category="tuition" redirectPath="/admin/tuition" data={feeSetup} />
+            </OtherFeeActionModal>
+          </div>
+        ) : undefined}
       />
 
       <div className="grid gap-[18px] xl:grid-cols-[1fr_1fr]">

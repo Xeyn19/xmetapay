@@ -118,18 +118,18 @@ export function FeeAssignStudentsForm({
           </Field>
         </FeeFormStep>
 
-        <FeeFormStep number="3" title="Optional overrides">
+        <FeeFormStep number="3" title="Custom amount and due date">
           <div className="grid gap-3 min-[560px]:grid-cols-2">
             <Field label="Custom amount">
               <input name="amountDue" type="number" min="0.01" step="0.01" className={fieldControlClass} placeholder="Leave blank to use fee default" />
               <p className="mt-1.5 text-[11.5px] leading-5 text-[#5a6070]">
-                Use only for a different charge.
+                Use for discounts, scholarships, or special charges.
               </p>
             </Field>
             <Field label="Due date">
               <input name="dueDate" type="date" className={fieldControlClass} />
               <p className="mt-1.5 text-[11.5px] leading-5 text-[#5a6070]">
-                Optional payment deadline.
+                Set a specific payment deadline.
               </p>
             </Field>
           </div>
