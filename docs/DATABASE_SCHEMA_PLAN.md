@@ -101,8 +101,8 @@ One parent profile per parent user.
 | --- | --- |
 | `id` | Primary key |
 | `user_id` | Links to `users.id` |
-| `student_name` | Combined student first/middle/last name captured during parent registration for pending-link display |
-| `student_reference` | Student reference captured during registration |
+| `student_name` | Pending-link display label; parent registration stores the submitted student reference here until an official student link exists |
+| `student_reference` | Student reference captured during registration and used for linking |
 | `relationship` | Mother, father, or guardian |
 
 ## Full Practical MVP Schema
