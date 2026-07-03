@@ -25,23 +25,6 @@ export default function ParentRegisterPage() {
             name: "phone",
             type: "tel",
             placeholder: "0917 000 0000",
-            required: false,
-          },
-          {
-            label: "Student first name",
-            name: "studentFirstName",
-            placeholder: "Juan Miguel",
-          },
-          {
-            label: "Student middle name",
-            name: "studentMiddleName",
-            placeholder: "Optional",
-            required: false,
-          },
-          {
-            label: "Student last name",
-            name: "studentLastName",
-            placeholder: "Santos",
           },
           {
             label: "Student ID or reference",
@@ -53,6 +36,7 @@ export default function ParentRegisterPage() {
             name: "relationship",
             placeholder: "Select relationship",
             options: ["Mother", "Father", "Guardian"],
+            spanFull: true,
           },
           {
             label: "Password",
