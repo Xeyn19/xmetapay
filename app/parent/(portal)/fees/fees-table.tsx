@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 import {
   DashboardTableControls,
@@ -87,21 +87,50 @@ export function ParentFeesTable({ rows }: { rows: ParentFeeRow[] }) {
       >
         {filteredRows.length > 0 ? (
           pagination.pageRows.map((row) => (
-            <tr key={row.id}>
-              <td>
-                <div className="font-semibold text-[#1a1a1a]">{row.studentName}</div>
-                <div className="font-mono text-[11px] text-[#6b6b6b]">{row.studentReference}</div>
-              </td>
-              <td>
-                <div className="font-semibold text-[#1a1a1a]">{row.feeName}</div>
-                <div className="text-[11px] text-[#6b6b6b]">{row.category === "tuition" ? "Tuition" : "Other fee"}</div>
-              </td>
-              <td>{row.amountDue}</td>
-              <td className="font-semibold text-[#2e7d32]">{row.amountPaid}</td>
-              <td className="font-semibold text-[#c62828]">{row.balance}</td>
-              <td>{row.dueDate}</td>
-              <td><StatusPill tone={row.tone}>{row.status}</StatusPill></td>
-            </tr>
+            <Fragment key={row.id}>
+              <tr>
+                <td>
+                  <div className="font-semibold text-[#1a1a1a]">{row.studentName}</div>
+                  <div className="font-mono text-[11px] text-[#6b6b6b]">{row.studentReference}</div>
+                </td>
+                <td>
+                  <div className="font-semibold text-[#1a1a1a]">{row.feeName}</div>
+                  <div className="text-[11px] text-[#6b6b6b]">{row.category === "tuition" ? "Tuition" : "Other fee"}</div>
+                </td>
+                <td>{row.amountDue}</td>
+                <td className="font-semibold text-[#2e7d32]">{row.amountPaid}</td>
+                <td className="font-semibold text-[#c62828]">{row.balance}</td>
+                <td>{row.dueDate}</td>
+                <td><StatusPill tone={row.tone}>{row.status}</StatusPill></td>
+              </tr>
+            {row.terms.length > 0 ? (
+              <tr className="bg-[#fffaf7]">
+                <td colSpan={7} className="px-4 py-3">
+                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#9a3412]">
+                    Tuition payment terms
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    {row.terms.map((term) => (
+                      <div key={term.id} className="rounded-lg border border-[#fed7aa] bg-white px-3 py-2 text-[12px]">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-[#1a1a1a]">{term.name}</span>
+                          <StatusPill tone={term.tone}>{term.status}</StatusPill>
+                        </div>
+                        <div className="mt-1 text-[#6b6b6b]">Due {term.dueDate}</div>
+                        <div className="mt-1 flex justify-between gap-2">
+                          <span>{term.amountPaid} paid</span>
+                          <span className="font-semibold text-[#c62828]">{term.balance} balance</span>
+                        </div>
+                        {!term.payable && term.status !== "Paid" ? (
+                          <div className="mt-1 text-[11px] text-[#6b6b6b]">Visible now, not payable for this status.</div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            ) : null}
+            </Fragment>
           ))
         ) : (
           <tr>

@@ -21,27 +21,32 @@ const paymentMethods: Array<{
   { id: "cash", title: "Cash", desc: "Local over-the-counter record", icon: Receipt },
 ];
 
+function rowKey(row: ParentPayableFee) {
+  return `${row.source}-${row.id}`;
+}
+
 export function ParentPaymentForm({ rows }: { rows: ParentPayableFee[] }) {
-  const [selected, setSelected] = useState<Set<number>>(new Set(rows.slice(0, 1).map((row) => row.id)));
+  const [selected, setSelected] = useState<Set<string>>(new Set(rows.slice(0, 1).map(rowKey)));
   const [method, setMethod] = useState<PaymentChannel>("gcash");
-  const selectedRows = useMemo(() => rows.filter((row) => selected.has(row.id)), [rows, selected]);
+  const selectedRows = useMemo(() => rows.filter((row) => selected.has(rowKey(row))), [rows, selected]);
   const selectedStudentId = selectedRows[0]?.studentId ?? null;
   const subtotal = selectedRows.reduce((sum, row) => sum + row.balanceValue, 0);
 
   const toggle = (fee: ParentPayableFee) => {
     setSelected((current) => {
+      const key = rowKey(fee);
       const next = new Set(current);
 
-      if (next.has(fee.id)) {
-        next.delete(fee.id);
+      if (next.has(key)) {
+        next.delete(key);
         return next;
       }
 
       if (selectedStudentId && selectedStudentId !== fee.studentId) {
-        return new Set([fee.id]);
+        return new Set([key]);
       }
 
-      next.add(fee.id);
+      next.add(key);
       return next;
     });
   };
@@ -53,23 +58,24 @@ export function ParentPaymentForm({ rows }: { rows: ParentPayableFee[] }) {
         <ParentCard title="Select fees to pay" icon={Receipt} bodyClassName="p-0">
           {rows.map((fee) => {
             const disabled = selectedStudentId !== null && selectedStudentId !== fee.studentId && selected.size > 0;
+            const selectedKey = rowKey(fee);
 
             return (
               <label
-                key={fee.id}
+                key={selectedKey}
                 className="flex w-full cursor-pointer items-center justify-between gap-4 border-b border-black/[0.08] px-5 py-4 text-left last:border-b-0 hover:bg-[#f8f8f7] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <input
                     type="checkbox"
-                    name="feeAssignmentId"
+                    name={fee.source === "term" ? "tuitionTermId" : "feeAssignmentId"}
                     value={fee.id}
-                    checked={selected.has(fee.id)}
+                    checked={selected.has(selectedKey)}
                     disabled={disabled}
                     onChange={() => toggle(fee)}
                     className="sr-only"
                   />
-                  <VisualCheckbox checked={selected.has(fee.id)} />
+                  <VisualCheckbox checked={selected.has(selectedKey)} />
                   <span className="min-w-0">
                     <span className="block truncate text-[15px] font-medium">{fee.feeName}</span>
                     <span className="mt-0.5 block truncate text-xs text-[#6b6b6b]">

@@ -563,11 +563,13 @@ flowchart TD
   A["Admin opens fees or tuition setup"] --> B["Create fee_types for active school year"]
   B --> C["Search and select one or more enrolled students"]
   C --> D["Create student_fee_assignments and skip duplicates"]
-  D --> E["Parent dashboard loads linked students"]
-  E --> F["Parent opens fee summary"]
-  F --> G["Read open, partial, and paid fee assignments"]
-  G --> H["Show balances by student"]
-  H --> I["Admin tuition report reads the same balances"]
+  D --> E{"Tuition needs installments?"}
+  E -->|Yes| F["Admin opens Manage terms and creates tuition_payment_terms"]
+  E -->|No| G["Keep normal fee assignment balance"]
+  F --> H["Parent opens fee summary"]
+  G --> H
+  H --> I["Show balances and tuition term schedule by student"]
+  I --> J["Admin tuition report reads the same balances and term summary"]
           </pre>
         </div>
 
@@ -578,22 +580,26 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens /parent/pay-tuition"] --> B["Read payable fee assignments through student_guardians"]
-  B --> C["Parent selects one student's payable fee items"]
+  A["Parent opens /parent/pay-tuition"] --> B["Read payable fee assignments and open tuition terms through student_guardians"]
+  B --> C["Parent selects one student's payable items"]
   C --> D["Parent chooses local test payment method"]
   D --> E["Server action requires parent session"]
-  E --> F["Lock selected student_fee_assignments"]
-  F --> G["Create payments row with paid status"]
-  G --> H["Create payment_allocations rows"]
-  H --> I["Update student_fee_assignments amount_paid"]
-  I --> J{"Balance fully paid?"}
-  J -->|Yes| K["Mark fee assignment paid"]
-  J -->|No| L["Mark fee assignment partial"]
-  K --> M["Create receipts row"]
-  L --> M
-  M --> N["Parent sees real receipt and payment history"]
-  N --> O["Admin dashboard and collections read the same payment records"]
+  E --> F{"Selected item type?"}
+  F -->|Regular fee| G["Lock selected student_fee_assignments"]
+  F -->|Tuition term| H["Lock payable tuition_payment_terms"]
+  G --> I["Create payments row with paid status"]
+  H --> I
+  I --> J{"Allocation target?"}
+  J -->|Regular fee| K["Create payment_allocations rows"]
+  J -->|Tuition term| L["Create payment_term_allocations rows"]
+  K --> M["Update student_fee_assignments amount_paid"]
+  L --> N["Update tuition terms and recalculate assignment amount_paid"]
+  M --> O["Create receipts row"]
+  N --> O
+  O --> P["Parent sees real receipt and payment history"]
+  P --> Q["Admin dashboard and collections read the same payment records"]
           </pre>
+          <p>Tuition terms are implemented per student tuition assignment through a shared server-only tuition terms helper. Parents can pay open or partial installments early, even before the due date. Other fees remain on the normal full-balance fee assignment flow.</p>
         </div>
 
         <h3>Wallet, Allowance, And Store</h3>

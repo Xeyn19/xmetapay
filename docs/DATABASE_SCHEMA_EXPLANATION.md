@@ -183,6 +183,19 @@ Main purpose:
 
 This table is the main source for outstanding balances.
 
+### `tuition_payment_terms`
+
+Stores per-student tuition installment schedules.
+
+Main purpose:
+
+- Split one tuition assignment into due terms.
+- Track each term amount, paid amount, due date, and status.
+- Let parents pay open or partial terms, including early payment before the due date.
+- Keep other fees on the normal fee-assignment flow.
+
+The parent portal reads these rows through `student_guardians`, so parents only see terms for linked students.
+
 ## Payments And Receipts Tables
 
 ### `payments`
@@ -210,6 +223,16 @@ Main purpose:
 - Allow one payment to pay tuition and other fees together.
 
 For example, one parent payment can cover part of tuition and all of a lab fee.
+
+### `payment_term_allocations`
+
+Links a payment to one or more tuition terms.
+
+Main purpose:
+
+- Store which installment terms were paid by a payment.
+- Let receipts and payment history show labels like Tuition - Term 1.
+- Keep term payments separate from regular `payment_allocations`.
 
 ### `receipts`
 
@@ -323,9 +346,9 @@ The schema supports this practical backend flow:
 5. Parent registers and can be linked to a student through `student_guardians`.
 6. Admin enrolls students for the active school year.
 7. Admin creates fee types and assigns fees to one or more selected students.
-8. Parent views fee balances from `student_fee_assignments`.
-9. Parent or admin records payments in `payments`.
-10. Payments are allocated to balances through `payment_allocations`.
+8. Parent views fee balances from `student_fee_assignments`, including tuition terms when configured.
+9. Parent records payments in `payments` for regular balances or open/partial tuition terms.
+10. Payments are allocated through `payment_allocations` or `payment_term_allocations`.
 11. Receipts are created in `receipts`.
 12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
 13. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens paginate loaded rows and export filtered rows as CSV or PDF.
@@ -339,8 +362,11 @@ The schema supports this practical backend flow:
 - `enrollments` connects students to a school year, grade level, and section.
 - `fee_types` defines what can be charged.
 - `student_fee_assignments` records what each student owes.
+- `tuition_payment_terms` breaks tuition balances into scheduled installments.
+- Tuition term parsing, payable checks, payments, and assignment recalculation are handled by a shared server-only tuition helper.
 - `payments` records money received.
 - `payment_allocations` applies payment money to student balances.
+- `payment_term_allocations` applies payment money to tuition installment terms.
 - `receipts` documents paid payments.
 - `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, and full wallet ledger history.
 - `store_transactions` records wallet spending at school merchants.
