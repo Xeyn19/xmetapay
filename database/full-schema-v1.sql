@@ -341,6 +341,7 @@ CREATE TABLE IF NOT EXISTS notification_logs (
   type ENUM('payment_reminder', 'receipt', 'low_wallet', 'enrollment_update') NOT NULL,
   channel ENUM('email', 'sms', 'in_app') NOT NULL,
   status ENUM('queued', 'sent', 'failed') NOT NULL DEFAULT 'queued',
+  message_body TEXT NULL,
   sent_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

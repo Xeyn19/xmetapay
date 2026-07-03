@@ -4,6 +4,7 @@ import test from "node:test";
 
 const fullSchemaPath = "database/full-schema-v1.sql";
 const databaseReadmePath = "database/README.md";
+const notificationMessageMigrationPath = "database/migrations/2026-07-03-notification-message-body.sql";
 const authSchema = readFileSync("database/auth-schema.sql", "utf8");
 
 test("full MVP schema file defines the database layers after auth", () => {
@@ -30,6 +31,7 @@ test("full MVP schema file defines the database layers after auth", () => {
     "CREATE TABLE IF NOT EXISTS store_merchants",
     "CREATE TABLE IF NOT EXISTS store_transactions",
     "CREATE TABLE IF NOT EXISTS notification_logs",
+    "message_body TEXT NULL",
     "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
   ].forEach((fragment) => assert.match(sql, new RegExp(fragment.replace(/[()]/g, "\\$&"))));
 });
@@ -60,7 +62,17 @@ test("database README documents XAMPP import order", () => {
 
   assert.match(readme, /auth-schema\.sql/);
   assert.match(readme, /full-schema-v1\.sql/);
+  assert.match(readme, /2026-07-03-notification-message-body\.sql/);
   assert.match(readme, /XAMPP|phpMyAdmin/);
+});
+
+test("notification message body migration is safe for existing XAMPP databases", () => {
+  assert.equal(existsSync(notificationMessageMigrationPath), true);
+  const sql = readFileSync(notificationMessageMigrationPath, "utf8");
+
+  assert.match(sql, /USE xmetapay_db;/);
+  assert.match(sql, /ALTER TABLE notification_logs/);
+  assert.match(sql, /ADD COLUMN IF NOT EXISTS message_body TEXT NULL AFTER status/);
 });
 
 test("auth schema remains focused on authentication tables", () => {
