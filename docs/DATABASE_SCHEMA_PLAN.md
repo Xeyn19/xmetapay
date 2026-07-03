@@ -511,6 +511,7 @@ CREATE TABLE notification_logs (
   type ENUM('payment_reminder', 'receipt', 'low_wallet', 'enrollment_update') NOT NULL,
   channel ENUM('email', 'sms', 'in_app') NOT NULL,
   status ENUM('queued', 'sent', 'failed') NOT NULL DEFAULT 'queued',
+  message_body TEXT NULL,
   sent_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -523,7 +524,7 @@ CREATE TABLE notification_logs (
 );
 ```
 
-Implementation status: queued in-app payment reminder history is implemented. School administrators and finance officers can create `payment_reminder` rows for linked parents with open or partial balances. The app prevents duplicate same-day reminder rows for the same school, linked parent, and student. Those rows use `channel = 'in_app'` and `status = 'queued'`. Real email/SMS delivery, scheduling, and notification-based report alerts can be added later.
+Implementation status: queued payment reminder history is implemented. School administrators and finance officers can open a reminder modal and create `payment_reminder` rows for linked parents with open or partial balances. The app prevents duplicate same-day reminder rows for the same school, linked parent, student, and selected channel. Those rows use `channel = 'email'` or `channel = 'sms'`, `status = 'queued'`, and `message_body` for the saved custom or generated reminder text. Real email/SMS delivery, scheduling, and notification-based report alerts can be added later.
 
 Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. CSV and PDF report exports are implemented for monthly revenue, collections, outstanding balances, and wallet/store activity. Real-data admin and parent table screens paginate loaded rows on screen and export filtered rows as CSV or PDF without adding report storage tables. Scheduled delivery and notification-based report alerts can be added later.
 

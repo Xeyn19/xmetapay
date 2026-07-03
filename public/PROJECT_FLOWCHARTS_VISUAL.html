@@ -677,18 +677,19 @@ flowchart TD
   A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
   B --> C{"Can access finance?"}
   C -->|No| D["Redirect to admin dashboard"]
-  C -->|Yes| E["Click Log reminders"]
-  E --> F["Find linked parents with open or partial balances"]
-  F --> G["Exclude reminders already logged today for the same school, parent, and student"]
+  C -->|Yes| E["Open Send reminders modal"]
+  E --> E2["Choose target, type, channel, and optional message"]
+  E2 --> F["Find linked parents with matching open or partial balances"]
+  F --> G["Exclude reminders already logged today for the same school, parent, student, and selected channel"]
   G --> H{"Any new reminder targets?"}
   H -->|No open balances| I["Show no reminders logged"]
   H -->|Already reminded today| J["Show reminders already logged today"]
-  H -->|Yes| K["Insert queued in-app payment_reminder rows"]
+  H -->|Yes| K["Insert queued payment_reminder rows"]
   K --> L["Show reminder history on tuition page"]
   L --> M["Dashboard activity feed updates"]
   M --> N["Email and SMS delivery remain future"]
           </pre>
-          <p>Reminder rows are stored in <code>notification_logs</code> with <code>type = payment_reminder</code>, <code>channel = in_app</code>, and <code>status = queued</code>. The same school, linked parent, and student can only receive one queued in-app reminder per calendar day. Registrars cannot log reminders.</p>
+          <p>Reminder rows are stored in <code>notification_logs</code> with <code>type = payment_reminder</code>, selected <code>channel = email</code> or <code>channel = sms</code>, <code>status = queued</code>, and saved <code>message_body</code> text. The same school, linked parent, student, and selected channel can only receive one queued reminder per calendar day. Registrars cannot log reminders. Real email/SMS delivery remains future work.</p>
         </div>
       </section>
 

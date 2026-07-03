@@ -69,7 +69,7 @@ export type TuitionPageRealData = {
   rows: TuitionRow[];
   outstandingByGrade: BarRow[];
   otherFeeSummary: Array<[string, string, string, string]>;
-  reminderRows: Array<[number, string, string, string, string, string, string]>;
+  reminderRows: Array<[number, string, string, string, string, string, string, string]>;
 };
 
 export type TuitionRow = {
@@ -810,7 +810,7 @@ async function getActivityFeed(schoolId: number) {
 
 async function getRecentReminderRows(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<ReminderHistoryRow[]>(
-    `SELECT nl.id AS notification_id, nl.created_at, nl.channel, nl.status,
+    `SELECT nl.id AS notification_id, nl.created_at, nl.channel, nl.status, nl.message_body,
        COALESCE(u.name, 'Parent pending') AS parent_name,
        COALESCE(st.first_name, '') AS first_name,
        st.middle_name,
@@ -839,6 +839,7 @@ async function getRecentReminderRows(schoolId: number, schoolYearId: number) {
       row.grade_name,
       labelForStatus(row.channel),
       labelForStatus(row.status),
+      row.message_body ?? "Default reminder",
     ] as TuitionPageRealData["reminderRows"][number];
   });
 }
@@ -1492,6 +1493,7 @@ type ReminderHistoryRow = RowDataPacket & {
   created_at: Date | string;
   channel: string;
   status: string;
+  message_body: string | null;
   parent_name: string;
   first_name: string;
   middle_name: string | null;
