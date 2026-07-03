@@ -97,6 +97,18 @@ Done when: admin and parent fee screens show real balances from MySQL.
 
 Done when: a parent can record a local test payment and both portals show the result.
 
+### Phase 5A: Tuition payment terms
+
+- [x] Add `tuition_payment_terms` for per-student tuition installment schedules.
+- [x] Add `payment_term_allocations` so receipts/history can show which term was paid.
+- [x] Add admin tuition `Manage terms` action for each student tuition assignment.
+- [x] Show tuition term schedules in the parent fee summary.
+- [x] Let parents pay open or partial tuition terms, including early payment before the due date.
+- [x] Keep other fees and tuition without terms on the existing full-balance payment flow.
+- [x] Keep tuition term parsing, validation, saving, payable checks, payment application, and assignment recalculation in a shared server-only helper.
+
+Done when: admin/finance can split a tuition balance into terms, and parents can pay open or partial installments from the portal.
+
 ## Phase 6: Wallet, Store, And Reports
 
 ### Phase 6A: Wallet top-up

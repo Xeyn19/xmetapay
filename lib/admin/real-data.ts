@@ -18,6 +18,7 @@ import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
+import { getTuitionTermSummary, parseTuitionTermsBlob } from "@/lib/tuition/terms";
 
 type Tone = "orange" | "green" | "red" | "blue" | "purple" | "teal";
 type NoteTone = "default" | "up" | "warn" | "danger";
@@ -73,6 +74,7 @@ export type TuitionPageRealData = {
 };
 
 export type TuitionRow = {
+  assignmentId: number;
   student: string;
   grade: string;
   section: string;
@@ -80,6 +82,17 @@ export type TuitionRow = {
   paid: number;
   lastPayment: string;
   status: "paid" | "partial" | "unpaid";
+  termSummary: string;
+  terms: TuitionTermRow[];
+};
+
+export type TuitionTermRow = {
+  id: number;
+  name: string;
+  amountDue: number;
+  amountPaid: number;
+  dueDate: string;
+  status: string;
 };
 
 export type CollectionsPageRealData = {
@@ -757,6 +770,7 @@ async function getRecentPayments(schoolId: number) {
     `SELECT p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name,
        COALESCE(
+         GROUP_CONCAT(DISTINCT CONCAT(term_ft.name, ' - ', tpt.term_name) ORDER BY tpt.sort_order SEPARATOR ', '),
          GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
          MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
          'Payment'
@@ -766,6 +780,10 @@ async function getRecentPayments(schoolId: number) {
      LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
      LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
      LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     LEFT JOIN payment_term_allocations pta ON pta.payment_id = p.id
+     LEFT JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
+     LEFT JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
+     LEFT JOIN fee_types term_ft ON term_ft.id = term_sfa.fee_type_id
      LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
      WHERE p.school_id = :schoolId
      GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
@@ -846,11 +864,30 @@ async function getRecentReminderRows(schoolId: number, schoolYearId: number) {
 
 async function getTuitionRows(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<TuitionSqlRow[]>(
-    `SELECT st.first_name, st.middle_name, st.last_name,
+    `SELECT sfa.id AS assignment_id,
+       st.first_name, st.middle_name, st.last_name,
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
        COALESCE(sec.name, '-') AS section_name,
        sfa.amount_due, sfa.amount_paid, sfa.status,
-       MAX(p.paid_at) AS last_payment_at
+       GREATEST(
+         COALESCE(MAX(p.paid_at), TIMESTAMP('1000-01-01 00:00:00')),
+         COALESCE(MAX(term_payment.paid_at), TIMESTAMP('1000-01-01 00:00:00'))
+       ) AS last_payment_at,
+       COUNT(DISTINCT tpt.id) AS term_count,
+       COUNT(DISTINCT CASE WHEN tpt.status = 'paid' THEN tpt.id END) AS paid_term_count,
+       COUNT(DISTINCT CASE WHEN tpt.status IN ('open', 'partial') THEN tpt.id END) AS open_term_count,
+       GROUP_CONCAT(
+         DISTINCT CONCAT_WS(
+           '~',
+           tpt.id,
+           tpt.term_name,
+           tpt.amount_due,
+           tpt.amount_paid,
+           DATE_FORMAT(tpt.due_date, '%Y-%m-%d'),
+           tpt.status
+         )
+         ORDER BY tpt.sort_order ASC SEPARATOR '||'
+       ) AS terms_blob
      FROM student_fee_assignments sfa
      JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
      JOIN students st ON st.id = sfa.student_id
@@ -859,6 +896,9 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
      LEFT JOIN sections sec ON sec.id = e.section_id
      LEFT JOIN payment_allocations pa ON pa.student_fee_assignment_id = sfa.id
      LEFT JOIN payments p ON p.id = pa.payment_id AND p.status = 'paid'
+     LEFT JOIN tuition_payment_terms tpt ON tpt.student_fee_assignment_id = sfa.id AND tpt.status <> 'cancelled'
+     LEFT JOIN payment_term_allocations pta ON pta.tuition_payment_term_id = tpt.id
+     LEFT JOIN payments term_payment ON term_payment.id = pta.payment_id AND term_payment.status = 'paid'
      WHERE st.school_id = :schoolId AND sfa.school_year_id = :schoolYearId
      GROUP BY sfa.id, st.first_name, st.middle_name, st.last_name, gl.name, sec.name, sfa.amount_due, sfa.amount_paid, sfa.status
      ORDER BY gl.sort_order ASC, st.last_name ASC, st.first_name ASC`,
@@ -866,14 +906,34 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
   );
 
   return rows.map((row) => ({
+    assignmentId: row.assignment_id,
     student: fullName(row.first_name, row.middle_name, row.last_name),
     grade: row.grade_name,
     section: row.section_name,
     due: decimalValue(row.amount_due),
     paid: decimalValue(row.amount_paid),
-    lastPayment: row.last_payment_at ? formatDateTime(row.last_payment_at) : "Pending",
+    lastPayment: validLastPayment(row.last_payment_at) ? formatDateTime(row.last_payment_at) : "Pending",
     status: feeStatusTone(row.status, row.amount_due, row.amount_paid),
+    termSummary: getTuitionTermSummary(row.term_count, row.paid_term_count, row.open_term_count),
+    terms: parseTuitionTermsBlob(row.terms_blob).map((term) => ({
+      id: term.id,
+      name: term.name,
+      amountDue: term.amountDue,
+      amountPaid: term.amountPaid,
+      dueDate: term.dueDate,
+      status: labelForStatus(term.status),
+    })),
   }));
+}
+
+function validLastPayment(value: Date | string | null) {
+  if (!value) {
+    return false;
+  }
+
+  const parsed = value instanceof Date ? value : new Date(value);
+
+  return parsed.getFullYear() > 1000;
 }
 
 async function getOtherFeeSummary(schoolId: number, schoolYearId: number) {
@@ -901,6 +961,7 @@ async function getCollectionRows(schoolId: number) {
        st.first_name, st.middle_name, st.last_name,
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
        COALESCE(
+         GROUP_CONCAT(DISTINCT CONCAT(term_ft.name, ' - ', tpt.term_name) ORDER BY tpt.sort_order SEPARATOR ', '),
          GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
          MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
          'Payment'
@@ -912,6 +973,10 @@ async function getCollectionRows(schoolId: number) {
      LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
      LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
      LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     LEFT JOIN payment_term_allocations pta ON pta.payment_id = p.id
+     LEFT JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
+     LEFT JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
+     LEFT JOIN fee_types term_ft ON term_ft.id = term_sfa.fee_type_id
      LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
      WHERE p.school_id = :schoolId
      GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
@@ -1502,6 +1567,7 @@ type ReminderHistoryRow = RowDataPacket & {
 };
 
 type TuitionSqlRow = RowDataPacket & {
+  assignment_id: number;
   first_name: string;
   middle_name: string | null;
   last_name: string;
@@ -1511,6 +1577,10 @@ type TuitionSqlRow = RowDataPacket & {
   amount_paid: number | string;
   status: string;
   last_payment_at: Date | string | null;
+  term_count: number | string;
+  paid_term_count: number | string;
+  open_term_count: number | string;
+  terms_blob: string | null;
 };
 
 type OtherFeeSummaryRow = RowDataPacket & {

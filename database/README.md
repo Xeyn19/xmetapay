@@ -18,6 +18,10 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Adds `notification_logs.message_body`.
    - Keeps old reminder history rows.
    - This migration is guarded so it can safely report that the column already exists.
+5. If `full-schema-v1.sql` was already imported before tuition installment terms were added, import `migrations/2026-07-03-tuition-payment-terms.sql`.
+   - Adds `tuition_payment_terms`.
+   - Adds `payment_term_allocations`.
+   - Keeps existing tuition assignments and payment history.
 
 ## Local Verification
 

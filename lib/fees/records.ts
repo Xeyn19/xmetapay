@@ -4,6 +4,7 @@ import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
+import { parseTuitionTermsBlob } from "@/lib/tuition/terms";
 
 export type FeeCategory = "tuition" | "other";
 
@@ -40,6 +41,19 @@ export type ParentFeeRow = {
   dueDate: string;
   status: string;
   tone: "green" | "amber" | "red" | "muted";
+  terms: ParentFeeTerm[];
+};
+
+export type ParentFeeTerm = {
+  id: number;
+  name: string;
+  amountDue: string;
+  amountPaid: string;
+  balance: string;
+  dueDate: string;
+  status: string;
+  payable: boolean;
+  tone: ParentFeeRow["tone"];
 };
 
 export async function getAdminFeeSetupData(
@@ -96,17 +110,10 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
     const nextDue = rows
       .filter((row) => row.due_date)
       .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)))[0]?.due_date;
+    const displayRows = rows.map((row) => {
+      const terms = parseFeeTerms(row.terms_blob);
 
-    return {
-      warning: null,
-      hasPayableFees: rows.some((row) => decimalValue(row.amount_due) > decimalValue(row.amount_paid) && row.status !== "cancelled"),
-      metrics: [
-        { label: "Total billed", value: rows.length > 0 ? money(totals.billed) : "Pending", note: rows.length > 0 ? `${rows.length} assigned fees` : "No assigned fees yet", accent: true },
-        { label: "Paid", value: rows.length > 0 ? money(totals.paid) : "Pending", note: "Recorded payment allocations", tone: "green" },
-        { label: "Outstanding", value: rows.length > 0 ? money(totals.outstanding) : "Pending", note: rows.length > 0 ? "Open and partial balances" : "Balances pending", tone: "red" },
-        { label: "Next due date", value: nextDue ? formatDate(nextDue) : "Pending", note: nextDue ? "Earliest assigned due date" : "No due dates yet", tone: "blue" },
-      ],
-      rows: rows.map((row) => ({
+      return {
         id: row.id,
         studentName: fullName(row.first_name, row.middle_name, row.last_name),
         studentReference: row.student_reference,
@@ -118,7 +125,24 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         dueDate: row.due_date ? formatDate(row.due_date) : "Pending",
         status: labelForStatus(row.status),
         tone: feeTone(row.status, row.amount_due, row.amount_paid),
-      })),
+        terms,
+      };
+    });
+
+    return {
+      warning: null,
+      hasPayableFees: displayRows.some((row) =>
+        row.terms.length > 0
+          ? row.terms.some((term) => term.payable)
+          : row.balance !== "P0" && row.status !== "Cancelled"
+      ),
+      metrics: [
+        { label: "Total billed", value: rows.length > 0 ? money(totals.billed) : "Pending", note: rows.length > 0 ? `${rows.length} assigned fees` : "No assigned fees yet", accent: true },
+        { label: "Paid", value: rows.length > 0 ? money(totals.paid) : "Pending", note: "Recorded payment allocations", tone: "green" },
+        { label: "Outstanding", value: rows.length > 0 ? money(totals.outstanding) : "Pending", note: rows.length > 0 ? "Open and partial balances" : "Balances pending", tone: "red" },
+        { label: "Next due date", value: nextDue ? formatDate(nextDue) : "Pending", note: nextDue ? "Earliest assigned due date" : "No due dates yet", tone: "blue" },
+      ],
+      rows: displayRows,
     };
   } catch {
     return {
@@ -176,13 +200,28 @@ async function getParentFeeRows(parentUserId: number) {
   const [rows] = await pool.execute<ParentFeeSqlRow[]>(
     `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
        ft.name AS fee_name, ft.category,
-       st.student_reference, st.first_name, st.middle_name, st.last_name
+       st.student_reference, st.first_name, st.middle_name, st.last_name,
+       GROUP_CONCAT(
+         DISTINCT CONCAT_WS(
+           '~',
+           tpt.id,
+           tpt.term_name,
+           tpt.amount_due,
+           tpt.amount_paid,
+           DATE_FORMAT(tpt.due_date, '%Y-%m-%d'),
+           tpt.status
+         )
+         ORDER BY tpt.sort_order ASC SEPARATOR '||'
+       ) AS terms_blob
      FROM student_guardians sg
      JOIN students st ON st.id = sg.student_id
      JOIN student_fee_assignments sfa ON sfa.student_id = st.id
      JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     LEFT JOIN tuition_payment_terms tpt ON tpt.student_fee_assignment_id = sfa.id AND tpt.status <> 'cancelled'
      WHERE sg.parent_user_id = :parentUserId
        AND sfa.status <> 'cancelled'
+     GROUP BY sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
+       ft.name, ft.category, st.student_reference, st.first_name, st.middle_name, st.last_name
      ORDER BY sfa.due_date IS NULL ASC, sfa.due_date ASC, st.last_name ASC, ft.name ASC`,
     { parentUserId },
   );
@@ -200,6 +239,20 @@ function feeTone(status: string, amountDue: number | string, amountPaid: number 
   }
 
   return "red";
+}
+
+function parseFeeTerms(value: string | null): ParentFeeTerm[] {
+  return parseTuitionTermsBlob(value).map((term) => ({
+    id: term.id,
+    name: term.name,
+    amountDue: money(term.amountDue),
+    amountPaid: money(term.amountPaid),
+    balance: money(term.balance),
+    dueDate: formatDate(term.dueDate),
+    status: labelForStatus(term.status),
+    payable: term.payable,
+    tone: feeTone(term.status, term.amountDue, term.amountPaid),
+  }));
 }
 
 function fullName(firstName: string, middleName: string | null, lastName: string) {
@@ -269,4 +322,5 @@ type ParentFeeSqlRow = RowDataPacket & {
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  terms_blob: string | null;
 };

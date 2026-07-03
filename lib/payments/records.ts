@@ -3,11 +3,13 @@ import "server-only";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { getParentPayableTuitionTerms, type ParentPayableTuitionTerm } from "@/lib/tuition/terms";
 
 export type PaymentChannel = "cash" | "card" | "online_banking" | "gcash" | "maya";
 
 export type ParentPayableFee = {
   id: number;
+  source: "fee" | "term";
   studentId: number;
   studentName: string;
   studentReference: string;
@@ -88,6 +90,7 @@ export async function getParentReceiptData(
          p.id AS payment_id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
          st.student_reference, st.first_name, st.middle_name, st.last_name,
          COALESCE(
+           GROUP_CONCAT(DISTINCT CONCAT(term_ft.name, ' - ', tpt.term_name) ORDER BY tpt.sort_order SEPARATOR ', '),
            GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
            MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
            'School fee payment'
@@ -99,6 +102,10 @@ export async function getParentReceiptData(
        LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
        LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
        LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+       LEFT JOIN payment_term_allocations pta ON pta.payment_id = p.id
+       LEFT JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
+       LEFT JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
+       LEFT JOIN fee_types term_ft ON term_ft.id = term_sfa.fee_type_id
        LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
        WHERE p.payer_user_id = :parentUserId
          ${selectedReceiptClause}
@@ -147,6 +154,7 @@ export async function getParentPaymentHistoryData(parentUserId: number): Promise
       `SELECT r.id AS receipt_id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
          st.first_name, st.middle_name, st.last_name,
          COALESCE(
+           GROUP_CONCAT(DISTINCT CONCAT(term_ft.name, ' - ', tpt.term_name) ORDER BY tpt.sort_order SEPARATOR ', '),
            GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
            MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
            'School fee payment'
@@ -158,6 +166,10 @@ export async function getParentPaymentHistoryData(parentUserId: number): Promise
        LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
        LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
        LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
+       LEFT JOIN payment_term_allocations pta ON pta.payment_id = p.id
+       LEFT JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
+       LEFT JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
+       LEFT JOIN fee_types term_ft ON term_ft.id = term_sfa.fee_type_id
        LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
        WHERE p.payer_user_id = :parentUserId
        GROUP BY r.id, p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
@@ -189,7 +201,9 @@ export async function getParentPaymentHistoryData(parentUserId: number): Promise
 }
 
 async function getParentPayableFees(parentUserId: number) {
-  const [rows] = await pool.execute<ParentPayableFeeRow[]>(
+  const [termRows, feeRows] = await Promise.all([
+    getParentPayableTuitionTerms(parentUserId),
+    pool.execute<ParentPayableFeeRow[]>(
     `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
        ft.name AS fee_name, ft.category,
        st.id AS student_id, st.student_reference, st.first_name, st.middle_name, st.last_name
@@ -200,28 +214,44 @@ async function getParentPayableFees(parentUserId: number) {
      WHERE sg.parent_user_id = :parentUserId
        AND sfa.status IN ('open', 'partial')
        AND sfa.amount_due > sfa.amount_paid
+       AND NOT EXISTS (
+         SELECT 1
+         FROM tuition_payment_terms tpt
+         WHERE tpt.student_fee_assignment_id = sfa.id
+           AND tpt.status <> 'cancelled'
+       )
      ORDER BY st.last_name ASC, st.first_name ASC, sfa.due_date IS NULL ASC, sfa.due_date ASC, ft.name ASC`,
     { parentUserId },
-  );
+    ),
+  ]);
+  const terms = termRows.map((row) => payableRow(row, "term" as const, `${row.fee_name} - ${row.term_name}`));
+  const fees = feeRows[0].map((row) => payableRow(row, "fee" as const, row.fee_name));
 
-  return rows.map((row) => {
-    const balanceValue = Math.max(decimalValue(row.amount_due) - decimalValue(row.amount_paid), 0);
+  return [...terms, ...fees];
+}
 
-    return {
-      id: row.id,
-      studentId: row.student_id,
-      studentName: fullName(row.first_name, row.middle_name, row.last_name),
-      studentReference: row.student_reference,
-      feeName: row.fee_name,
-      category: row.category,
-      balanceValue,
-      balance: money(balanceValue),
-      amountDue: money(row.amount_due),
-      amountPaid: money(row.amount_paid),
-      dueDate: row.due_date ? formatDate(row.due_date) : "Pending",
-      status: labelForStatus(row.status),
-    };
-  });
+function payableRow(
+  row: ParentPayableFeeRow | ParentPayableTuitionTerm,
+  source: ParentPayableFee["source"],
+  feeName: string,
+): ParentPayableFee {
+  const balanceValue = Math.max(decimalValue(row.amount_due) - decimalValue(row.amount_paid), 0);
+
+  return {
+    id: row.id,
+    source,
+    studentId: row.student_id,
+    studentName: fullName(row.first_name, row.middle_name, row.last_name),
+    studentReference: row.student_reference,
+    feeName,
+    category: row.category,
+    balanceValue,
+    balance: money(balanceValue),
+    amountDue: money(row.amount_due),
+    amountPaid: money(row.amount_paid),
+    dueDate: row.due_date ? formatDate(row.due_date) : "Pending",
+    status: labelForStatus(row.status),
+  };
 }
 
 function fullName(firstName: string, middleName: string | null, lastName: string) {

@@ -9,16 +9,23 @@ import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/prom
 import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import type { PaymentChannel } from "@/lib/payments/records";
+import { applyTuitionTermPayment, TuitionTermsError } from "@/lib/tuition/terms";
 
 const paymentChannels = new Set<PaymentChannel>(["cash", "card", "online_banking", "gcash", "maya"]);
 
 export async function createParentPaymentAction(formData: FormData) {
   const session = await requireRole("parent");
   const feeAssignmentIds = selectedFeeIds(formData);
+  const tuitionTermIds = selectedTermIds(formData);
   const channel = paymentChannel(formData);
 
-  if (feeAssignmentIds.length === 0) {
+  if (feeAssignmentIds.length === 0 && tuitionTermIds.length === 0) {
     await toast("Payment not recorded", "Select at least one payable fee.");
+    redirect("/parent/pay-tuition");
+  }
+
+  if (feeAssignmentIds.length > 0 && tuitionTermIds.length > 0) {
+    await toast("Payment not recorded", "Pay tuition terms separately from regular fee balances.");
     redirect("/parent/pay-tuition");
   }
 
@@ -34,88 +41,97 @@ export async function createParentPaymentAction(formData: FormData) {
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    const fees = await getLockedPayableFees(connection, session.userId, feeAssignmentIds);
-
-    if (fees.length !== feeAssignmentIds.length) {
-      throw new PaymentValidationError("Some selected fees are no longer payable. Refresh and try again.");
-    }
-
-    const studentIds = new Set(fees.map((fee) => fee.student_id));
-
-    if (studentIds.size !== 1) {
-      throw new PaymentValidationError("Pay one student's fees at a time.");
-    }
-
-    const schoolIds = new Set(fees.map((fee) => fee.school_id));
-
-    if (schoolIds.size !== 1) {
-      throw new PaymentValidationError("Selected fees must belong to one school.");
-    }
-
-    const total = roundMoney(
-      fees.reduce((sum, fee) => sum + Math.max(decimalValue(fee.amount_due) - decimalValue(fee.amount_paid), 0), 0),
-    );
-
-    if (total <= 0) {
-      throw new PaymentValidationError("The selected fees are already paid.");
-    }
-
-    const referenceNumber = makeReferenceNumber("PAY");
-    const receiptNumber = makeReferenceNumber("RCT");
-    const [paymentResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO payments (school_id, payer_user_id, student_id, reference_number, channel, amount, status, paid_at)
-       VALUES (:schoolId, :payerUserId, :studentId, :referenceNumber, :channel, :amount, 'paid', NOW())`,
-      {
-        schoolId: fees[0].school_id,
-        payerUserId: session.userId,
-        studentId: fees[0].student_id,
-        referenceNumber,
+    if (tuitionTermIds.length > 0) {
+      receiptId = await applyTuitionTermPayment(connection, {
+        parentUserId: session.userId,
+        tuitionTermIds,
         channel,
-        amount: total,
-      },
-    );
-    const paymentId = paymentResult.insertId;
+        makeReferenceNumber,
+      });
+    } else {
+      const fees = await getLockedPayableFees(connection, session.userId, feeAssignmentIds);
 
-    for (const fee of fees) {
-      const balance = roundMoney(Math.max(decimalValue(fee.amount_due) - decimalValue(fee.amount_paid), 0));
-
-      if (balance <= 0) {
-        continue;
+      if (fees.length !== feeAssignmentIds.length) {
+        throw new PaymentValidationError("Some selected fees are no longer payable. Refresh and try again.");
       }
 
-      await connection.execute<ResultSetHeader>(
-        `INSERT INTO payment_allocations (payment_id, student_fee_assignment_id, amount)
-         VALUES (:paymentId, :feeAssignmentId, :amount)`,
+      const studentIds = new Set(fees.map((fee) => fee.student_id));
+
+      if (studentIds.size !== 1) {
+        throw new PaymentValidationError("Pay one student's fees at a time.");
+      }
+
+      const schoolIds = new Set(fees.map((fee) => fee.school_id));
+
+      if (schoolIds.size !== 1) {
+        throw new PaymentValidationError("Selected fees must belong to one school.");
+      }
+
+      const total = roundMoney(
+        fees.reduce((sum, fee) => sum + Math.max(decimalValue(fee.amount_due) - decimalValue(fee.amount_paid), 0), 0),
+      );
+
+      if (total <= 0) {
+        throw new PaymentValidationError("The selected fees are already paid.");
+      }
+
+      const referenceNumber = makeReferenceNumber("PAY");
+      const receiptNumber = makeReferenceNumber("RCT");
+      const [paymentResult] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO payments (school_id, payer_user_id, student_id, reference_number, channel, amount, status, paid_at)
+         VALUES (:schoolId, :payerUserId, :studentId, :referenceNumber, :channel, :amount, 'paid', NOW())`,
+        {
+          schoolId: fees[0].school_id,
+          payerUserId: session.userId,
+          studentId: fees[0].student_id,
+          referenceNumber,
+          channel,
+          amount: total,
+        },
+      );
+      const paymentId = paymentResult.insertId;
+
+      for (const fee of fees) {
+        const balance = roundMoney(Math.max(decimalValue(fee.amount_due) - decimalValue(fee.amount_paid), 0));
+
+        if (balance <= 0) {
+          continue;
+        }
+
+        await connection.execute<ResultSetHeader>(
+          `INSERT INTO payment_allocations (payment_id, student_fee_assignment_id, amount)
+           VALUES (:paymentId, :feeAssignmentId, :amount)`,
+          {
+            paymentId,
+            feeAssignmentId: fee.id,
+            amount: balance,
+          },
+        );
+        await connection.execute<ResultSetHeader>(
+          `UPDATE student_fee_assignments
+           SET amount_paid = LEAST(amount_due, amount_paid + :amount),
+             status = CASE
+               WHEN amount_paid + :amount >= amount_due THEN 'paid'
+               ELSE 'partial'
+             END
+           WHERE id = :feeAssignmentId`,
+          {
+            feeAssignmentId: fee.id,
+            amount: balance,
+          },
+        );
+      }
+
+      const [receiptResult] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO receipts (payment_id, receipt_number)
+         VALUES (:paymentId, :receiptNumber)`,
         {
           paymentId,
-          feeAssignmentId: fee.id,
-          amount: balance,
+          receiptNumber,
         },
       );
-      await connection.execute<ResultSetHeader>(
-        `UPDATE student_fee_assignments
-         SET amount_paid = LEAST(amount_due, amount_paid + :amount),
-           status = CASE
-             WHEN amount_paid + :amount >= amount_due THEN 'paid'
-             ELSE 'partial'
-           END
-         WHERE id = :feeAssignmentId`,
-        {
-          feeAssignmentId: fee.id,
-          amount: balance,
-        },
-      );
+      receiptId = receiptResult.insertId;
     }
-
-    const [receiptResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO receipts (payment_id, receipt_number)
-       VALUES (:paymentId, :receiptNumber)`,
-      {
-        paymentId,
-        receiptNumber,
-      },
-    );
-    receiptId = receiptResult.insertId;
 
     await connection.commit();
   } catch (error) {
@@ -125,7 +141,7 @@ export async function createParentPaymentAction(formData: FormData) {
 
     await toast(
       "Payment not recorded",
-      error instanceof PaymentValidationError
+      error instanceof PaymentValidationError || error instanceof TuitionTermsError
         ? error.message
         : "Unable to record the payment. Check MySQL/XAMPP and try again.",
     );
@@ -168,6 +184,15 @@ async function getLockedPayableFees(
 function selectedFeeIds(formData: FormData) {
   const ids = formData
     .getAll("feeAssignmentId")
+    .map((value) => (typeof value === "string" ? Number(value) : NaN))
+    .filter((value) => Number.isInteger(value) && value > 0);
+
+  return [...new Set(ids)].slice(0, 25);
+}
+
+function selectedTermIds(formData: FormData) {
+  const ids = formData
+    .getAll("tuitionTermId")
     .map((value) => (typeof value === "string" ? Number(value) : NaN))
     .filter((value) => Number.isInteger(value) && value > 0);
 
