@@ -62,20 +62,35 @@ export default async function ParentDashboardPage() {
                 </Link>
               ))}
               <form action={linkParentStudentAction} className="grid gap-3 border-t border-black/[0.08] p-4 sm:p-5">
-                <ParentField label="Link another student by reference" required>
-                  <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
-                </ParentField>
-                <ParentButton type="submit" tone="primary" className="w-full min-[420px]:w-auto">
-                  <Plus className="size-4" />
-                  Link another student
-                </ParentButton>
+                <div>
+                  <ParentField label="Add another student" required>
+                    <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
+                  </ParentField>
+                  <p className="mt-2 text-xs leading-5 text-[#6b6b6b]">
+                    Use the student reference from the school. You can add more than one child.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <ParentButton type="submit" tone="primary" className="w-full min-[420px]:w-auto">
+                    <Plus className="size-4" />
+                    Add another student
+                  </ParentButton>
+                  <Link href="/parent/students" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
+                    Manage students
+                  </Link>
+                </div>
               </form>
             </>
           ) : (
             <form action={linkParentStudentAction} className="grid gap-3">
-              <ParentField label="Student reference" required>
-                <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
-              </ParentField>
+              <div>
+                <ParentField label="Student reference" required>
+                  <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
+                </ParentField>
+                <p className="mt-2 text-xs leading-5 text-[#6b6b6b]">
+                  Use the student reference from the school. You can add more than one child.
+                </p>
+              </div>
               <ParentButton type="submit" tone="primary">
                 <Plus className="size-4" />
                 Link student

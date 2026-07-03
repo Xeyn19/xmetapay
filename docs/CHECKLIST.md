@@ -69,10 +69,13 @@ Done when: the admin dashboard can load school setup data from MySQL.
 - [x] Create an admin flow for adding or listing students.
 - [x] Restrict student creation/enrollment to `school_administrator` and `registrar`.
 - [x] Link parent accounts to students using `student_reference`.
+- [x] Allow parent registration to submit one or more student references.
 - [x] Show linked students on the parent dashboard from the database.
+- [x] Add a parent My students page for managing multiple linked students.
+- [x] Handle duplicate parent-student links with a friendly already-linked message.
 - [x] Keep parent access limited to their linked students only.
 
-Done when: admins can manage students and parents can see only their linked children.
+Done when: admins can manage students and parents can add or view multiple linked children while only seeing records connected through `student_guardians`.
 
 ## Phase 4: Fees And Tuition Backend
 

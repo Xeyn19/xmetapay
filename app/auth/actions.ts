@@ -66,14 +66,18 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
         },
       );
 
-      try {
-        await linkParentToStudentByReference(
-          connection,
-          userResult.insertId,
-          parsed.data.profile.studentReference,
-        );
-      } catch {
-        // Parent accounts can be created before the school has imported or added the student record.
+      const studentReferences = parsed.data.profile.studentReferences ?? [parsed.data.profile.studentReference];
+
+      for (const studentReference of studentReferences) {
+        try {
+          await linkParentToStudentByReference(
+            connection,
+            userResult.insertId,
+            studentReference,
+          );
+        } catch {
+          // Parent accounts can be created before the school has imported or added the student record.
+        }
       }
     }
 

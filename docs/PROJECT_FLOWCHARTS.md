@@ -242,24 +242,26 @@ Database touchpoints:
 
 Implemented.
 
-During registration, the parent submits a `student_reference`. If exactly one matching student exists, the system creates a `student_guardians` link immediately.
+During registration, the parent can submit one or more `student_reference` values. The first reference is saved in `parent_profiles` for pending-link display, and every submitted reference attempts a separate `student_guardians` link. Parents can still add more children later from the portal.
 
 ```mermaid
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Submit guardian details, required phone, relationship, student_reference, password"]
+  A["Parent opens /parent/register"] --> B["Submit guardian details, required phone, relationship, one or more student_reference values, password"]
   B --> C["Validate required fields"]
   C --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
   F --> G["Insert users row with role parent"]
   G --> H["Insert parent_profiles row"]
-  H --> I["Search students by student_reference"]
-  I --> J{"Exactly one matching student?"}
-  J -->|Yes| K["Insert student_guardians row"]
-  J -->|No| L["Keep parent active with no linked student"]
-  K --> M["Create DB-backed session and HttpOnly cookie"]
-  L --> M
-  M --> N["Redirect to /parent/dashboard"]
+  H --> I["Save first reference in parent_profiles"]
+  I --> J["Loop through submitted student references"]
+  J --> K{"Exactly one matching student?"}
+  K -->|Yes| L["Insert student_guardians row"]
+  K -->|No| M["Skip that reference and keep account active"]
+  L --> N["Continue checking remaining references"]
+  M --> N
+  N --> O["Create DB-backed session and HttpOnly cookie"]
+  O --> P["Redirect to /parent/dashboard"]
 ```
 
 Database touchpoints:
@@ -298,22 +300,23 @@ Database touchpoints:
 - `grade_levels`
 - `sections`
 
-### 3. Parent Manual Link By Reference
+### 3. Parent Add Another Student By Reference
 
 Implemented.
 
-If parent registration did not find a student yet, the parent can retry from the parent dashboard after the school/admin creates the student.
+If parent registration did not find a student yet, or if the parent has another child at the school, the parent can add another `student_reference` from the dashboard or `/parent/students`.
 
 ```mermaid
 flowchart TD
-  A["Parent dashboard shows no linked students"] --> B["Parent enters student_reference"]
+  A["Parent opens dashboard or /parent/students"] --> B["Parent enters student_reference"]
   B --> C["Require parent session"]
   C --> D["Search students by student_reference"]
   D --> E{"Exactly one matching student?"}
   E -->|No| F["Show friendly not found or ambiguous message"]
-  E -->|Yes| G["Create or reuse student_guardians link"]
-  G --> H["Reload parent dashboard"]
-  H --> I["Linked student appears"]
+  E -->|Already linked| G["Show Student already linked message"]
+  E -->|Yes| H["Create student_guardians link"]
+  H --> I["Reload dashboard or My students page"]
+  I --> J["All linked students remain visible"]
 ```
 
 Database touchpoints:
@@ -326,7 +329,7 @@ Database touchpoints:
 
 Implemented.
 
-The parent does not own a student just because they typed a student reference once. The real access rule is the database link in `student_guardians`.
+The parent does not own a student just because they typed a student reference once. The real access rule is the database link in `student_guardians`, and one parent can have many linked students through separate rows.
 
 ```mermaid
 flowchart TD

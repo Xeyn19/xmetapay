@@ -308,7 +308,7 @@
             <tr>
               <td>Students</td>
               <td><code>students</code>, <code>student_guardians</code></td>
-              <td>Student profiles and parent-to-student links.</td>
+              <td>Student profiles and parent-to-student links, including one parent linked to multiple students.</td>
             </tr>
             <tr>
               <td>Enrollment</td>
@@ -672,16 +672,18 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens register page"] --> B["Submit guardian details and student reference"]
+  A["Parent opens register page"] --> B["Submit guardian details and one or more student references"]
   B --> C["Create user with role parent"]
   C --> D["Create parent profile"]
-  D --> E["Find student by student_reference"]
-  E --> F{"Student found?"}
-  F -->|Yes| G["Create student_guardians link"]
-  F -->|No| H["Keep profile pending for school review"]
-  G --> I["Create session"]
-  H --> I
-  I --> J["Redirect to parent dashboard"]
+  D --> E["Save first reference in parent_profiles"]
+  E --> F["Loop through submitted references"]
+  F --> G{"Student found?"}
+  G -->|Yes| H["Create student_guardians link"]
+  G -->|No| I["Skip that reference for now"]
+  H --> J["Create session after all references are checked"]
+  I --> J
+  J --> K["Redirect to parent dashboard"]
+  K --> L["Parent can add more students later from /parent/students"]
           </pre>
         </div>
 

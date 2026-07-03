@@ -5,6 +5,7 @@ import {
   IdCard,
   Receipt,
   Settings,
+  Users,
   Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -45,6 +46,10 @@ export const parentPageMeta: Record<string, ParentPageMeta> = {
     title: "Student profile",
     subtitle: "Choose a linked student profile",
   },
+  "/parent/students": {
+    title: "My students",
+    subtitle: "Manage linked student records",
+  },
   "/parent/fees": {
     title: "Fee summary",
     subtitle: "Assigned balances from school records",
@@ -74,7 +79,10 @@ export const parentNavSections: ParentNavSection[] = [
   },
   {
     label: "Enrollment",
-    items: [{ label: "Student profile", href: "/parent/student-profile", icon: IdCard }],
+    items: [
+      { label: "My students", href: "/parent/students", icon: Users },
+      { label: "Student profile", href: "/parent/student-profile", icon: IdCard },
+    ],
   },
   {
     label: "Payments",

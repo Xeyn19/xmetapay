@@ -389,6 +389,15 @@ export async function linkParentToStudentByReference(
   }
 
   const studentId = studentRows[0].id;
+  const [existingLinkRows] = await executor.execute<CountRow[]>(
+    "SELECT COUNT(*) AS total FROM student_guardians WHERE student_id = :studentId AND parent_user_id = :parentUserId",
+    { studentId, parentUserId },
+  );
+
+  if (Number(existingLinkRows[0]?.total ?? 0) > 0) {
+    return "already_linked" as const;
+  }
+
   const [guardianCountRows] = await executor.execute<CountRow[]>(
     "SELECT COUNT(*) AS total FROM student_guardians WHERE student_id = :studentId",
     { studentId },
@@ -397,9 +406,7 @@ export async function linkParentToStudentByReference(
 
   await executor.execute(
     `INSERT INTO student_guardians (student_id, parent_user_id, relationship, is_primary)
-     VALUES (:studentId, :parentUserId, :relationship, :isPrimary)
-     ON DUPLICATE KEY UPDATE
-       relationship = VALUES(relationship)`,
+     VALUES (:studentId, :parentUserId, :relationship, :isPrimary)`,
     {
       studentId,
       parentUserId,

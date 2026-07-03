@@ -440,27 +440,28 @@ flowchart TD
       <section>
         <h2>Parent Portal</h2>
 
-        <h3>Parent Registration And Automatic Student Linking</h3>
+        <h3>Parent Registration And Student Links</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-registration-auto-link.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Submit guardian details, required phone, relationship, student_reference, password"]
+  A["Parent opens /parent/register"] --> B["Submit guardian details, required phone, relationship, one or more student_reference values, password"]
   B --> C["Validate required fields"]
   C --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
   F --> G["Insert users row with role parent"]
-  G --> H["Insert parent_profiles row"]
-  H --> I["Search students by student_reference"]
+  G --> H["Insert parent_profiles row with first reference"]
+  H --> I["Loop through submitted student references"]
   I --> J{"Exactly one matching student?"}
   J -->|Yes| K["Insert student_guardians row"]
-  J -->|No| L["Keep parent active with no linked student"]
-  K --> M["Create DB-backed session and HttpOnly cookie"]
+  J -->|No| L["Skip that reference and keep account active"]
+  K --> M["Continue checking remaining references"]
   L --> M
-  M --> N["Redirect to /parent/dashboard"]
+  M --> N["Create DB-backed session and HttpOnly cookie"]
+  N --> O["Redirect to /parent/dashboard"]
           </pre>
         </div>
 
@@ -484,21 +485,22 @@ flowchart TD
           </pre>
         </div>
 
-        <h3>Parent Manual Link By Reference</h3>
+        <h3>Parent Add Another Student By Reference</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-manual-link-by-reference.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent dashboard shows no linked students"] --> B["Parent enters student_reference"]
+  A["Parent opens dashboard or /parent/students"] --> B["Parent enters student_reference"]
   B --> C["Require parent session"]
   C --> D["Search students by student_reference"]
   D --> E{"Exactly one matching student?"}
   E -->|No| F["Show friendly not found or ambiguous message"]
-  E -->|Yes| G["Create or reuse student_guardians link"]
-  G --> H["Reload parent dashboard"]
-  H --> I["Linked student appears"]
+  E -->|Already linked| G["Show Student already linked message"]
+  E -->|Yes| H["Create student_guardians link"]
+  H --> I["Reload dashboard or My students page"]
+  I --> J["All linked students remain visible"]
           </pre>
         </div>
       </section>
