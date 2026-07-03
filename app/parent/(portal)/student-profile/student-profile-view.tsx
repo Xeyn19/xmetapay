@@ -27,6 +27,7 @@ export function StudentProfileEmptyState() {
         Link your parent portal to a student reference before viewing student profile details.
       </ParentAlert>
       <form action={linkParentStudentAction} className="grid gap-3">
+        <input type="hidden" name="redirectTo" value="/parent/student-profile" />
         <ParentField label="Student reference" required>
           <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
         </ParentField>

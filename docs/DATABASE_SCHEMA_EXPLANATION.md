@@ -57,7 +57,7 @@ School setup is shared across staff accounts. If a registrar or finance officer 
 
 ### `parent_profiles`
 
-This stores parent-side profile details for users with the `parent` role. Parent registration asks for guardian details, required phone number, relationship, and `student_reference`. The submitted reference is also stored in `parent_profiles.student_name` as a pending-link display label because the column is required, but official student identity still comes from the school-created `students` record after linking.
+This stores parent-side profile details for users with the `parent` role. Parent registration asks for guardian details, required phone number, relationship, and one or more student references. The first submitted reference is stored in `parent_profiles.student_reference` and `parent_profiles.student_name` as a pending-link display label because those columns are required, but official student identity still comes from the school-created `students` records after linking.
 
 ## School Setup Tables
 
@@ -126,7 +126,7 @@ Main purpose:
 - Store the relationship type: mother, father, or guardian.
 - Mark a primary guardian when needed.
 
-This table is what lets the parent portal show only the children linked to the signed-in parent.
+This table is what lets the parent portal show only the children linked to the signed-in parent. Parent registration can create multiple links by looping through submitted `student_reference` values, and the parent dashboard or My students page can add more linked students later by inserting additional `student_guardians` rows. The unique student-parent pair prevents duplicate links.
 
 ## Enrollment Tables
 

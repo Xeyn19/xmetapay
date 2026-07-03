@@ -7,7 +7,7 @@ export default function ParentRegisterPage() {
         portal="parent"
         mode="register"
         title="Create parent account"
-        subtitle="Link your guardian profile to an existing student record from the school."
+        subtitle="Link your guardian profile to one or more existing student records from the school."
         fields={[
           {
             label: "Guardian name",
@@ -27,15 +27,16 @@ export default function ParentRegisterPage() {
             placeholder: "0917 000 0000",
           },
           {
-            label: "Student ID or reference",
-            name: "studentReference",
-            placeholder: "BWA-001",
-          },
-          {
             label: "Relationship",
             name: "relationship",
             placeholder: "Select relationship",
             options: ["Mother", "Father", "Guardian"],
+          },
+          {
+            label: "Student ID or reference",
+            name: "studentReferences",
+            type: "studentReferences",
+            placeholder: "BWA-001",
             spanFull: true,
           },
           {

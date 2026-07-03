@@ -101,8 +101,8 @@ One parent profile per parent user.
 | --- | --- |
 | `id` | Primary key |
 | `user_id` | Links to `users.id` |
-| `student_name` | Pending-link display label; parent registration stores the submitted student reference here until an official student link exists |
-| `student_reference` | Student reference captured during registration and used for linking |
+| `student_name` | Pending-link display label; parent registration stores the first submitted student reference here until an official student link exists |
+| `student_reference` | First student reference captured during registration; all submitted references attempt `student_guardians` links |
 | `relationship` | Mother, father, or guardian |
 
 ## Full Practical MVP Schema
@@ -215,7 +215,7 @@ CREATE TABLE students (
 
 #### `student_guardians`
 
-Links parent accounts to students. This supports multiple guardians per student and multiple students per parent.
+Links parent accounts to students. This supports multiple guardians per student and multiple students per parent. Parent registration can submit one or more student references and creates one row per matched student; later, the parent portal can add more children by creating additional rows here. The unique pair key keeps duplicate links from being created.
 
 ```sql
 CREATE TABLE student_guardians (
@@ -702,16 +702,17 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A["Parent opens register page"] --> B["Submit guardian details and student reference"]
+  A["Parent opens register page"] --> B["Submit guardian details and one or more student references"]
   B --> C["Create user with role parent"]
   C --> D["Create parent profile"]
-  D --> E["Find student by student_reference"]
-  E --> F{"Student found?"}
-  F -->|Yes| G["Create student_guardians link"]
-  F -->|No| H["Keep profile pending for school review"]
-  G --> I["Create session"]
-  H --> I
-  I --> J["Redirect to parent dashboard"]
+  D --> E["Save first reference in parent_profiles"]
+  E --> F["Loop through submitted references"]
+  F --> G{"Student found?"}
+  G -->|Yes| H["Create student_guardians link"]
+  G -->|No| I["Skip that reference for now"]
+  H --> J["Create session after all references are checked"]
+  I --> J
+  J --> K["Redirect to parent dashboard"]
 ```
 
 ### Parent Payment Flow

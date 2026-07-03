@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { loginAction, registerAction, type AuthFormState } from "@/app/auth/actions";
 import { AuthToastListener } from "./auth-toast-listener";
@@ -66,7 +66,7 @@ export function PortalAuthLayout({
         </header>
 
         <section className={isLogin ? "flex flex-1 items-center justify-center py-6 sm:py-8" : "flex flex-1 items-center justify-center py-8 sm:py-10 lg:py-12"}>
-          <div className={isLogin ? "w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6" : "w-full max-w-3xl rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 lg:p-8"}>
+          <div className={isLogin ? "w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6" : "w-full max-w-4xl rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 lg:p-8"}>
             {children}
             <div className={isLogin ? "mt-5 border-t border-zinc-100 pt-4 text-center text-sm text-zinc-600" : "mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-600"}>
               {mode === "login" ? "New to this portal?" : "Already have access?"}{" "}
@@ -137,7 +137,7 @@ export function AuthForm({
           <AuthField key={field.name} field={field} compact={isLogin} error={state.errors?.[field.name]} />
         ))}
         {hasPasswordPair ? (
-          <div className="grid grid-cols-2 gap-3 sm:col-span-2 sm:gap-4">
+          <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 sm:gap-4">
             {passwordFields.map((field) => (
               <AuthField key={field.name} field={field} compact={isLogin} alignLabel error={state.errors?.[field.name]} />
             ))}
@@ -174,6 +174,10 @@ function AuthField({
   error?: string;
 }) {
   const required = field.required ?? true;
+
+  if (field.type === "studentReferences") {
+    return <StudentReferencesField error={error} />;
+  }
 
   return (
     <label className={cn("block", field.spanFull && "sm:col-span-2")}>
@@ -216,6 +220,83 @@ function AuthField({
       )}
       {error ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{error}</span> : null}
     </label>
+  );
+}
+
+function StudentReferencesField({ error }: { error?: string }) {
+  const [references, setReferences] = useState([""]);
+  const countLabel = `${references.length} ${references.length === 1 ? "student" : "students"}`;
+
+  function updateReference(index: number, value: string) {
+    setReferences((current) => current.map((reference, itemIndex) => (itemIndex === index ? value : reference)));
+  }
+
+  function addReference() {
+    setReferences((current) => [...current, ""]);
+  }
+
+  function removeReference(index: number) {
+    setReferences((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  return (
+    <div className="sm:col-span-2">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <span className="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-500 sm:text-xs sm:tracking-[0.12em]">
+          Student IDs or references
+        </span>
+        <span className="rounded-md bg-[#fbe9e7] px-2 py-1 text-[11px] font-bold text-[#bf360c]">
+          {countLabel}
+        </span>
+      </div>
+      <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-[0_1px_0_rgba(17,19,26,0.03)] sm:p-4">
+        <p className="max-w-2xl text-xs leading-5 text-zinc-500 sm:text-[13px] sm:leading-6">
+          Enter the student references from the school. Add all children you want connected to this parent account.
+        </p>
+        <div className="mt-3 grid gap-2.5">
+          {references.map((reference, index) => (
+            <div key={index} className="grid gap-2 min-[560px]:grid-cols-[2rem_minmax(0,1fr)_auto] min-[560px]:items-center">
+              <span className="hidden size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs font-bold text-zinc-500 min-[560px]:inline-flex">
+                {index + 1}
+              </span>
+              <input
+                name="studentReferences"
+                type="text"
+                value={reference}
+                onChange={(event) => updateReference(index, event.target.value)}
+                placeholder={index === 0 ? "BWA-001" : "Another student reference"}
+                required={index === 0}
+                aria-label={`Student reference ${index + 1}`}
+                aria-invalid={Boolean(error)}
+                className="min-h-12 min-w-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
+              />
+              {references.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => removeReference(index)}
+                  className="min-h-11 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-600 transition hover:bg-zinc-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 min-[560px]:min-h-12"
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+          <button
+            type="button"
+            onClick={addReference}
+            className="min-h-11 rounded-lg border border-button-outline bg-white px-3 text-sm font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
+          >
+            Add another student
+          </button>
+          <span className="text-xs leading-5 text-zinc-500">
+            Duplicate references are ignored safely.
+          </span>
+        </div>
+      </div>
+      {error ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{error}</span> : null}
+    </div>
   );
 }
 

@@ -13,6 +13,7 @@ const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
 const parentLayoutPath = "app/parent/(portal)/layout.tsx";
 const parentStudentProfilePath = "app/parent/(portal)/student-profile/page.tsx";
 const parentStudentProfileViewPath = "app/parent/(portal)/student-profile/student-profile-view.tsx";
+const parentStudentsPagePath = "app/parent/(portal)/students/page.tsx";
 const parentSelectedStudentProfilePath = "app/parent/(portal)/students/[studentId]/page.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
 const parentShellPath = "app/parent/_components/parent-shell.tsx";
@@ -68,7 +69,12 @@ test("parent student link action is protected and links by student reference", (
   assert.match(action, /export async function linkParentStudentAction\(formData: FormData\)/);
   assert.match(action, /await requireRole\("parent"\)/);
   assert.match(action, /linkParentToStudentByReference/);
-  assert.match(action, /redirect\("\/parent\/dashboard"\)/);
+  assert.match(action, /safeRedirectPath/);
+  assert.match(action, /redirect\(redirectTo\)/);
+  assert.match(action, /Student already linked/);
+  assert.match(action, /already connected to your parent portal/);
+  assert.match(action, /path === "\/parent\/students"/);
+  assert.match(action, /return "\/parent\/dashboard"/);
 });
 
 test("parent registration attempts guardian linking after creating parent profile", () => {
@@ -79,8 +85,9 @@ test("parent registration attempts guardian linking after creating parent profil
   assert.match(authActions, /tryLinkAdminProfileToExistingSchool/);
   assert.match(authActions, /UPDATE admin_profiles ap\s+SET ap\.school_id = \(/);
   assert.match(authActions, /missingFullSchema/);
+  assert.match(authActions, /const studentReferences = parsed\.data\.profile\.studentReferences \?\? \[parsed\.data\.profile\.studentReference\]/);
+  assert.match(authActions, /for \(const studentReference of studentReferences\)/);
   assert.match(authActions, /await linkParentToStudentByReference\(/);
-  assert.match(authActions, /parsed\.data\.profile\.studentReference/);
 });
 
 test("admin and parent pages use database helpers instead of mock student arrays", () => {
@@ -108,6 +115,8 @@ test("admin and parent pages use database helpers instead of mock student arrays
   assert.match(parentDashboard, /linkParentStudentAction/);
   assert.match(parentDashboard, /<form action=\{linkParentStudentAction\}/);
   assert.match(parentDashboard, /href=\{student\.profileHref\}/);
+  assert.match(parentDashboard, /Use the student reference from the school\. You can add more than one child\./);
+  assert.match(parentDashboard, /href="\/parent\/students"/);
   assert.doesNotMatch(parentDashboard, /href="\/parent\/student-profile"/);
   assert.doesNotMatch(parentDashboard, /children|dashboardMetrics|outstandingFees|recentActivity/);
 });
@@ -151,9 +160,26 @@ test("parent portal removes dead enrollment wizard and keeps student reference l
   assert.doesNotMatch(parentPortalData, /Enroll a student|\/parent\/enroll/);
 
   assert.match(parentDashboard, /linkParentStudentAction/);
-  assert.match(parentDashboard, /Link another student/);
+  assert.match(parentDashboard, /Add another student/);
+  assert.match(parentDashboard, /Manage students/);
   assert.match(parentDashboard, /name="studentReference"/);
   assert.doesNotMatch(parentDashboard, /href="\/parent\/enroll"/);
+});
+
+test("parent My students page manages multiple linked students", () => {
+  assert.equal(existsSync(parentStudentsPagePath), true);
+  const parentStudentsPage = readFileSync(parentStudentsPagePath, "utf8");
+  const helper = readFileSync(studentRecordsPath, "utf8");
+
+  assert.match(parentStudentsPage, /requireRole\("parent"\)/);
+  assert.match(parentStudentsPage, /getParentDashboardData\(session\.userId\)/);
+  assert.match(parentStudentsPage, /StudentProfileSelector/);
+  assert.match(parentStudentsPage, /Add another student/);
+  assert.match(parentStudentsPage, /Use the student reference from the school\. You can add more than one child to this parent account\./);
+  assert.match(parentStudentsPage, /name="redirectTo" value="\/parent\/students"/);
+  assert.match(helper, /SELECT COUNT\(\*\) AS total FROM student_guardians WHERE student_id = :studentId AND parent_user_id = :parentUserId/);
+  assert.match(helper, /return "already_linked" as const/);
+  assert.doesNotMatch(helper, /ON DUPLICATE KEY UPDATE/);
 });
 
 test("parent portal shell and profile use real database-backed identity", () => {
@@ -256,6 +282,9 @@ test("backend checklist tracks completed student and guardian linking slice", ()
   assert.match(checklist, /- \[x\] Add backend helpers for `students` and `student_guardians`\./);
   assert.match(checklist, /- \[x\] Create an admin flow for adding or listing students\./);
   assert.match(checklist, /- \[x\] Link parent accounts to students using `student_reference`\./);
+  assert.match(checklist, /- \[x\] Allow parent registration to submit one or more student references\./);
   assert.match(checklist, /- \[x\] Show linked students on the parent dashboard from the database\./);
+  assert.match(checklist, /- \[x\] Add a parent My students page for managing multiple linked students\./);
+  assert.match(checklist, /- \[x\] Handle duplicate parent-student links with a friendly already-linked message\./);
   assert.match(checklist, /- \[x\] Keep parent access limited to their linked students only\./);
 });

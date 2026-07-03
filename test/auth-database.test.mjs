@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
+const authUiPath = "app/_components/auth-ui.tsx";
+const parentRegisterPath = "app/parent/register/page.tsx";
 const testCredentialInput = "not-a-real-test-login-value";
 
 test("auth schema creates role-scoped users and profile indexes for MySQL", () => {
@@ -66,21 +68,24 @@ test("auth validation normalizes role-specific registration payloads", async () 
   assert.equal(admin.data.phone, null);
   assert.equal(admin.data.profile.staffRole, "finance_officer");
 
-  const parent = parseRegisterForm("parent", new Map([
-    ["guardianName", " Maria Santos "],
-    ["email", "PARENT@EMAIL.COM"],
-    ["phone", "0917 000 0000"],
-    ["studentReference", "BWA-001"],
-    ["relationship", "Mother"],
-    ["password", testCredentialInput],
-    ["confirmPassword", testCredentialInput],
-  ]));
+  const parentForm = new FormData();
+  parentForm.append("guardianName", " Maria Santos ");
+  parentForm.append("email", "PARENT@EMAIL.COM");
+  parentForm.append("phone", "0917 000 0000");
+  parentForm.append("studentReferences", "BWA-001");
+  parentForm.append("studentReferences", " BWA-002 ");
+  parentForm.append("studentReferences", "bwa-001");
+  parentForm.append("relationship", "Mother");
+  parentForm.append("password", testCredentialInput);
+  parentForm.append("confirmPassword", testCredentialInput);
+  const parent = parseRegisterForm("parent", parentForm);
 
   assert.equal(parent.ok, true);
   assert.equal(parent.data.name, "Maria Santos");
   assert.equal(parent.data.phone, "0917 000 0000");
   assert.equal(parent.data.profile.studentName, "BWA-001");
   assert.equal(parent.data.profile.studentReference, "BWA-001");
+  assert.deepEqual(parent.data.profile.studentReferences, ["BWA-001", "BWA-002"]);
   assert.equal(parent.data.profile.relationship, "mother");
 
   const parentMissingPhone = parseRegisterForm("parent", new Map([
@@ -95,6 +100,19 @@ test("auth validation normalizes role-specific registration payloads", async () 
 
   assert.equal(parentMissingPhone.ok, false);
   assert.equal(parentMissingPhone.errors.phone, "Phone number is required.");
+
+  const parentMissingReferences = parseRegisterForm("parent", new Map([
+    ["guardianName", " Maria Santos "],
+    ["email", "parent4@email.com"],
+    ["phone", "0999 111 2222"],
+    ["studentReference", ""],
+    ["relationship", "Guardian"],
+    ["password", testCredentialInput],
+    ["confirmPassword", testCredentialInput],
+  ]));
+
+  assert.equal(parentMissingReferences.ok, false);
+  assert.equal(parentMissingReferences.errors.studentReferences, "Add at least one student ID or reference.");
 
   const parentWithoutStudentNames = parseRegisterForm("parent", new Map([
     ["guardianName", " Maria Santos "],
@@ -136,5 +154,21 @@ test("auth validation normalizes role-specific registration payloads", async () 
       password: testCredentialInput,
     },
   });
+});
+
+test("parent registration renders multi-student reference controls", () => {
+  const parentRegister = readFileSync(parentRegisterPath, "utf8");
+  const authUi = readFileSync(authUiPath, "utf8");
+
+  assert.match(parentRegister, /one or more existing student records/);
+  assert.match(parentRegister, /name: "studentReferences"/);
+  assert.match(parentRegister, /type: "studentReferences"/);
+  assert.doesNotMatch(parentRegister, /name: "studentReference"/);
+  assert.match(authUi, /function StudentReferencesField/);
+  assert.match(authUi, /name="studentReferences"/);
+  assert.match(authUi, /Add another student/);
+  assert.match(authUi, /Remove/);
+  assert.match(authUi, /Add all children you want connected to this parent account/);
+  assert.match(authUi, /Duplicate references are ignored safely/);
 });
 

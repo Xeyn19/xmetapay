@@ -99,7 +99,7 @@ export function ParentShell({
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   const active = pathname === item.href
-                    || pathname.startsWith(`${item.href}/`)
+                    || (item.href !== "/parent/students" && pathname.startsWith(`${item.href}/`))
                     || (item.href === "/parent/student-profile" && pathname.startsWith("/parent/students/"))
                     || (pathname === "/parent" && item.href === "/parent/dashboard");
                   return (
@@ -172,6 +172,7 @@ export function ParentShell({
 
 function getParentMeta(pathname: string, context: ParentPortalContext) {
   const isSelectedStudentProfilePath = pathname.startsWith("/parent/students/");
+  const isStudentsPath = pathname === "/parent/students";
   const isStudentProfilePath = pathname === "/parent/student-profile" || isSelectedStudentProfilePath;
   const page = isStudentProfilePath
     ? parentPageMeta["/parent/student-profile"]
@@ -191,6 +192,13 @@ function getParentMeta(pathname: string, context: ParentPortalContext) {
     return {
       title: page.title,
       subtitle: isSelectedStudentProfilePath ? "Selected student details" : studentLabel,
+    };
+  }
+
+  if (isStudentsPath) {
+    return {
+      title: page.title,
+      subtitle: "Add or open student records linked to this parent account",
     };
   }
 
