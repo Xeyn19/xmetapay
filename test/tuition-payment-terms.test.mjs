@@ -7,6 +7,7 @@ const fullSchemaPath = "database/full-schema-v1.sql";
 const tuitionTermsPath = "lib/tuition/terms.ts";
 const adminActionPath = "app/admin/tuition-terms/actions.ts";
 const tuitionTablePath = "app/admin/(dashboard)/tuition/tuition-report-table.tsx";
+const termScheduleFieldsPath = "app/admin/fees/tuition-term-schedule-fields.tsx";
 const adminRealDataPath = "lib/admin/real-data.ts";
 const parentFeeRecordsPath = "lib/fees/records.ts";
 const parentFeesTablePath = "app/parent/(portal)/fees/fees-table.tsx";
@@ -44,6 +45,7 @@ test("admin tuition term action requires finance access and validates totals", (
 
   assert.match(action, /"use server";/);
   assert.match(action, /export async function saveTuitionTermsAction/);
+  assert.match(action, /export async function updateTuitionAssignmentAction/);
   assert.match(action, /await requireRole\("admin"\)/);
   assert.match(action, /canAccessFinance\(staffRole\)/);
   assert.match(action, /parseTuitionTermInputs/);
@@ -56,6 +58,9 @@ test("admin tuition term action requires finance access and validates totals", (
   assert.match(terms, /DELETE FROM tuition_payment_terms/);
   assert.match(terms, /INSERT INTO tuition_payment_terms/);
   assert.match(action, /revalidatePath\("\/parent\/pay-tuition"\)/);
+  assert.match(action, /Amount due cannot be lower than the amount already paid/);
+  assert.match(action, /This tuition has terms\. Use Manage terms before changing the total amount/);
+  assert.match(action, /UPDATE student_fee_assignments/);
 });
 
 test("tuition term service owns shared parsing, payable, and payment rules", () => {
@@ -76,23 +81,31 @@ test("tuition term service owns shared parsing, payable, and payment rules", () 
 
 test("admin tuition report exposes per-student manage terms UI", () => {
   const table = readFileSync(tuitionTablePath, "utf8");
+  const termFields = readFileSync(termScheduleFieldsPath, "utf8");
   const helper = readFileSync(adminRealDataPath, "utf8");
 
   assert.match(helper, /assignmentId: number/);
+  assert.match(helper, /dueDate: string \| null/);
+  assert.match(helper, /statusValue: "open" \| "partial" \| "paid" \| "cancelled"/);
   assert.match(helper, /terms: TuitionTermRow\[\]/);
   assert.match(helper, /LEFT JOIN tuition_payment_terms tpt/);
   assert.match(helper, /LEFT JOIN payment_term_allocations pta/);
   assert.match(helper, /getTuitionTermSummary/);
   assert.match(helper, /parseTuitionTermsBlob/);
-  assert.match(table, /saveTuitionTermsAction/);
+  assert.match(table, /saveTuitionTermsAction, updateTuitionAssignmentAction/);
   assert.match(table, /Manage terms/);
-  assert.match(table, /name="termName"/);
-  assert.match(table, /name="termAmount"/);
-  assert.match(table, /name="termDueDate"/);
-  assert.match(table, /Term total must equal the remaining tuition balance/);
-  assert.match(table, /rebalanceTerms\(\[\.\.\.current, blankTerm\(current\.length\)\], remainingBalance\)/);
-  assert.match(table, /rebalanceTerms\(current\.filter\(\(item\) => item\.key !== term\.key\), remainingBalance\)/);
-  assert.match(table, /function rebalanceTerms/);
+  assert.match(table, /Edit tuition assignment/);
+  assert.match(table, /Term due dates remain the parent payment deadlines/);
+  assert.match(table, /The fee due date is the parent payment deadline/);
+  assert.match(table, /Amount is locked while terms exist/);
+  assert.match(table, /For reporting only\. Parents pay by the term due dates/);
+  assert.match(table, /TuitionTermScheduleFields/);
+  assert.match(termFields, /name="termName"/);
+  assert.match(termFields, /name="termAmount"/);
+  assert.match(termFields, /name="termDueDate"/);
+  assert.match(termFields, /Term due date/);
+  assert.match(termFields, /Term amounts must match the tuition amount before saving/);
+  assert.match(termFields, /function rebalanceTerms/);
 });
 
 test("parent fee and payment helpers expose payable tuition terms through guardian scope", () => {
@@ -103,7 +116,10 @@ test("parent fee and payment helpers expose payable tuition terms through guardi
   const terms = readFileSync(tuitionTermsPath, "utf8");
 
   assert.match(feeHelper, /parseTuitionTermsBlob/);
-  assert.match(feeHelper, /parseFeeTerms/);
+  assert.match(feeHelper, /formatFeeTerms/);
+  assert.match(feeHelper, /dueDateCandidates/);
+  assert.match(feeHelper, /See term schedule/);
+  assert.match(feeHelper, /Earliest unpaid fee or term due date/);
   assert.match(feesTable, /Tuition payment terms/);
   assert.match(feesTable, /Visible now, not payable for this status/);
   assert.match(paymentHelper, /source: "fee" \| "term"/);

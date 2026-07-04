@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
-import { CalendarDays, Plus, X } from "lucide-react";
+import { CalendarDays, Pencil, X } from "lucide-react";
 
-import { saveTuitionTermsAction } from "@/app/admin/tuition-terms/actions";
+import { saveTuitionTermsAction, updateTuitionAssignmentAction } from "@/app/admin/tuition-terms/actions";
+import { TuitionTermScheduleFields } from "@/app/admin/fees/tuition-term-schedule-fields";
 import {
   DashboardTableControls,
   DashboardTablePagination,
@@ -14,7 +15,7 @@ import {
   usePaginatedRows,
 } from "@/app/_components/table-controls";
 
-import { AdminButton, AdminTable, Field, StatusPill, fieldControlClass } from "../../_components/admin-ui";
+import { AdminButton, AdminTable, StatusPill } from "../../_components/admin-ui";
 
 export type TuitionReportRow = {
   assignmentId: number;
@@ -24,8 +25,10 @@ export type TuitionReportRow = {
   due: number;
   paid: number;
   balance: number;
+  dueDate: string | null;
   lastPayment: string;
   status: "paid" | "partial" | "unpaid";
+  statusValue: "open" | "partial" | "paid" | "cancelled";
   termSummary: string;
   terms: Array<{
     id: number;
@@ -126,7 +129,10 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
                 </td>
                 <td className="text-[12px] font-semibold text-[#5a6070]">{row.termSummary}</td>
                 <td>
-                  <TuitionTermsModal row={row} />
+                  <div className="flex flex-wrap gap-2">
+                    <TuitionAssignmentEditModal row={row} />
+                    <TuitionTermsModal row={row} />
+                  </div>
                 </td>
               </tr>
             );
@@ -153,12 +159,153 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
   );
 }
 
+function TuitionAssignmentEditModal({ row }: { row: TuitionReportRow }) {
+  const [open, setOpen] = useState(false);
+  const titleId = useId();
+  const hasTerms = row.terms.length > 0;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex min-h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] transition hover:border-[#e64a19]/35 hover:bg-[#fff5f2] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+      >
+        Edit
+      </button>
+
+      {open ? (
+        <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-[#0f1117]/45 px-3 py-6 backdrop-blur-sm sm:px-6">
+          <button
+            type="button"
+            aria-label="Close tuition edit dialog"
+            className="fixed inset-0 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            className="relative flex max-h-[calc(100svh-48px)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-black/[0.07] bg-white shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
+              <div>
+                <h2 id={titleId} className="flex items-center gap-2 text-[13px] font-bold text-[#0f1117]">
+                  <Pencil className="size-4 text-[#e64a19]" />
+                  Edit tuition assignment
+                </h2>
+                <p className="mt-1 text-[11.5px] leading-5 text-[#5a6070]">
+                  Update {row.student}&apos;s tuition report details. {hasTerms ? "Term due dates remain the parent payment deadlines." : "The fee due date is the parent payment deadline."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                aria-label="Close modal"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <form action={updateTuitionAssignmentAction} className="overflow-y-auto">
+              <input type="hidden" name="assignmentId" value={row.assignmentId} />
+              <div className="grid gap-4 p-4 sm:p-5">
+                <label className="grid gap-1.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#5a6070]">
+                  Amount due
+                  {hasTerms ? (
+                    <>
+                      <input type="hidden" name="amountDue" value={row.due} />
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={row.due}
+                        disabled
+                        className="min-h-12 rounded-lg border border-black/10 bg-[#f2f4f7] px-3 text-[14px] font-semibold normal-case tracking-normal text-[#5a6070] outline-none"
+                      />
+                    </>
+                  ) : (
+                    <input
+                      name="amountDue"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      defaultValue={row.due}
+                      className="min-h-12 rounded-lg border border-black/10 bg-white px-3 text-[14px] font-semibold normal-case tracking-normal text-[#0f1117] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15"
+                      required
+                    />
+                  )}
+                  <span className="text-[11.5px] font-medium normal-case leading-5 tracking-normal text-[#5a6070]">
+                    {hasTerms ? "Amount is locked while terms exist. Use Manage terms to control the schedule." : "Amount cannot be lower than the amount already paid."}
+                  </span>
+                </label>
+
+                <label className="grid gap-1.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#5a6070]">
+                  {hasTerms ? "Overall due date" : "Fee due date"}
+                  <input
+                    name="dueDate"
+                    type="date"
+                    defaultValue={row.dueDate ?? ""}
+                    className="min-h-12 rounded-lg border border-black/10 bg-white px-3 text-[14px] normal-case tracking-normal text-[#0f1117] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15"
+                  />
+                  <span className="text-[11.5px] font-medium normal-case leading-5 tracking-normal text-[#5a6070]">
+                    {hasTerms ? "For reporting only. Parents pay by the term due dates." : "This is the parent payment deadline when no terms exist."}
+                  </span>
+                </label>
+
+                <label className="grid gap-1.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#5a6070]">
+                  Status
+                  <select
+                    name="status"
+                    defaultValue={row.statusValue}
+                    className="min-h-12 rounded-lg border border-black/10 bg-white px-3 text-[14px] normal-case tracking-normal text-[#0f1117] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15"
+                    required
+                  >
+                    <option value="open">Open</option>
+                    <option value="partial">Partial</option>
+                    <option value="paid">Paid</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-black/[0.07] px-4 py-3.5 sm:flex-row sm:justify-end sm:px-5">
+                <AdminButton type="button" tone="outline" className="w-full sm:w-auto" onClick={() => setOpen(false)}>
+                  Cancel
+                </AdminButton>
+                <AdminButton type="submit" tone="primary" className="w-full sm:w-auto">
+                  Save changes
+                </AdminButton>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function TuitionTermsModal({ row }: { row: TuitionReportRow }) {
   const [open, setOpen] = useState(false);
   const [terms, setTerms] = useState(() => initialTerms(row));
   const titleId = useId();
   const remainingBalance = row.balance;
-  const termTotal = terms.reduce((sum, term) => sum + Number(term.amount || 0), 0);
 
   useEffect(() => {
     if (!open) {
@@ -225,68 +372,14 @@ function TuitionTermsModal({ row }: { row: TuitionReportRow }) {
             <form action={saveTuitionTermsAction} className="overflow-y-auto">
               <input type="hidden" name="assignmentId" value={row.assignmentId} />
               <div className="space-y-4 p-4 sm:p-5">
-                <div className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-3 text-[12.5px] leading-5 text-[#5a6070]">
-                  Term total must equal the remaining tuition balance. Current term total:{" "}
-                  <span className={Math.round(termTotal * 100) === Math.round(remainingBalance * 100) ? "font-bold text-[#2e7d32]" : "font-bold text-[#c62828]"}>
-                    {money(termTotal)}
-                  </span>
-                </div>
-
-                <div className="grid gap-3">
-                  {terms.map((term, index) => (
-                    <div key={term.key} className="grid gap-3 rounded-lg border border-black/[0.07] bg-white p-3 min-[720px]:grid-cols-[1fr_150px_170px_44px]">
-                      <Field label={`Term ${index + 1} name`} required>
-                        <input
-                          name="termName"
-                          value={term.name}
-                          onChange={(event) => updateTerm(setTerms, term.key, "name", event.target.value)}
-                          className={fieldControlClass}
-                          required
-                        />
-                      </Field>
-                      <Field label="Amount" required>
-                        <input
-                          name="termAmount"
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={term.amount}
-                          onChange={(event) => updateTerm(setTerms, term.key, "amount", event.target.value)}
-                          className={fieldControlClass}
-                          required
-                        />
-                      </Field>
-                      <Field label="Due date" required>
-                        <input
-                          name="termDueDate"
-                          type="date"
-                          value={term.dueDate}
-                          onChange={(event) => updateTerm(setTerms, term.key, "dueDate", event.target.value)}
-                          className={fieldControlClass}
-                          required
-                        />
-                      </Field>
-                      <button
-                        type="button"
-                        onClick={() => setTerms((current) => rebalanceTerms(current.filter((item) => item.key !== term.key), remainingBalance))}
-                        className="mt-auto inline-flex min-h-12 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
-                        aria-label={`Remove ${term.name}`}
-                        disabled={terms.length === 1}
-                      >
-                        <X className="size-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setTerms((current) => rebalanceTerms([...current, blankTerm(current.length)], remainingBalance))}
-                  className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-black/10 bg-white px-3.5 text-[12.5px] font-semibold text-[#0f1117] transition hover:border-[#e64a19]/35 hover:bg-[#fff5f2] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
-                >
-                  <Plus className="size-4" />
-                  Add term
-                </button>
+                <TuitionTermScheduleFields
+                  totalAmount={remainingBalance}
+                  initialTerms={terms}
+                  defaultTermCount={row.terms.length > 0 ? 0 : 3}
+                  title="Student payment terms"
+                  emptyText="No terms yet."
+                  addLabel="Add term"
+                />
               </div>
 
               <div className="flex flex-col-reverse gap-2 border-t border-black/[0.07] px-4 py-3.5 sm:flex-row sm:justify-end sm:px-5">
@@ -330,33 +423,6 @@ function initialTerms(row: TuitionReportRow): EditableTerm[] {
     amount: String(amount),
     dueDate: "",
   }));
-}
-
-function blankTerm(index: number): EditableTerm {
-  return {
-    key: `new-${Date.now()}-${index}`,
-    name: `Term ${index + 1}`,
-    amount: "",
-    dueDate: "",
-  };
-}
-
-function rebalanceTerms(terms: EditableTerm[], total: number): EditableTerm[] {
-  const split = splitAmount(total, Math.max(terms.length, 1));
-
-  return terms.map((term, index) => ({
-    ...term,
-    amount: String(split[index] ?? 0),
-  }));
-}
-
-function updateTerm(
-  setTerms: (updater: (current: EditableTerm[]) => EditableTerm[]) => void,
-  key: string,
-  field: keyof Omit<EditableTerm, "key">,
-  value: string,
-) {
-  setTerms((current) => current.map((term) => (term.key === key ? { ...term, [field]: value } : term)));
 }
 
 function splitAmount(total: number, parts: number) {

@@ -46,6 +46,17 @@ type SaveTuitionTermScheduleParams = {
   terms: TuitionTermInput[];
 };
 
+type SaveFeeTypeTermTemplateParams = {
+  feeTypeId: number;
+  terms: TuitionTermInput[];
+};
+
+type CreateTuitionTermsFromTemplateParams = {
+  assignmentIds: number[];
+  templateTerms: TuitionTermInput[];
+  amountDue: number;
+};
+
 type ApplyTuitionTermPaymentParams = {
   parentUserId: number;
   tuitionTermIds: number[];
@@ -153,6 +164,136 @@ export function validateTuitionTermSchedule(terms: TuitionTermInput[], remaining
   }
 
   return totalTerms;
+}
+
+export async function saveFeeTypeTermTemplate(
+  connection: PoolConnection,
+  params: SaveFeeTypeTermTemplateParams,
+) {
+  if (params.terms.length === 0) {
+    return 0;
+  }
+
+  const values = params.terms
+    .map((_, index) => `(:feeTypeId, :termName${index}, :sortOrder${index}, :amountDue${index}, :dueDate${index})`)
+    .join(", ");
+  const queryParams = params.terms.reduce<Record<string, string | number>>((next, term, index) => {
+    next[`termName${index}`] = term.name;
+    next[`sortOrder${index}`] = index + 1;
+    next[`amountDue${index}`] = term.amount;
+    next[`dueDate${index}`] = term.dueDate;
+    return next;
+  }, { feeTypeId: params.feeTypeId });
+
+  await connection.execute<ResultSetHeader>(
+    `INSERT INTO fee_type_term_templates (
+       fee_type_id, term_name, sort_order, amount_due, due_date
+     )
+     VALUES ${values}`,
+    queryParams,
+  );
+
+  return params.terms.length;
+}
+
+export async function getFeeTypeTermTemplate(connection: PoolConnection, feeTypeId: number) {
+  const [rows] = await connection.execute<FeeTypeTermTemplateRow[]>(
+    `SELECT term_name, amount_due, due_date
+     FROM fee_type_term_templates
+     WHERE fee_type_id = :feeTypeId
+     ORDER BY sort_order ASC`,
+    { feeTypeId },
+  );
+
+  return rows.map((row) => ({
+    name: row.term_name,
+    amount: decimalValue(row.amount_due),
+    dueDate: formatDateForInput(row.due_date),
+  }));
+}
+
+export async function createTuitionTermsFromTemplate(
+  connection: PoolConnection,
+  params: CreateTuitionTermsFromTemplateParams,
+) {
+  if (params.assignmentIds.length === 0 || params.templateTerms.length === 0) {
+    return 0;
+  }
+
+  const scaledTerms = scaleTuitionTermTemplate(params.templateTerms, params.amountDue);
+  let createdCount = 0;
+
+  for (const assignmentId of params.assignmentIds) {
+    const [existingRows] = await connection.execute<CountRow[]>(
+      `SELECT COUNT(*) AS total
+       FROM tuition_payment_terms
+       WHERE student_fee_assignment_id = :assignmentId`,
+      { assignmentId },
+    );
+
+    if (numberValue(existingRows[0]?.total) > 0) {
+      continue;
+    }
+
+    const values = scaledTerms
+      .map((_, index) =>
+        `(:assignmentId, :termName${index}, :sortOrder${index}, :amountDue${index}, 0.00, :dueDate${index}, 'open')`,
+      )
+      .join(", ");
+    const queryParams = scaledTerms.reduce<Record<string, string | number>>((next, term, index) => {
+      next[`termName${index}`] = term.name;
+      next[`sortOrder${index}`] = index + 1;
+      next[`amountDue${index}`] = term.amount;
+      next[`dueDate${index}`] = term.dueDate;
+      return next;
+    }, { assignmentId });
+
+    await connection.execute<ResultSetHeader>(
+      `INSERT INTO tuition_payment_terms (
+         student_fee_assignment_id, term_name, sort_order, amount_due, amount_paid, due_date, status
+       )
+       VALUES ${values}`,
+      queryParams,
+    );
+    createdCount += scaledTerms.length;
+  }
+
+  return createdCount;
+}
+
+export function scaleTuitionTermTemplate(terms: TuitionTermInput[], amountDue: number) {
+  if (terms.length === 0) {
+    return [];
+  }
+
+  const totalCents = Math.round(roundMoney(amountDue) * 100);
+
+  if (totalCents < terms.length) {
+    throw new TuitionTermsError("Custom amount is too small for this tuition term template.");
+  }
+
+  const templateTotalCents = terms.reduce((sum, term) => sum + Math.round(term.amount * 100), 0);
+
+  if (templateTotalCents <= 0) {
+    throw new TuitionTermsError("Tuition term template amounts must be greater than zero.");
+  }
+
+  let allocatedCents = 0;
+
+  return terms.map((term, index) => {
+    const remainingTerms = terms.length - index;
+    const remainingCents = totalCents - allocatedCents;
+    const cents = index === terms.length - 1
+      ? remainingCents
+      : Math.max(1, Math.min(remainingCents - (remainingTerms - 1), Math.round((Math.round(term.amount * 100) / templateTotalCents) * totalCents)));
+
+    allocatedCents += cents;
+
+    return {
+      ...term,
+      amount: roundMoney(cents / 100),
+    };
+  });
 }
 
 export async function saveTuitionTermSchedule(
@@ -428,6 +569,14 @@ function validDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
 }
 
+function formatDateForInput(value: Date | string) {
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  return String(value).slice(0, 10);
+}
+
 function decimalValue(value: number | string | null | undefined) {
   return Number(value ?? 0);
 }
@@ -449,6 +598,12 @@ function money(value: number) {
 
 type CountRow = RowDataPacket & {
   total: number;
+};
+
+type FeeTypeTermTemplateRow = RowDataPacket & {
+  term_name: string;
+  amount_due: number | string;
+  due_date: Date | string;
 };
 
 type TuitionAssignmentRow = RowDataPacket & {

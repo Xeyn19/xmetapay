@@ -22,6 +22,10 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Adds `tuition_payment_terms`.
    - Adds `payment_term_allocations`.
    - Keeps existing tuition assignments and payment history.
+6. If `full-schema-v1.sql` was already imported before fee type term templates were added, import `migrations/2026-07-04-fee-type-term-templates.sql`.
+   - Adds `fee_type_term_templates`.
+   - Lets tuition fee types store reusable installment templates.
+   - Existing tuition fee types and per-student terms stay unchanged.
 
 ## Local Verification
 

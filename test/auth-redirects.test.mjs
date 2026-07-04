@@ -97,6 +97,7 @@ test("auth sessions are database-backed and never expose raw tokens", () => {
   assert.match(session, /row\.user_status !== "active"/);
   assert.match(session, /row\.user_role !== row\.role/);
   assert.match(session, /UPDATE auth_sessions\s+SET last_used_at = CURRENT_TIMESTAMP/);
+  assert.match(session, /Session reads should not fail just because XAMPP reset a bookkeeping write/);
   assert.doesNotMatch(session, /signSession/);
   assert.doesNotMatch(session, /verifySessionToken/);
 });
