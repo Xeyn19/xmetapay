@@ -18,6 +18,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Local database environment file is ignored by Git.
 - [x] Auth uses database-backed `auth_sessions` with hashed tokens and logout revocation.
 - [x] Admin dashboard pages use MySQL-backed reads where tables exist, with honest pending/empty states where feature data is not created yet.
+- [x] School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - [x] Student, enrollment, and guardian-linking backend is implemented.
 - [x] Parent local test payments, fee allocations, receipts, and payment history are implemented.
 - [x] Parent local wallet top-up and wallet transaction history are implemented.

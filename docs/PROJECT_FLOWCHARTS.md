@@ -49,6 +49,7 @@ Implemented:
 - Admin allowance total balance is calculated from the current `wallets.balance` values, counting each wallet once.
 - Admin allowance ledger shows real monthly top-up stats and segmented wallet-balance filters.
 - Store/canteen purchase recording through student wallets.
+- School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - Admin CSV and PDF report exports for monthly revenue, collections, outstanding balances, and wallet/store activity.
 - Admin and parent real-data tables paginate on screen and can export filtered rows as CSV or PDF.
 - Queued in-app payment reminder history through `notification_logs`.
