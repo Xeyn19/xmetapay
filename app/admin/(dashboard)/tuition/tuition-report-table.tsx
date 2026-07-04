@@ -14,6 +14,7 @@ import {
   toFilterOptions,
   usePaginatedRows,
 } from "@/app/_components/table-controls";
+import { Button } from "@/components/ui/button";
 
 import { AdminButton, AdminTable, StatusPill } from "../../_components/admin-ui";
 
@@ -97,16 +98,14 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
       </div>
       <AdminTable
         headers={[
-          { label: "Student name", className: "w-[20%]" },
-          { label: "Grade", className: "w-[10%]" },
-          { label: "Section", className: "w-[10%]" },
-          { label: "Fee due", className: "w-[12%]" },
-          { label: "Paid", className: "w-[11%]" },
+          { label: "Student", className: "w-[22%]" },
+          { label: "Schedule", className: "w-[18%]" },
+          { label: "Fee due", className: "w-[11%]" },
+          { label: "Paid", className: "w-[10%]" },
           { label: "Balance", className: "w-[11%]" },
           { label: "Last payment", className: "w-[12%]" },
-          { label: "Status", className: "w-[10%]" },
-          { label: "Terms", className: "w-[12%]" },
-          { label: "Action", className: "w-[10%]" },
+          { label: "Status", className: "w-[8%]" },
+          { label: "Actions", className: "w-[8%]" },
         ]}
       >
         {filteredRows.length > 0 ? (
@@ -115,21 +114,35 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
 
             return (
               <tr key={row.assignmentId}>
-                <td className="font-bold">{row.student}</td>
-                <td>{row.grade}</td>
-                <td>{row.section}</td>
-                <td>P{row.due.toLocaleString()}</td>
+                <td className="whitespace-normal">
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-[#0f1117]">{row.student}</p>
+                    <p className="mt-1 truncate text-[11.5px] font-medium text-[#5a6070]">
+                      {row.grade} - {row.section}
+                    </p>
+                  </div>
+                </td>
+                <td className="whitespace-normal">
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-semibold text-[#0f1117]">
+                      {row.terms.length > 0 ? row.termSummary : "No terms"}
+                    </p>
+                    <p className="mt-1 truncate text-[11px] font-medium text-[#5a6070]">
+                      {row.terms.length > 0 ? "Parents pay by term due dates" : row.dueDate ? `Fee due ${row.dueDate}` : "No fee due date"}
+                    </p>
+                  </div>
+                </td>
+                <td className="font-semibold text-[#0f1117]">P{row.due.toLocaleString()}</td>
                 <td className="font-semibold text-[#2e7d32]">P{row.paid.toLocaleString()}</td>
-                <td className={row.balance > 0 ? "font-semibold text-[#c62828]" : "text-[#9ba3b8]"}>
+                <td className={row.balance > 0 ? "font-semibold text-[#c62828]" : "font-semibold text-[#9ba3b8]"}>
                   P{row.balance.toLocaleString()}
                 </td>
                 <td className="font-mono text-[11px] text-[#5a6070]">{row.lastPayment}</td>
                 <td>
                   <StatusPill tone={row.status}>{statusLabel}</StatusPill>
                 </td>
-                <td className="text-[12px] font-semibold text-[#5a6070]">{row.termSummary}</td>
                 <td>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center justify-end gap-1.5">
                     <TuitionAssignmentEditModal row={row} />
                     <TuitionTermsModal row={row} />
                   </div>
@@ -139,7 +152,7 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
           })
         ) : (
           <tr>
-            <td colSpan={10} className="text-center text-[#5a6070]">
+            <td colSpan={8} className="text-center text-[#5a6070]">
               {rows.length === 0 ? "No tuition fee assignments yet." : "No tuition rows match the current filters."}
             </td>
           </tr>
@@ -181,13 +194,16 @@ function TuitionAssignmentEditModal({ row }: { row: TuitionReportRow }) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] transition hover:border-[#e64a19]/35 hover:bg-[#fff5f2] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+        variant="outline"
+        size="icon-sm"
+        title={`Edit assignment for ${row.student}`}
+        aria-label={`Edit tuition assignment for ${row.student}`}
       >
-        Edit
-      </button>
+        <Pencil />
+      </Button>
 
       {open ? (
         <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-[#0f1117]/45 px-3 py-6 backdrop-blur-sm sm:px-6">
@@ -324,16 +340,19 @@ function TuitionTermsModal({ row }: { row: TuitionReportRow }) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => {
           setTerms(initialTerms(row));
           setOpen(true);
         }}
-        className="inline-flex min-h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] transition hover:border-[#e64a19]/35 hover:bg-[#fff5f2] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+        variant="outline"
+        size="icon-sm"
+        title={`Manage terms for ${row.student}`}
+        aria-label={`Manage tuition terms for ${row.student}`}
       >
-        Manage terms
-      </button>
+        <CalendarDays />
+      </Button>
 
       {open ? (
         <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-[#0f1117]/45 px-3 py-6 backdrop-blur-sm sm:px-6">
