@@ -83,10 +83,13 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(forms, /Leave blank to use fee default/);
   assert.match(forms, /Use for discounts, scholarships, or special charges/);
   assert.match(forms, /name="dueDate"/);
-  assert.match(forms, /Set a specific payment deadline/);
+  assert.match(forms, /Fee due date/);
+  assert.match(forms, /Overall due date/);
+  assert.match(forms, /Parents pay by the term due dates from the template/);
+  assert.match(forms, /Used as the parent payment deadline when this tuition has no terms/);
   assert.match(forms, /Choose fee/);
   assert.match(forms, /Select students/);
-  assert.match(forms, /Custom amount and due date/);
+  assert.match(forms, /Amount override and deadline/);
   assert.match(forms, /xl:grid-cols-\[0\.8fr_1\.2fr\]/);
   assert.doesNotMatch(forms, /Amount due/);
   assert.doesNotMatch(forms, /Use default/);

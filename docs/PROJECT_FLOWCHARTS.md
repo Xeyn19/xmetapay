@@ -390,20 +390,26 @@ Implemented.
 ```mermaid
 flowchart TD
   A["Admin opens fees or tuition setup"] --> B["Create fee_types for active school year"]
-  B --> C["Search and select one or more enrolled students"]
-  C --> D["Create student_fee_assignments and skip duplicates"]
-  D --> E{"Tuition needs installments?"}
-  E -->|Yes| F["Admin opens Manage terms and creates tuition_payment_terms"]
-  E -->|No| G["Keep normal fee assignment balance"]
-  F --> H["Parent opens fee summary"]
-  G --> H
-  H --> I["Show balances and tuition term schedule by student"]
-  I --> J["Admin tuition report reads the same balances and term summary"]
+  B --> C{"Tuition fee type has template?"}
+  C -->|Yes| D["Save fee_type_term_templates"]
+  C -->|No| E["Keep normal fee type"]
+  D --> F["Search and select one or more enrolled students"]
+  E --> F
+  F --> G["Create student_fee_assignments and skip duplicates"]
+  G --> H{"Template exists?"}
+  H -->|Yes| I["Automatically create per-student tuition terms"]
+  H -->|No| J["Keep normal fee assignment balance"]
+  I --> K["Admin can adjust final schedule with Manage terms"]
+  J --> L["Parent opens fee summary"]
+  K --> L
+  L --> M["Show balances and tuition term schedule by student"]
+  M --> N["Admin tuition report reads the same balances and term summary"]
 ```
 
 Database touchpoints:
 
 - `fee_types`
+- `fee_type_term_templates`
 - `student_fee_assignments`
 - `tuition_payment_terms`
 - `students`
@@ -447,6 +453,12 @@ Database touchpoints:
 - `student_guardians`
 
 Tuition terms are implemented per student tuition assignment through a shared server-only tuition terms helper. Parents can pay open or partial terms early, even before the due date. Other fees remain on the normal fee assignment payment flow.
+
+Due date rule:
+
+- Fees without terms use the assignment due date from `student_fee_assignments`.
+- Tuition with terms uses each installment due date from `tuition_payment_terms`.
+- The parent fee summary shows `See term schedule` on the main tuition row when term dates control the deadlines.
 
 ## Wallet, Allowance, And Store Flow
 

@@ -90,12 +90,16 @@ export async function getSession() {
     return null;
   }
 
-  await pool.execute(
-    `UPDATE auth_sessions
-     SET last_used_at = CURRENT_TIMESTAMP
-     WHERE id = :id`,
-    { id: row.id },
-  );
+  try {
+    await pool.execute(
+      `UPDATE auth_sessions
+       SET last_used_at = CURRENT_TIMESTAMP
+       WHERE id = :id`,
+      { id: row.id },
+    );
+  } catch {
+    // Session reads should not fail just because XAMPP reset a bookkeeping write.
+  }
 
   return {
     userId: row.user_id,

@@ -169,6 +169,19 @@ Main purpose:
 
 Examples include tuition, miscellaneous fee, lab fee, activity fee, and allowance-related charges.
 
+### `fee_type_term_templates`
+
+Stores optional reusable installment templates for tuition fee types.
+
+Main purpose:
+
+- Let admin/finance define payment terms once in the Add tuition fee type modal.
+- Keep term name, order, amount, and term due date connected to the tuition fee type.
+- Automatically create per-student tuition terms when that templated tuition fee is assigned.
+- Leave other fees on the normal single-balance assignment flow.
+
+If an assignment uses a custom amount, the template term amounts are scaled proportionally and the final term absorbs any cent-rounding difference. The generated student-specific terms are still editable later through Manage terms.
+
 ### `student_fee_assignments`
 
 Assigns fees to students and tracks balances.
@@ -177,11 +190,13 @@ Main purpose:
 
 - Store how much a student owes for a fee.
 - Track how much has already been paid.
-- Track due dates and payment status: open, partial, paid, or cancelled.
+- Track the fee due date and payment status: open, partial, paid, or cancelled.
 - Support selected-student bulk assignment while the unique key prevents duplicate fee charges for the same student, fee, and school year.
 - Support both admin tuition reports and parent fee summaries.
 
 This table is the main source for outstanding balances.
+
+If a tuition assignment has installment terms, the parent-facing payment deadlines come from `tuition_payment_terms.due_date`. If a fee has no terms, the parent-facing payment deadline comes from `student_fee_assignments.due_date`.
 
 ### `tuition_payment_terms`
 

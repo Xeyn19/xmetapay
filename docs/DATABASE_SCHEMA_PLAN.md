@@ -286,7 +286,7 @@ CREATE TABLE enrollment_documents (
 
 #### `fee_types`
 
-Defines tuition and other school fees.
+Defines tuition and other school fees. Tuition fee types can optionally have a fee type term template so the same installment schedule is reused whenever that tuition type is assigned.
 
 ```sql
 CREATE TABLE fee_types (
@@ -304,6 +304,28 @@ CREATE TABLE fee_types (
   KEY idx_fee_types_school_category_status (school_id, category, status),
   CONSTRAINT fk_fee_types_school FOREIGN KEY (school_id) REFERENCES schools(id),
   CONSTRAINT fk_fee_types_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id)
+);
+```
+
+#### `fee_type_term_templates`
+
+Stores reusable tuition payment term templates for a tuition fee type. This is the fee type term template layer: when admin/finance assigns a templated tuition fee to selected students, the app automatically create per-student tuition terms in `tuition_payment_terms`. Other fees do not use this table.
+
+```sql
+CREATE TABLE fee_type_term_templates (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  fee_type_id BIGINT UNSIGNED NOT NULL,
+  term_name VARCHAR(120) NOT NULL,
+  sort_order INT UNSIGNED NOT NULL,
+  amount_due DECIMAL(10,2) NOT NULL,
+  due_date DATE NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_fee_type_term_templates_order (fee_type_id, sort_order),
+  UNIQUE KEY uq_fee_type_term_templates_name (fee_type_id, term_name),
+  KEY idx_fee_type_term_templates_fee_type (fee_type_id),
+  CONSTRAINT fk_fee_type_term_templates_fee_type FOREIGN KEY (fee_type_id) REFERENCES fee_types(id) ON DELETE CASCADE
 );
 ```
 

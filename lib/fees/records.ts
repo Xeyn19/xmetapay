@@ -13,7 +13,7 @@ export type AdminFeeSetupData = {
   warning: string | null;
   activeSchoolYearName: string | null;
   students: Array<{ id: number; name: string; meta: string }>;
-  feeTypes: Array<{ id: number; name: string; amount: string; amountValue: number }>;
+  feeTypes: Array<{ id: number; name: string; amount: string; amountValue: number; termCount: number }>;
 };
 
 export type ParentFeePageData = {
@@ -99,6 +99,10 @@ export async function getAdminFeeSetupData(
 export async function getParentFeePageData(parentUserId: number): Promise<ParentFeePageData> {
   try {
     const rows = await getParentFeeRows(parentUserId);
+    const rowsWithTerms = rows.map((row) => ({
+      row,
+      rawTerms: parseTuitionTermsBlob(row.terms_blob),
+    }));
     const totals = rows.reduce(
       (sum, row) => ({
         billed: sum.billed + decimalValue(row.amount_due),
@@ -107,11 +111,11 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
       }),
       { billed: 0, paid: 0, outstanding: 0 },
     );
-    const nextDue = rows
-      .filter((row) => row.due_date)
-      .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)))[0]?.due_date;
-    const displayRows = rows.map((row) => {
-      const terms = parseFeeTerms(row.terms_blob);
+    const nextDue = rowsWithTerms
+      .flatMap(({ row, rawTerms }) => dueDateCandidates(row, rawTerms))
+      .sort()[0];
+    const displayRows = rowsWithTerms.map(({ row, rawTerms }) => {
+      const terms = formatFeeTerms(rawTerms);
 
       return {
         id: row.id,
@@ -122,7 +126,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         amountDue: money(row.amount_due),
         amountPaid: money(row.amount_paid),
         balance: money(Math.max(decimalValue(row.amount_due) - decimalValue(row.amount_paid), 0)),
-        dueDate: row.due_date ? formatDate(row.due_date) : "Pending",
+        dueDate: terms.length > 0 ? "See term schedule" : row.due_date ? formatDate(row.due_date) : "Pending",
         status: labelForStatus(row.status),
         tone: feeTone(row.status, row.amount_due, row.amount_paid),
         terms,
@@ -140,7 +144,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         { label: "Total billed", value: rows.length > 0 ? money(totals.billed) : "Pending", note: rows.length > 0 ? `${rows.length} assigned fees` : "No assigned fees yet", accent: true },
         { label: "Paid", value: rows.length > 0 ? money(totals.paid) : "Pending", note: "Recorded payment allocations", tone: "green" },
         { label: "Outstanding", value: rows.length > 0 ? money(totals.outstanding) : "Pending", note: rows.length > 0 ? "Open and partial balances" : "Balances pending", tone: "red" },
-        { label: "Next due date", value: nextDue ? formatDate(nextDue) : "Pending", note: nextDue ? "Earliest assigned due date" : "No due dates yet", tone: "blue" },
+        { label: "Next due date", value: nextDue ? formatDate(nextDue) : "Pending", note: nextDue ? "Earliest unpaid fee or term due date" : "No due dates yet", tone: "blue" },
       ],
       rows: displayRows,
     };
@@ -181,10 +185,12 @@ async function getEnrolledStudentOptions(schoolId: number, schoolYearId: number)
 
 async function getFeeTypeOptions(schoolId: number, schoolYearId: number, category: FeeCategory) {
   const [rows] = await pool.execute<FeeTypeOptionRow[]>(
-    `SELECT id, name, default_amount
-     FROM fee_types
-     WHERE school_id = :schoolId AND school_year_id = :schoolYearId AND category = :category AND status = 'active'
-     ORDER BY name ASC`,
+    `SELECT ft.id, ft.name, ft.default_amount, COUNT(ftt.id) AS term_count
+     FROM fee_types ft
+     LEFT JOIN fee_type_term_templates ftt ON ftt.fee_type_id = ft.id
+     WHERE ft.school_id = :schoolId AND ft.school_year_id = :schoolYearId AND ft.category = :category AND ft.status = 'active'
+     GROUP BY ft.id, ft.name, ft.default_amount
+     ORDER BY ft.name ASC`,
     { schoolId, schoolYearId, category },
   );
 
@@ -193,6 +199,7 @@ async function getFeeTypeOptions(schoolId: number, schoolYearId: number, categor
     name: row.name,
     amount: money(row.default_amount),
     amountValue: decimalValue(row.default_amount),
+    termCount: numberValue(row.term_count),
   }));
 }
 
@@ -241,8 +248,8 @@ function feeTone(status: string, amountDue: number | string, amountPaid: number 
   return "red";
 }
 
-function parseFeeTerms(value: string | null): ParentFeeTerm[] {
-  return parseTuitionTermsBlob(value).map((term) => ({
+function formatFeeTerms(terms: ReturnType<typeof parseTuitionTermsBlob>): ParentFeeTerm[] {
+  return terms.map((term) => ({
     id: term.id,
     name: term.name,
     amountDue: money(term.amountDue),
@@ -255,11 +262,29 @@ function parseFeeTerms(value: string | null): ParentFeeTerm[] {
   }));
 }
 
+function dueDateCandidates(row: ParentFeeSqlRow, terms: ReturnType<typeof parseTuitionTermsBlob>) {
+  if (terms.length > 0) {
+    return terms
+      .filter((term) => term.payable && term.balance > 0)
+      .map((term) => term.dueDate);
+  }
+
+  if (row.due_date && row.status !== "paid") {
+    return [dateKey(row.due_date)];
+  }
+
+  return [];
+}
+
 function fullName(firstName: string, middleName: string | null, lastName: string) {
   return [firstName, middleName, lastName].filter(Boolean).join(" ");
 }
 
 function decimalValue(value: number | string | null | undefined) {
+  return Number(value ?? 0);
+}
+
+function numberValue(value: number | string | null | undefined) {
   return Number(value ?? 0);
 }
 
@@ -286,6 +311,14 @@ function formatDate(value: Date | string) {
   });
 }
 
+function dateKey(value: Date | string) {
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  return String(value).slice(0, 10);
+}
+
 function labelForStatus(value: string) {
   return value
     .split(/[_\s-]+/)
@@ -308,6 +341,7 @@ type FeeTypeOptionRow = RowDataPacket & {
   id: number;
   name: string;
   default_amount: number | string;
+  term_count: number | string;
 };
 
 type ParentFeeSqlRow = RowDataPacket & {
