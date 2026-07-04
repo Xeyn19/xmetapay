@@ -41,6 +41,7 @@ export type SummaryRow = {
 export type BarRow = {
   label: string;
   value: string;
+  amount: number;
   percent: number;
   tone?: "orange" | "green" | "blue";
 };
@@ -57,6 +58,7 @@ export type AdminDashboardRealData = {
   warning: string | null;
   alerts: Array<{ tone: "danger" | "warn"; message: string }>;
   kpis: AdminRealKpi[];
+  administratorKpis: AdminRealKpi[];
   tuitionByGrade: BarRow[];
   monthlySummary: SummaryRow[];
   recentFeeAssignments: Array<[string, string, string, string, string, string]>;
@@ -241,14 +243,41 @@ export async function getAdminDashboardRealData(adminUserId: number): Promise<Ad
           icon: Wallet,
         },
       ],
+      administratorKpis: [
+        { label: "Total enrolled", value: String(studentSummary.enrolled), note: setup.schoolYearName ?? "Active school year", tone: "blue", icon: Users },
+        {
+          label: "Collected",
+          value: paymentSummary.paidCount > 0 ? money(paymentSummary.paidAmount) : "Pending",
+          note: paymentSummary.paidCount > 0 ? `${paymentSummary.paidCount} paid payment records` : "Payment records pending",
+          tone: "orange",
+          noteTone: paymentSummary.paidCount > 0 ? "up" : "warn",
+          icon: CreditCard,
+        },
+        {
+          label: "Outstanding",
+          value: hasFees ? money(feeSummary.openBalance) : "Pending",
+          note: hasFees ? `${feeSummary.openAssignments} open or partial fee records` : "Create fee assignments first",
+          tone: "red",
+          noteTone: hasFees && feeSummary.openBalance > 0 ? "danger" : "default",
+          icon: Activity,
+        },
+        {
+          label: "Top-ups today",
+          value: walletSummary.todayTopUpCount > 0 ? money(walletSummary.todayTopUps) : "Pending",
+          note: walletSummary.todayTopUpCount > 0 ? `${walletSummary.todayTopUpCount} top-up transaction${walletSummary.todayTopUpCount === 1 ? "" : "s"}` : "No top-ups today",
+          tone: "green",
+          noteTone: walletSummary.todayTopUpCount > 0 ? "up" : "default",
+          icon: Wallet,
+        },
+      ],
       tuitionByGrade,
       monthlySummary: [
         { label: "Total fees billed", value: hasFees ? money(feeSummary.amountDue) : "Pending" },
         { label: "Collected from assignments", value: hasFees ? money(feeSummary.amountPaid) : "Pending", tone: hasFees ? "green" : "default" },
         { label: "Outstanding balance", value: hasFees ? money(feeSummary.openBalance) : "Pending", tone: hasFees && feeSummary.openBalance > 0 ? "red" : "default" },
         { label: "Collection rate", value: hasFees ? percent(feeSummary.amountPaid, feeSummary.amountDue) : "Pending" },
-        { label: "Wallet balance total", value: walletSummary.walletCount > 0 ? money(walletSummary.totalBalance) : "Pending" },
-        { label: "Store spend recorded", value: walletSummary.storeSpend > 0 ? money(walletSummary.storeSpend) : "Pending" },
+        { label: "Allowance top-ups this month", value: walletSummary.monthlyTopUps > 0 ? money(walletSummary.monthlyTopUps) : "Pending", tone: walletSummary.monthlyTopUps > 0 ? "green" : "default" },
+        { label: "Store transactions this month", value: walletSummary.storeSpend > 0 ? money(walletSummary.storeSpend) : "Pending", tone: walletSummary.storeSpend > 0 ? "blue" : "default" },
       ],
       recentFeeAssignments,
       recentPayments,
@@ -672,7 +701,9 @@ async function getWalletSummary(schoolId: number, schoolYearId: number) {
        COALESCE(SUM(monthly_spend), 0) AS monthly_spend,
        COALESCE(SUM(store_spend), 0) AS store_spend,
        COALESCE(SUM(monthly_top_ups), 0) AS monthly_top_ups,
-       COALESCE(SUM(monthly_top_up_count), 0) AS monthly_top_up_count
+       COALESCE(SUM(monthly_top_up_count), 0) AS monthly_top_up_count,
+       COALESCE(SUM(today_top_ups), 0) AS today_top_ups,
+       COALESCE(SUM(today_top_up_count), 0) AS today_top_up_count
      FROM (
        SELECT w.id AS wallet_id,
          w.balance,
@@ -680,7 +711,9 @@ async function getWalletSummary(schoolId: number, schoolYearId: number) {
          COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS monthly_spend,
          COALESCE(SUM(CASE WHEN wt.type = 'purchase' THEN ABS(wt.amount) ELSE 0 END), 0) AS store_spend,
          COALESCE(SUM(CASE WHEN wt.type = 'top_up' THEN wt.amount ELSE 0 END), 0) AS monthly_top_ups,
-         COUNT(CASE WHEN wt.type = 'top_up' THEN 1 END) AS monthly_top_up_count
+         COUNT(CASE WHEN wt.type = 'top_up' THEN 1 END) AS monthly_top_up_count,
+         COALESCE(SUM(CASE WHEN wt.type = 'top_up' AND DATE(wt.created_at) = CURRENT_DATE THEN wt.amount ELSE 0 END), 0) AS today_top_ups,
+         COUNT(CASE WHEN wt.type = 'top_up' AND DATE(wt.created_at) = CURRENT_DATE THEN 1 END) AS today_top_up_count
        FROM students st
        LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
        LEFT JOIN wallets w ON w.student_id = st.id
@@ -701,6 +734,8 @@ async function getWalletSummary(schoolId: number, schoolYearId: number) {
     storeSpend: decimalValue(row?.store_spend),
     monthlyTopUps: decimalValue(row?.monthly_top_ups),
     monthlyTopUpCount: numberValue(row?.monthly_top_up_count),
+    todayTopUps: decimalValue(row?.today_top_ups),
+    todayTopUpCount: numberValue(row?.today_top_up_count),
   };
 }
 
@@ -1232,6 +1267,12 @@ function emptyDashboard(warning: string | null): AdminDashboardRealData {
       { label: "Outstanding", value: "Pending", note: "Fee assignments pending", tone: "red", icon: Activity },
       { label: "Wallets", value: "Pending", note: "No wallet records yet", tone: "green", icon: Wallet },
     ],
+    administratorKpis: [
+      { label: "Total enrolled", value: "0", note: "School setup pending", tone: "blue", icon: Users },
+      { label: "Collected", value: "Pending", note: "Payment records pending", tone: "orange", icon: CreditCard },
+      { label: "Outstanding", value: "Pending", note: "Fee assignments pending", tone: "red", icon: Activity },
+      { label: "Top-ups today", value: "Pending", note: "No top-ups today", tone: "green", icon: Wallet },
+    ],
     tuitionByGrade: [],
     monthlySummary: pendingSummary(),
     recentFeeAssignments: [],
@@ -1379,6 +1420,7 @@ function barRows(rows: GradeAmountRow[], moneyValue = true): BarRow[] {
       return {
         label: row.label ?? "Not enrolled",
         value: moneyValue ? money(amount) : String(amount),
+        amount,
         percent: max > 0 ? Math.max(8, Math.round((amount / max) * 100)) : 0,
       };
     });
@@ -1510,6 +1552,8 @@ type WalletSummaryRow = RowDataPacket & {
   store_spend: number | string;
   monthly_top_ups: number | string;
   monthly_top_up_count: number;
+  today_top_ups: number | string;
+  today_top_up_count: number;
 };
 
 type GradeAmountRow = RowDataPacket & {

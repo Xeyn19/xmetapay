@@ -193,7 +193,8 @@ test("admin dashboard shows assigned fees before payment records exist", () => {
   assert.match(dashboard, /getAdminFeeSetupData\(session\.userId, "tuition"\)/);
   assert.match(dashboard, /getAdminStaffRole\(session\.userId\)/);
   assert.match(dashboard, /canAccessFinance\(staffRole\)/);
-  assert.match(dashboard, /feeAssignmentAction=\{canManageFinance/);
+  assert.match(dashboard, /const feeAssignmentAction = canManageFinance/);
+  assert.match(dashboard, /<DashboardFeeAssignmentActions feeSetup=\{feeSetup\} \/>/);
   assert.match(dashboard, /triggerLabel="Assign fee"/);
   assert.match(dashboard, /triggerLabel="Add fee type"/);
   assert.match(dashboard, /triggerIcon="receipt"/);

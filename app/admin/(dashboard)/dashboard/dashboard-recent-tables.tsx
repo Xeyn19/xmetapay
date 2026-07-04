@@ -51,7 +51,7 @@ export function DashboardRecentTables({
   );
 }
 
-function RecentFeeAssignmentsTable({ rows, action }: { rows: RecentFeeAssignmentRow[]; action?: ReactNode }) {
+export function RecentFeeAssignmentsTable({ rows, action }: { rows: RecentFeeAssignmentRow[]; action?: ReactNode }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const filteredRows = useMemo(
@@ -134,7 +134,7 @@ function RecentFeeAssignmentsTable({ rows, action }: { rows: RecentFeeAssignment
   );
 }
 
-function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
+export function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [channel, setChannel] = useState("all");
