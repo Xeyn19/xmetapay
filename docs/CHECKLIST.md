@@ -82,7 +82,7 @@ Done when: admins can manage students and parents can add or view multiple linke
 
 - [x] Add backend helpers for `fee_types` and `student_fee_assignments`.
 - [x] Create tuition and other fee types for the active school year.
-- [x] Assign fees to one or more selected students.
+- [x] Assign fees to one or more selected students, with grade/section filters for faster bulk selection.
 - [x] Replace admin tuition report mock rows with database rows.
 - [x] Replace parent fee summary mock rows with database rows.
 - [x] Calculate open, partial, and paid balances from database values.

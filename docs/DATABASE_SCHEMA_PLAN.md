@@ -309,7 +309,7 @@ CREATE TABLE fee_types (
 
 #### `fee_type_term_templates`
 
-Stores reusable tuition payment term templates for a tuition fee type. This is the fee type term template layer: when admin/finance assigns a templated tuition fee to selected students, the app automatically create per-student tuition terms in `tuition_payment_terms`. Other fees do not use this table.
+Stores reusable tuition payment term templates for a tuition fee type. This is the fee type term template layer: when admin/finance assigns a templated tuition fee to selected students, including grade/section-filtered bulk selections, the app automatically creates per-student tuition terms in `tuition_payment_terms`. Other fees do not use this table.
 
 ```sql
 CREATE TABLE fee_type_term_templates (

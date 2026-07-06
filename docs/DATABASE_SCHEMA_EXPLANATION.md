@@ -191,7 +191,7 @@ Main purpose:
 - Store how much a student owes for a fee.
 - Track how much has already been paid.
 - Track the fee due date and payment status: open, partial, paid, or cancelled.
-- Support selected-student bulk assignment while the unique key prevents duplicate fee charges for the same student, fee, and school year.
+- Support selected-student bulk assignment with grade/section filtering while the unique key prevents duplicate fee charges for the same student, fee, and school year.
 - Support both admin tuition reports and parent fee summaries.
 
 This table is the main source for outstanding balances.

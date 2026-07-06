@@ -30,6 +30,9 @@ test("fee records helper reads admin options and parent fee balances from MySQL"
   assert.match(helper, /FROM student_guardians sg/);
   assert.match(helper, /WHERE sg\.parent_user_id = :parentUserId/);
   assert.match(helper, /getResolvedAdminSchoolSetup\(adminUserId\)/);
+  assert.match(helper, /gradeName: row\.grade_name/);
+  assert.match(helper, /sectionName: row\.section_name/);
+  assert.match(helper, /studentReference: row\.student_reference/);
 });
 
 test("admin fee actions are protected and validate finance writes", () => {
@@ -75,7 +78,12 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(forms, /Assign \{label\} to selected students/);
   assert.match(studentChecklist, /name="studentIds"/);
   assert.match(studentChecklist, /Search enrolled students/);
-  assert.match(studentChecklist, /Select visible/);
+  assert.match(studentChecklist, /All grades/);
+  assert.match(studentChecklist, /All sections/);
+  assert.match(studentChecklist, /student\.gradeName === grade/);
+  assert.match(studentChecklist, /student\.sectionName === section/);
+  assert.match(studentChecklist, /Select matching/);
+  assert.match(studentChecklist, /Use filters to assign this fee by grade, section, or selected students/);
   assert.match(studentChecklist, /Clear/);
   assert.match(forms, /name="feeTypeId"/);
   assert.match(forms, /name="amountDue"/);
@@ -243,7 +251,7 @@ test("checklist marks Phase 4 fees backend complete before Phase 5 payment work"
 
   assert.match(checklist, /- \[x\] Add backend helpers for `fee_types` and `student_fee_assignments`\./);
   assert.match(checklist, /- \[x\] Create tuition and other fee types for the active school year\./);
-  assert.match(checklist, /- \[x\] Assign fees to one or more selected students\./);
+  assert.match(checklist, /- \[x\] Assign fees to one or more selected students, with grade\/section filters for faster bulk selection\./);
   assert.match(checklist, /- \[x\] Replace parent fee summary mock rows with database rows\./);
   assert.match(checklist, /- \[x\] Calculate open, partial, and paid balances from database values\./);
   assert.match(checklist, /Parent local test payments, fee allocations, receipts, and payment history are implemented\./);
