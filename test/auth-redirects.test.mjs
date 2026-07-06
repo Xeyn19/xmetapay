@@ -87,16 +87,10 @@ test("auth sessions are database-backed and never expose raw tokens", () => {
   assert.match(migration, /CONSTRAINT fk_auth_sessions_user/);
   assert.match(fullSchema, /CREATE TABLE IF NOT EXISTS auth_sessions/);
   assert.match(envExample, /AUTH_SESSION_DAYS=1/);
-  assert.match(envExample, /MYSQL_SSL=/);
-  assert.match(envExample, /MYSQL_SSL_CA=/);
-  assert.match(envExample, /MYSQL_SSL_REJECT_UNAUTHORIZED=true/);
 
   assert.match(authDb, /function envValue\(name: string, localFallback: string\)/);
   assert.match(authDb, /throw new Error\(`\$\{name\} must be set in production\.`\)/);
-  assert.match(authDb, /function mysqlSslConfig\(\)/);
-  assert.match(authDb, /process\.env\.MYSQL_SSL\?\.toLowerCase\(\)/);
-  assert.match(authDb, /process\.env\.MYSQL_SSL_CA\?\.replaceAll\("\\\\n", "\\n"\)/);
-  assert.match(authDb, /MYSQL_SSL_REJECT_UNAUTHORIZED/);
+  assert.doesNotMatch(authDb, /MYSQL_SSL|mysqlSslConfig/);
 
   assert.match(session, /randomBytes\(32\)\.toString\("base64url"\)/);
   assert.match(session, /hashSessionToken\(token\)/);
