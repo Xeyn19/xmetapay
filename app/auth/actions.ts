@@ -95,9 +95,11 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
       await connection.rollback();
     }
 
+    logAuthDatabaseError("register", error);
+
     return duplicateAccount(error)
       ? { message: "An account already exists for this portal using that email or phone." }
-      : { message: "Unable to create the account. Check that MySQL/XAMPP is running and try again." };
+      : { message: databaseFailureMessage("create the account") };
   } finally {
     connection?.release();
   }
@@ -148,8 +150,10 @@ export async function loginAction(role: PortalRole, _state: AuthFormState = init
         ? "Welcome back to the school admin dashboard."
         : "Welcome back to your parent portal.",
     });
-  } catch {
-    return { message: "Unable to sign in. Check that MySQL/XAMPP is running and try again." };
+  } catch (error) {
+    logAuthDatabaseError("login", error);
+
+    return { message: databaseFailureMessage("sign in") };
   }
 
   redirect(role === "admin" ? "/admin/dashboard" : "/parent/dashboard");
@@ -170,6 +174,39 @@ export async function logoutAction(role: PortalRole) {
 
 function duplicateAccount(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ER_DUP_ENTRY";
+}
+
+function databaseFailureMessage(action: string) {
+  return process.env.NODE_ENV === "production"
+    ? `Unable to ${action}. The production database connection is unavailable.`
+    : `Unable to ${action}. Check that MySQL/XAMPP is running and try again.`;
+}
+
+function logAuthDatabaseError(action: "login" | "register", error: unknown) {
+  if (duplicateAccount(error)) {
+    return;
+  }
+
+  console.error("[auth:database]", {
+    action,
+    ...databaseErrorDetails(error),
+  });
+}
+
+function databaseErrorDetails(error: unknown) {
+  if (typeof error !== "object" || error === null) {
+    return { name: "UnknownError" };
+  }
+
+  const details: Record<string, unknown> = {};
+
+  for (const key of ["name", "code", "errno", "sqlState", "fatal"]) {
+    if (key in error) {
+      details[key] = error[key as keyof typeof error];
+    }
+  }
+
+  return details;
 }
 
 async function tryLinkAdminProfileToExistingSchool(

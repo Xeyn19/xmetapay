@@ -10,7 +10,6 @@ export const pool = mysql.createPool({
   database: envValue("MYSQL_DATABASE", "xmetapay_db"),
   user: envValue("MYSQL_USER", "root"),
   password: envValue("MYSQL_PASSWORD", ""),
-  ssl: mysqlSslConfig(),
   waitForConnections: true,
   connectionLimit: 10,
   namedPlaceholders: true,
@@ -28,18 +27,4 @@ function envValue(name: string, localFallback: string) {
   }
 
   return localFallback;
-}
-
-function mysqlSslConfig() {
-  const enabled = process.env.MYSQL_SSL?.toLowerCase();
-  const ca = process.env.MYSQL_SSL_CA?.replaceAll("\\n", "\n");
-
-  if (!ca && enabled !== "true" && enabled !== "1" && enabled !== "required") {
-    return undefined;
-  }
-
-  return {
-    ca,
-    rejectUnauthorized: process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== "false",
-  };
 }
