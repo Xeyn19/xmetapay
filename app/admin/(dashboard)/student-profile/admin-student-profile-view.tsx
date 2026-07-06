@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { CreditCard, Edit, History, IdCard, Plus, Users, Wallet } from "lucide-react";
 
-import { DashboardTablePagination, usePaginatedRows } from "@/app/_components/table-controls";
+import {
+  DashboardTableControls,
+  DashboardTablePagination,
+  exportRowsToCsv,
+  exportRowsToPdf,
+  filterByQuery,
+  toFilterOptions,
+  usePaginatedRows,
+} from "@/app/_components/table-controls";
 import type { AdminStudentProfileRealData, AdminStudentProfileSummary } from "@/lib/admin/real-data";
 
 import {
@@ -19,10 +28,104 @@ import {
 type StudentProfile = NonNullable<AdminStudentProfileRealData["student"]>;
 
 export function AdminStudentProfileSelector({ students }: { students: AdminStudentProfileSummary[] }) {
-  const pagination = usePaginatedRows(students, "all-students");
+  const [query, setQuery] = useState("");
+  const [grade, setGrade] = useState("all");
+  const [section, setSection] = useState("all");
+  const [enrollmentStatus, setEnrollmentStatus] = useState("all");
+  const [guardianStatus, setGuardianStatus] = useState("all");
+  const sectionOptions = useMemo(() => {
+    const source = grade === "all" ? students : students.filter((student) => student.gradeName === grade);
+
+    return toFilterOptions(source.map((student) => student.sectionName), "All sections");
+  }, [grade, students]);
+  const filteredStudents = useMemo(
+    () => filterByQuery(
+      students.filter((student) =>
+        (grade === "all" || student.gradeName === grade)
+        && (section === "all" || student.sectionName === section)
+        && (enrollmentStatus === "all" || student.enrollmentStatus === enrollmentStatus)
+        && (guardianStatus === "all" || student.guardianStatus === guardianStatus)
+      ),
+      query,
+      (student) => [
+        student.fullName,
+        student.studentReference,
+        student.gradeName,
+        student.sectionName,
+        student.gradeSection,
+        student.guardians,
+        student.guardianStatus,
+        student.enrollmentStatus,
+      ].join(" "),
+    ),
+    [enrollmentStatus, grade, guardianStatus, query, section, students],
+  );
+  const pagination = usePaginatedRows(
+    filteredStudents,
+    `${query}|${grade}|${section}|${enrollmentStatus}|${guardianStatus}`,
+  );
 
   return (
     <DashboardCard title="Choose a student profile" icon={IdCard} bodyClassName="p-0">
+      <div className="border-b border-black/[0.07] px-[18px] py-3">
+        <DashboardTableControls
+          query={query}
+          onQueryChange={setQuery}
+          searchPlaceholder="Search name, reference, guardian..."
+          filters={[
+            {
+              label: "Grade",
+              value: grade,
+              onChange: (value) => {
+                setGrade(value);
+                setSection("all");
+              },
+              options: toFilterOptions(students.map((student) => student.gradeName), "All grades"),
+            },
+            { label: "Section", value: section, onChange: setSection, options: sectionOptions },
+            {
+              label: "Enrollment status",
+              value: enrollmentStatus,
+              onChange: setEnrollmentStatus,
+              options: toFilterOptions(students.map((student) => student.enrollmentStatus), "All enrollment"),
+            },
+            {
+              label: "Guardian link",
+              value: guardianStatus,
+              onChange: setGuardianStatus,
+              options: toFilterOptions(students.map((student) => student.guardianStatus), "All guardian links"),
+            },
+          ]}
+          onClear={() => {
+            setQuery("");
+            setGrade("all");
+            setSection("all");
+            setEnrollmentStatus("all");
+            setGuardianStatus("all");
+          }}
+          onExport={() => exportRowsToCsv("admin-student-profiles.csv", filteredStudents, [
+            { label: "Reference", value: (student) => student.studentReference },
+            { label: "Full name", value: (student) => student.fullName },
+            { label: "Grade", value: (student) => student.gradeName },
+            { label: "Section", value: (student) => student.sectionName },
+            { label: "Parent or guardian", value: (student) => student.guardians },
+            { label: "Guardian link", value: (student) => student.guardianStatus },
+            { label: "Enrollment status", value: (student) => student.enrollmentStatus },
+            { label: "Student status", value: (student) => student.studentStatus },
+          ])}
+          onExportPdf={() => exportRowsToPdf("admin-student-profiles.pdf", "Student profile selector", filteredStudents, [
+            { label: "Reference", value: (student) => student.studentReference },
+            { label: "Full name", value: (student) => student.fullName },
+            { label: "Grade", value: (student) => student.gradeName },
+            { label: "Section", value: (student) => student.sectionName },
+            { label: "Parent or guardian", value: (student) => student.guardians },
+            { label: "Guardian link", value: (student) => student.guardianStatus },
+            { label: "Enrollment status", value: (student) => student.enrollmentStatus },
+            { label: "Student status", value: (student) => student.studentStatus },
+          ])}
+          exportDisabled={filteredStudents.length === 0}
+        />
+      </div>
       <AdminTable
         headers={[
           { label: "Student", className: "w-[28%]" },
@@ -32,7 +135,7 @@ export function AdminStudentProfileSelector({ students }: { students: AdminStude
           { label: "Status", className: "w-[14%]" },
         ]}
       >
-        {students.length > 0 ? (
+        {filteredStudents.length > 0 ? (
           pagination.pageRows.map((student) => (
             <tr key={student.id}>
               <td>
@@ -45,7 +148,10 @@ export function AdminStudentProfileSelector({ students }: { students: AdminStude
               </td>
               <td className="font-mono text-[11px] text-[#5a6070]">{student.studentReference}</td>
               <td>{student.gradeSection}</td>
-              <td>{student.guardians}</td>
+              <td>
+                <div className="font-semibold text-[#0f1117]">{student.guardians}</div>
+                <div className="mt-0.5 text-[11px] text-[#5a6070]">{student.guardianStatus}</div>
+              </td>
               <td>
                 <StatusPill tone={student.enrollmentStatus === "Enrolled" ? "enrolled" : "pending"}>
                   {student.enrollmentStatus}
@@ -56,7 +162,7 @@ export function AdminStudentProfileSelector({ students }: { students: AdminStude
         ) : (
           <tr>
             <td colSpan={5} className="text-center text-[#5a6070]">
-              No student records yet.
+              {students.length === 0 ? "No student records yet." : "No students match the current filters."}
             </td>
           </tr>
         )}
