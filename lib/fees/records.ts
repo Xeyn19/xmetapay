@@ -12,7 +12,14 @@ export type AdminFeeSetupData = {
   ready: boolean;
   warning: string | null;
   activeSchoolYearName: string | null;
-  students: Array<{ id: number; name: string; meta: string }>;
+  students: Array<{
+    id: number;
+    name: string;
+    meta: string;
+    gradeName: string;
+    sectionName: string | null;
+    studentReference: string;
+  }>;
   feeTypes: Array<{ id: number; name: string; amount: string; amountValue: number; termCount: number }>;
 };
 
@@ -179,6 +186,9 @@ async function getEnrolledStudentOptions(schoolId: number, schoolYearId: number)
   return rows.map((row) => ({
     id: row.id,
     name: fullName(row.first_name, row.middle_name, row.last_name),
+    gradeName: row.grade_name,
+    sectionName: row.section_name,
+    studentReference: row.student_reference,
     meta: [row.grade_name, row.section_name, row.student_reference].filter(Boolean).join(" - "),
   }));
 }
