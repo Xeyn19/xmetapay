@@ -171,8 +171,11 @@ export type AdminStudentProfileSummary = {
   initials: string;
   fullName: string;
   studentReference: string;
+  gradeName: string;
+  sectionName: string;
   gradeSection: string;
   guardians: string;
+  guardianStatus: string;
   enrollmentStatus: string;
   studentStatus: string;
 };
@@ -611,8 +614,11 @@ async function getAdminStudentProfileSummaries(schoolId: number, schoolYearId: n
       initials: initialsFor(name),
       fullName: name,
       studentReference: row.student_reference,
+      gradeName: row.grade_name,
+      sectionName: row.section_name,
       gradeSection,
       guardians: row.guardian_names,
+      guardianStatus: row.guardian_names === "Not linked" ? "Pending" : "Linked",
       enrollmentStatus: labelForStatus(row.enrollment_status),
       studentStatus: labelForStatus(row.student_status),
     };
