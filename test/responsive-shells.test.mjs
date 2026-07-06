@@ -28,3 +28,35 @@ test("admin and parent shells guard mobile pages from horizontal overflow", () =
     assert.match(source, /min-w-0/, `${name} shell should allow nested content to shrink`);
   });
 });
+
+test("admin and parent shells avoid nested nav scrolling", () => {
+  [
+    { name: "admin", source: adminShell },
+    { name: "parent", source: parentShell },
+  ].forEach(({ name, source }) => {
+    assert.doesNotMatch(
+      source,
+      /<nav className="[^"]*overflow-y-auto/,
+      `${name} nav should not create a second sidebar scrollbar`
+    );
+    assert.match(
+      source,
+      /<aside[\s\S]*overflow-y-auto overscroll-contain/,
+      `${name} sidebar should own the short-screen overflow fallback`
+    );
+    assert.match(source, /mt-auto grid shrink-0 gap-2 border-t/, `${name} footer should stay aligned at the bottom`);
+  });
+});
+
+test("admin and parent shells keep stable sidebar text layout", () => {
+  assert.match(adminShell, /w-60 max-w-\[calc\(100vw-24px\)\]/, "admin sidebar should use the shared sidebar width");
+  assert.match(adminShell, /lg:pl-60/, "admin content offset should match the shared sidebar width");
+  assert.match(parentShell, /w-60 max-w-\[calc\(100vw-24px\)\]/, "parent sidebar should use the shared sidebar width");
+  assert.match(parentShell, /lg:pl-60/, "parent content offset should match the shared sidebar width");
+
+  [adminShell, parentShell].forEach((source) => {
+    assert.match(source, /<span className="min-w-0 flex-1 truncate">\{item\.label\}<\/span>/);
+    assert.match(source, /shrink-0 rounded-full bg-\[#c62828\]/);
+    assert.match(source, /<span className="truncate">Log out<\/span>/);
+  });
+});
