@@ -4,6 +4,7 @@ import test from "node:test";
 
 const authUi = readFileSync("app/_components/auth-ui.tsx", "utf8");
 const authActions = readFileSync("app/auth/actions.ts", "utf8");
+const authDb = readFileSync("lib/auth/db.ts", "utf8");
 const session = readFileSync("lib/auth/session.ts", "utf8");
 const homePage = readFileSync("app/page.tsx", "utf8");
 const rootLayout = readFileSync("app/layout.tsx", "utf8");
@@ -86,6 +87,16 @@ test("auth sessions are database-backed and never expose raw tokens", () => {
   assert.match(migration, /CONSTRAINT fk_auth_sessions_user/);
   assert.match(fullSchema, /CREATE TABLE IF NOT EXISTS auth_sessions/);
   assert.match(envExample, /AUTH_SESSION_DAYS=1/);
+  assert.match(envExample, /MYSQL_SSL=/);
+  assert.match(envExample, /MYSQL_SSL_CA=/);
+  assert.match(envExample, /MYSQL_SSL_REJECT_UNAUTHORIZED=true/);
+
+  assert.match(authDb, /function envValue\(name: string, localFallback: string\)/);
+  assert.match(authDb, /throw new Error\(`\$\{name\} must be set in production\.`\)/);
+  assert.match(authDb, /function mysqlSslConfig\(\)/);
+  assert.match(authDb, /process\.env\.MYSQL_SSL\?\.toLowerCase\(\)/);
+  assert.match(authDb, /process\.env\.MYSQL_SSL_CA\?\.replaceAll\("\\\\n", "\\n"\)/);
+  assert.match(authDb, /MYSQL_SSL_REJECT_UNAUTHORIZED/);
 
   assert.match(session, /randomBytes\(32\)\.toString\("base64url"\)/);
   assert.match(session, /hashSessionToken\(token\)/);
