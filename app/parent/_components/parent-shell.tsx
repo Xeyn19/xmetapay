@@ -52,7 +52,7 @@ export function ParentShell({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col border-r border-black/[0.08] bg-white transition-transform duration-200",
+          "fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain border-r border-black/[0.08] bg-white transition-transform duration-200",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         id="parent-sidebar"
@@ -60,21 +60,20 @@ export function ParentShell({
         aria-modal="true"
         aria-label="Parent navigation"
       >
-        <div className="border-b border-black/[0.08] px-[18px] pb-4 pt-5">
-          <div className="mb-2 flex items-center gap-2.5">
+        <div className="shrink-0 border-b border-black/[0.08] px-[18px] pb-3.5 pt-4">
+          <div className="mb-1.5 flex items-center gap-2.5">
             <span className="flex size-[34px] items-center justify-center rounded-lg bg-[#e64a19] text-white">
               <Receipt className="size-[18px]" />
             </span>
-            <span className="text-[15px] font-semibold">XMETA Pay</span>
+            <span className="min-w-0 truncate text-[15px] font-semibold">XMETA Pay</span>
           </div>
-          <p className="text-[11px] leading-4 text-[#6b6b6b]">
-            Parent portal
-            <br />
-            Student-linked access
-          </p>
+          <div className="space-y-0.5 text-[11px] leading-4 text-[#6b6b6b]">
+            <div className="truncate">Parent portal</div>
+            <div className="truncate">Student-linked access</div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 border-b border-black/[0.08] bg-[#fbe9e7] px-[18px] py-3">
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-black/[0.08] bg-[#fbe9e7] px-[18px] py-2.5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e64a19] text-[13px] font-semibold text-white">
             {context.parentInitials}
           </span>
@@ -89,10 +88,10 @@ export function ParentShell({
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2.5 py-2.5">
+        <nav className="flex-1 px-2.5 py-2">
           {navSections.map((section) => (
             <div key={section.label}>
-              <div className="px-2 py-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9e9e9e]">
+              <div className="px-2 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9e9e9e]">
                 {section.label}
               </div>
               <div className="grid gap-1">
@@ -108,13 +107,13 @@ export function ParentShell({
                       href={item.href}
                       onClick={() => setOpen(false)}
                       className={cn(
-                        "flex min-h-11 items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20",
+                        "flex min-h-10 items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20",
                         active && "bg-[#fbe9e7] text-[#e64a19] hover:bg-[#fbe9e7] hover:text-[#e64a19]"
                       )}
                     >
                       <Icon className="size-[17px] shrink-0" />
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                      {item.badge ? <span className="rounded-full bg-[#c62828] px-1.5 text-[10px] font-semibold leading-4 text-white">{item.badge}</span> : null}
+                      {item.badge ? <span className="shrink-0 rounded-full bg-[#c62828] px-1.5 text-[10px] font-semibold leading-4 text-white">{item.badge}</span> : null}
                     </Link>
                   );
                 })}
@@ -123,18 +122,18 @@ export function ParentShell({
           ))}
         </nav>
 
-        <div className="grid gap-2 border-t border-black/[0.08] px-[18px] py-3.5">
-          <div className="flex items-center gap-2 text-xs text-[#6b6b6b]">
-            <Settings className="size-[15px]" />
-            Account settings
+        <div className="mt-auto grid shrink-0 gap-2 border-t border-black/[0.08] px-[18px] py-3">
+          <div className="flex min-w-0 items-center gap-2 text-xs text-[#6b6b6b]">
+            <Settings className="size-[15px] shrink-0" />
+            <span className="truncate">Account settings</span>
           </div>
           <form action={logout}>
             <button
               type="submit"
-              className="flex min-h-11 w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+              className="flex min-h-10 w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
             >
-              <LogOut className="size-[17px]" />
-              Log out
+              <LogOut className="size-[17px] shrink-0" />
+              <span className="truncate">Log out</span>
             </button>
           </form>
         </div>
