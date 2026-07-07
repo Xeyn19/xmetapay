@@ -7,7 +7,7 @@ export default function AdminRegisterPage() {
         portal="admin"
         mode="register"
         title="Create admin access"
-        subtitle="Set up a school staff profile for the XMETA Pay admin workspace."
+        subtitle="Create the school owner account for XMETA Pay. Staff accounts can be managed later from the admin workspace."
         fields={[
           {
             label: "Admin name",
@@ -23,7 +23,7 @@ export default function AdminRegisterPage() {
             label: "School email",
             name: "email",
             type: "email",
-            placeholder: "registrar@school.edu.ph",
+            placeholder: "admin@school.edu.ph",
           },
           {
             label: "Phone number",
@@ -31,13 +31,6 @@ export default function AdminRegisterPage() {
             type: "tel",
             placeholder: "0917 000 0000",
             required: false,
-          },
-          {
-            label: "Staff role",
-            name: "staffRole",
-            placeholder: "Select staff role",
-            options: ["Finance officer", "Registrar", "School administrator"],
-            spanFull: true,
           },
           {
             label: "Password",
