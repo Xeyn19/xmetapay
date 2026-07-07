@@ -5,7 +5,8 @@ import test from "node:test";
 const schoolSetupPath = "lib/school/setup.ts";
 const schoolSetupActionPath = "app/admin/school-setup/actions.ts";
 const schoolSetupPagePath = "app/admin/(dashboard)/school-setup/page.tsx";
-const schoolSetupFormPath = "app/admin/(dashboard)/school-setup/manual-school-setup-form.tsx";
+const schoolSetupFormPath = "app/admin/_components/manual-school-setup-form.tsx";
+const onboardingSetupPagePath = "app/admin/onboarding/school-setup/page.tsx";
 const adminLayoutPath = "app/admin/(dashboard)/layout.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
 const checklistPath = "docs/CHECKLIST.md";
@@ -84,7 +85,9 @@ test("admin manual school setup action is protected and saves submitted records"
   assert.match(action, /linkSameSchoolStaffProfiles/);
   assert.match(action, /WHERE school_id IS NULL\s+AND \(school_name = :previousSchoolName OR school_name = :currentSchoolName\)/);
   assert.match(action, /setAuthFlashToast/);
-  assert.match(action, /redirect\("\/admin\/school-setup"\)/);
+  assert.match(action, /schoolSetupRedirectTarget\(formData\)/);
+  assert.match(action, /redirect\(redirectTo\)/);
+  assert.match(action, /"\/admin\/onboarding\/school-setup"/);
   assert.match(action, /redirect\("\/admin\/dashboard"\)/);
   assert.doesNotMatch(action, /defaultSchoolYear/);
   assert.doesNotMatch(action, /defaultGradeLevels/);
@@ -100,6 +103,8 @@ test("admin dashboard layout passes authenticated school context into the shell"
   assert.match(layout, /import \{ getAdminSchoolContext \} from "@\/lib\/school\/setup";/);
   assert.match(layout, /const session = await requireRole\("admin"\);/);
   assert.match(layout, /const schoolContext = await getAdminSchoolContext\(session\.userId\);/);
+  assert.match(layout, /canManageSchoolSetup\(schoolContext\.staffRole\)/);
+  assert.match(layout, /redirect\("\/admin\/onboarding\/school-setup"\)/);
   assert.match(layout, /<AdminShell schoolContext=\{schoolContext\}>/);
 });
 
@@ -124,15 +129,30 @@ test("admin shell renders school setup context instead of fixed prototype labels
 test("manual school setup page uses protected data and editable setup form", () => {
   assert.equal(existsSync(schoolSetupPagePath), true);
   assert.equal(existsSync(schoolSetupFormPath), true);
+  assert.equal(existsSync(onboardingSetupPagePath), true);
   const page = readFileSync(schoolSetupPagePath, "utf8");
   const form = readFileSync(schoolSetupFormPath, "utf8");
+  const onboardingPage = readFileSync(onboardingSetupPagePath, "utf8");
 
   assert.match(page, /await requireRole\("admin"\)/);
   assert.match(page, /getAdminSchoolSetupFormData\(session\.userId\)/);
   assert.match(page, /<ManualSchoolSetupForm initialData=\{initialData\} \/>/);
+  assert.match(page, /@\/app\/admin\/_components\/manual-school-setup-form/);
+
+  assert.match(onboardingPage, /await requireRole\("admin"\)/);
+  assert.match(onboardingPage, /logoutAction\.bind\(null, "admin"\)/);
+  assert.match(onboardingPage, /getAdminSchoolContext\(session\.userId\)/);
+  assert.match(onboardingPage, /getAdminSchoolSetupFormData\(session\.userId\)/);
+  assert.match(onboardingPage, /canManageSchoolSetup\(staffRole\)/);
+  assert.match(onboardingPage, /redirect\("\/admin\/dashboard"\)/);
+  assert.match(onboardingPage, /Add your school year, grades, and sections before opening the dashboard\./);
+  assert.match(onboardingPage, /Sign out/);
+  assert.match(onboardingPage, /redirectTo="\/admin\/onboarding\/school-setup"/);
+
   assert.match(form, /"use client";/);
   assert.match(form, /saveSchoolSetupAction/);
   assert.match(form, /name="gradeSetup"/);
+  assert.match(form, /name="redirectTo"/);
   assert.match(form, /name="schoolName"/);
   assert.match(form, /name="schoolCode"/);
   assert.match(form, /name="schoolYearName"/);

@@ -65,6 +65,11 @@ test("dashboard route groups protect admin and parent portals by role", () => {
   assert.equal(existsSync("app/parent/(portal)/dashboard/page.tsx"), true);
 });
 
+test("admin registration redirects to setup onboarding before the real dashboard", () => {
+  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/onboarding\/school-setup" : "\/parent\/dashboard"\);/);
+  assert.match(authActions, /description: role === "admin"[\s\S]*Complete school setup to unlock the admin dashboard\./);
+});
+
 test("logout clears the auth session and redirects by portal role", () => {
   const adminShell = readFileSync("app/admin/_components/admin-shell.tsx", "utf8");
   const parentShell = readFileSync("app/parent/_components/parent-shell.tsx", "utf8");

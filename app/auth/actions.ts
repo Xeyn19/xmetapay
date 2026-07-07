@@ -87,7 +87,7 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
       role,
       title: "Account created",
       description: role === "admin"
-        ? "Welcome to the school admin dashboard."
+        ? "Complete school setup to unlock the admin dashboard."
         : "Welcome to your parent portal.",
     });
   } catch (error) {
@@ -104,7 +104,7 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
     connection?.release();
   }
 
-  redirect(role === "admin" ? "/admin/dashboard" : "/parent/dashboard");
+  redirect(role === "admin" ? "/admin/onboarding/school-setup" : "/parent/dashboard");
 }
 
 export async function loginAction(role: PortalRole, _state: AuthFormState = initialState, formData: FormData): Promise<AuthFormState> {

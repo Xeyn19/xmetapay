@@ -25,6 +25,7 @@ type SetupInput = {
 export async function saveSchoolSetupAction(formData: FormData) {
   const session = await requireRole("admin");
   const staffRole = await getAdminStaffRole(session.userId);
+  const redirectTo = schoolSetupRedirectTarget(formData);
 
   if (!canManageSchoolSetup(staffRole)) {
     await setAuthFlashToast({
@@ -43,7 +44,7 @@ export async function saveSchoolSetupAction(formData: FormData) {
       title: "School setup not saved",
       description: input.message,
     });
-    redirect("/admin/school-setup");
+    redirect(redirectTo);
   }
 
   let connection: PoolConnection | null = null;
@@ -87,7 +88,7 @@ export async function saveSchoolSetupAction(formData: FormData) {
       title: "School setup not saved",
       description: "Check that the school code is unique and MySQL/XAMPP is running, then try again.",
     });
-    redirect("/admin/school-setup");
+    redirect(redirectTo);
   } finally {
     connection?.release();
   }
@@ -166,6 +167,12 @@ function parseGradeSetup(value: string) {
 
 function textValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function schoolSetupRedirectTarget(formData: FormData) {
+  const value = textValue(formData, "redirectTo");
+
+  return value === "/admin/onboarding/school-setup" ? value : "/admin/school-setup";
 }
 
 function normalizeLabel(value: string) {

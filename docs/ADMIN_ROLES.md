@@ -31,7 +31,7 @@ This guide explains the three school/admin staff roles used by XMETA Pay. All th
 
 The first real school account should be a `school_administrator`.
 
-Only a school administrator can complete `Set up school records`. This setup creates or links the school, active school year, grade levels, and sections. If a registrar or finance officer signs in before setup is complete, they should see:
+Only a school administrator can complete `Set up school records`. After registration, a new school administrator is sent to a setup-only onboarding screen before the real dashboard is shown. This setup creates or links the school, active school year, grade levels, and sections. If a registrar or finance officer signs in before setup is complete, they should see:
 
 ```text
 Ask a school administrator to complete school setup first.
@@ -44,7 +44,7 @@ For the MVP, this matching uses the exact school name from admin registration. A
 ## Practical Workflow
 
 1. A school administrator registers first.
-2. The school administrator completes school setup.
+2. The school administrator completes setup-only onboarding.
 3. Registrar and finance officer accounts with the same school name are linked to the existing school context.
 4. A registrar can add and enroll students.
 5. Parents link to those students by `student_reference`.
