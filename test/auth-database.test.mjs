@@ -57,7 +57,6 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["schoolName", " Brentwood Academy "],
     ["email", "REGISTRAR@SCHOOL.EDU.PH"],
     ["phone", ""],
-    ["staffRole", "Finance officer"],
     ["password", testCredentialInput],
     ["confirmPassword", testCredentialInput],
   ]));
@@ -66,7 +65,18 @@ test("auth validation normalizes role-specific registration payloads", async () 
   assert.equal(admin.data.name, "Maria Dela Cruz");
   assert.equal(admin.data.email, "registrar@school.edu.ph");
   assert.equal(admin.data.phone, null);
-  assert.equal(admin.data.profile.staffRole, "finance_officer");
+  assert.equal(admin.data.profile.staffRole, "school_administrator");
+
+  const adminShortPassword = parseRegisterForm("admin", new Map([
+    ["adminName", " Maria Dela Cruz "],
+    ["schoolName", " Brentwood Academy "],
+    ["email", "registrar@school.edu.ph"],
+    ["password", "short"],
+    ["confirmPassword", "short"],
+  ]));
+
+  assert.equal(adminShortPassword.ok, false);
+  assert.equal(adminShortPassword.errors.password, "Password must be at least 8 characters.");
 
   const parentForm = new FormData();
   parentForm.append("guardianName", " Maria Santos ");

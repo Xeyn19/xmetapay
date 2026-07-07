@@ -18,8 +18,13 @@ test("auth forms submit through server actions instead of static redirects", () 
   assert.match(authUi, /const serverAction = \(isLogin \? loginAction : registerAction\)\.bind\(null, portal\);/);
   assert.match(authUi, /useActionState<AuthFormState, FormData>\(serverAction/);
   assert.match(authUi, /<form action={action}/);
+  assert.match(authUi, /const \[fieldValues, setFieldValues\] = useState<Record<string, string>>/);
+  assert.match(authUi, /value=\{value\}/);
+  assert.match(authUi, /onChange=\{\(event\) => onValueChange\(field\.name, event\.target\.value\)\}/);
   assert.match(authUi, /required = field\.required \?\? true/);
   assert.match(authUi, /required=\{required\}/);
+  assert.match(authUi, /minLength=\{field\.name === "password" \? 8 : undefined\}/);
+  assert.match(authUi, /Use at least 8 characters\./);
   assert.doesNotMatch(authUi, /Remember me/);
   assert.doesNotMatch(authUi, /Forgot password\?/);
 });
@@ -32,8 +37,10 @@ test("auth pages show fields that match the role-specific schema", () => {
   assert.match(adminLoginPage, /placeholder: "admin@school\.edu\.ph or 0917 000 0000"/);
   assert.doesNotMatch(adminLoginPage, /type: "email"/);
 
-  assert.match(adminRegisterPage, /name: "staffRole"/);
-  assert.match(adminRegisterPage, /label: "Staff role"/);
+  assert.match(adminRegisterPage, /Create the school owner account/);
+  assert.doesNotMatch(adminRegisterPage, /name: "staffRole"/);
+  assert.doesNotMatch(adminRegisterPage, /label: "Staff role"/);
+  assert.doesNotMatch(adminRegisterPage, /Finance officer|Registrar|School administrator/);
   assert.doesNotMatch(adminRegisterPage, /name: "role"/);
   assert.match(adminRegisterPage, /name: "phone"[\s\S]*required: false/);
   assert.match(parentRegisterPage, /name: "phone"/);

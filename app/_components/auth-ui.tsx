@@ -102,6 +102,9 @@ export function AuthForm({
   const [state, action, pending] = useActionState<AuthFormState, FormData>(serverAction, {
     message: "",
   });
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(fields.map((field) => [field.name, ""])),
+  );
   const fieldGridClass =
     mode === "register" ? "grid gap-4 sm:grid-cols-2" : "grid gap-4";
   const passwordIndex = fields.findIndex((field) => field.name === "password");
@@ -116,6 +119,10 @@ export function AuthForm({
   const passwordFields = hasPasswordPair
     ? [fields[passwordIndex], fields[confirmPasswordIndex]]
     : [];
+
+  function updateFieldValue(name: string, value: string) {
+    setFieldValues((current) => ({ ...current, [name]: value }));
+  }
 
   return (
     <form action={action} className={isLogin ? "space-y-4" : "space-y-5 sm:space-y-6"}>
@@ -134,12 +141,28 @@ export function AuthForm({
 
       <div className={fieldGridClass}>
         {visibleFields.map((field) => (
-          <AuthField key={field.name} field={field} compact={isLogin} error={state.errors?.[field.name]} />
+          <AuthField
+            key={field.name}
+            field={field}
+            compact={isLogin}
+            error={state.errors?.[field.name]}
+            value={fieldValues[field.name] ?? ""}
+            onValueChange={updateFieldValue}
+          />
         ))}
         {hasPasswordPair ? (
           <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 sm:gap-4">
             {passwordFields.map((field) => (
-              <AuthField key={field.name} field={field} compact={isLogin} alignLabel error={state.errors?.[field.name]} />
+              <AuthField
+                key={field.name}
+                field={field}
+                compact={isLogin}
+                alignLabel
+                error={state.errors?.[field.name]}
+                value={fieldValues[field.name] ?? ""}
+                onValueChange={updateFieldValue}
+                showPasswordHelp={mode === "register" && field.name === "password"}
+              />
             ))}
           </div>
         ) : null}
@@ -167,11 +190,17 @@ function AuthField({
   compact,
   alignLabel = false,
   error,
+  value,
+  onValueChange,
+  showPasswordHelp = false,
 }: {
   field: Field;
   compact: boolean;
   alignLabel?: boolean;
   error?: string;
+  value: string;
+  onValueChange: (name: string, value: string) => void;
+  showPasswordHelp?: boolean;
 }) {
   const required = field.required ?? true;
 
@@ -191,7 +220,8 @@ function AuthField({
           required={required}
           aria-invalid={Boolean(error)}
           className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
-          defaultValue=""
+          value={value}
+          onChange={(event) => onValueChange(field.name, event.target.value)}
         >
           <option value="" disabled>
             {field.placeholder}
@@ -205,6 +235,9 @@ function AuthField({
           name={field.name}
           placeholder={field.placeholder}
           required={required}
+          minLength={field.name === "password" ? 8 : undefined}
+          value={value}
+          onChange={(event) => onValueChange(field.name, event.target.value)}
           aria-invalid={Boolean(error)}
           className="px-3 py-2 text-sm text-[#11131a] placeholder:text-zinc-400"
         />
@@ -214,10 +247,17 @@ function AuthField({
           type={field.type ?? "text"}
           placeholder={field.placeholder}
           required={required}
+          value={value}
+          onChange={(event) => onValueChange(field.name, event.target.value)}
           aria-invalid={Boolean(error)}
           className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
         />
       )}
+      {showPasswordHelp ? (
+        <span className="mt-1.5 block text-xs font-medium text-zinc-500">
+          Use at least 8 characters.
+        </span>
+      ) : null}
       {error ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{error}</span> : null}
     </label>
   );
