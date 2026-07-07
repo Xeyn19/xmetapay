@@ -89,6 +89,7 @@ test("auth sessions are database-backed and never expose raw tokens", () => {
   assert.match(envExample, /AUTH_SESSION_DAYS=1/);
 
   assert.match(authDb, /function envValue\(name: string, localFallback: string\)/);
+  assert.match(authDb, /port: Number\(process\.env\.MYSQL_PORT \|\| "3306"\)/);
   assert.match(authDb, /process\.env\.NEXT_PHASE === "phase-production-build"/);
   assert.match(authDb, /isProduction && !isProductionBuild/);
   assert.match(authDb, /throw new Error\(`\$\{name\} must be set in production\.`\)/);
