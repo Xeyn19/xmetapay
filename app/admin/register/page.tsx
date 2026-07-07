@@ -30,7 +30,6 @@ export default function AdminRegisterPage() {
             name: "phone",
             type: "tel",
             placeholder: "0917 000 0000",
-            required: false,
           },
           {
             label: "Password",

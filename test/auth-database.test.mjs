@@ -56,7 +56,7 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["adminName", " Maria Dela Cruz "],
     ["schoolName", " Brentwood Academy "],
     ["email", "REGISTRAR@SCHOOL.EDU.PH"],
-    ["phone", ""],
+    ["phone", "0917 111 2222"],
     ["password", testCredentialInput],
     ["confirmPassword", testCredentialInput],
   ]));
@@ -64,8 +64,20 @@ test("auth validation normalizes role-specific registration payloads", async () 
   assert.equal(admin.ok, true);
   assert.equal(admin.data.name, "Maria Dela Cruz");
   assert.equal(admin.data.email, "registrar@school.edu.ph");
-  assert.equal(admin.data.phone, null);
+  assert.equal(admin.data.phone, "0917 111 2222");
   assert.equal(admin.data.profile.staffRole, "school_administrator");
+
+  const adminMissingPhone = parseRegisterForm("admin", new Map([
+    ["adminName", " Maria Dela Cruz "],
+    ["schoolName", " Brentwood Academy "],
+    ["email", "registrar@school.edu.ph"],
+    ["phone", ""],
+    ["password", testCredentialInput],
+    ["confirmPassword", testCredentialInput],
+  ]));
+
+  assert.equal(adminMissingPhone.ok, false);
+  assert.equal(adminMissingPhone.errors.phone, "Phone number is required.");
 
   const adminShortPassword = parseRegisterForm("admin", new Map([
     ["adminName", " Maria Dela Cruz "],

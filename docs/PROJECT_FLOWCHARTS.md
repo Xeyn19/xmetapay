@@ -124,13 +124,13 @@ The admin account starts in the shared `users` table with `role = admin`. Admin-
 
 ```mermaid
 flowchart TD
-  A["Admin opens /admin/register"] --> B["Submit name, school name, email or phone, staff role, password"]
+  A["Admin opens /admin/register"] --> B["Submit admin name, school name, email, phone, password"]
   B --> C["Validate required fields"]
   C --> D{"Email or phone already used for admin role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
   F --> G["Insert users row with role admin"]
-  G --> H["Insert admin_profiles row"]
+  G --> H["Insert admin_profiles row as school_administrator"]
   H --> I["Create DB-backed session and HttpOnly cookie"]
   I --> J["Redirect to /admin/dashboard"]
 
