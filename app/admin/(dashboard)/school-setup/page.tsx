@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminSchoolSetupFormData } from "@/lib/school/setup";
 
-import { ManualSchoolSetupForm } from "./manual-school-setup-form";
+import { ManualSchoolSetupForm } from "@/app/admin/_components/manual-school-setup-form";
 
 export default async function AdminSchoolSetupPage() {
   const session = await requireRole("admin");

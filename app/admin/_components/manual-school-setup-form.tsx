@@ -14,7 +14,13 @@ type GradeRow = {
   sections: string[];
 };
 
-export function ManualSchoolSetupForm({ initialData }: { initialData: AdminSchoolSetupFormData }) {
+export function ManualSchoolSetupForm({
+  initialData,
+  redirectTo = "/admin/school-setup",
+}: {
+  initialData: AdminSchoolSetupFormData;
+  redirectTo?: string;
+}) {
   const [grades, setGrades] = useState<GradeRow[]>(
     initialData.grades.map((grade, index) => ({
       id: `grade-${index}-${grade.name || "new"}`,
@@ -92,13 +98,11 @@ export function ManualSchoolSetupForm({ initialData }: { initialData: AdminSchoo
   return (
     <form action={saveSchoolSetupAction} className="grid gap-5">
       <input type="hidden" name="gradeSetup" value={gradeSetup} />
+      <input type="hidden" name="redirectTo" value={redirectTo} />
 
       <section className="overflow-hidden rounded-xl border border-black/[0.07] bg-white">
         <div className="border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
-          <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">School identity</h2>
-          <p className="mt-1 text-[12px] leading-5 text-[#5a6070]">
-            Confirm the real school record that will scope students, fees, payments, and reports.
-          </p>
+          <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">School</h2>
         </div>
         <div className="grid gap-3 p-[18px] md:grid-cols-[1fr_220px]">
           <Field label="School name" required>
@@ -107,7 +111,7 @@ export function ManualSchoolSetupForm({ initialData }: { initialData: AdminSchoo
               defaultValue={initialData.schoolName}
               required
               className={fieldControlClass}
-              placeholder="Enter school name"
+              placeholder="School name"
             />
           </Field>
           <Field label="School code" required>
@@ -124,13 +128,10 @@ export function ManualSchoolSetupForm({ initialData }: { initialData: AdminSchoo
 
       <section className="overflow-hidden rounded-xl border border-black/[0.07] bg-white">
         <div className="border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
-          <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">Active school year</h2>
-          <p className="mt-1 text-[12px] leading-5 text-[#5a6070]">
-            This is the year used for enrollment, tuition, payments, and class sections.
-          </p>
+          <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">School year</h2>
         </div>
         <div className="grid gap-3 p-[18px] md:grid-cols-3">
-          <Field label="School year name" required>
+          <Field label="Year name" required>
             <input
               name="schoolYearName"
               defaultValue={initialData.schoolYearName}
@@ -163,10 +164,7 @@ export function ManualSchoolSetupForm({ initialData }: { initialData: AdminSchoo
       <section className="overflow-hidden rounded-xl border border-black/[0.07] bg-white">
         <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-[18px]">
           <div>
-            <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">Grade levels and sections</h2>
-            <p className="mt-1 text-[12px] leading-5 text-[#5a6070]">
-              Add the real grade levels and sections used by this school year.
-            </p>
+            <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">Grades and sections</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             <AdminButton type="button" tone="outline" onClick={applyGradeTemplate}>
@@ -189,7 +187,7 @@ export function ManualSchoolSetupForm({ initialData }: { initialData: AdminSchoo
                     value={grade.name}
                     onChange={(event) => updateGrade(gradeIndex, event.target.value)}
                     className={cn(fieldControlClass, "bg-white")}
-                    placeholder="Grade level name"
+                    placeholder="Grade name"
                   />
                 </Field>
 

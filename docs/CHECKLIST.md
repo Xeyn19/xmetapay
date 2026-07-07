@@ -61,6 +61,7 @@ Done when: the full schema can be imported from a clean local database without e
 - [x] Create grade levels and sections from the admin side or a safe local seed script.
 - [x] Replace hard-coded school year/dashboard school labels with database reads.
 - [x] Restrict school setup to `school_administrator`.
+- [x] Redirect new school administrators to setup-only onboarding before showing the real dashboard.
 
 Done when: the admin dashboard can load school setup data from MySQL.
 

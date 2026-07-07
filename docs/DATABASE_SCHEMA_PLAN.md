@@ -675,12 +675,12 @@ erDiagram
 ```mermaid
 flowchart TD
   A["Admin opens /admin/register"] --> B["Create user and admin profile only"]
-  B --> C["Admin lands on dashboard"]
+  B --> C["Redirect to setup-only onboarding"]
   C --> D{"School setup complete?"}
   D -->|Yes| E["Use linked school context"]
   D -->|No| F{"staff_role is school_administrator?"}
   F -->|No| G["Ask a school administrator to complete setup"]
-  F -->|Yes| H["Open Set up school records"]
+  F -->|Yes| H["Complete school setup form"]
   H --> I["Save school, active year, grade levels, and sections"]
   I --> J["Link same-school admin profiles to schools.id"]
   J --> E

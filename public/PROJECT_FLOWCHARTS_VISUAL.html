@@ -362,13 +362,17 @@ flowchart TD
   F --> G["Insert users row with role admin"]
   G --> H["Insert admin_profiles row as school_administrator"]
   H --> I["Create DB-backed session and HttpOnly cookie"]
-  I --> J["Redirect to /admin/dashboard"]
+  I --> J["Redirect to /admin/onboarding/school-setup"]
+  J --> K["Complete setup-only onboarding form"]
+  K --> L["Redirect to /admin/dashboard"]
 
-  K["Admin opens /admin/login"] --> L["Find active admin user by email or phone"]
-  L --> M{"Password valid?"}
-  M -->|No| N["Show invalid login error"]
-  M -->|Yes| O["Create DB-backed session and HttpOnly cookie"]
-  O --> J
+  M["Admin opens /admin/login"] --> N["Find active admin user by email or phone"]
+  N --> O{"Password valid?"}
+  O -->|No| P["Show invalid login error"]
+  O -->|Yes| Q["Create DB-backed session and HttpOnly cookie"]
+  Q --> R{"School setup complete?"}
+  R -->|No, school_administrator| J
+  R -->|Yes| L
           </pre>
         </div>
 
@@ -379,15 +383,15 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Admin dashboard loads"] --> B{"admin_profiles.school_id exists?"}
+  A["Admin setup onboarding or dashboard loads"] --> B{"admin_profiles.school_id exists?"}
   B -->|Yes| C["Use linked school context"]
   B -->|No| D{"Exact schools.name matches school_name?"}
   D -->|Yes| E["Save matched school_id to admin_profiles"]
   E --> C
   D -->|No| F{"staff_role is school_administrator?"}
   F -->|No| G["Show ask school administrator message"]
-  F -->|Yes| H["Show Set up school records panel"]
-  H --> I["Admin opens manual setup screen"]
+  F -->|Yes| H["Redirect to setup-only onboarding screen"]
+  H --> I["Admin completes setup-only onboarding form"]
   I --> J["Require admin session and school_administrator role"]
   J --> K["Admin confirms school name and code"]
   K --> L["Admin enters active school year and dates"]
