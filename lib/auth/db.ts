@@ -3,6 +3,7 @@ import "server-only";
 import mysql from "mysql2/promise";
 
 const isProduction = process.env.NODE_ENV === "production";
+const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
 
 export const pool = mysql.createPool({
   host: envValue("MYSQL_HOST", "127.0.0.1"),
@@ -22,7 +23,7 @@ function envValue(name: string, localFallback: string) {
     return value;
   }
 
-  if (isProduction) {
+  if (isProduction && !isProductionBuild) {
     throw new Error(`${name} must be set in production.`);
   }
 
