@@ -154,7 +154,7 @@ Database touchpoints:
 
 Implemented.
 
-After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, adds one or more school years, chooses exactly one active year, then creates grade levels and sections for that active year. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
+After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, adds one or more school years, chooses exactly one active year, then creates grade levels and sections for that active year. The ongoing `/admin/school-setup` page shows all school years and the active-year structure before the edit form. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
 
 ```mermaid
 flowchart TD
@@ -176,7 +176,10 @@ flowchart TD
   O --> P["Save schools, school_years, grade_levels, sections"]
   P --> Q["Update same-school admin_profiles.school_id"]
   Q --> R["Redirect back to dashboard"]
-  R --> C
+  R --> S["Admin opens School setup overview when needed"]
+  S --> T["Review all years and active-year structure"]
+  T --> U["Edit setup with the existing setup form"]
+  U --> C
 ```
 
 Database touchpoints:

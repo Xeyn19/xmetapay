@@ -68,6 +68,12 @@ test("school setup backend helper reads admin school context from MySQL", () => 
   assert.match(helper, /Ask a school administrator to set up this school first\./);
   assert.match(helper, /missingSchoolSetupTables/);
   assert.match(helper, /export async function getAdminSchoolSetupFormData\(userId: number\)/);
+  assert.match(helper, /export async function getAdminSchoolSetupOverview\(userId: number\)/);
+  assert.match(helper, /getSchoolYearOverviewRows/);
+  assert.match(helper, /COUNT\(DISTINCT sec\.id\) AS section_count/);
+  assert.match(helper, /COUNT\(DISTINCT e\.id\) AS enrollment_count/);
+  assert.match(helper, /COUNT\(DISTINCT ft\.id\) AS fee_type_count/);
+  assert.match(helper, /ORDER BY sy\.status = 'active' DESC/);
   assert.match(helper, /getGradeSectionRows/);
   assert.match(helper, /schoolCodeFor/);
 });
@@ -148,9 +154,15 @@ test("manual school setup page uses protected data and editable setup form", () 
   const onboardingPage = readFileSync(onboardingSetupPagePath, "utf8");
 
   assert.match(page, /await requireRole\("admin"\)/);
+  assert.match(page, /getAdminSchoolSetupOverview\(session\.userId\)/);
   assert.match(page, /getAdminSchoolSetupFormData\(session\.userId\)/);
+  assert.match(page, /School years/);
+  assert.match(page, /Active year structure/);
+  assert.match(page, /Edit school setup/);
   assert.match(page, /<ManualSchoolSetupForm initialData=\{initialData\} \/>/);
   assert.match(page, /@\/app\/admin\/_components\/manual-school-setup-form/);
+  assert.match(page, /Review every school year here/);
+  assert.match(page, /Live dashboards, enrollment, fees, wallet, store, and reports still use the active year\./);
 
   assert.match(onboardingPage, /await requireRole\("admin"\)/);
   assert.match(onboardingPage, /logoutAction\.bind\(null, "admin"\)/);
@@ -189,5 +201,6 @@ test("backend checklist tracks completed school setup backend slice", () => {
   assert.match(checklist, /- \[x\] Link admin profiles to a real school record\./);
   assert.match(checklist, /- \[x\] Share the completed school context with same-school registrar and finance staff accounts\./);
   assert.match(checklist, /- \[x\] Support one or many school years with exactly one active school year\./);
+  assert.match(checklist, /- \[x\] Add a School setup overview page for all school years and active-year structure\./);
   assert.match(checklist, /- \[x\] Create grade levels and sections from the admin side or a safe local seed script\./);
 });

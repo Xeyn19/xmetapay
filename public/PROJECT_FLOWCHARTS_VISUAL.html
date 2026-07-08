@@ -401,7 +401,10 @@ flowchart TD
   O --> P["Save schools, school_years, grade_levels, sections"]
   P --> Q["Update same-school admin_profiles.school_id"]
   Q --> R["Redirect back to dashboard"]
-  R --> C
+  R --> S["Admin opens School setup overview when needed"]
+  S --> T["Review all years and active-year structure"]
+  T --> U["Edit setup with the existing setup form"]
+  U --> C
           </pre>
         </div>
 

@@ -108,7 +108,10 @@ export const pageMeta: Record<string, PageMeta> = {
 export const navSections: NavSection[] = [
   {
     label: "Overview",
-    items: [{ label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard }],
+    items: [
+      { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      { label: "School setup", href: "/admin/school-setup", icon: Building2 },
+    ],
   },
   {
     label: "Finance",
