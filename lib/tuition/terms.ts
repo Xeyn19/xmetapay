@@ -32,7 +32,8 @@ export type ParentPayableTuitionTerm = RowDataPacket & {
   fee_name: string;
   category: "tuition";
   student_id: number;
-  school_id?: number;
+  school_id: number;
+  school_year_id: number;
   student_reference: string;
   first_name: string;
   middle_name: string | null;
@@ -359,10 +360,11 @@ export async function getParentPayableTuitionTerms(parentUserId: number) {
   const [rows] = await pool.execute<ParentPayableTuitionTerm[]>(
     `SELECT tpt.id, tpt.student_fee_assignment_id, tpt.amount_due, tpt.amount_paid, tpt.due_date, tpt.status, tpt.term_name,
        ft.name AS fee_name, ft.category,
-       st.id AS student_id, st.student_reference, st.first_name, st.middle_name, st.last_name
+       st.id AS student_id, st.school_id, sfa.school_year_id, st.student_reference, st.first_name, st.middle_name, st.last_name
      FROM student_guardians sg
      JOIN students st ON st.id = sg.student_id
      JOIN student_fee_assignments sfa ON sfa.student_id = st.id
+     JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
      JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
      JOIN tuition_payment_terms tpt ON tpt.student_fee_assignment_id = sfa.id
      WHERE sg.parent_user_id = :parentUserId
@@ -403,6 +405,18 @@ export async function applyTuitionTermPayment(
     throw new TuitionTermsError("Selected terms must belong to one school.");
   }
 
+  const schoolYearIds = new Set(terms.map((term) => term.school_year_id));
+
+  if (schoolYearIds.size !== 1) {
+    throw new TuitionTermsError("Selected terms must belong to one school year.");
+  }
+
+  const schoolYearId = terms[0]?.school_year_id;
+
+  if (typeof schoolYearId !== "number") {
+    throw new TuitionTermsError("Selected terms must belong to one school year.");
+  }
+
   const total = roundMoney(
     terms.reduce((sum, term) => sum + Math.max(decimalValue(term.amount_due) - decimalValue(term.amount_paid), 0), 0),
   );
@@ -414,10 +428,11 @@ export async function applyTuitionTermPayment(
   const referenceNumber = params.makeReferenceNumber("PAY");
   const receiptNumber = params.makeReferenceNumber("RCT");
   const [paymentResult] = await connection.execute<ResultSetHeader>(
-    `INSERT INTO payments (school_id, payer_user_id, student_id, reference_number, channel, amount, status, paid_at)
-     VALUES (:schoolId, :payerUserId, :studentId, :referenceNumber, :channel, :amount, 'paid', NOW())`,
+    `INSERT INTO payments (school_id, school_year_id, payer_user_id, student_id, reference_number, channel, amount, status, paid_at)
+     VALUES (:schoolId, :schoolYearId, :payerUserId, :studentId, :referenceNumber, :channel, :amount, 'paid', NOW())`,
     {
       schoolId,
+      schoolYearId,
       payerUserId: params.parentUserId,
       studentId: terms[0].student_id,
       referenceNumber,
@@ -506,6 +521,7 @@ async function getLockedTuitionAssignment(
     `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.status
      FROM student_fee_assignments sfa
      JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
+     JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
      JOIN students st ON st.id = sfa.student_id
      WHERE sfa.id = :assignmentId
        AND st.school_id = :schoolId
@@ -529,7 +545,7 @@ async function getLockedParentPayableTuitionTerms(
   const placeholders = tuitionTermIds.map((_, index) => `:tuitionTermId${index}`).join(", ");
   const params = Object.fromEntries(tuitionTermIds.map((id, index) => [`tuitionTermId${index}`, id]));
   const [rows] = await connection.execute<ParentPayableTuitionTerm[]>(
-    `SELECT tpt.id, tpt.student_fee_assignment_id, tpt.amount_due, tpt.amount_paid, tpt.status,
+    `SELECT tpt.id, tpt.student_fee_assignment_id, sfa.school_year_id, tpt.amount_due, tpt.amount_paid, tpt.status,
        st.id AS student_id, st.school_id
      FROM tuition_payment_terms tpt
      JOIN student_fee_assignments sfa ON sfa.id = tpt.student_fee_assignment_id

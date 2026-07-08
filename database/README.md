@@ -29,6 +29,10 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
 7. If `full-schema-v1.sql` was already imported before multi-year setup was added, import `migrations/2026-07-08-school-year-upcoming-status.sql`.
    - Adds the `upcoming` school year status.
    - Lets a school prepare future school years while keeping one active year for live dashboard work.
+8. If `full-schema-v1.sql` was already imported before school-year record isolation was added, import `migrations/2026-07-08-operational-school-year-stamps.sql`.
+   - Adds nullable `school_year_id` stamps to payments, wallet transactions, store transactions, and notification logs.
+   - Adds indexes and foreign keys for faster selected-year dashboard/report filtering.
+   - Existing local history stays valid; new app writes save the active school year.
 
 ## Local Verification
 

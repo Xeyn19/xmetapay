@@ -210,6 +210,7 @@ async function getParentPayableFees(parentUserId: number) {
      FROM student_guardians sg
      JOIN students st ON st.id = sg.student_id
      JOIN student_fee_assignments sfa ON sfa.student_id = st.id
+     JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
      JOIN fee_types ft ON ft.id = sfa.fee_type_id
      WHERE sg.parent_user_id = :parentUserId
        AND sfa.status IN ('open', 'partial')

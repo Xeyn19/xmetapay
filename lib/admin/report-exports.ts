@@ -101,6 +101,8 @@ async function monthlyRevenueExport(schoolId: number, schoolYearId: number, cont
      FROM payments p
      WHERE p.school_id = :schoolId AND p.status = 'paid'
        AND (
+         p.school_year_id = :schoolYearId
+         OR
          EXISTS (
            SELECT 1
            FROM payment_allocations pa
@@ -148,6 +150,8 @@ async function collectionsExport(schoolId: number, schoolYearId: number, context
      JOIN students st ON st.id = p.student_id
      WHERE p.school_id = :schoolId
        AND (
+         p.school_year_id = :schoolYearId
+         OR
          EXISTS (
            SELECT 1
            FROM payment_allocations pa
@@ -251,6 +255,7 @@ async function walletStoreExport(schoolId: number, schoolYearId: number, context
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      LEFT JOIN sections sec ON sec.id = e.section_id
      WHERE st.school_id = :schoolId
+       AND (wt.school_year_id = :schoolYearId OR (wt.school_year_id IS NULL AND e.id IS NOT NULL))
      ORDER BY wt.created_at DESC, wt.id DESC`,
     { schoolId, schoolYearId },
   );

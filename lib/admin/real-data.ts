@@ -208,7 +208,7 @@ export async function getAdminDashboardRealData(adminUserId: number): Promise<Ad
         getTuitionByGrade(setup.schoolId, setup.schoolYearId),
         getRecentFeeAssignments(setup.schoolId, setup.schoolYearId),
         getRecentPayments(setup.schoolId, setup.schoolYearId),
-        getActivityFeed(setup.schoolId),
+        getActivityFeed(setup.schoolId, setup.schoolYearId),
       ]);
 
     const hasFees = feeSummary.assignmentCount > 0;
@@ -699,6 +699,8 @@ async function getPaymentSummary(schoolId: number, schoolYearId: number) {
      FROM payments
      WHERE school_id = :schoolId
        AND (
+         school_year_id = :schoolYearId
+         OR
          EXISTS (
            SELECT 1
            FROM payment_allocations pa
@@ -756,9 +758,11 @@ async function getWalletSummary(schoolId: number, schoolYearId: number) {
          COALESCE(SUM(CASE WHEN wt.type = 'top_up' AND DATE(wt.created_at) = CURRENT_DATE THEN wt.amount ELSE 0 END), 0) AS today_top_ups,
          COUNT(CASE WHEN wt.type = 'top_up' AND DATE(wt.created_at) = CURRENT_DATE THEN 1 END) AS today_top_up_count
        FROM students st
-       LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
+       JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
        LEFT JOIN wallets w ON w.student_id = st.id
-       LEFT JOIN wallet_transactions wt ON wt.wallet_id = w.id AND wt.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
+       LEFT JOIN wallet_transactions wt ON wt.wallet_id = w.id
+        AND wt.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
+        AND (wt.school_year_id = :schoolYearId OR wt.school_year_id IS NULL)
        WHERE st.school_id = :schoolId
        GROUP BY w.id, w.balance, w.status
      ) wallet_rows`,
@@ -863,6 +867,8 @@ async function getRecentPayments(schoolId: number, schoolYearId: number) {
      LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
      WHERE p.school_id = :schoolId
        AND (
+         p.school_year_id = :schoolYearId
+         OR
          sfa.school_year_id = :schoolYearId
          OR term_sfa.school_year_id = :schoolYearId
          OR EXISTS (
@@ -891,14 +897,15 @@ async function getRecentPayments(schoolId: number, schoolYearId: number) {
   ] as [string, string, string, string, string, string]);
 }
 
-async function getActivityFeed(schoolId: number) {
+async function getActivityFeed(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<NotificationRow[]>(
     `SELECT id, type, channel, status, created_at, sent_at
      FROM notification_logs
      WHERE school_id = :schoolId
+       AND (school_year_id = :schoolYearId OR school_year_id IS NULL)
      ORDER BY created_at DESC, id DESC
      LIMIT 5`,
-    { schoolId },
+    { schoolId, schoolYearId },
   );
 
   return rows.map((row) => {
@@ -928,6 +935,7 @@ async function getRecentReminderRows(schoolId: number, schoolYearId: number) {
      LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      WHERE nl.school_id = :schoolId
+       AND (nl.school_year_id = :schoolYearId OR nl.school_year_id IS NULL)
        AND nl.type = 'payment_reminder'
      ORDER BY nl.created_at DESC, nl.id DESC
      LIMIT 8`,
@@ -1142,9 +1150,10 @@ async function getAllowanceRows(schoolId: number, schoolYearId: number) {
        COALESCE(SUM(CASE WHEN wt.type = 'top_up' THEN wt.amount ELSE 0 END), 0) AS total_top_ups
      FROM wallets w
      JOIN students st ON st.id = w.student_id
-     LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
+     JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      LEFT JOIN wallet_transactions wt ON wt.wallet_id = w.id
+      AND (wt.school_year_id = :schoolYearId OR wt.school_year_id IS NULL)
      WHERE st.school_id = :schoolId
      GROUP BY w.id, st.first_name, st.middle_name, st.last_name, gl.name, w.balance
      ORDER BY st.last_name ASC, st.first_name ASC`,
@@ -1175,6 +1184,7 @@ async function getStoreSummary(schoolId: number, schoolYearId: number) {
        COALESCE(SUM(stx.fee_amount), 0) AS fee_amount
      FROM store_merchants sm
      LEFT JOIN store_transactions stx ON stx.merchant_id = sm.id
+      AND (stx.school_year_id = :schoolYearId OR stx.school_year_id IS NULL)
      LEFT JOIN enrollments e ON e.student_id = stx.student_id AND e.school_year_id = :schoolYearId
      WHERE sm.school_id = :schoolId
        AND (stx.id IS NULL OR e.id IS NOT NULL)`,
@@ -1202,6 +1212,7 @@ async function getStoreRows(schoolId: number, schoolYearId: number) {
      LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      WHERE sm.school_id = :schoolId
+       AND (stx.school_year_id = :schoolYearId OR (stx.school_year_id IS NULL AND e.id IS NOT NULL))
      ORDER BY stx.purchased_at DESC, stx.id DESC
      LIMIT 50`,
     { schoolId, schoolYearId },
@@ -1227,6 +1238,7 @@ async function getStoreSpendByGrade(schoolId: number, schoolYearId: number) {
      LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      WHERE sm.school_id = :schoolId
+       AND (stx.school_year_id = :schoolYearId OR (stx.school_year_id IS NULL AND e.id IS NOT NULL))
      GROUP BY gl.name, gl.sort_order
      ORDER BY gl.sort_order ASC, gl.name ASC`,
     { schoolId, schoolYearId },
@@ -1242,6 +1254,7 @@ async function getStorePeakHours(schoolId: number, schoolYearId: number) {
      JOIN store_merchants sm ON sm.id = stx.merchant_id
      JOIN enrollments e ON e.student_id = stx.student_id AND e.school_year_id = :schoolYearId
      WHERE sm.school_id = :schoolId
+       AND (stx.school_year_id = :schoolYearId OR stx.school_year_id IS NULL)
      GROUP BY HOUR(stx.purchased_at)
      ORDER BY amount DESC, label ASC
      LIMIT 6`,
@@ -1258,6 +1271,8 @@ async function getMonthlyRevenue(schoolId: number, schoolYearId: number) {
      FROM payments p
      WHERE p.school_id = :schoolId
        AND (
+         p.school_year_id = :schoolYearId
+         OR
          EXISTS (
            SELECT 1
            FROM payment_allocations pa

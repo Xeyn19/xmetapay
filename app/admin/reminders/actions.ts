@@ -56,6 +56,7 @@ export async function logPaymentRemindersAction(
          SELECT COUNT(DISTINCT existing_reminder.channel)
          FROM notification_logs existing_reminder
          WHERE existing_reminder.school_id = :schoolId
+           AND (existing_reminder.school_year_id = :schoolYearId OR existing_reminder.school_year_id IS NULL)
            AND existing_reminder.recipient_user_id = sg.parent_user_id
            AND existing_reminder.student_id = st.id
            AND existing_reminder.type = 'payment_reminder'
@@ -95,6 +96,7 @@ export async function logPaymentRemindersAction(
       const existingChannels = await getExistingReminderChannels(
         connection,
         context.schoolId,
+        context.schoolYearId,
         row.parent_user_id,
         row.student_id,
         options.channels,
@@ -107,13 +109,14 @@ export async function logPaymentRemindersAction(
 
         await connection.execute<ResultSetHeader>(
           `INSERT INTO notification_logs (
-             school_id, recipient_user_id, student_id, type, channel, status, message_body
+             school_id, school_year_id, recipient_user_id, student_id, type, channel, status, message_body
            )
            VALUES (
-             :schoolId, :recipientUserId, :studentId, 'payment_reminder', :channel, 'queued', :messageBody
+             :schoolId, :schoolYearId, :recipientUserId, :studentId, 'payment_reminder', :channel, 'queued', :messageBody
            )`,
           {
             schoolId: context.schoolId,
+            schoolYearId: context.schoolYearId,
             recipientUserId: row.parent_user_id,
             studentId: row.student_id,
             channel,
@@ -185,6 +188,7 @@ async function countEligibleReminderTargets(
 async function getExistingReminderChannels(
   connection: PoolConnection,
   schoolId: number,
+  schoolYearId: number,
   parentUserId: number,
   studentId: number,
   channels: ReminderChannel[],
@@ -194,6 +198,7 @@ async function getExistingReminderChannels(
     `SELECT channel
      FROM notification_logs
      WHERE school_id = :schoolId
+       AND (school_year_id = :schoolYearId OR school_year_id IS NULL)
        AND recipient_user_id = :parentUserId
        AND student_id = :studentId
        AND type = 'payment_reminder'
@@ -201,6 +206,7 @@ async function getExistingReminderChannels(
        AND DATE(created_at) = CURRENT_DATE`,
     {
       schoolId,
+      schoolYearId,
       parentUserId,
       studentId,
       ...channelBindings.params,

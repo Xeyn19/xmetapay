@@ -397,19 +397,20 @@ flowchart TD
   K --> L["Admin adds one or more school years"]
   L --> M["Admin chooses exactly one active year"]
   M --> N["Admin adds grade levels"]
-  N --> O["Admin adds sections for the active year"]
+  N --> O["Admin adds sections for the selected setup year"]
   O --> P["Save schools, school_years, grade_levels, sections"]
   P --> Q["Update same-school admin_profiles.school_id"]
   Q --> R["Redirect back to dashboard"]
   R --> S["Admin opens School setup overview when needed"]
-  S --> T["Review all years and active-year structure"]
-  T --> U["Edit setup with the existing setup form"]
-  U --> C
+  S --> T["Review all years and selected-year structure"]
+  T --> U["Edit selected-year sections"]
+  U --> V["Prepare manual rollover if needed"]
+  V --> C
           </pre>
         </div>
 
         <h3>Admin School-Year View Context</h3>
-        <p>Implemented: the admin selector changes view/report data by school year. Writes remain active-year-only for MVP safety.</p>
+        <p>Implemented: the admin selector changes view/report data by school year. Writes remain active-year-only for MVP safety. New payment, wallet, store, and reminder history rows store the active school year.</p>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="admin-school-year-view-context.svg">Download SVG</button>
@@ -426,6 +427,28 @@ flowchart TD
   D --> H{"Selected year is active?"}
   H -->|Yes| I["Write forms continue normally"]
   H -->|No| J["Show read-only context; new records stay in active year"]
+          </pre>
+        </div>
+
+        <h3>Manual School-Year Rollover</h3>
+        <p>Implemented: student master records are shared across years. Rollover creates target-year enrollment rows without duplicating students.</p>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-school-year-rollover.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["School administrator opens School setup"] --> B["Choose source school year"]
+  B --> C["Select enrolled students from source year"]
+  C --> D["Choose target school year grade and section"]
+  D --> E["Submit Prepare rollover"]
+  E --> F["Validate school administrator role and school ownership"]
+  F --> G["Insert target-year enrollments"]
+  G --> H{"Student already enrolled in target year?"}
+  H -->|Yes| I["Skip duplicate and include in result"]
+  H -->|No| J["Student appears in target-year views"]
+  I --> K["Show rollover result"]
+  J --> K
           </pre>
         </div>
 
