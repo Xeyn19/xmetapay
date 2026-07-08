@@ -154,7 +154,7 @@ Database touchpoints:
 
 Implemented.
 
-After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, active school year, grade levels, and sections. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
+After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, adds one or more school years, chooses exactly one active year, then creates grade levels and sections for that active year. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
 
 ```mermaid
 flowchart TD
@@ -169,13 +169,14 @@ flowchart TD
   H --> I["Admin completes setup-only onboarding form"]
   I --> J["Require admin session and school_administrator role"]
   J --> K["Admin confirms school name and code"]
-  K --> L["Admin enters active school year and dates"]
-  L --> M["Admin adds grade levels"]
-  M --> N["Admin adds sections per grade"]
-  N --> O["Save schools, school_years, grade_levels, sections"]
-  O --> P["Update same-school admin_profiles.school_id"]
-  P --> Q["Redirect back to dashboard"]
-  Q --> C
+  K --> L["Admin adds one or more school years"]
+  L --> M["Admin chooses exactly one active year"]
+  M --> N["Admin adds grade levels"]
+  N --> O["Admin adds sections for the active year"]
+  O --> P["Save schools, school_years, grade_levels, sections"]
+  P --> Q["Update same-school admin_profiles.school_id"]
+  Q --> R["Redirect back to dashboard"]
+  R --> C
 ```
 
 Database touchpoints:
@@ -612,7 +613,7 @@ Use this testing order when checking the project manually in XAMPP:
 
 1. Register an admin account.
 2. Log in as admin.
-3. Set up school records with the real school year, grade levels, and sections.
+3. Set up school records with one or more school years, one active year, grade levels, and active-year sections.
 4. Create a student with a clear `student_reference`.
 5. Confirm the student appears in the admin student table.
 6. Register a parent account using the same `student_reference`.

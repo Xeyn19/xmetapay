@@ -31,7 +31,7 @@ This guide explains the three school/admin staff roles used by XMETA Pay. All th
 
 The first real school account should be a `school_administrator`.
 
-Only a school administrator can complete `Set up school records`. After registration, a new school administrator is sent to a setup-only onboarding screen before the real dashboard is shown. This setup creates or links the school, active school year, grade levels, and sections. If a registrar or finance officer signs in before setup is complete, they should see:
+Only a school administrator can complete `Set up school records`. After registration, a new school administrator is sent to a setup-only onboarding screen before the real dashboard is shown. This setup creates or links the school, one or more school years, exactly one active year, grade levels, and sections for the active year. If a registrar or finance officer signs in before setup is complete, they should see:
 
 ```text
 Ask a school administrator to complete school setup first.

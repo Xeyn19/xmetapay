@@ -32,9 +32,12 @@ export type AdminSchoolContext = {
 export type AdminSchoolSetupFormData = {
   schoolName: string;
   schoolCode: string;
-  schoolYearName: string;
-  startsOn: string;
-  endsOn: string;
+  schoolYears: Array<{
+    name: string;
+    startsOn: string;
+    endsOn: string;
+    status: "upcoming" | "active" | "closed";
+  }>;
   grades: Array<{
     name: string;
     sections: string[];
@@ -189,15 +192,16 @@ export async function getAdminSchoolSetupFormData(userId: number): Promise<Admin
     const school = await resolveSchoolForProfile(profile);
     const schoolName = school?.name ?? profile.school_name;
     const schoolCode = school?.code ?? schoolCodeFor(schoolName);
-    const activeYear = school ? await getActiveSchoolYear(school.id) : null;
+    const schoolYears = school ? await getSchoolYearRows(school.id) : [];
+    const activeYear = schoolYears.find((year) => year.status === "active") ?? null;
     const grades = school && activeYear ? await getGradeSectionRows(school.id, activeYear.id) : [];
 
     return {
       schoolName,
       schoolCode,
-      schoolYearName: activeYear?.name ?? "",
-      startsOn: activeYear?.startsOn ?? "",
-      endsOn: activeYear?.endsOn ?? "",
+      schoolYears: schoolYears.length > 0
+        ? schoolYears.map(({ name, startsOn, endsOn, status }) => ({ name, startsOn, endsOn, status }))
+        : [{ name: "", startsOn: "", endsOn: "", status: "active" }],
       grades: grades.length > 0 ? grades : [{ name: "", sections: [""] }],
     };
   } catch {
@@ -304,6 +308,24 @@ async function getActiveSchoolYear(schoolId: number) {
         endsOn: formatDate(row.ends_on),
       }
     : null;
+}
+
+async function getSchoolYearRows(schoolId: number) {
+  const [rows] = await pool.execute<Array<SchoolYearRow & { status: "upcoming" | "active" | "closed" }>>(
+    `SELECT id, name, starts_on, ends_on, status
+     FROM school_years
+     WHERE school_id = :schoolId
+     ORDER BY status = 'active' DESC, starts_on DESC, id DESC`,
+    { schoolId },
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    startsOn: formatDate(row.starts_on),
+    endsOn: formatDate(row.ends_on),
+    status: row.status,
+  }));
 }
 
 async function countGradeLevels(schoolId: number) {
@@ -430,9 +452,7 @@ function emptySetupFormData(schoolName: string): AdminSchoolSetupFormData {
   return {
     schoolName,
     schoolCode: schoolCodeFor(schoolName),
-    schoolYearName: "",
-    startsOn: "",
-    endsOn: "",
+    schoolYears: [{ name: "", startsOn: "", endsOn: "", status: "active" }],
     grades: [{ name: "", sections: [""] }],
   };
 }

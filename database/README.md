@@ -26,6 +26,9 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Adds `fee_type_term_templates`.
    - Lets tuition fee types store reusable installment templates.
    - Existing tuition fee types and per-student terms stay unchanged.
+7. If `full-schema-v1.sql` was already imported before multi-year setup was added, import `migrations/2026-07-08-school-year-upcoming-status.sql`.
+   - Adds the `upcoming` school year status.
+   - Lets a school prepare future school years while keeping one active year for live dashboard work.
 
 ## Local Verification
 

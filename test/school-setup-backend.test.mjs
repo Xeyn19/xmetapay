@@ -12,6 +12,7 @@ const adminShellPath = "app/admin/_components/admin-shell.tsx";
 const checklistPath = "docs/CHECKLIST.md";
 const fullSchemaPath = "database/full-schema-v1.sql";
 const migrationPath = "database/migrations/2026-06-24-admin-school-link.sql";
+const schoolYearStatusMigrationPath = "database/migrations/2026-07-08-school-year-upcoming-status.sql";
 
 test("admin school link migration is safe to import into existing XAMPP data", () => {
   assert.equal(existsSync(migrationPath), true);
@@ -34,6 +35,15 @@ test("fresh full schema includes admin profile school link after schools table e
   assert.ok(linkIndex > schoolsIndex, "admin profile school link should be added after schools exists");
   assert.match(schema, /idx_admin_profiles_school_id/);
   assert.match(schema, /fk_admin_profiles_school/);
+});
+
+test("school year status migration supports future school years", () => {
+  assert.equal(existsSync(schoolYearStatusMigrationPath), true);
+  const migration = readFileSync(schoolYearStatusMigrationPath, "utf8");
+  const schema = readFileSync(fullSchemaPath, "utf8");
+
+  assert.match(migration, /MODIFY COLUMN status ENUM\('upcoming', 'active', 'closed'\)/);
+  assert.match(schema, /status ENUM\('upcoming', 'active', 'closed'\) NOT NULL DEFAULT 'active'/);
 });
 
 test("school setup backend helper reads admin school context from MySQL", () => {
@@ -72,12 +82,15 @@ test("admin manual school setup action is protected and saves submitted records"
   assert.match(action, /formData\.get\(key\)/);
   assert.match(action, /schoolName/);
   assert.match(action, /schoolCode/);
-  assert.match(action, /schoolYearName/);
-  assert.match(action, /startsOn/);
-  assert.match(action, /endsOn/);
+  assert.match(action, /schoolYearSetup/);
+  assert.match(action, /parseSchoolYearSetup/);
+  assert.match(action, /Choose exactly one active school year\./);
+  assert.match(action, /School year names must be unique\./);
+  assert.match(action, /ensureSchoolYears/);
   assert.match(action, /gradeSetup/);
   assert.match(action, /INSERT INTO schools/);
   assert.match(action, /INSERT INTO school_years/);
+  assert.match(action, /:status/);
   assert.match(action, /INSERT INTO grade_levels/);
   assert.match(action, /INSERT INTO sections/);
   assert.match(action, /ON DUPLICATE KEY UPDATE/);
@@ -145,19 +158,22 @@ test("manual school setup page uses protected data and editable setup form", () 
   assert.match(onboardingPage, /getAdminSchoolSetupFormData\(session\.userId\)/);
   assert.match(onboardingPage, /canManageSchoolSetup\(staffRole\)/);
   assert.match(onboardingPage, /redirect\("\/admin\/dashboard"\)/);
-  assert.match(onboardingPage, /Add your school year, grades, and sections before opening the dashboard\./);
+  assert.match(onboardingPage, /Add school years, choose the active year, then add grades and sections before opening the dashboard\./);
   assert.match(onboardingPage, /Sign out/);
   assert.match(onboardingPage, /redirectTo="\/admin\/onboarding\/school-setup"/);
 
   assert.match(form, /"use client";/);
   assert.match(form, /saveSchoolSetupAction/);
+  assert.match(form, /name="schoolYearSetup"/);
   assert.match(form, /name="gradeSetup"/);
   assert.match(form, /name="redirectTo"/);
   assert.match(form, /name="schoolName"/);
   assert.match(form, /name="schoolCode"/);
-  assert.match(form, /name="schoolYearName"/);
-  assert.match(form, /name="startsOn"/);
-  assert.match(form, /name="endsOn"/);
+  assert.match(form, /School years/);
+  assert.match(form, /Add year/);
+  assert.match(form, /Set active/);
+  assert.match(form, /Upcoming/);
+  assert.match(form, /Closed/);
   assert.match(form, /Add grade level/);
   assert.match(form, /Add section/);
   assert.match(form, /Grade 1-10/);
@@ -172,6 +188,6 @@ test("backend checklist tracks completed school setup backend slice", () => {
   assert.match(checklist, /- \[x\] Replace hard-coded school year\/dashboard school labels with database reads\./);
   assert.match(checklist, /- \[x\] Link admin profiles to a real school record\./);
   assert.match(checklist, /- \[x\] Share the completed school context with same-school registrar and finance staff accounts\./);
-  assert.match(checklist, /- \[x\] Create one active school year for the local test school\./);
+  assert.match(checklist, /- \[x\] Support one or many school years with exactly one active school year\./);
   assert.match(checklist, /- \[x\] Create grade levels and sections from the admin side or a safe local seed script\./);
 });

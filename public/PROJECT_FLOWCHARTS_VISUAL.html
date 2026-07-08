@@ -394,13 +394,14 @@ flowchart TD
   H --> I["Admin completes setup-only onboarding form"]
   I --> J["Require admin session and school_administrator role"]
   J --> K["Admin confirms school name and code"]
-  K --> L["Admin enters active school year and dates"]
-  L --> M["Admin adds grade levels"]
-  M --> N["Admin adds sections per grade"]
-  N --> O["Save schools, school_years, grade_levels, sections"]
-  O --> P["Update same-school admin_profiles.school_id"]
-  P --> Q["Redirect back to dashboard"]
-  Q --> C
+  K --> L["Admin adds one or more school years"]
+  L --> M["Admin chooses exactly one active year"]
+  M --> N["Admin adds grade levels"]
+  N --> O["Admin adds sections for the active year"]
+  O --> P["Save schools, school_years, grade_levels, sections"]
+  P --> Q["Update same-school admin_profiles.school_id"]
+  Q --> R["Redirect back to dashboard"]
+  R --> C
           </pre>
         </div>
 

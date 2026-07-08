@@ -15,6 +15,7 @@ test("full MVP schema file defines the database layers after auth", () => {
     "USE xmetapay_db;",
     "CREATE TABLE IF NOT EXISTS schools",
     "CREATE TABLE IF NOT EXISTS school_years",
+    "status ENUM('upcoming', 'active', 'closed') NOT NULL DEFAULT 'active'",
     "CREATE TABLE IF NOT EXISTS grade_levels",
     "CREATE TABLE IF NOT EXISTS sections",
     "CREATE TABLE IF NOT EXISTS students",

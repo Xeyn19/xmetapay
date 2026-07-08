@@ -65,7 +65,7 @@ export const pageMeta: Record<string, PageMeta> = {
   },
   "/admin/school-setup": {
     title: "School setup",
-    subtitle: "School year, grade levels, and sections",
+    subtitle: "School years, grade levels, and sections",
   },
   "/admin/tuition": {
     title: "Tuition report",

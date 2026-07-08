@@ -13,12 +13,17 @@ type SetupGradeInput = {
   sections: string[];
 };
 
+type SetupSchoolYearInput = {
+  name: string;
+  startsOn: string;
+  endsOn: string;
+  status: "upcoming" | "active" | "closed";
+};
+
 type SetupInput = {
   schoolName: string;
   schoolCode: string;
-  schoolYearName: string;
-  startsOn: string;
-  endsOn: string;
+  schoolYears: SetupSchoolYearInput[];
   grades: SetupGradeInput[];
 };
 
@@ -68,7 +73,7 @@ export async function saveSchoolSetupAction(formData: FormData) {
     );
     await linkSameSchoolStaffProfiles(connection, schoolId, profile.school_name, input.data.schoolName);
 
-    const schoolYearId = await ensureSchoolYear(connection, schoolId, input.data);
+    const schoolYearId = await ensureSchoolYears(connection, schoolId, input.data.schoolYears);
     const gradeLevelIds = await ensureGradeLevels(connection, schoolId, input.data.grades);
     await ensureSections(connection, schoolId, schoolYearId, input.data.grades, gradeLevelIds);
 
@@ -76,7 +81,7 @@ export async function saveSchoolSetupAction(formData: FormData) {
     await setAuthFlashToast({
       role: "admin",
       title: "School setup saved",
-      description: "Your school year, grade levels, and sections now use your real school records.",
+      description: "Your school years, active-year grades, and sections now use your real school records.",
     });
   } catch {
     if (connection) {
@@ -99,17 +104,27 @@ export async function saveSchoolSetupAction(formData: FormData) {
 function parseSchoolSetupForm(formData: FormData) {
   const schoolName = textValue(formData, "schoolName");
   const schoolCode = normalizeCode(textValue(formData, "schoolCode"));
-  const schoolYearName = textValue(formData, "schoolYearName");
-  const startsOn = textValue(formData, "startsOn");
-  const endsOn = textValue(formData, "endsOn");
+  const schoolYears = parseSchoolYearSetup(textValue(formData, "schoolYearSetup"));
   const grades = parseGradeSetup(textValue(formData, "gradeSetup"));
 
-  if (!schoolName || !schoolCode || !schoolYearName || !startsOn || !endsOn) {
-    return { ok: false as const, message: "Complete the school, school year, and date fields." };
+  if (!schoolName || !schoolCode) {
+    return { ok: false as const, message: "Complete the school name and code." };
   }
 
-  if (new Date(startsOn) >= new Date(endsOn)) {
-    return { ok: false as const, message: "School year end date must be after the start date." };
+  if (schoolYears.length === 0) {
+    return { ok: false as const, message: "Add at least one school year." };
+  }
+
+  if (schoolYears.filter((year) => year.status === "active").length !== 1) {
+    return { ok: false as const, message: "Choose exactly one active school year." };
+  }
+
+  if (new Set(schoolYears.map((year) => year.name.toLowerCase())).size !== schoolYears.length) {
+    return { ok: false as const, message: "School year names must be unique." };
+  }
+
+  if (schoolYears.some((year) => new Date(year.startsOn) >= new Date(year.endsOn))) {
+    return { ok: false as const, message: "Each school year end date must be after its start date." };
   }
 
   if (grades.length === 0) {
@@ -125,12 +140,28 @@ function parseSchoolSetupForm(formData: FormData) {
     data: {
       schoolName,
       schoolCode,
-      schoolYearName,
-      startsOn,
-      endsOn,
+      schoolYears,
       grades,
     },
   };
+}
+
+function parseSchoolYearSetup(value: string): SetupSchoolYearInput[] {
+  try {
+    const parsed = JSON.parse(value) as Array<{ name?: unknown; startsOn?: unknown; endsOn?: unknown; status?: unknown }>;
+    return parsed
+      .map((year) => {
+        const name = normalizeLabel(String(year.name ?? "")).slice(0, 40);
+        const startsOn = normalizeDate(String(year.startsOn ?? ""));
+        const endsOn = normalizeDate(String(year.endsOn ?? ""));
+        const status = normalizeSchoolYearStatus(year.status);
+
+        return { name, startsOn, endsOn, status };
+      })
+      .filter((year) => Boolean(year.name && year.startsOn && year.endsOn));
+  } catch {
+    return [];
+  }
 }
 
 function parseGradeSetup(value: string) {
@@ -177,6 +208,14 @@ function schoolSetupRedirectTarget(formData: FormData) {
 
 function normalizeLabel(value: string) {
   return value.trim().replace(/\s+/g, " ").slice(0, 60);
+}
+
+function normalizeDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
+}
+
+function normalizeSchoolYearStatus(value: unknown): SetupSchoolYearInput["status"] {
+  return value === "active" || value === "closed" ? value : "upcoming";
 }
 
 function normalizeCode(value: string) {
@@ -272,31 +311,46 @@ async function getSchoolByCodeOrName(connection: PoolConnection, schoolCode: str
   return rows[0] ?? null;
 }
 
-async function ensureSchoolYear(connection: PoolConnection, schoolId: number, input: SetupInput) {
+async function ensureSchoolYears(connection: PoolConnection, schoolId: number, schoolYears: SetupSchoolYearInput[]) {
+  const activeYear = schoolYears.find((year) => year.status === "active");
+
+  if (!activeYear) {
+    throw new Error("Active school year was not found.");
+  }
+
   await connection.execute(
     `UPDATE school_years
      SET status = 'closed'
-     WHERE school_id = :schoolId AND name <> :name AND status = 'active'`,
-    { schoolId, name: input.schoolYearName },
+     WHERE school_id = :schoolId AND name <> :activeYearName AND status = 'active'`,
+    { schoolId, activeYearName: activeYear.name },
   );
 
-  const [result] = await connection.execute<ResultSetHeader>(
-    `INSERT INTO school_years (school_id, name, starts_on, ends_on, status)
-     VALUES (:schoolId, :name, :startsOn, :endsOn, 'active')
-     ON DUPLICATE KEY UPDATE
-       starts_on = VALUES(starts_on),
-       ends_on = VALUES(ends_on),
-       status = VALUES(status),
-       id = LAST_INSERT_ID(id)`,
-    {
-      schoolId,
-      name: input.schoolYearName,
-      startsOn: input.startsOn,
-      endsOn: input.endsOn,
-    },
-  );
+  let activeYearId = 0;
 
-  return Number(result.insertId);
+  for (const year of schoolYears) {
+    const [result] = await connection.execute<ResultSetHeader>(
+      `INSERT INTO school_years (school_id, name, starts_on, ends_on, status)
+       VALUES (:schoolId, :name, :startsOn, :endsOn, :status)
+       ON DUPLICATE KEY UPDATE
+         starts_on = VALUES(starts_on),
+         ends_on = VALUES(ends_on),
+         status = VALUES(status),
+         id = LAST_INSERT_ID(id)`,
+      {
+        schoolId,
+        name: year.name,
+        startsOn: year.startsOn,
+        endsOn: year.endsOn,
+        status: year.status,
+      },
+    );
+
+    if (year.status === "active") {
+      activeYearId = Number(result.insertId);
+    }
+  }
+
+  return activeYearId;
 }
 
 async function ensureGradeLevels(connection: PoolConnection, schoolId: number, grades: SetupGradeInput[]) {

@@ -14,6 +14,14 @@ type GradeRow = {
   sections: string[];
 };
 
+type SchoolYearRow = {
+  id: string;
+  name: string;
+  startsOn: string;
+  endsOn: string;
+  status: "upcoming" | "active" | "closed";
+};
+
 export function ManualSchoolSetupForm({
   initialData,
   redirectTo = "/admin/school-setup",
@@ -21,6 +29,15 @@ export function ManualSchoolSetupForm({
   initialData: AdminSchoolSetupFormData;
   redirectTo?: string;
 }) {
+  const [schoolYears, setSchoolYears] = useState<SchoolYearRow[]>(
+    initialData.schoolYears.map((year, index) => ({
+      id: `school-year-${index}-${year.name || "new"}`,
+      name: year.name,
+      startsOn: year.startsOn,
+      endsOn: year.endsOn,
+      status: year.status,
+    })),
+  );
   const [grades, setGrades] = useState<GradeRow[]>(
     initialData.grades.map((grade, index) => ({
       id: `grade-${index}-${grade.name || "new"}`,
@@ -32,6 +49,43 @@ export function ManualSchoolSetupForm({
     () => JSON.stringify(grades.map(({ name, sections }) => ({ name, sections }))),
     [grades],
   );
+  const schoolYearSetup = useMemo(
+    () => JSON.stringify(schoolYears.map(({ name, startsOn, endsOn, status }) => ({ name, startsOn, endsOn, status }))),
+    [schoolYears],
+  );
+
+  function updateSchoolYear(index: number, field: "name" | "startsOn" | "endsOn", value: string) {
+    setSchoolYears((current) => current.map((year, yearIndex) => yearIndex === index ? { ...year, [field]: value } : year));
+  }
+
+  function updateSchoolYearStatus(index: number, status: "upcoming" | "closed") {
+    setSchoolYears((current) => current.map((year, yearIndex) => yearIndex === index ? { ...year, status } : year));
+  }
+
+  function setActiveSchoolYear(index: number) {
+    setSchoolYears((current) => current.map((year, yearIndex) => ({
+      ...year,
+      status: yearIndex === index ? "active" : (year.status === "active" ? "upcoming" : year.status),
+    })));
+  }
+
+  function addSchoolYear() {
+    setSchoolYears((current) => [...current, { id: `school-year-${Date.now()}`, name: "", startsOn: "", endsOn: "", status: "upcoming" }]);
+  }
+
+  function removeSchoolYear(index: number) {
+    setSchoolYears((current) => {
+      if (current.length === 1) {
+        return current;
+      }
+
+      const next = current.filter((_, yearIndex) => yearIndex !== index);
+
+      return next.some((year) => year.status === "active")
+        ? next
+        : next.map((year, yearIndex) => yearIndex === 0 ? { ...year, status: "active" } : year);
+    });
+  }
 
   function updateGrade(index: number, name: string) {
     setGrades((current) => current.map((grade, gradeIndex) => gradeIndex === index ? { ...grade, name } : grade));
@@ -97,6 +151,7 @@ export function ManualSchoolSetupForm({
 
   return (
     <form action={saveSchoolSetupAction} className="grid gap-5">
+      <input type="hidden" name="schoolYearSetup" value={schoolYearSetup} />
       <input type="hidden" name="gradeSetup" value={gradeSetup} />
       <input type="hidden" name="redirectTo" value={redirectTo} />
 
@@ -127,37 +182,79 @@ export function ManualSchoolSetupForm({
       </section>
 
       <section className="overflow-hidden rounded-xl border border-black/[0.07] bg-white">
-        <div className="border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
-          <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">School year</h2>
+        <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-[18px]">
+          <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">School years</h2>
+          <AdminButton type="button" tone="outline" className="justify-self-start" onClick={addSchoolYear}>
+            <Plus className="size-4" />
+            Add year
+          </AdminButton>
         </div>
-        <div className="grid gap-3 p-[18px] md:grid-cols-3">
-          <Field label="Year name" required>
-            <input
-              name="schoolYearName"
-              defaultValue={initialData.schoolYearName}
-              required
-              className={fieldControlClass}
-              placeholder="2026-2027"
-            />
-          </Field>
-          <Field label="Start date" required>
-            <input
-              name="startsOn"
-              type="date"
-              defaultValue={initialData.startsOn}
-              required
-              className={fieldControlClass}
-            />
-          </Field>
-          <Field label="End date" required>
-            <input
-              name="endsOn"
-              type="date"
-              defaultValue={initialData.endsOn}
-              required
-              className={fieldControlClass}
-            />
-          </Field>
+        <div className="grid gap-3 p-[18px]">
+          {schoolYears.map((year, yearIndex) => (
+            <div key={year.id} className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-3">
+              <div className="grid gap-3 min-[860px]:grid-cols-[1fr_150px_150px_130px_auto] min-[860px]:items-end">
+                <Field label={`Year ${yearIndex + 1}`} required>
+                  <input
+                    value={year.name}
+                    onChange={(event) => updateSchoolYear(yearIndex, "name", event.target.value)}
+                    required
+                    className={cn(fieldControlClass, "bg-white")}
+                    placeholder="2026-2027"
+                  />
+                </Field>
+                <Field label="Start" required>
+                  <input
+                    type="date"
+                    value={year.startsOn}
+                    onChange={(event) => updateSchoolYear(yearIndex, "startsOn", event.target.value)}
+                    required
+                    className={cn(fieldControlClass, "bg-white")}
+                  />
+                </Field>
+                <Field label="End" required>
+                  <input
+                    type="date"
+                    value={year.endsOn}
+                    onChange={(event) => updateSchoolYear(yearIndex, "endsOn", event.target.value)}
+                    required
+                    className={cn(fieldControlClass, "bg-white")}
+                  />
+                </Field>
+                <Field label="Status" required>
+                  {year.status === "active" ? (
+                    <div className="flex min-h-12 items-center rounded-lg border border-[#2e7d32]/20 bg-[#e8f5e9] px-3 text-[12px] font-bold text-[#2e7d32]">
+                      Active
+                    </div>
+                  ) : (
+                    <select
+                      value={year.status}
+                      onChange={(event) => updateSchoolYearStatus(yearIndex, event.target.value === "closed" ? "closed" : "upcoming")}
+                      className={cn(fieldControlClass, "bg-white")}
+                    >
+                      <option value="upcoming">Upcoming</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  )}
+                </Field>
+                <div className="flex flex-wrap gap-2 min-[860px]:justify-end">
+                  {year.status !== "active" ? (
+                    <AdminButton type="button" tone="outline" onClick={() => setActiveSchoolYear(yearIndex)}>
+                      Set active
+                    </AdminButton>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => removeSchoolYear(yearIndex)}
+                    className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 disabled:pointer-events-none disabled:opacity-50"
+                    disabled={schoolYears.length === 1}
+                  >
+                    <Trash2 className="size-4" />
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

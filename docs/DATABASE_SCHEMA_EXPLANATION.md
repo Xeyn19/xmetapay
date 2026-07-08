@@ -73,11 +73,11 @@ Main purpose:
 
 ### `school_years`
 
-Stores academic years per school, such as `2026-2027`.
+Stores academic years per school, such as `2026-2027`. A school can keep many years for history and planning, but only one should be `active` for live dashboard work.
 
 Main purpose:
 
-- Define the active or closed school year.
+- Define upcoming, active, or closed school years.
 - Let fees, sections, enrollments, and reports be grouped by school year.
 - Prevent duplicate school year names within the same school.
 
@@ -356,7 +356,7 @@ The schema supports this practical backend flow:
 
 1. Admin registers and logs in through the existing auth tables.
 2. A school record is created and linked to school setup records.
-3. Admin creates school years, grade levels, and sections.
+3. Admin creates one or many school years, chooses one active year, then creates grade levels and sections for that active year.
 4. Admin creates student records.
 5. Parent registers and can be linked to a student through `student_guardians`.
 6. Admin enrolls students for the active school year.

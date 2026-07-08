@@ -131,7 +131,7 @@ CREATE TABLE schools (
 
 #### `school_years`
 
-Stores school years per school.
+Stores one or many school years per school. One row should be `active` for the live dashboard, while future rows can be `upcoming` and old rows can be `closed`.
 
 ```sql
 CREATE TABLE school_years (
@@ -140,7 +140,7 @@ CREATE TABLE school_years (
   name VARCHAR(40) NOT NULL,
   starts_on DATE NOT NULL,
   ends_on DATE NOT NULL,
-  status ENUM('active', 'closed') NOT NULL DEFAULT 'active',
+  status ENUM('upcoming', 'active', 'closed') NOT NULL DEFAULT 'active',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -681,7 +681,7 @@ flowchart TD
   D -->|No| F{"staff_role is school_administrator?"}
   F -->|No| G["Ask a school administrator to complete setup"]
   F -->|Yes| H["Complete school setup form"]
-  H --> I["Save school, active year, grade levels, and sections"]
+  H --> I["Save school, school years, one active year, grades, and sections"]
   I --> J["Link same-school admin profiles to schools.id"]
   J --> E
 ```

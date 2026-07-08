@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS school_years (
   name VARCHAR(40) NOT NULL,
   starts_on DATE NOT NULL,
   ends_on DATE NOT NULL,
-  status ENUM('active', 'closed') NOT NULL DEFAULT 'active',
+  status ENUM('upcoming', 'active', 'closed') NOT NULL DEFAULT 'active',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
