@@ -26,7 +26,7 @@ test("student records helper reads students, enrollment, and guardian links from
 
   assert.match(helper, /import "server-only";/);
   assert.match(helper, /import \{ pool \} from "@\/lib\/auth\/db";/);
-  assert.match(helper, /import \{ getResolvedAdminSchoolSetup \} from "@\/lib\/school\/setup";/);
+  assert.match(helper, /import \{ getResolvedAdminSchoolViewSetup \} from "@\/lib\/school\/setup";/);
   assert.match(helper, /export async function getAdminStudentPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getAdminParentsPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getParentDashboardData\(parentUserId: number\)/);
@@ -39,7 +39,7 @@ test("student records helper reads students, enrollment, and guardian links from
   assert.match(helper, /WHERE sg\.parent_user_id = :parentUserId/);
   assert.match(helper, /studentId\?: number/);
   assert.match(helper, /AND st\.id = :studentId/);
-  assert.match(helper, /return getResolvedAdminSchoolSetup\(adminUserId\)/);
+  assert.match(helper, /return getResolvedAdminSchoolViewSetup\(adminUserId\)/);
   assert.doesNotMatch(helper, /FROM admin_profiles ap\s+LEFT JOIN school_years sy ON sy\.school_id = ap\.school_id/);
 });
 

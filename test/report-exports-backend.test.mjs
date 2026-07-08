@@ -40,7 +40,7 @@ test("admin report export helper has four school-scoped real SQL reports and PDF
   assert.match(helper, /import "server-only";/);
   assert.match(helper, /import jsPDF from "jspdf"/);
   assert.match(helper, /import autoTable from "jspdf-autotable"/);
-  assert.match(helper, /getResolvedAdminSchoolSetup\(adminUserId\)/);
+  assert.match(helper, /getResolvedAdminSchoolViewSetup\(adminUserId\)/);
   assert.match(helper, /"monthly-revenue"/);
   assert.match(helper, /"collections"/);
   assert.match(helper, /"outstanding-balances"/);
@@ -51,6 +51,8 @@ test("admin report export helper has four school-scoped real SQL reports and PDF
   assert.match(helper, /renderPdfReport/);
   assert.match(helper, /FROM payments p/);
   assert.match(helper, /p\.school_id = :schoolId/);
+  assert.match(helper, /monthlyRevenueExport\(setup\.schoolId, setup\.schoolYearId, contextLines\)/);
+  assert.match(helper, /collectionsExport\(setup\.schoolId, setup\.schoolYearId, contextLines\)/);
   assert.match(helper, /FROM student_fee_assignments sfa/);
   assert.match(helper, /ft\.school_id = :schoolId AND sfa\.school_year_id = :schoolYearId/);
   assert.match(helper, /FROM wallet_transactions wt/);

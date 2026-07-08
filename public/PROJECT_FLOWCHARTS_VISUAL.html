@@ -408,6 +408,27 @@ flowchart TD
           </pre>
         </div>
 
+        <h3>Admin School-Year View Context</h3>
+        <p>Implemented: the admin selector changes view/report data by school year. Writes remain active-year-only for MVP safety.</p>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-school-year-view-context.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Admin opens any admin dashboard page"] --> B["Load all school years for admin school"]
+  B --> C{"Selected year cookie is valid for this school?"}
+  C -->|Yes| D["Use selected year for page reads"]
+  C -->|No| E["Fall back to active school year"]
+  E --> D
+  D --> F["Header/sidebar shows school name and selected year"]
+  D --> G["Dashboard, students, fees, wallet, store, reports, and exports read selected year"]
+  D --> H{"Selected year is active?"}
+  H -->|Yes| I["Write forms continue normally"]
+  H -->|No| J["Show read-only context; new records stay in active year"]
+          </pre>
+        </div>
+
         <h3>Student Creation And Enrollment</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
@@ -673,7 +694,7 @@ flowchart TD
   F --> G{"Format?"}
   G -->|CSV or omitted| H["Return escaped CSV"]
   G -->|PDF| I["Render server-side PDF"]
-  H --> J["Resolve school and active school year"]
+  H --> J["Resolve school and selected view year"]
   I --> J
   J --> K{"Report type"}
   K -->|monthly-revenue| L["Query paid payments by month"]

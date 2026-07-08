@@ -190,7 +190,32 @@ Database touchpoints:
 - `grade_levels`
 - `sections`
 
-### 3. Admin Student Creation And Enrollment
+### 3. Admin School-Year View Context
+
+Implemented.
+
+The admin portal can view data for any configured school year. The selected year is stored in a safe cookie containing only a school year id. The backend validates that the selected year belongs to the signed-in admin's school before using it. Operational write actions still use the active year only, so upcoming and closed years are read-only view/report contexts for the MVP.
+
+```mermaid
+flowchart TD
+  A["Admin opens any admin dashboard page"] --> B["Load all school years for admin school"]
+  B --> C{"Selected year cookie is valid for this school?"}
+  C -->|Yes| D["Use selected year for page reads"]
+  C -->|No| E["Fall back to active school year"]
+  E --> D
+  D --> F["Header/sidebar shows school name and selected year"]
+  D --> G["Dashboard, students, fees, wallet, store, reports, and exports read selected year"]
+  D --> H{"Selected year is active?"}
+  H -->|Yes| I["Write forms continue normally"]
+  H -->|No| J["Show read-only context; new records stay in active year"]
+```
+
+Database touchpoints:
+
+- `school_years`
+- active-year records in `enrollments`, `fee_types`, `student_fee_assignments`, `payments`, `wallet_transactions`, and `store_transactions`
+
+### 4. Admin Student Creation And Enrollment
 
 Implemented.
 
@@ -537,7 +562,7 @@ flowchart TD
   G --> H{"Format?"}
   H -->|CSV or omitted| I["Return escaped CSV download"]
   H -->|PDF| J["Render server-side PDF with jsPDF"]
-  I --> K["Resolve school_id and active school_year_id"]
+  I --> K["Resolve school_id and selected view school_year_id"]
   J --> K
   K --> L{"Report type"}
   L -->|monthly-revenue| M["Query paid payment totals by month"]

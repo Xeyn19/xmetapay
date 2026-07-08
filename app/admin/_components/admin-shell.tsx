@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
   Database,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { logoutAction } from "@/app/auth/actions";
+import { selectAdminSchoolYearAction } from "@/app/admin/school-year/actions";
 import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
 import {
@@ -34,13 +35,17 @@ export function AdminShell({
   schoolContext: AdminSchoolContext;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const selectedStudentProfilePath = /^\/admin\/students\/\d+$/.test(pathname);
   const meta = selectedStudentProfilePath
     ? pageMeta["/admin/student-profile"]
     : pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
   const subtitle = dashboardSubtitle(meta.subtitle, schoolContext);
-  const schoolYear = schoolContext.activeSchoolYear?.name ?? "School year pending";
+  const schoolYear = schoolContext.selectedSchoolYear?.name
+    ?? schoolContext.activeSchoolYear?.name
+    ?? "School year pending";
+  const redirectTo = `${pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`;
   const setupIncomplete = !schoolContext.schoolId
     || !schoolContext.databaseReady
     || !schoolContext.activeSchoolYear
@@ -200,7 +205,33 @@ export function AdminShell({
               </div>
             ) : null}
           </div>
-          <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
+          <div className="flex w-full min-w-0 max-w-full flex-col gap-2 md:w-auto md:items-end">
+            {schoolContext.schoolYears.length > 0 ? (
+              <form action={selectAdminSchoolYearAction} className="w-full md:w-[260px]">
+                <input type="hidden" name="redirectTo" value={redirectTo} />
+                <label className="sr-only" htmlFor="admin-school-year-selector">School year</label>
+                <select
+                  id="admin-school-year-selector"
+                  name="schoolYearId"
+                  defaultValue={schoolContext.selectedSchoolYear?.id ?? schoolContext.activeSchoolYear?.id ?? ""}
+                  onChange={(event) => event.currentTarget.form?.requestSubmit()}
+                  className="min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#303443] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15"
+                  title="Choose school year to view"
+                >
+                  {schoolContext.schoolYears.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.name} ({schoolYearStatusLabel(year.status)})
+                    </option>
+                  ))}
+                </select>
+              </form>
+            ) : null}
+            {!schoolContext.selectedSchoolYearIsActive && schoolContext.selectedSchoolYear ? (
+              <p className="max-w-[260px] text-[10.5px] leading-4 text-[#8a4b00]">
+                Viewing {schoolContext.selectedSchoolYear.status} year. New records stay in the active year.
+              </p>
+            ) : null}
+            <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
             {canSendReminders ? (
               <Link
                 href="/admin/tuition#payment-reminders"
@@ -222,6 +253,7 @@ export function AdminShell({
                 Add student
               </Link>
             ) : null}
+            </div>
           </div>
         </header>
 
@@ -233,11 +265,17 @@ export function AdminShell({
 }
 
 function dashboardSubtitle(subtitle: string, schoolContext: AdminSchoolContext) {
-  const schoolYear = schoolContext.activeSchoolYear?.name ?? "School year pending";
+  const schoolYear = schoolContext.selectedSchoolYear?.name
+    ?? schoolContext.activeSchoolYear?.name
+    ?? "School year pending";
 
   if (subtitle === "School dashboard - SY 2025-2026") {
     return `${schoolContext.schoolName} - ${schoolYear}`;
   }
 
   return subtitle.replaceAll("SY 2025-2026", schoolYear);
+}
+
+function schoolYearStatusLabel(status: "upcoming" | "active" | "closed") {
+  return status[0].toUpperCase() + status.slice(1);
 }

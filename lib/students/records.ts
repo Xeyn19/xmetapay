@@ -4,7 +4,7 @@ import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 import { labelForChannel } from "@/lib/payments/records";
-import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
+import { getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 
 type Queryable = Pick<Pool | PoolConnection, "execute">;
 
@@ -419,7 +419,7 @@ export async function linkParentToStudentByReference(
 }
 
 async function getAdminSetup(adminUserId: number) {
-  return getResolvedAdminSchoolSetup(adminUserId);
+  return getResolvedAdminSchoolViewSetup(adminUserId);
 }
 
 async function getGradeOptions(schoolId: number) {

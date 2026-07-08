@@ -5,7 +5,7 @@ import autoTable from "jspdf-autotable";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
-import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
+import { getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 
 export const reportExportTypes = [
   "monthly-revenue",
@@ -49,7 +49,7 @@ export async function getAdminReportExport(adminUserId: number, type: ReportExpo
 }
 
 export async function getAdminReportExportData(adminUserId: number, type: ReportExportType): Promise<AdminReportExportData> {
-  const setup = await getResolvedAdminSchoolSetup(adminUserId);
+  const setup = await getResolvedAdminSchoolViewSetup(adminUserId);
 
   if (!setup.schoolId || !setup.schoolYearId) {
     return {
@@ -67,11 +67,11 @@ export async function getAdminReportExportData(adminUserId: number, type: Report
   ];
 
   if (type === "monthly-revenue") {
-    return monthlyRevenueExport(setup.schoolId, contextLines);
+    return monthlyRevenueExport(setup.schoolId, setup.schoolYearId, contextLines);
   }
 
   if (type === "collections") {
-    return collectionsExport(setup.schoolId, contextLines);
+    return collectionsExport(setup.schoolId, setup.schoolYearId, contextLines);
   }
 
   if (type === "outstanding-balances") {
@@ -93,16 +93,38 @@ export async function getAdminReportPdf(report: AdminReportExportData) {
   return Buffer.from(doc.output("arraybuffer"));
 }
 
-async function monthlyRevenueExport(schoolId: number, contextLines: string[]): Promise<AdminReportExportData> {
+async function monthlyRevenueExport(schoolId: number, schoolYearId: number, contextLines: string[]): Promise<AdminReportExportData> {
   const [rows] = await pool.execute<MonthlyRevenueExportRow[]>(
     `SELECT DATE_FORMAT(COALESCE(p.paid_at, p.created_at), '%Y-%m') AS month,
        COUNT(*) AS paid_payment_count,
        COALESCE(SUM(p.amount), 0) AS paid_amount
      FROM payments p
      WHERE p.school_id = :schoolId AND p.status = 'paid'
+       AND (
+         EXISTS (
+           SELECT 1
+           FROM payment_allocations pa
+           JOIN student_fee_assignments paid_sfa ON paid_sfa.id = pa.student_fee_assignment_id
+           WHERE pa.payment_id = p.id AND paid_sfa.school_year_id = :schoolYearId
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM payment_term_allocations pta
+           JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
+           JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
+           WHERE pta.payment_id = p.id AND term_sfa.school_year_id = :schoolYearId
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM wallet_transactions wt
+           JOIN wallets w ON w.id = wt.wallet_id
+           JOIN enrollments e ON e.student_id = w.student_id AND e.school_year_id = :schoolYearId
+           WHERE wt.payment_id = p.id
+         )
+       )
      GROUP BY DATE_FORMAT(COALESCE(p.paid_at, p.created_at), '%Y-%m')
      ORDER BY month ASC`,
-    { schoolId },
+    { schoolId, schoolYearId },
   );
 
   return reportData(
@@ -118,15 +140,37 @@ async function monthlyRevenueExport(schoolId: number, contextLines: string[]): P
   );
 }
 
-async function collectionsExport(schoolId: number, contextLines: string[]): Promise<AdminReportExportData> {
+async function collectionsExport(schoolId: number, schoolYearId: number, contextLines: string[]): Promise<AdminReportExportData> {
   const [rows] = await pool.execute<CollectionsExportRow[]>(
     `SELECT p.reference_number, p.channel, p.status, p.amount, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name
      FROM payments p
      JOIN students st ON st.id = p.student_id
      WHERE p.school_id = :schoolId
+       AND (
+         EXISTS (
+           SELECT 1
+           FROM payment_allocations pa
+           JOIN student_fee_assignments paid_sfa ON paid_sfa.id = pa.student_fee_assignment_id
+           WHERE pa.payment_id = p.id AND paid_sfa.school_year_id = :schoolYearId
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM payment_term_allocations pta
+           JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
+           JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
+           WHERE pta.payment_id = p.id AND term_sfa.school_year_id = :schoolYearId
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM wallet_transactions wt
+           JOIN wallets w ON w.id = wt.wallet_id
+           JOIN enrollments e ON e.student_id = w.student_id AND e.school_year_id = :schoolYearId
+           WHERE wt.payment_id = p.id
+         )
+       )
      ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC`,
-    { schoolId },
+    { schoolId, schoolYearId },
   );
 
   return reportData(

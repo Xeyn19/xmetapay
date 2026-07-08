@@ -103,6 +103,8 @@ test("admin manual school setup action is protected and saves submitted records"
   assert.match(action, /UPDATE admin_profiles\s+SET school_id = :schoolId/);
   assert.match(action, /linkSameSchoolStaffProfiles/);
   assert.match(action, /WHERE school_id IS NULL\s+AND \(school_name = :previousSchoolName OR school_name = :currentSchoolName\)/);
+  assert.match(action, /import \{ adminSchoolYearCookieName \} from "@\/lib\/school\/setup";/);
+  assert.match(action, /cookieStore\.set\(adminSchoolYearCookieName, String\(schoolYearId\)/);
   assert.match(action, /setAuthFlashToast/);
   assert.match(action, /schoolSetupRedirectTarget\(formData\)/);
   assert.match(action, /redirect\(redirectTo\)/);
