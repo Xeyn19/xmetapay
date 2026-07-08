@@ -56,7 +56,7 @@ export default async function TuitionPage() {
       </DashboardCard>
 
       <DashboardCard
-        title={`Tuition report - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
+        title={`Tuition report - ${data.schoolYearName ?? "School year pending"}`}
         icon={Receipt}
         bodyClassName="p-0"
         className="mb-[18px]"

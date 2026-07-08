@@ -59,12 +59,14 @@ Done when: the full schema can be imported from a clean local database without e
 - [x] Share the completed school context with same-school registrar and finance staff accounts.
 - [x] Support one or many school years with exactly one active school year.
 - [x] Add a School setup overview page for all school years and active-year structure.
+- [x] Add an admin school-year selector for viewing historical/upcoming year data.
+- [x] Keep operational write actions tied to the active school year for MVP safety.
 - [x] Create grade levels and sections from the admin side or a safe local seed script.
 - [x] Replace hard-coded school year/dashboard school labels with database reads.
 - [x] Restrict school setup to `school_administrator`.
 - [x] Redirect new school administrators to setup-only onboarding before showing the real dashboard.
 
-Done when: the admin dashboard can load school setup data from MySQL.
+Done when: the admin dashboard can load school setup data from MySQL, switch admin views by school year, and keep new operational records in the active year.
 
 ## Phase 3: Students And Guardian Linking
 

@@ -17,7 +17,7 @@ import type { LucideIcon } from "lucide-react";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
-import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
+import { getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 import { getTuitionTermSummary, parseTuitionTermsBlob } from "@/lib/tuition/terms";
 
 type Tone = "orange" | "green" | "red" | "blue" | "purple" | "teal";
@@ -68,6 +68,7 @@ export type AdminDashboardRealData = {
 
 export type TuitionPageRealData = {
   warning: string | null;
+  schoolYearName: string | null;
   kpis: AdminRealKpi[];
   rows: TuitionRow[];
   outstandingByGrade: BarRow[];
@@ -107,6 +108,7 @@ export type CollectionsPageRealData = {
 
 export type OtherFeesPageRealData = {
   warning: string | null;
+  schoolYearName: string | null;
   kpis: AdminRealKpi[];
   items: Array<{
     name: string;
@@ -201,11 +203,11 @@ export async function getAdminDashboardRealData(adminUserId: number): Promise<Ad
       await Promise.all([
         getStudentSummary(setup.schoolId, setup.schoolYearId),
         getFeeSummary(setup.schoolId, setup.schoolYearId),
-        getPaymentSummary(setup.schoolId),
+        getPaymentSummary(setup.schoolId, setup.schoolYearId),
         getWalletSummary(setup.schoolId, setup.schoolYearId),
         getTuitionByGrade(setup.schoolId, setup.schoolYearId),
         getRecentFeeAssignments(setup.schoolId, setup.schoolYearId),
-        getRecentPayments(setup.schoolId),
+        getRecentPayments(setup.schoolId, setup.schoolYearId),
         getActivityFeed(setup.schoolId),
       ]);
 
@@ -312,6 +314,7 @@ export async function getAdminTuitionPageRealData(adminUserId: number): Promise<
 
     return {
       warning: null,
+      schoolYearName: setup.schoolYearName,
       kpis: [
         { label: "Tuition billed", value: hasRows ? money(feeSummary.amountDue) : "Pending", note: hasRows ? `${rows.length} tuition assignments` : "Create tuition fee assignments first", tone: "orange", icon: Calculator },
         { label: "Collected", value: hasRows ? money(feeSummary.amountPaid) : "Pending", note: hasRows ? percent(feeSummary.amountPaid, feeSummary.amountDue) : "Collection pending", tone: "green", noteTone: hasRows ? "up" : "default", icon: CreditCard },
@@ -336,7 +339,14 @@ export async function getAdminCollectionsPageRealData(adminUserId: number): Prom
   }
 
   try {
-    const [summary, rows] = await Promise.all([getPaymentSummary(setup.schoolId), getCollectionRows(setup.schoolId)]);
+    if (!setup.schoolYearId) {
+      return emptyCollections(setup.warning);
+    }
+
+    const [summary, rows] = await Promise.all([
+      getPaymentSummary(setup.schoolId, setup.schoolYearId),
+      getCollectionRows(setup.schoolId, setup.schoolYearId),
+    ]);
 
     return {
       warning: null,
@@ -368,6 +378,7 @@ export async function getAdminOtherFeesPageRealData(adminUserId: number): Promis
 
     return {
       warning: null,
+      schoolYearName: setup.schoolYearName,
       kpis: [
         { label: "Total billed", value: items.length > 0 ? money(summary.amountDue) : "Pending", note: setup.schoolYearName ?? "Non-tuition fee items", tone: "orange", icon: Calculator },
         { label: "Collected", value: items.length > 0 ? money(summary.amountPaid) : "Pending", note: items.length > 0 ? percent(summary.amountPaid, summary.amountDue) : "Collection pending", tone: "green", noteTone: items.length > 0 ? "up" : "default", icon: CreditCard },
@@ -418,10 +429,10 @@ export async function getAdminStoreTransactionsPageRealData(adminUserId: number)
 
   try {
     const [summary, rows, spendByGrade, peakHours] = await Promise.all([
-      getStoreSummary(setup.schoolId),
+      getStoreSummary(setup.schoolId, setup.schoolYearId),
       getStoreRows(setup.schoolId, setup.schoolYearId),
       getStoreSpendByGrade(setup.schoolId, setup.schoolYearId),
-      getStorePeakHours(setup.schoolId),
+      getStorePeakHours(setup.schoolId, setup.schoolYearId),
     ]);
 
     return {
@@ -452,9 +463,9 @@ export async function getAdminReportsPageRealData(adminUserId: number): Promise<
     const [students, fees, payments, store, monthlyRevenue] = await Promise.all([
       getStudentSummary(setup.schoolId, setup.schoolYearId),
       getFeeSummary(setup.schoolId, setup.schoolYearId),
-      getPaymentSummary(setup.schoolId),
-      getStoreSummary(setup.schoolId),
-      getMonthlyRevenue(setup.schoolId),
+      getPaymentSummary(setup.schoolId, setup.schoolYearId),
+      getStoreSummary(setup.schoolId, setup.schoolYearId),
+      getMonthlyRevenue(setup.schoolId, setup.schoolYearId),
     ]);
 
     return {
@@ -626,7 +637,7 @@ async function getAdminStudentProfileSummaries(schoolId: number, schoolYearId: n
 }
 
 async function getAdminSetup(adminUserId: number): Promise<AdminSetup> {
-  const setup = await getResolvedAdminSchoolSetup(adminUserId);
+  const setup = await getResolvedAdminSchoolViewSetup(adminUserId);
 
   return {
     schoolId: setup.schoolId,
@@ -678,7 +689,7 @@ async function getFeeSummary(schoolId: number, schoolYearId: number, category?: 
   };
 }
 
-async function getPaymentSummary(schoolId: number) {
+async function getPaymentSummary(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<PaymentSummaryRow[]>(
     `SELECT COUNT(*) AS total_count,
        COUNT(CASE WHEN status = 'paid' THEN 1 END) AS paid_count,
@@ -686,8 +697,30 @@ async function getPaymentSummary(schoolId: number) {
        COUNT(CASE WHEN status IN ('failed', 'voided', 'refunded') THEN 1 END) AS failed_count,
        COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) AS paid_amount
      FROM payments
-     WHERE school_id = :schoolId`,
-    { schoolId },
+     WHERE school_id = :schoolId
+       AND (
+         EXISTS (
+           SELECT 1
+           FROM payment_allocations pa
+           JOIN student_fee_assignments paid_sfa ON paid_sfa.id = pa.student_fee_assignment_id
+           WHERE pa.payment_id = payments.id AND paid_sfa.school_year_id = :schoolYearId
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM payment_term_allocations pta
+           JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
+           JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
+           WHERE pta.payment_id = payments.id AND term_sfa.school_year_id = :schoolYearId
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM wallet_transactions wt
+           JOIN wallets w ON w.id = wt.wallet_id
+           JOIN enrollments e ON e.student_id = w.student_id AND e.school_year_id = :schoolYearId
+           WHERE wt.payment_id = payments.id
+         )
+       )`,
+    { schoolId, schoolYearId },
   );
   const row = rows[0];
 
@@ -808,7 +841,7 @@ async function getRecentFeeAssignments(schoolId: number, schoolYearId: number) {
   ] as AdminDashboardRealData["recentFeeAssignments"][number]);
 }
 
-async function getRecentPayments(schoolId: number) {
+async function getRecentPayments(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<PaymentRow[]>(
     `SELECT p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name,
@@ -829,11 +862,23 @@ async function getRecentPayments(schoolId: number) {
      LEFT JOIN fee_types term_ft ON term_ft.id = term_sfa.fee_type_id
      LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
      WHERE p.school_id = :schoolId
+       AND (
+         sfa.school_year_id = :schoolYearId
+         OR term_sfa.school_year_id = :schoolYearId
+         OR EXISTS (
+           SELECT 1
+           FROM wallets payment_wallet
+           JOIN enrollments payment_enrollment
+             ON payment_enrollment.student_id = payment_wallet.student_id
+            AND payment_enrollment.school_year_id = :schoolYearId
+           WHERE payment_wallet.id = wt.wallet_id
+         )
+       )
      GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name
      ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC
      LIMIT 6`,
-    { schoolId },
+    { schoolId, schoolYearId },
   );
 
   return rows.map((row) => [
@@ -1000,7 +1045,7 @@ async function getOtherFeeSummary(schoolId: number, schoolYearId: number) {
   ] as [string, string, string, string]);
 }
 
-async function getCollectionRows(schoolId: number) {
+async function getCollectionRows(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<PaymentRow[]>(
     `SELECT p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name,
@@ -1013,7 +1058,7 @@ async function getCollectionRows(schoolId: number) {
        ) AS fee_name
      FROM payments p
      JOIN students st ON st.id = p.student_id
-     LEFT JOIN enrollments e ON e.student_id = st.id
+     LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
      LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
@@ -1024,11 +1069,23 @@ async function getCollectionRows(schoolId: number) {
      LEFT JOIN fee_types term_ft ON term_ft.id = term_sfa.fee_type_id
      LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
      WHERE p.school_id = :schoolId
+       AND (
+         sfa.school_year_id = :schoolYearId
+         OR term_sfa.school_year_id = :schoolYearId
+         OR EXISTS (
+           SELECT 1
+           FROM wallets payment_wallet
+           JOIN enrollments payment_enrollment
+             ON payment_enrollment.student_id = payment_wallet.student_id
+            AND payment_enrollment.school_year_id = :schoolYearId
+           WHERE payment_wallet.id = wt.wallet_id
+         )
+       )
      GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
        st.first_name, st.middle_name, st.last_name, gl.name
      ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC
      LIMIT 50`,
-    { schoolId },
+    { schoolId, schoolYearId },
   );
 
   return rows.map((row) => [
@@ -1110,7 +1167,7 @@ async function getAllowanceRows(schoolId: number, schoolYearId: number) {
   });
 }
 
-async function getStoreSummary(schoolId: number) {
+async function getStoreSummary(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<StoreSummaryRow[]>(
     `SELECT COUNT(DISTINCT stx.id) AS transaction_count,
        COUNT(DISTINCT sm.id) AS merchant_count,
@@ -1118,8 +1175,10 @@ async function getStoreSummary(schoolId: number) {
        COALESCE(SUM(stx.fee_amount), 0) AS fee_amount
      FROM store_merchants sm
      LEFT JOIN store_transactions stx ON stx.merchant_id = sm.id
-     WHERE sm.school_id = :schoolId`,
-    { schoolId },
+     LEFT JOIN enrollments e ON e.student_id = stx.student_id AND e.school_year_id = :schoolYearId
+     WHERE sm.school_id = :schoolId
+       AND (stx.id IS NULL OR e.id IS NOT NULL)`,
+    { schoolId, schoolYearId },
   );
   const row = rows[0];
 
@@ -1176,31 +1235,54 @@ async function getStoreSpendByGrade(schoolId: number, schoolYearId: number) {
   return barRows(rows);
 }
 
-async function getStorePeakHours(schoolId: number) {
+async function getStorePeakHours(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<GradeAmountRow[]>(
     `SELECT CONCAT(LPAD(HOUR(stx.purchased_at), 2, '0'), ':00') AS label, COUNT(*) AS amount
      FROM store_transactions stx
      JOIN store_merchants sm ON sm.id = stx.merchant_id
+     JOIN enrollments e ON e.student_id = stx.student_id AND e.school_year_id = :schoolYearId
      WHERE sm.school_id = :schoolId
      GROUP BY HOUR(stx.purchased_at)
      ORDER BY amount DESC, label ASC
      LIMIT 6`,
-    { schoolId },
+    { schoolId, schoolYearId },
   );
 
   return barRows(rows, false);
 }
 
-async function getMonthlyRevenue(schoolId: number) {
+async function getMonthlyRevenue(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<GradeAmountRow[]>(
     `SELECT DATE_FORMAT(COALESCE(p.paid_at, p.created_at), '%Y-%m') AS label,
        COALESCE(SUM(CASE WHEN p.status = 'paid' THEN p.amount ELSE 0 END), 0) AS amount
      FROM payments p
      WHERE p.school_id = :schoolId
+       AND (
+         EXISTS (
+           SELECT 1
+           FROM payment_allocations pa
+           JOIN student_fee_assignments paid_sfa ON paid_sfa.id = pa.student_fee_assignment_id
+           WHERE pa.payment_id = p.id AND paid_sfa.school_year_id = :schoolYearId
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM payment_term_allocations pta
+           JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
+           JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
+           WHERE pta.payment_id = p.id AND term_sfa.school_year_id = :schoolYearId
+         )
+         OR EXISTS (
+           SELECT 1
+           FROM wallet_transactions wt
+           JOIN wallets w ON w.id = wt.wallet_id
+           JOIN enrollments e ON e.student_id = w.student_id AND e.school_year_id = :schoolYearId
+           WHERE wt.payment_id = p.id
+         )
+       )
      GROUP BY DATE_FORMAT(COALESCE(p.paid_at, p.created_at), '%Y-%m')
      ORDER BY label ASC
      LIMIT 12`,
-    { schoolId },
+    { schoolId, schoolYearId },
   );
 
   return barRows(rows);
@@ -1294,6 +1376,7 @@ function emptyDashboard(warning: string | null): AdminDashboardRealData {
 function emptyTuition(warning: string | null): TuitionPageRealData {
   return {
     warning,
+    schoolYearName: null,
     kpis: [
       { label: "Tuition billed", value: "Pending", note: "Create tuition fee assignments first", tone: "orange", icon: Calculator },
       { label: "Collected", value: "Pending", note: "Collection pending", tone: "green", icon: CreditCard },
@@ -1323,6 +1406,7 @@ function emptyCollections(warning: string | null): CollectionsPageRealData {
 function emptyOtherFees(warning: string | null): OtherFeesPageRealData {
   return {
     warning,
+    schoolYearName: null,
     kpis: [
       { label: "Total billed", value: "Pending", note: "Non-tuition fee assignments", tone: "orange", icon: Calculator },
       { label: "Collected", value: "Pending", note: "Collection pending", tone: "green", icon: CreditCard },

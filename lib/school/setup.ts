@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cookies } from "next/headers";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
@@ -23,10 +24,21 @@ export type AdminSchoolContext = {
     startsOn: string;
     endsOn: string;
   } | null;
+  selectedSchoolYear: AdminSchoolYearOption | null;
+  selectedSchoolYearIsActive: boolean;
+  schoolYears: AdminSchoolYearOption[];
   gradeLevelCount: number;
   sectionCount: number;
   databaseReady: boolean;
   warning: string | null;
+};
+
+export type AdminSchoolYearOption = {
+  id: number;
+  name: string;
+  startsOn: string;
+  endsOn: string;
+  status: "upcoming" | "active" | "closed";
 };
 
 export type AdminSchoolSetupFormData = {
@@ -86,6 +98,15 @@ export type ResolvedAdminSchoolSetup = {
   warning: string | null;
 };
 
+export type ResolvedAdminSchoolViewSetup = ResolvedAdminSchoolSetup & {
+  activeSchoolYearId: number | null;
+  activeSchoolYearName: string | null;
+  selectedSchoolYearStatus: AdminSchoolYearOption["status"] | null;
+  selectedSchoolYearIsActive: boolean;
+};
+
+export const adminSchoolYearCookieName = "xmetapay_admin_school_year_id";
+
 const fallbackContext: AdminSchoolContext = {
   adminName: "School administrator",
   adminInitials: "SA",
@@ -95,6 +116,9 @@ const fallbackContext: AdminSchoolContext = {
   schoolName: "School setup pending",
   schoolCode: null,
   activeSchoolYear: null,
+  selectedSchoolYear: null,
+  selectedSchoolYearIsActive: false,
+  schoolYears: [],
   gradeLevelCount: 0,
   sectionCount: 0,
   databaseReady: false,
@@ -119,11 +143,13 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
       };
     }
 
-    const [activeSchoolYear, gradeLevelCount, sectionCount] = await Promise.all([
+    const [schoolYears, activeSchoolYear, gradeLevelCount, sectionCount] = await Promise.all([
+      getSchoolYearRows(school.id),
       getActiveSchoolYear(school.id),
       countGradeLevels(school.id),
       countSections(school.id),
     ]);
+    const selectedSchoolYear = await resolveSelectedSchoolYear(schoolYears, activeSchoolYear);
 
     return {
       ...baseContext,
@@ -131,6 +157,9 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
       schoolName: school.name,
       schoolCode: school.code,
       activeSchoolYear,
+      selectedSchoolYear,
+      selectedSchoolYearIsActive: Boolean(selectedSchoolYear && selectedSchoolYear.id === activeSchoolYear?.id),
+      schoolYears,
       gradeLevelCount,
       sectionCount,
       databaseReady: Boolean(activeSchoolYear && gradeLevelCount > 0 && sectionCount > 0),
@@ -206,6 +235,72 @@ export async function getResolvedAdminSchoolSetup(userId: number): Promise<Resol
         : "School setup records are unavailable. Confirm MySQL/XAMPP is running.",
     };
   }
+}
+
+export async function getResolvedAdminSchoolViewSetup(userId: number): Promise<ResolvedAdminSchoolViewSetup> {
+  try {
+    const profile = await getAdminProfile(userId);
+
+    if (!profile) {
+      return emptyViewSetup("Admin profile was not found.");
+    }
+
+    const school = await resolveSchoolForProfile(profile);
+
+    if (!school) {
+      return emptyViewSetup(setupMissingSchoolWarning(profile.staff_role));
+    }
+
+    const [schoolYears, activeSchoolYear, gradeLevelCount, sectionCount] = await Promise.all([
+      getSchoolYearRows(school.id),
+      getActiveSchoolYear(school.id),
+      countGradeLevels(school.id),
+      countSections(school.id),
+    ]);
+    const selectedSchoolYear = await resolveSelectedSchoolYear(schoolYears, activeSchoolYear);
+
+    return {
+      schoolId: school.id,
+      schoolYearId: selectedSchoolYear?.id ?? null,
+      schoolYearName: selectedSchoolYear?.name ?? null,
+      activeSchoolYearId: activeSchoolYear?.id ?? null,
+      activeSchoolYearName: activeSchoolYear?.name ?? null,
+      selectedSchoolYearStatus: selectedSchoolYear?.status ?? null,
+      selectedSchoolYearIsActive: Boolean(selectedSchoolYear && selectedSchoolYear.id === activeSchoolYear?.id),
+      gradeLevelCount,
+      sectionCount,
+      warning: setupWarning(profile.staff_role, activeSchoolYear, gradeLevelCount, sectionCount),
+    };
+  } catch (error) {
+    return emptyViewSetup(
+      missingSchoolSetupTables(error)
+        ? "Import database/full-schema-v1.sql to enable school setup records."
+        : "School setup records are unavailable. Confirm MySQL/XAMPP is running.",
+    );
+  }
+}
+
+export async function canSelectAdminSchoolYear(userId: number, schoolYearId: number) {
+  if (!Number.isInteger(schoolYearId) || schoolYearId <= 0) {
+    return false;
+  }
+
+  const profile = await getAdminProfile(userId);
+  const school = profile ? await resolveSchoolForProfile(profile) : null;
+
+  if (!school) {
+    return false;
+  }
+
+  const [rows] = await pool.execute<Array<RowDataPacket & { id: number }>>(
+    `SELECT id
+     FROM school_years
+     WHERE id = :schoolYearId AND school_id = :schoolId
+     LIMIT 1`,
+    { schoolYearId, schoolId: school.id },
+  );
+
+  return Boolean(rows[0]);
 }
 
 export async function getAdminSchoolSetupOverview(userId: number): Promise<AdminSchoolSetupOverview> {
@@ -539,11 +634,51 @@ function contextFromProfile(profile: AdminProfileRow): AdminSchoolContext {
     schoolName: profile.school_name,
     schoolCode: null,
     activeSchoolYear: null,
+    selectedSchoolYear: null,
+    selectedSchoolYearIsActive: false,
+    schoolYears: [],
     gradeLevelCount: 0,
     sectionCount: 0,
     databaseReady: false,
     warning: null,
   };
+}
+
+function emptyViewSetup(warning: string): ResolvedAdminSchoolViewSetup {
+  return {
+    schoolId: null,
+    schoolYearId: null,
+    schoolYearName: null,
+    activeSchoolYearId: null,
+    activeSchoolYearName: null,
+    selectedSchoolYearStatus: null,
+    selectedSchoolYearIsActive: false,
+    gradeLevelCount: 0,
+    sectionCount: 0,
+    warning,
+  };
+}
+
+async function resolveSelectedSchoolYear(
+  schoolYears: AdminSchoolYearOption[],
+  activeSchoolYear: AdminSchoolContext["activeSchoolYear"],
+) {
+  const cookieStore = await cookies();
+  const cookieYearId = Number(cookieStore.get(adminSchoolYearCookieName)?.value);
+  const selectedFromCookie = Number.isInteger(cookieYearId)
+    ? schoolYears.find((year) => year.id === cookieYearId)
+    : null;
+
+  if (selectedFromCookie) {
+    return selectedFromCookie;
+  }
+
+  if (activeSchoolYear) {
+    return schoolYears.find((year) => year.id === activeSchoolYear.id)
+      ?? { ...activeSchoolYear, status: "active" as const };
+  }
+
+  return schoolYears[0] ?? null;
 }
 
 function initialsFor(name: string) {

@@ -29,7 +29,7 @@ export default async function OtherFeesPage() {
       </KpiGrid>
 
       <DashboardCard
-        title={`Other school fees - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
+        title={`Other school fees - ${data.schoolYearName ?? "School year pending"}`}
         icon={ClipboardList}
         action={
           <div className="flex flex-wrap items-center gap-2">

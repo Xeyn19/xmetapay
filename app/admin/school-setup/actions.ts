@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
@@ -7,6 +8,7 @@ import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import { getAdminStaffRole } from "@/lib/admin/access";
 import { canManageSchoolSetup } from "@/lib/admin/permissions";
+import { adminSchoolYearCookieName } from "@/lib/school/setup";
 
 type SetupGradeInput = {
   name: string;
@@ -78,6 +80,14 @@ export async function saveSchoolSetupAction(formData: FormData) {
     await ensureSections(connection, schoolId, schoolYearId, input.data.grades, gradeLevelIds);
 
     await connection.commit();
+    const cookieStore = await cookies();
+    cookieStore.set(adminSchoolYearCookieName, String(schoolYearId), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+    });
     await setAuthFlashToast({
       role: "admin",
       title: "School setup saved",

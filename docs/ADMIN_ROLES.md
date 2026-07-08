@@ -41,15 +41,22 @@ School setup is school-wide, not per staff account. After the school administrat
 
 For the MVP, this matching uses the exact school name from admin registration. A future production improvement should use a school invite code or required school code during staff registration so staff can join the correct school even when two schools have similar names.
 
+## School-Year Viewing Rule
+
+The admin shell has a school-year selector for viewing data from any configured year. The selected year changes admin dashboard labels, student lists, fee/collection views, wallet/store pages, reports, and exports.
+
+Only one school year is still the active/current year. For MVP safety, operational writes such as new enrollments, fee assignments, reminders, tuition terms, wallet/store purchase recording, and setup changes continue to use the active year only. Upcoming or closed years are view/report contexts, not write targets.
+
 ## Practical Workflow
 
 1. A school administrator registers first.
 2. The school administrator completes setup-only onboarding.
 3. The school administrator reviews and edits all school years from `School setup`.
-4. Registrar and finance officer accounts with the same school name are linked to the existing school context.
-5. A registrar can add and enroll students.
-6. Parents link to those students by `student_reference`.
-7. A finance officer works on tuition, collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented.
+4. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
+5. Registrar and finance officer accounts with the same school name are linked to the existing school context.
+6. A registrar can add and enroll students in the active year.
+7. Parents link to those students by `student_reference`.
+8. A finance officer works on active-year tuition, collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented.
 
 Payment reminder history is a finance action. School administrators and finance officers can create queued `in_app` reminder log rows for linked parents with open or partial balances. The reminder action is idempotent for the same school, linked parent, and student on the same calendar day, so repeated clicks do not create duplicate same-day reminder rows. Registrars cannot log reminders because they do not have access to finance pages. Real email and SMS notification delivery is still future work.
 
