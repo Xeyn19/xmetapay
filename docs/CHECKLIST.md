@@ -58,6 +58,7 @@ Done when: the full schema can be imported from a clean local database without e
 - [x] Link admin profiles to a real school record.
 - [x] Share the completed school context with same-school registrar and finance staff accounts.
 - [x] Support one or many school years with exactly one active school year.
+- [x] Add a School setup overview page for all school years and active-year structure.
 - [x] Create grade levels and sections from the admin side or a safe local seed script.
 - [x] Replace hard-coded school year/dashboard school labels with database reads.
 - [x] Restrict school setup to `school_administrator`.

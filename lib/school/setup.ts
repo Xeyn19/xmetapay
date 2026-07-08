@@ -44,6 +44,39 @@ export type AdminSchoolSetupFormData = {
   }>;
 };
 
+export type AdminSchoolSetupOverview = {
+  schoolName: string;
+  schoolCode: string;
+  schoolStatus: "active" | "inactive" | "pending";
+  warning: string | null;
+  kpis: Array<{
+    label: string;
+    value: string;
+    note: string;
+    tone: "orange" | "green" | "red" | "blue" | "purple" | "teal";
+  }>;
+  schoolYears: Array<{
+    id: number;
+    name: string;
+    startsOn: string;
+    endsOn: string;
+    status: "upcoming" | "active" | "closed";
+    sectionCount: number;
+    enrollmentCount: number;
+    feeTypeCount: number;
+  }>;
+  activeYear: {
+    id: number;
+    name: string;
+    startsOn: string;
+    endsOn: string;
+  } | null;
+  activeYearGrades: Array<{
+    name: string;
+    sections: string[];
+  }>;
+};
+
 export type ResolvedAdminSchoolSetup = {
   schoolId: number | null;
   schoolYearId: number | null;
@@ -172,6 +205,84 @@ export async function getResolvedAdminSchoolSetup(userId: number): Promise<Resol
         ? "Import database/full-schema-v1.sql to enable school setup records."
         : "School setup records are unavailable. Confirm MySQL/XAMPP is running.",
     };
+  }
+}
+
+export async function getAdminSchoolSetupOverview(userId: number): Promise<AdminSchoolSetupOverview> {
+  let profile: AdminProfileRow | null = null;
+
+  try {
+    profile = await getAdminProfile(userId);
+  } catch {
+    profile = await tryGetAdminProfileOnly(userId);
+  }
+
+  if (!profile) {
+    return emptySetupOverview("School", "Admin profile was not found.");
+  }
+
+  try {
+    const school = await resolveSchoolForProfile(profile);
+
+    if (!school) {
+      return emptySetupOverview(profile.school_name, setupMissingSchoolWarning(profile.staff_role));
+    }
+
+    const [schoolYears, activeSchoolYear, gradeLevelCount, sectionCount] = await Promise.all([
+      getSchoolYearOverviewRows(school.id),
+      getActiveSchoolYear(school.id),
+      countGradeLevels(school.id),
+      countSections(school.id),
+    ]);
+    const activeYearGrades = activeSchoolYear ? await getGradeSectionRows(school.id, activeSchoolYear.id) : [];
+    const upcomingCount = schoolYears.filter((year) => year.status === "upcoming").length;
+    const activeYearSections = activeYearGrades.reduce((total, grade) => total + grade.sections.filter(Boolean).length, 0);
+    const warning = schoolYears.length === 0
+      ? "Add at least one school year."
+      : setupWarning(profile.staff_role, activeSchoolYear, gradeLevelCount, sectionCount);
+
+    return {
+      schoolName: school.name,
+      schoolCode: school.code,
+      schoolStatus: school.status,
+      warning,
+      kpis: [
+        {
+          label: "School years",
+          value: String(schoolYears.length),
+          note: schoolYears.length === 1 ? "1 year configured" : `${schoolYears.length} years configured`,
+          tone: "blue",
+        },
+        {
+          label: "Active year",
+          value: activeSchoolYear?.name ?? "Pending",
+          note: activeSchoolYear ? `${activeSchoolYear.startsOn} to ${activeSchoolYear.endsOn}` : "Choose one active school year",
+          tone: activeSchoolYear ? "green" : "red",
+        },
+        {
+          label: "Upcoming years",
+          value: String(upcomingCount),
+          note: upcomingCount === 1 ? "1 future year prepared" : `${upcomingCount} future years prepared`,
+          tone: "purple",
+        },
+        {
+          label: "Active-year sections",
+          value: String(activeYearSections),
+          note: activeYearSections > 0 ? `${gradeLevelCount} grade levels` : "Add sections for the active year",
+          tone: activeYearSections > 0 ? "orange" : "red",
+        },
+      ],
+      schoolYears,
+      activeYear: activeSchoolYear,
+      activeYearGrades,
+    };
+  } catch (error) {
+    return emptySetupOverview(
+      profile.school_name,
+      missingSchoolSetupTables(error)
+        ? "Import database/full-schema-v1.sql to enable school setup records."
+        : "School setup records are unavailable. Confirm MySQL/XAMPP is running.",
+    );
   }
 }
 
@@ -324,7 +435,40 @@ async function getSchoolYearRows(schoolId: number) {
     name: row.name,
     startsOn: formatDate(row.starts_on),
     endsOn: formatDate(row.ends_on),
-    status: row.status,
+    status: normalizeSchoolYearStatus(row.status),
+  }));
+}
+
+async function getSchoolYearOverviewRows(schoolId: number) {
+  const [rows] = await pool.execute<Array<SchoolYearRow & {
+    status: "upcoming" | "active" | "closed";
+    section_count: number;
+    enrollment_count: number;
+    fee_type_count: number;
+  }>>(
+    `SELECT sy.id, sy.name, sy.starts_on, sy.ends_on, sy.status,
+            COUNT(DISTINCT sec.id) AS section_count,
+            COUNT(DISTINCT e.id) AS enrollment_count,
+            COUNT(DISTINCT ft.id) AS fee_type_count
+     FROM school_years sy
+     LEFT JOIN sections sec ON sec.school_year_id = sy.id
+     LEFT JOIN enrollments e ON e.school_year_id = sy.id
+     LEFT JOIN fee_types ft ON ft.school_year_id = sy.id
+     WHERE sy.school_id = :schoolId
+     GROUP BY sy.id, sy.name, sy.starts_on, sy.ends_on, sy.status
+     ORDER BY sy.status = 'active' DESC, sy.starts_on DESC, sy.id DESC`,
+    { schoolId },
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    startsOn: formatDate(row.starts_on),
+    endsOn: formatDate(row.ends_on),
+    status: normalizeSchoolYearStatus(row.status),
+    sectionCount: Number(row.section_count ?? 0),
+    enrollmentCount: Number(row.enrollment_count ?? 0),
+    feeTypeCount: Number(row.fee_type_count ?? 0),
   }));
 }
 
@@ -455,6 +599,28 @@ function emptySetupFormData(schoolName: string): AdminSchoolSetupFormData {
     schoolYears: [{ name: "", startsOn: "", endsOn: "", status: "active" }],
     grades: [{ name: "", sections: [""] }],
   };
+}
+
+function emptySetupOverview(schoolName: string, warning: string | null): AdminSchoolSetupOverview {
+  return {
+    schoolName,
+    schoolCode: schoolCodeFor(schoolName),
+    schoolStatus: "pending",
+    warning,
+    kpis: [
+      { label: "School years", value: "0", note: "Add at least one school year", tone: "red" },
+      { label: "Active year", value: "Pending", note: "Choose one active school year", tone: "red" },
+      { label: "Upcoming years", value: "0", note: "No future years prepared", tone: "purple" },
+      { label: "Active-year sections", value: "0", note: "Add sections for the active year", tone: "red" },
+    ],
+    schoolYears: [],
+    activeYear: null,
+    activeYearGrades: [],
+  };
+}
+
+function normalizeSchoolYearStatus(value: unknown): "upcoming" | "active" | "closed" {
+  return value === "active" || value === "closed" ? value : "upcoming";
 }
 
 function schoolCodeFor(schoolName: string) {

@@ -31,7 +31,7 @@ This guide explains the three school/admin staff roles used by XMETA Pay. All th
 
 The first real school account should be a `school_administrator`.
 
-Only a school administrator can complete `Set up school records`. After registration, a new school administrator is sent to a setup-only onboarding screen before the real dashboard is shown. This setup creates or links the school, one or more school years, exactly one active year, grade levels, and sections for the active year. If a registrar or finance officer signs in before setup is complete, they should see:
+Only a school administrator can complete `Set up school records`. After registration, a new school administrator is sent to a setup-only onboarding screen before the real dashboard is shown. The ongoing `School setup` dashboard page shows school details, all school years, the active year, and the active-year grade/section structure. If a registrar or finance officer signs in before setup is complete, they should see:
 
 ```text
 Ask a school administrator to complete school setup first.
@@ -45,10 +45,11 @@ For the MVP, this matching uses the exact school name from admin registration. A
 
 1. A school administrator registers first.
 2. The school administrator completes setup-only onboarding.
-3. Registrar and finance officer accounts with the same school name are linked to the existing school context.
-4. A registrar can add and enroll students.
-5. Parents link to those students by `student_reference`.
-6. A finance officer works on tuition, collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented.
+3. The school administrator reviews and edits all school years from `School setup`.
+4. Registrar and finance officer accounts with the same school name are linked to the existing school context.
+5. A registrar can add and enroll students.
+6. Parents link to those students by `student_reference`.
+7. A finance officer works on tuition, collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented.
 
 Payment reminder history is a finance action. School administrators and finance officers can create queued `in_app` reminder log rows for linked parents with open or partial balances. The reminder action is idempotent for the same school, linked parent, and student on the same calendar day, so repeated clicks do not create duplicate same-day reminder rows. Registrars cannot log reminders because they do not have access to finance pages. Real email and SMS notification delivery is still future work.
 

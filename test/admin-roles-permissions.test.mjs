@@ -6,6 +6,7 @@ const rolesDocPath = "docs/ADMIN_ROLES.md";
 const permissionsPath = "lib/admin/permissions.ts";
 const accessPath = "lib/admin/access.ts";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
+const adminNavDataPath = "app/admin/_data/admin-dashboard-data.ts";
 const schoolSetupActionPath = "app/admin/school-setup/actions.ts";
 const studentActionPath = "app/admin/students/actions.ts";
 const schoolSetupPagePath = "app/admin/(dashboard)/school-setup/page.tsx";
@@ -71,7 +72,9 @@ test("server admin access helper redirects unauthorized staff routes", () => {
 
 test("admin shell filters sidebar and setup actions by staff role", () => {
   const shell = readFileSync(adminShellPath, "utf8");
+  const navData = readFileSync(adminNavDataPath, "utf8");
 
+  assert.match(navData, /label: "School setup", href: "\/admin\/school-setup", icon: Building2/);
   assert.match(shell, /filterAdminNavSectionsForStaffRole/);
   assert.match(shell, /canManageSchoolSetup/);
   assert.match(shell, /canUseAdminHeaderAction/);
