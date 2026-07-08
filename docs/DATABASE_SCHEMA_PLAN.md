@@ -390,6 +390,7 @@ Stores payment transactions from parent or admin-entered channels.
 CREATE TABLE payments (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   school_id BIGINT UNSIGNED NOT NULL,
+  school_year_id BIGINT UNSIGNED NULL,
   payer_user_id BIGINT UNSIGNED NULL,
   student_id BIGINT UNSIGNED NOT NULL,
   reference_number VARCHAR(80) NOT NULL,
@@ -402,13 +403,17 @@ CREATE TABLE payments (
 
   UNIQUE KEY uq_payments_reference_number (reference_number),
   KEY idx_payments_school_status_paid_at (school_id, status, paid_at),
+  KEY idx_payments_school_year_status_paid_at (school_id, school_year_id, status, paid_at),
   KEY idx_payments_student_paid_at (student_id, paid_at),
   KEY idx_payments_payer_paid_at (payer_user_id, paid_at),
   CONSTRAINT fk_payments_school FOREIGN KEY (school_id) REFERENCES schools(id),
+  CONSTRAINT fk_payments_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE SET NULL,
   CONSTRAINT fk_payments_payer FOREIGN KEY (payer_user_id) REFERENCES users(id),
   CONSTRAINT fk_payments_student FOREIGN KEY (student_id) REFERENCES students(id)
 );
 ```
+
+`school_year_id` is nullable for older migrated records, but new payment writes store the active school year so admin selected-year reports do not have to guess from related allocation rows.
 
 #### `payment_allocations`
 
@@ -495,6 +500,7 @@ CREATE TABLE wallet_transactions (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   wallet_id BIGINT UNSIGNED NOT NULL,
   payment_id BIGINT UNSIGNED NULL,
+  school_year_id BIGINT UNSIGNED NULL,
   type ENUM('top_up', 'purchase', 'adjustment', 'reversal') NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
   balance_after DECIMAL(10,2) NOT NULL,
@@ -504,8 +510,10 @@ CREATE TABLE wallet_transactions (
   KEY idx_wallet_transactions_wallet_created (wallet_id, created_at),
   KEY idx_wallet_transactions_payment (payment_id),
   KEY idx_wallet_transactions_type_created (type, created_at),
+  KEY idx_wallet_transactions_year_type_created (school_year_id, type, created_at),
   CONSTRAINT fk_wallet_transactions_wallet FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
-  CONSTRAINT fk_wallet_transactions_payment FOREIGN KEY (payment_id) REFERENCES payments(id)
+  CONSTRAINT fk_wallet_transactions_payment FOREIGN KEY (payment_id) REFERENCES payments(id),
+  CONSTRAINT fk_wallet_transactions_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE SET NULL
 );
 ```
 
@@ -515,6 +523,7 @@ Dashboard calculation note:
 - Admin allowance total balance should sum one row per wallet.
 - Admin allowance monthly top-up stats should sum current-month `wallet_transactions` rows where `type = 'top_up'`.
 - `wallet_transactions` should drive full wallet history, parent dashboard wallet activity, selected student profile wallet activity, monthly spend, and store spending reports.
+- New wallet top-up and purchase ledger rows store `school_year_id` for selected-year admin reporting.
 - Store purchases stay out of parent payment history because they are wallet ledger events, not payment records.
 - Avoid summing `wallets.balance` after joining to `wallet_transactions`, because multiple ledger rows for the same wallet can duplicate the displayed total.
 
@@ -547,6 +556,7 @@ CREATE TABLE store_transactions (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   merchant_id BIGINT UNSIGNED NOT NULL,
   student_id BIGINT UNSIGNED NOT NULL,
+  school_year_id BIGINT UNSIGNED NULL,
   wallet_transaction_id BIGINT UNSIGNED NOT NULL,
   reference_number VARCHAR(80) NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
@@ -556,8 +566,10 @@ CREATE TABLE store_transactions (
   UNIQUE KEY uq_store_transactions_reference (reference_number),
   KEY idx_store_transactions_student_date (student_id, purchased_at),
   KEY idx_store_transactions_merchant_date (merchant_id, purchased_at),
+  KEY idx_store_transactions_year_date (school_year_id, purchased_at),
   CONSTRAINT fk_store_transactions_merchant FOREIGN KEY (merchant_id) REFERENCES store_merchants(id),
   CONSTRAINT fk_store_transactions_student FOREIGN KEY (student_id) REFERENCES students(id),
+  CONSTRAINT fk_store_transactions_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE SET NULL,
   CONSTRAINT fk_store_transactions_wallet_txn FOREIGN KEY (wallet_transaction_id) REFERENCES wallet_transactions(id)
 );
 ```
@@ -572,6 +584,7 @@ Stores reminder and notification history for parents.
 CREATE TABLE notification_logs (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   school_id BIGINT UNSIGNED NOT NULL,
+  school_year_id BIGINT UNSIGNED NULL,
   recipient_user_id BIGINT UNSIGNED NULL,
   student_id BIGINT UNSIGNED NULL,
   type ENUM('payment_reminder', 'receipt', 'low_wallet', 'enrollment_update') NOT NULL,
@@ -582,9 +595,11 @@ CREATE TABLE notification_logs (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   KEY idx_notification_logs_school_type_created (school_id, type, created_at),
+  KEY idx_notification_logs_school_year_type_created (school_id, school_year_id, type, created_at),
   KEY idx_notification_logs_recipient_created (recipient_user_id, created_at),
   KEY idx_notification_logs_student_created (student_id, created_at),
   CONSTRAINT fk_notification_logs_school FOREIGN KEY (school_id) REFERENCES schools(id),
+  CONSTRAINT fk_notification_logs_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE SET NULL,
   CONSTRAINT fk_notification_logs_recipient FOREIGN KEY (recipient_user_id) REFERENCES users(id),
   CONSTRAINT fk_notification_logs_student FOREIGN KEY (student_id) REFERENCES students(id)
 );

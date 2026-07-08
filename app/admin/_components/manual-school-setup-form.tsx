@@ -16,6 +16,7 @@ type GradeRow = {
 
 type SchoolYearRow = {
   id: string;
+  databaseId: number | null;
   name: string;
   startsOn: string;
   endsOn: string;
@@ -32,6 +33,7 @@ export function ManualSchoolSetupForm({
   const [schoolYears, setSchoolYears] = useState<SchoolYearRow[]>(
     initialData.schoolYears.map((year, index) => ({
       id: `school-year-${index}-${year.name || "new"}`,
+      databaseId: year.id,
       name: year.name,
       startsOn: year.startsOn,
       endsOn: year.endsOn,
@@ -49,6 +51,10 @@ export function ManualSchoolSetupForm({
     () => JSON.stringify(grades.map(({ name, sections }) => ({ name, sections }))),
     [grades],
   );
+  const selectedSetupSchoolYearId = initialData.selectedSetupSchoolYearId
+    ?? schoolYears.find((year) => year.status === "active")?.databaseId
+    ?? schoolYears[0]?.databaseId
+    ?? "";
   const schoolYearSetup = useMemo(
     () => JSON.stringify(schoolYears.map(({ name, startsOn, endsOn, status }) => ({ name, startsOn, endsOn, status }))),
     [schoolYears],
@@ -70,7 +76,7 @@ export function ManualSchoolSetupForm({
   }
 
   function addSchoolYear() {
-    setSchoolYears((current) => [...current, { id: `school-year-${Date.now()}`, name: "", startsOn: "", endsOn: "", status: "upcoming" }]);
+    setSchoolYears((current) => [...current, { id: `school-year-${Date.now()}`, databaseId: null, name: "", startsOn: "", endsOn: "", status: "upcoming" }]);
   }
 
   function removeSchoolYear(index: number) {
@@ -153,6 +159,7 @@ export function ManualSchoolSetupForm({
     <form action={saveSchoolSetupAction} className="grid gap-5">
       <input type="hidden" name="schoolYearSetup" value={schoolYearSetup} />
       <input type="hidden" name="gradeSetup" value={gradeSetup} />
+      <input type="hidden" name="sectionSchoolYearId" value={selectedSetupSchoolYearId} />
       <input type="hidden" name="redirectTo" value={redirectTo} />
 
       <section className="overflow-hidden rounded-xl border border-black/[0.07] bg-white">
@@ -262,6 +269,9 @@ export function ManualSchoolSetupForm({
         <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-[18px]">
           <div>
             <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">Grades and sections</h2>
+            <p className="mt-1 text-[11px] leading-4 text-[#5a6070]">
+              Editing {initialData.selectedSetupSchoolYearName ?? "the selected school year"}.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <AdminButton type="button" tone="outline" onClick={applyGradeTemplate}>
@@ -276,6 +286,26 @@ export function ManualSchoolSetupForm({
         </div>
 
         <div className="grid gap-3 p-[18px]">
+          {initialData.schoolYears.filter((year) => year.id).length > 0 ? (
+            <Field label="Edit sections for">
+              <select
+                value={String(selectedSetupSchoolYearId)}
+                onChange={(event) => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("setupYearId", event.target.value);
+                  window.location.href = url.toString();
+                }}
+                className={cn(fieldControlClass, "max-w-md bg-white")}
+              >
+                {initialData.schoolYears.filter((year) => year.id).map((year) => (
+                  <option key={year.id} value={String(year.id)}>
+                    {year.name} ({year.status})
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : null}
+
           {grades.map((grade, gradeIndex) => (
             <div key={grade.id} className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-3">
               <div className="grid gap-2 min-[620px]:grid-cols-[minmax(160px,220px)_1fr_auto] min-[620px]:items-start">

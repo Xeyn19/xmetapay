@@ -67,6 +67,12 @@ export async function createParentPaymentAction(formData: FormData) {
         throw new PaymentValidationError("Selected fees must belong to one school.");
       }
 
+      const schoolYearIds = new Set(fees.map((fee) => fee.school_year_id));
+
+      if (schoolYearIds.size !== 1) {
+        throw new PaymentValidationError("Selected fees must belong to one school year.");
+      }
+
       const total = roundMoney(
         fees.reduce((sum, fee) => sum + Math.max(decimalValue(fee.amount_due) - decimalValue(fee.amount_paid), 0), 0),
       );
@@ -78,10 +84,11 @@ export async function createParentPaymentAction(formData: FormData) {
       const referenceNumber = makeReferenceNumber("PAY");
       const receiptNumber = makeReferenceNumber("RCT");
       const [paymentResult] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO payments (school_id, payer_user_id, student_id, reference_number, channel, amount, status, paid_at)
-         VALUES (:schoolId, :payerUserId, :studentId, :referenceNumber, :channel, :amount, 'paid', NOW())`,
+        `INSERT INTO payments (school_id, school_year_id, payer_user_id, student_id, reference_number, channel, amount, status, paid_at)
+         VALUES (:schoolId, :schoolYearId, :payerUserId, :studentId, :referenceNumber, :channel, :amount, 'paid', NOW())`,
         {
           schoolId: fees[0].school_id,
+          schoolYearId: fees[0].school_year_id,
           payerUserId: session.userId,
           studentId: fees[0].student_id,
           referenceNumber,
@@ -163,7 +170,7 @@ async function getLockedPayableFees(
   const placeholders = feeAssignmentIds.map((_, index) => `:feeAssignmentId${index}`).join(", ");
   const params = Object.fromEntries(feeAssignmentIds.map((id, index) => [`feeAssignmentId${index}`, id]));
   const [rows] = await connection.execute<PayableFeeRow[]>(
-    `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.status,
+    `SELECT sfa.id, sfa.school_year_id, sfa.amount_due, sfa.amount_paid, sfa.status,
        st.id AS student_id, st.school_id
      FROM student_fee_assignments sfa
      JOIN students st ON st.id = sfa.student_id
@@ -253,6 +260,7 @@ type PayableFeeRow = RowDataPacket & {
   id: number;
   student_id: number;
   school_id: number;
+  school_year_id: number;
   amount_due: number | string;
   amount_paid: number | string;
   status: string;

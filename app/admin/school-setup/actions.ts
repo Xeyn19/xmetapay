@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
@@ -25,6 +26,7 @@ type SetupSchoolYearInput = {
 type SetupInput = {
   schoolName: string;
   schoolCode: string;
+  sectionSchoolYearId: number | null;
   schoolYears: SetupSchoolYearInput[];
   grades: SetupGradeInput[];
 };
@@ -76,8 +78,14 @@ export async function saveSchoolSetupAction(formData: FormData) {
     await linkSameSchoolStaffProfiles(connection, schoolId, profile.school_name, input.data.schoolName);
 
     const schoolYearId = await ensureSchoolYears(connection, schoolId, input.data.schoolYears);
+    const sectionSchoolYearId = await resolveSectionSchoolYearId(
+      connection,
+      schoolId,
+      input.data.sectionSchoolYearId,
+      schoolYearId,
+    );
     const gradeLevelIds = await ensureGradeLevels(connection, schoolId, input.data.grades);
-    await ensureSections(connection, schoolId, schoolYearId, input.data.grades, gradeLevelIds);
+    await ensureSections(connection, schoolId, sectionSchoolYearId, input.data.grades, gradeLevelIds);
 
     await connection.commit();
     const cookieStore = await cookies();
@@ -91,7 +99,7 @@ export async function saveSchoolSetupAction(formData: FormData) {
     await setAuthFlashToast({
       role: "admin",
       title: "School setup saved",
-      description: "Your school years, active-year grades, and sections now use your real school records.",
+      description: "Your school years, grades, and selected-year sections now use your real school records.",
     });
   } catch {
     if (connection) {
@@ -111,10 +119,120 @@ export async function saveSchoolSetupAction(formData: FormData) {
   redirect("/admin/dashboard");
 }
 
+export async function prepareSchoolYearRolloverAction(formData: FormData) {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+
+  if (!canManageSchoolSetup(staffRole)) {
+    await setAuthFlashToast({
+      role: "admin",
+      title: "Rollover not saved",
+      description: "Only school administrators can prepare school year rollovers.",
+    });
+    redirect("/admin/dashboard");
+  }
+
+  const sourceSchoolYearId = positiveIntegerValue(formData, "sourceSchoolYearId");
+  const targetSectionId = positiveIntegerValue(formData, "targetSectionId");
+  const studentIds = selectedStudentIds(formData);
+
+  if (!sourceSchoolYearId || !targetSectionId || studentIds.length === 0) {
+    await setAuthFlashToast({
+      role: "admin",
+      title: "Rollover not saved",
+      description: "Choose a source year, target section, and at least one student.",
+    });
+    redirect("/admin/school-setup");
+  }
+
+  let connection: PoolConnection | null = null;
+
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const profile = await getAdminProfileForUpdate(connection, session.userId);
+
+    if (!profile?.school_id) {
+      throw new RolloverValidationError("Complete school setup before preparing a rollover.");
+    }
+
+    const sourceYear = await getSchoolYearForSchool(connection, profile.school_id, sourceSchoolYearId);
+    const targetSection = await getSectionForSchool(connection, profile.school_id, targetSectionId);
+
+    if (!sourceYear || !targetSection) {
+      throw new RolloverValidationError("Choose valid source and target school-year records.");
+    }
+
+    if (sourceYear.id === targetSection.school_year_id) {
+      throw new RolloverValidationError("Choose a target section from a different school year.");
+    }
+
+    const students = await getSourceRolloverStudents(connection, profile.school_id, sourceSchoolYearId, studentIds);
+
+    if (students.length === 0) {
+      throw new RolloverValidationError("No selected students were found in the source year.");
+    }
+
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    for (const student of students) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        `INSERT IGNORE INTO enrollments (
+           student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at
+         )
+         VALUES (
+           :studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', NOW(), NOW()
+         )`,
+        {
+          studentId: student.id,
+          schoolYearId: targetSection.school_year_id,
+          gradeLevelId: targetSection.grade_level_id,
+          sectionId: targetSection.id,
+        },
+      );
+
+      if (result.affectedRows > 0) {
+        createdCount += 1;
+      } else {
+        skippedCount += 1;
+      }
+    }
+
+    await connection.commit();
+    revalidatePath("/admin/school-setup");
+    revalidatePath("/admin/students");
+    revalidatePath("/admin/student-profile");
+    await setAuthFlashToast({
+      role: "admin",
+      title: "Rollover prepared",
+      description: `${createdCount} student${createdCount === 1 ? "" : "s"} enrolled in the target year.${skippedCount > 0 ? ` ${skippedCount} already had target-year enrollment.` : ""}`,
+    });
+  } catch (error) {
+    if (connection) {
+      await connection.rollback().catch(() => undefined);
+    }
+
+    await setAuthFlashToast({
+      role: "admin",
+      title: "Rollover not saved",
+      description: error instanceof RolloverValidationError
+        ? error.message
+        : "Unable to prepare rollover enrollments. Check MySQL/XAMPP and try again.",
+    });
+  } finally {
+    connection?.release();
+  }
+
+  redirect("/admin/school-setup");
+}
+
 function parseSchoolSetupForm(formData: FormData) {
   const schoolName = textValue(formData, "schoolName");
   const schoolCode = normalizeCode(textValue(formData, "schoolCode"));
   const schoolYears = parseSchoolYearSetup(textValue(formData, "schoolYearSetup"));
+  const sectionSchoolYearId = positiveIntegerValue(formData, "sectionSchoolYearId");
   const grades = parseGradeSetup(textValue(formData, "gradeSetup"));
 
   if (!schoolName || !schoolCode) {
@@ -150,6 +268,7 @@ function parseSchoolSetupForm(formData: FormData) {
     data: {
       schoolName,
       schoolCode,
+      sectionSchoolYearId,
       schoolYears,
       grades,
     },
@@ -208,6 +327,21 @@ function parseGradeSetup(value: string) {
 
 function textValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function positiveIntegerValue(formData: FormData, key: string) {
+  const parsed = Number(textValue(formData, key));
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function selectedStudentIds(formData: FormData) {
+  const ids = formData
+    .getAll("studentId")
+    .map((value) => (typeof value === "string" ? Number(value) : NaN))
+    .filter((value) => Number.isInteger(value) && value > 0);
+
+  return [...new Set(ids)].slice(0, 200);
 }
 
 function schoolSetupRedirectTarget(formData: FormData) {
@@ -386,6 +520,78 @@ async function ensureGradeLevels(connection: PoolConnection, schoolId: number, g
   return gradeLevelIds;
 }
 
+async function resolveSectionSchoolYearId(
+  connection: PoolConnection,
+  schoolId: number,
+  requestedSchoolYearId: number | null,
+  activeSchoolYearId: number,
+) {
+  if (!requestedSchoolYearId) {
+    return activeSchoolYearId;
+  }
+
+  const [rows] = await connection.execute<Array<RowDataPacket & { id: number }>>(
+    `SELECT id
+     FROM school_years
+     WHERE id = :schoolYearId AND school_id = :schoolId
+     LIMIT 1`,
+    { schoolYearId: requestedSchoolYearId, schoolId },
+  );
+
+  return rows[0]?.id ?? activeSchoolYearId;
+}
+
+async function getSchoolYearForSchool(connection: PoolConnection, schoolId: number, schoolYearId: number) {
+  const [rows] = await connection.execute<Array<RowDataPacket & { id: number }>>(
+    `SELECT id
+     FROM school_years
+     WHERE id = :schoolYearId AND school_id = :schoolId
+     LIMIT 1`,
+    { schoolYearId, schoolId },
+  );
+
+  return rows[0] ?? null;
+}
+
+async function getSectionForSchool(connection: PoolConnection, schoolId: number, sectionId: number) {
+  const [rows] = await connection.execute<Array<RowDataPacket & {
+    id: number;
+    school_year_id: number;
+    grade_level_id: number;
+  }>>(
+    `SELECT id, school_year_id, grade_level_id
+     FROM sections
+     WHERE id = :sectionId AND school_id = :schoolId
+     LIMIT 1`,
+    { sectionId, schoolId },
+  );
+
+  return rows[0] ?? null;
+}
+
+async function getSourceRolloverStudents(
+  connection: PoolConnection,
+  schoolId: number,
+  sourceSchoolYearId: number,
+  studentIds: number[],
+) {
+  const placeholders = studentIds.map((_, index) => `:studentId${index}`).join(", ");
+  const studentParams = Object.fromEntries(studentIds.map((id, index) => [`studentId${index}`, id]));
+  const [rows] = await connection.execute<Array<RowDataPacket & { id: number }>>(
+    `SELECT st.id
+     FROM students st
+     JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :sourceSchoolYearId
+     WHERE st.school_id = :schoolId
+       AND st.id IN (${placeholders})
+       AND e.status = 'enrolled'
+     ORDER BY st.id ASC
+     FOR UPDATE`,
+    { schoolId, sourceSchoolYearId, ...studentParams },
+  );
+
+  return rows;
+}
+
 async function ensureSections(
   connection: PoolConnection,
   schoolId: number,
@@ -436,3 +642,5 @@ type AdminProfileRow = RowDataPacket & {
 type SchoolRow = RowDataPacket & {
   id: number;
 };
+
+class RolloverValidationError extends Error {}

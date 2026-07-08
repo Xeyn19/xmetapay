@@ -57,10 +57,11 @@ export async function createWalletTopUpAction(formData: FormData) {
     const receiptNumber = makeReferenceNumber("RCT");
     const balanceAfter = roundMoney(decimalValue(wallet.balance) + amount);
     const [paymentResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO payments (school_id, payer_user_id, student_id, reference_number, channel, amount, status, paid_at)
-       VALUES (:schoolId, :payerUserId, :studentId, :referenceNumber, :channel, :amount, 'paid', NOW())`,
+      `INSERT INTO payments (school_id, school_year_id, payer_user_id, student_id, reference_number, channel, amount, status, paid_at)
+       VALUES (:schoolId, :schoolYearId, :payerUserId, :studentId, :referenceNumber, :channel, :amount, 'paid', NOW())`,
       {
         schoolId: student.school_id,
+        schoolYearId: student.school_year_id,
         payerUserId: session.userId,
         studentId: student.id,
         referenceNumber,
@@ -80,11 +81,12 @@ export async function createWalletTopUpAction(formData: FormData) {
       },
     );
     await connection.execute<ResultSetHeader>(
-      `INSERT INTO wallet_transactions (wallet_id, payment_id, type, amount, balance_after, description)
-       VALUES (:walletId, :paymentId, 'top_up', :amount, :balanceAfter, 'Wallet top-up')`,
+      `INSERT INTO wallet_transactions (wallet_id, payment_id, school_year_id, type, amount, balance_after, description)
+       VALUES (:walletId, :paymentId, :schoolYearId, 'top_up', :amount, :balanceAfter, 'Wallet top-up')`,
       {
         walletId: wallet.id,
         paymentId,
+        schoolYearId: student.school_year_id,
         amount,
         balanceAfter,
       },
@@ -128,8 +130,9 @@ async function getLockedLinkedStudent(
   studentId: number,
 ) {
   const [rows] = await connection.execute<LinkedStudentRow[]>(
-    `SELECT st.id, st.school_id
+    `SELECT st.id, st.school_id, sy.id AS school_year_id
      FROM students st
+     JOIN school_years sy ON sy.school_id = st.school_id AND sy.status = 'active'
      JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
      WHERE st.id = :studentId
      LIMIT 1
@@ -237,6 +240,7 @@ class WalletValidationError extends Error {}
 type LinkedStudentRow = RowDataPacket & {
   id: number;
   school_id: number;
+  school_year_id: number;
 };
 
 type WalletRow = RowDataPacket & {

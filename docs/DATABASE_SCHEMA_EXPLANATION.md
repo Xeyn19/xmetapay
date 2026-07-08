@@ -222,10 +222,12 @@ Main purpose:
 - Record which school collected the payment.
 - Record which student the payment is for.
 - Optionally record which parent user paid.
+- Store the school year for new payment history rows.
 - Store payment channel, amount, status, and paid timestamp.
 - Use a unique reference number for tracking.
 
 Payment status starts as pending and can become paid, failed, voided, or refunded.
+`school_year_id` is nullable for migrated history, but new payment writes store the active school year.
 
 ### `payment_allocations`
 
@@ -282,6 +284,7 @@ Main purpose:
 - Track top-ups, purchases, adjustments, and reversals.
 - Store the amount and resulting balance after each transaction.
 - Optionally connect wallet top-ups to payment records.
+- Store the school year for new wallet ledger rows.
 
 This table provides an audit trail for all wallet changes.
 
@@ -312,7 +315,7 @@ Tracks purchases made through the student wallet.
 
 Main purpose:
 
-- Record the merchant, student, wallet transaction, amount, and purchase timestamp.
+- Record the merchant, student, school year, wallet transaction, amount, and purchase timestamp.
 - Store a unique transaction reference number.
 - Support admin store reports, parent dashboard store snapshots, selected student profile spending snapshots, and full parent wallet spending history.
 
@@ -347,8 +350,9 @@ Main purpose:
 - Store the channel: email, SMS, or in-app.
 - Track status: queued, sent, or failed.
 - Connect notifications to a school, recipient user, and optionally a student.
+- Store the school year for new reminder history rows.
 
-Current implementation: school administrators and finance officers can open a reminder modal and log queued payment reminders for linked parents with open or partial balances. The action logs at most one queued `payment_reminder` per school, linked parent, student, selected channel, and calendar day. Each new reminder row stores the custom or generated text in `message_body`. The tuition page shows recent reminder history, and the admin dashboard activity feed reads the same table. This table is for audit and history. It does not send notifications by itself; real email/SMS delivery remains future work.
+Current implementation: school administrators and finance officers can open a reminder modal and log queued payment reminders for linked parents with open or partial balances. The action logs at most one queued `payment_reminder` per school year, school, linked parent, student, selected channel, and calendar day. Each new reminder row stores the custom or generated text in `message_body`. The tuition page shows recent reminder history, and the admin dashboard activity feed reads the same table. This table is for audit and history. It does not send notifications by itself; real email/SMS delivery remains future work.
 
 ## Main Data Flow
 
@@ -356,37 +360,39 @@ The schema supports this practical backend flow:
 
 1. Admin registers and logs in through the existing auth tables.
 2. A school record is created and linked to school setup records.
-3. Admin creates one or many school years, chooses one active year, then creates grade levels and sections for that active year.
+3. Admin creates one or many school years, chooses one active year, then creates grade levels and selected-year sections.
 4. Admin creates student records.
 5. Parent registers and can be linked to a student through `student_guardians`.
 6. Admin enrolls students for the active school year.
-7. Admin creates fee types and assigns fees to one or more selected students.
-8. Parent views fee balances from `student_fee_assignments`, including tuition terms when configured.
-9. Parent records payments in `payments` for regular balances or open/partial tuition terms.
-10. Payments are allocated through `payment_allocations` or `payment_term_allocations`.
-11. Receipts are created in `receipts`.
-12. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
-13. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens paginate loaded rows and export filtered rows as CSV or PDF.
-14. Queued in-app payment reminder history is recorded in `notification_logs`; real notification delivery remains future work.
+7. When a school year changes, the school administrator uses manual rollover to create target-year enrollments without duplicating `students`.
+8. Admin creates fee types and assigns fees to one or more selected students.
+9. Parent views fee balances from `student_fee_assignments`, including tuition terms when configured.
+10. Parent records payments in `payments` for regular balances or open/partial tuition terms.
+11. Payments are allocated through `payment_allocations` or `payment_term_allocations`.
+12. Receipts are created in `receipts`.
+13. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
+14. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens paginate loaded rows and export filtered rows as CSV or PDF.
+15. Queued in-app payment reminder history is recorded in `notification_logs`; real notification delivery remains future work.
 
 ## Relationship Summary
 
 - `schools` owns school years, grade levels, sections, students, fees, payments, store merchants, and notifications.
 - `users` owns admin and parent login identity.
 - `student_guardians` connects parent users to students.
+- `students` is the reusable student master record across school years.
 - `enrollments` connects students to a school year, grade level, and section.
 - `fee_types` defines what can be charged.
 - `student_fee_assignments` records what each student owes.
 - `tuition_payment_terms` breaks tuition balances into scheduled installments.
 - Tuition term parsing, payable checks, payments, and assignment recalculation are handled by a shared server-only tuition helper.
-- `payments` records money received.
+- `payments` records money received and stores the active school year for new rows.
 - `payment_allocations` applies payment money to student balances.
 - `payment_term_allocations` applies payment money to tuition installment terms.
 - `receipts` documents paid payments.
-- `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, and full wallet ledger history.
-- `store_transactions` records wallet spending at school merchants.
+- `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, full wallet ledger history, and the school year for new ledger rows.
+- `store_transactions` records wallet spending at school merchants and stores the school year for new purchase rows.
 - Report CSV and PDF exports read from operational tables and do not require separate report storage tables.
-- `notification_logs` records communication history.
+- `notification_logs` records communication history and stores the school year for new reminder rows.
 
 ## Safety Notes
 

@@ -44,7 +44,10 @@ export type AdminSchoolYearOption = {
 export type AdminSchoolSetupFormData = {
   schoolName: string;
   schoolCode: string;
+  selectedSetupSchoolYearId: number | null;
+  selectedSetupSchoolYearName: string | null;
   schoolYears: Array<{
+    id: number | null;
     name: string;
     startsOn: string;
     endsOn: string;
@@ -86,6 +89,30 @@ export type AdminSchoolSetupOverview = {
   activeYearGrades: Array<{
     name: string;
     sections: string[];
+  }>;
+};
+
+export type AdminSchoolRolloverData = {
+  ready: boolean;
+  warning: string | null;
+  years: Array<{
+    id: number;
+    name: string;
+    status: "upcoming" | "active" | "closed";
+  }>;
+  students: Array<{
+    id: number;
+    schoolYearId: number;
+    name: string;
+    reference: string;
+    className: string;
+  }>;
+  targetSections: Array<{
+    id: number;
+    schoolYearId: number;
+    schoolYearName: string;
+    gradeName: string;
+    sectionName: string;
   }>;
 };
 
@@ -381,7 +408,10 @@ export async function getAdminSchoolSetupOverview(userId: number): Promise<Admin
   }
 }
 
-export async function getAdminSchoolSetupFormData(userId: number): Promise<AdminSchoolSetupFormData> {
+export async function getAdminSchoolSetupFormData(
+  userId: number,
+  setupSchoolYearId?: number | null,
+): Promise<AdminSchoolSetupFormData> {
   let profile: AdminProfileRow | null = null;
 
   try {
@@ -400,18 +430,62 @@ export async function getAdminSchoolSetupFormData(userId: number): Promise<Admin
     const schoolCode = school?.code ?? schoolCodeFor(schoolName);
     const schoolYears = school ? await getSchoolYearRows(school.id) : [];
     const activeYear = schoolYears.find((year) => year.status === "active") ?? null;
-    const grades = school && activeYear ? await getGradeSectionRows(school.id, activeYear.id) : [];
+    const selectedSetupYear = resolveSetupSchoolYear(schoolYears, setupSchoolYearId, activeYear);
+    const grades = school && selectedSetupYear ? await getGradeSectionRows(school.id, selectedSetupYear.id) : [];
 
     return {
       schoolName,
       schoolCode,
+      selectedSetupSchoolYearId: selectedSetupYear?.id ?? null,
+      selectedSetupSchoolYearName: selectedSetupYear?.name ?? null,
       schoolYears: schoolYears.length > 0
-        ? schoolYears.map(({ name, startsOn, endsOn, status }) => ({ name, startsOn, endsOn, status }))
-        : [{ name: "", startsOn: "", endsOn: "", status: "active" }],
+        ? schoolYears.map(({ id, name, startsOn, endsOn, status }) => ({ id, name, startsOn, endsOn, status }))
+        : [{ id: null, name: "", startsOn: "", endsOn: "", status: "active" }],
       grades: grades.length > 0 ? grades : [{ name: "", sections: [""] }],
     };
   } catch {
     return emptySetupFormData(profile.school_name);
+  }
+}
+
+export async function getAdminSchoolRolloverData(userId: number): Promise<AdminSchoolRolloverData> {
+  try {
+    const profile = await getAdminProfile(userId);
+    const school = profile ? await resolveSchoolForProfile(profile) : null;
+
+    if (!school) {
+      return {
+        ready: false,
+        warning: profile ? setupMissingSchoolWarning(profile.staff_role) : "Admin profile was not found.",
+        years: [],
+        students: [],
+        targetSections: [],
+      };
+    }
+
+    const [years, students, targetSections] = await Promise.all([
+      getSchoolYearRows(school.id),
+      getRolloverStudentRows(school.id),
+      getRolloverSectionRows(school.id),
+    ]);
+
+    return {
+      ready: years.length > 1 && students.length > 0 && targetSections.length > 0,
+      warning: years.length > 1
+        ? null
+        : "Add another school year before preparing rollover enrollments.",
+      years: years.map(({ id, name, status }) => ({ id, name, status })),
+      students,
+      targetSections,
+    };
+  } catch {
+    return {
+      ready: false,
+      warning: "Rollover data is unavailable. Confirm MySQL/XAMPP and the full schema are ready.",
+      years: [],
+      students: [],
+      targetSections: [],
+    };
   }
 }
 
@@ -731,9 +805,88 @@ function emptySetupFormData(schoolName: string): AdminSchoolSetupFormData {
   return {
     schoolName,
     schoolCode: schoolCodeFor(schoolName),
-    schoolYears: [{ name: "", startsOn: "", endsOn: "", status: "active" }],
+    selectedSetupSchoolYearId: null,
+    selectedSetupSchoolYearName: null,
+    schoolYears: [{ id: null, name: "", startsOn: "", endsOn: "", status: "active" }],
     grades: [{ name: "", sections: [""] }],
   };
+}
+
+async function getRolloverStudentRows(schoolId: number) {
+  const [rows] = await pool.execute<Array<RowDataPacket & {
+    id: number;
+    school_year_id: number;
+    student_reference: string;
+    first_name: string;
+    middle_name: string | null;
+    last_name: string;
+    grade_name: string;
+    section_name: string | null;
+  }>>(
+    `SELECT st.id, e.school_year_id, st.student_reference, st.first_name, st.middle_name, st.last_name,
+       gl.name AS grade_name, sec.name AS section_name
+     FROM enrollments e
+     JOIN students st ON st.id = e.student_id
+     JOIN grade_levels gl ON gl.id = e.grade_level_id
+     LEFT JOIN sections sec ON sec.id = e.section_id
+     WHERE st.school_id = :schoolId AND e.status = 'enrolled'
+     ORDER BY e.school_year_id DESC, gl.sort_order ASC, st.last_name ASC, st.first_name ASC`,
+    { schoolId },
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    schoolYearId: row.school_year_id,
+    name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(" "),
+    reference: row.student_reference,
+    className: [row.grade_name, row.section_name].filter(Boolean).join(" - "),
+  }));
+}
+
+async function getRolloverSectionRows(schoolId: number) {
+  const [rows] = await pool.execute<Array<RowDataPacket & {
+    id: number;
+    school_year_id: number;
+    school_year_name: string;
+    grade_name: string;
+    section_name: string;
+  }>>(
+    `SELECT sec.id, sec.school_year_id, sy.name AS school_year_name, gl.name AS grade_name, sec.name AS section_name
+     FROM sections sec
+     JOIN school_years sy ON sy.id = sec.school_year_id
+     JOIN grade_levels gl ON gl.id = sec.grade_level_id
+     WHERE sec.school_id = :schoolId
+     ORDER BY sy.starts_on DESC, gl.sort_order ASC, sec.name ASC`,
+    { schoolId },
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    schoolYearId: row.school_year_id,
+    schoolYearName: row.school_year_name,
+    gradeName: row.grade_name,
+    sectionName: row.section_name,
+  }));
+}
+
+function resolveSetupSchoolYear(
+  schoolYears: AdminSchoolYearOption[],
+  setupSchoolYearId: number | null | undefined,
+  activeYear: AdminSchoolContext["activeSchoolYear"],
+) {
+  const requested = Number(setupSchoolYearId);
+
+  if (Number.isInteger(requested) && requested > 0) {
+    const selected = schoolYears.find((year) => year.id === requested);
+
+    if (selected) {
+      return selected;
+    }
+  }
+
+  return activeYear
+    ? schoolYears.find((year) => year.id === activeYear.id) ?? activeYear
+    : schoolYears[0] ?? null;
 }
 
 function emptySetupOverview(schoolName: string, warning: string | null): AdminSchoolSetupOverview {

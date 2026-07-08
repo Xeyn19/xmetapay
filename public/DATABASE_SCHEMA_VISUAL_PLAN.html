@@ -303,7 +303,7 @@
             <tr>
               <td>School setup</td>
               <td><code>schools</code>, <code>school_years</code>, <code>grade_levels</code>, <code>sections</code></td>
-              <td>School structure with one or many school years, one active year, and active-year student placement.</td>
+              <td>School structure with one or many school years, one active year, selected-year section editing, and manual rollover targets.</td>
             </tr>
             <tr>
               <td>Students</td>
@@ -313,7 +313,7 @@
             <tr>
               <td>Enrollment</td>
               <td><code>enrollments</code>, <code>enrollment_documents</code></td>
-              <td>Enrollment status, grade/section assignment, and required documents.</td>
+              <td>Year-specific enrollment status and grade/section assignment. Student master records stay shared across years.</td>
             </tr>
             <tr>
               <td>Fees</td>
@@ -323,17 +323,17 @@
             <tr>
               <td>Payments</td>
               <td><code>payments</code>, <code>payment_allocations</code>, <code>payment_term_allocations</code>, <code>receipts</code></td>
-              <td>Payment records, regular fee allocation, tuition term allocation, and receipt generation.</td>
+              <td>Payment records, active school-year stamps for new rows, regular fee allocation, tuition term allocation, and receipt generation.</td>
             </tr>
             <tr>
               <td>Wallet</td>
               <td><code>wallets</code>, <code>wallet_transactions</code></td>
-              <td>Student allowance balance, top-ups, purchases, dashboard activity, selected profile activity, and adjustments. Current totals sum each wallet once; admin monthly top-up stats sum current-month top-up ledger rows.</td>
+              <td>Student allowance balance, year-stamped top-ups/purchases for new rows, dashboard activity, selected profile activity, and adjustments. Current totals sum each wallet once; admin monthly top-up stats sum current-month top-up ledger rows.</td>
             </tr>
             <tr>
               <td>Store</td>
               <td><code>store_merchants</code>, <code>store_transactions</code></td>
-              <td>Implemented Phase 6B tables for canteen and school store spending logs.</td>
+              <td>Implemented Phase 6B tables for canteen and school store spending logs, with active school-year stamps for new purchase rows.</td>
             </tr>
             <tr>
               <td>Reports</td>
@@ -343,7 +343,7 @@
             <tr>
               <td>Notifications</td>
               <td><code>notification_logs</code></td>
-              <td>Implemented queued SMS/email payment reminder history with saved <code>message_body</code> text and once-per-day deduplication for the same school, linked parent, student, and selected channel. Real delivery, receipts, low-wallet alerts, and enrollment-update notifications remain future.</td>
+              <td>Implemented queued SMS/email payment reminder history with saved <code>message_body</code> text, school-year stamps for new rows, and once-per-day deduplication for the same school year, school, linked parent, student, and selected channel. Real delivery, receipts, low-wallet alerts, and enrollment-update notifications remain future.</td>
             </tr>
           </tbody>
         </table>
@@ -529,6 +529,7 @@ erDiagram
   PAYMENTS {
     bigint id PK
     bigint school_id FK
+    bigint school_year_id FK
     bigint payer_user_id FK
     bigint student_id FK
     varchar reference_number
@@ -562,6 +563,7 @@ erDiagram
     bigint id PK
     bigint wallet_id FK
     bigint payment_id FK
+    bigint school_year_id FK
     enum type
     decimal amount
     decimal balance_after
@@ -579,6 +581,7 @@ erDiagram
     bigint id PK
     bigint merchant_id FK
     bigint student_id FK
+    bigint school_year_id FK
     bigint wallet_transaction_id FK
     varchar reference_number
     decimal amount
@@ -588,6 +591,7 @@ erDiagram
   NOTIFICATION_LOGS {
     bigint id PK
     bigint school_id FK
+    bigint school_year_id FK
     bigint recipient_user_id FK
     bigint student_id FK
     enum type

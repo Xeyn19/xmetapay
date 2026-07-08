@@ -74,7 +74,7 @@ export async function recordStorePurchaseAction(formData: FormData) {
       throw new StoreValidationError("Choose an active merchant from this school.");
     }
 
-    const wallet = await getLockedStudentWallet(connection, context.schoolId, studentId);
+    const wallet = await getLockedStudentWallet(connection, context.schoolId, context.schoolYearId, studentId);
 
     if (!wallet) {
       throw new StoreValidationError("Choose a student with an active allowance wallet.");
@@ -103,10 +103,11 @@ export async function recordStorePurchaseAction(formData: FormData) {
       },
     );
     const [walletTransactionResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO wallet_transactions (wallet_id, payment_id, type, amount, balance_after, description)
-       VALUES (:walletId, NULL, 'purchase', :amount, :balanceAfter, :description)`,
+      `INSERT INTO wallet_transactions (wallet_id, payment_id, school_year_id, type, amount, balance_after, description)
+       VALUES (:walletId, NULL, :schoolYearId, 'purchase', :amount, :balanceAfter, :description)`,
       {
         walletId: wallet.id,
+        schoolYearId: context.schoolYearId,
         amount: -amount,
         balanceAfter,
         description: `Store purchase - ${merchant.name}`,
@@ -115,11 +116,12 @@ export async function recordStorePurchaseAction(formData: FormData) {
     const walletTransactionId = walletTransactionResult.insertId;
 
     await connection.execute<ResultSetHeader>(
-      `INSERT INTO store_transactions (merchant_id, student_id, wallet_transaction_id, reference_number, amount, fee_amount)
-       VALUES (:merchantId, :studentId, :walletTransactionId, :referenceNumber, :amount, :feeAmount)`,
+      `INSERT INTO store_transactions (merchant_id, student_id, school_year_id, wallet_transaction_id, reference_number, amount, fee_amount)
+       VALUES (:merchantId, :studentId, :schoolYearId, :walletTransactionId, :referenceNumber, :amount, :feeAmount)`,
       {
         merchantId,
         studentId,
+        schoolYearId: context.schoolYearId,
         walletTransactionId,
         referenceNumber,
         amount,
@@ -184,17 +186,23 @@ async function getMerchantForSchool(connection: PoolConnection, schoolId: number
   return rows[0] ?? null;
 }
 
-async function getLockedStudentWallet(connection: PoolConnection, schoolId: number, studentId: number) {
+async function getLockedStudentWallet(
+  connection: PoolConnection,
+  schoolId: number,
+  schoolYearId: number,
+  studentId: number,
+) {
   const [rows] = await connection.execute<WalletRow[]>(
     `SELECT w.id, w.balance, w.status
      FROM wallets w
      JOIN students st ON st.id = w.student_id
+     JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
      WHERE st.id = :studentId
        AND st.school_id = :schoolId
        AND st.status = 'active'
      LIMIT 1
      FOR UPDATE`,
-    { studentId, schoolId },
+    { studentId, schoolId, schoolYearId },
   );
 
   return rows[0] ?? null;

@@ -3,16 +3,24 @@ import { CalendarDays, Edit3, Info, Layers3 } from "lucide-react";
 import { AlertBanner, AdminTable, DashboardCard, KpiCard, KpiGrid, StatusPill } from "@/app/admin/_components/admin-ui";
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
-import { getAdminSchoolSetupFormData, getAdminSchoolSetupOverview } from "@/lib/school/setup";
+import { getAdminSchoolRolloverData, getAdminSchoolSetupFormData, getAdminSchoolSetupOverview } from "@/lib/school/setup";
 
 import { ManualSchoolSetupForm } from "@/app/admin/_components/manual-school-setup-form";
+import { SchoolYearRolloverForm } from "@/app/admin/_components/school-year-rollover-form";
 
-export default async function AdminSchoolSetupPage() {
+export default async function AdminSchoolSetupPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ setupYearId?: string }>;
+}) {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/school-setup");
-  const [overview, initialData] = await Promise.all([
+  const resolvedSearchParams = await searchParams;
+  const setupYearId = parseSetupYearId(resolvedSearchParams?.setupYearId);
+  const [overview, initialData, rolloverData] = await Promise.all([
     getAdminSchoolSetupOverview(session.userId),
-    getAdminSchoolSetupFormData(session.userId),
+    getAdminSchoolSetupFormData(session.userId, setupYearId),
+    getAdminSchoolRolloverData(session.userId),
   ]);
 
   return (
@@ -88,6 +96,13 @@ export default async function AdminSchoolSetupPage() {
         )}
       </DashboardCard>
 
+      <DashboardCard title="Prepare next year" icon={CalendarDays}>
+        <div className="mb-4 max-w-3xl text-[12px] leading-5 text-[#5a6070]">
+          Promote selected students into another school year without duplicating their master student record.
+        </div>
+        <SchoolYearRolloverForm data={rolloverData} />
+      </DashboardCard>
+
       <details className="group overflow-hidden rounded-xl border border-black/[0.07] bg-white">
         <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b border-black/[0.07] px-4 py-3.5 text-[13px] font-bold text-[#0f1117] marker:hidden sm:px-[18px]">
           <span className="flex items-center gap-2">
@@ -129,4 +144,10 @@ function statusLabel(status: "upcoming" | "active" | "closed" | undefined) {
   }
 
   return "Upcoming";
+}
+
+function parseSetupYearId(value: string | undefined) {
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }

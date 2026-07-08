@@ -644,12 +644,14 @@ async function getParentRecentWalletActivity(
   const selectedStudentClause = typeof studentId === "number" ? "AND st.id = :studentId" : "";
   const [rows] = await pool.execute<ParentRecentWalletActivityRow[]>(
     `SELECT wt.id, wt.type, wt.amount, wt.balance_after, wt.description, wt.created_at,
+       sy.name AS school_year_name,
        p.channel, p.status,
        st.first_name, st.middle_name, st.last_name
      FROM wallet_transactions wt
      JOIN wallets w ON w.id = wt.wallet_id
      JOIN students st ON st.id = w.student_id
      JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     LEFT JOIN school_years sy ON sy.id = wt.school_year_id
      LEFT JOIN payments p ON p.id = wt.payment_id
      WHERE 1 = 1
        ${selectedStudentClause}
@@ -668,7 +670,7 @@ async function getParentRecentWalletActivity(
       id: row.id,
       date: formatDateTime(row.created_at),
       studentName: fullName(row.first_name, row.middle_name, row.last_name),
-      description: row.description ?? labelForWalletType(row.type),
+      description: [row.description ?? labelForWalletType(row.type), row.school_year_name].filter(Boolean).join(" - "),
       amount: `${isCredit ? "+" : "-"}${money(Math.abs(rawAmount))}`,
       balanceAfter: money(row.balance_after),
       channel: isPurchase ? "Store wallet" : row.channel ? labelForChannel(row.channel) : "Wallet",
@@ -939,6 +941,7 @@ type ParentRecentWalletActivityRow = RowDataPacket & {
   balance_after: number | string;
   description: string | null;
   created_at: Date | string;
+  school_year_name: string | null;
   channel: string | null;
   status: string | null;
   first_name: string;

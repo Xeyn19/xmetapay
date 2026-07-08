@@ -154,7 +154,7 @@ Database touchpoints:
 
 Implemented.
 
-After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, adds one or more school years, chooses exactly one active year, then creates grade levels and sections for that active year. The ongoing `/admin/school-setup` page shows all school years and the active-year structure before the edit form. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
+After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, adds one or more school years, chooses exactly one active year, then creates grade levels and sections. The ongoing `/admin/school-setup` page shows all school years, lets the administrator edit sections for a selected school year, and provides manual rollover preparation. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
 
 ```mermaid
 flowchart TD
@@ -172,14 +172,15 @@ flowchart TD
   K --> L["Admin adds one or more school years"]
   L --> M["Admin chooses exactly one active year"]
   M --> N["Admin adds grade levels"]
-  N --> O["Admin adds sections for the active year"]
+  N --> O["Admin adds sections for the selected setup year"]
   O --> P["Save schools, school_years, grade_levels, sections"]
   P --> Q["Update same-school admin_profiles.school_id"]
   Q --> R["Redirect back to dashboard"]
   R --> S["Admin opens School setup overview when needed"]
   S --> T["Review all years and active-year structure"]
-  T --> U["Edit setup with the existing setup form"]
-  U --> C
+  T --> U["Edit selected-year grade and section structure"]
+  U --> V["Prepare rollover into target-year sections when needed"]
+  V --> C
 ```
 
 Database touchpoints:
@@ -194,7 +195,7 @@ Database touchpoints:
 
 Implemented.
 
-The admin portal can view data for any configured school year. The selected year is stored in a safe cookie containing only a school year id. The backend validates that the selected year belongs to the signed-in admin's school before using it. Operational write actions still use the active year only, so upcoming and closed years are read-only view/report contexts for the MVP.
+The admin portal can view data for any configured school year. The selected year is stored in a safe cookie containing only a school year id. The backend validates that the selected year belongs to the signed-in admin's school before using it. Operational write actions still use the active year only, so upcoming and closed years are read-only view/report contexts for the MVP. New payment, wallet, store, and reminder history rows store `school_year_id` so selected-year reports do not depend only on enrollment inference.
 
 ```mermaid
 flowchart TD
@@ -213,7 +214,37 @@ flowchart TD
 Database touchpoints:
 
 - `school_years`
-- active-year records in `enrollments`, `fee_types`, `student_fee_assignments`, `payments`, `wallet_transactions`, and `store_transactions`
+- selected-year records in `enrollments`, `fee_types`, `student_fee_assignments`, `payments`, `wallet_transactions`, `store_transactions`, and `notification_logs`
+
+### 3A. Manual School-Year Rollover
+
+Implemented.
+
+Student master records stay shared across years. Rollover creates a new `enrollments` row for the target school year; it does not duplicate the `students` row.
+
+```mermaid
+flowchart TD
+  A["School administrator opens School setup"] --> B["Choose source school year"]
+  B --> C["Select enrolled students from source year"]
+  C --> D["Choose target school year grade and section"]
+  D --> E["Submit Prepare rollover"]
+  E --> F["Require school_administrator role"]
+  F --> G["Validate source year and target section belong to school"]
+  G --> H["Insert target-year enrollments"]
+  H --> I{"Student already enrolled in target year?"}
+  I -->|Yes| J["Skip duplicate and include in result message"]
+  I -->|No| K["Student appears in target-year views"]
+  J --> L["Show rollover result"]
+  K --> L
+```
+
+Database touchpoints:
+
+- `students`
+- `enrollments`
+- `school_years`
+- `grade_levels`
+- `sections`
 
 ### 4. Admin Student Creation And Enrollment
 

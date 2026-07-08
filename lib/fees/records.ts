@@ -233,6 +233,7 @@ async function getParentFeeRows(parentUserId: number) {
      FROM student_guardians sg
      JOIN students st ON st.id = sg.student_id
      JOIN student_fee_assignments sfa ON sfa.student_id = st.id
+     JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
      JOIN fee_types ft ON ft.id = sfa.fee_type_id
      LEFT JOIN tuition_payment_terms tpt ON tpt.student_fee_assignment_id = sfa.id AND tpt.status <> 'cancelled'
      WHERE sg.parent_user_id = :parentUserId
