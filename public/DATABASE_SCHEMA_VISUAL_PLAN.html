@@ -303,7 +303,7 @@
             <tr>
               <td>School setup</td>
               <td><code>schools</code>, <code>school_years</code>, <code>grade_levels</code>, <code>sections</code></td>
-              <td>School structure used by admin dashboards and student placement.</td>
+              <td>School structure with one or many school years, one active year, and active-year student placement.</td>
             </tr>
             <tr>
               <td>Students</td>
@@ -615,7 +615,7 @@ flowchart TD
   D -->|No| F{"staff_role is school_administrator?"}
   F -->|No| G["Ask a school administrator to complete setup"]
   F -->|Yes| H["Complete school setup form"]
-  H --> I["Save school, active year, grade levels, and sections"]
+  H --> I["Save school, school years, one active year, grades, and sections"]
   I --> J["Link same-school admin profiles to schools.id"]
   J --> E
           </pre>

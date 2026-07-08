@@ -67,7 +67,7 @@ export default async function AdminSchoolSetupOnboardingPage() {
               Set up school
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5a6070]">
-              Add your school year, grades, and sections before opening the dashboard.
+              Add school years, choose the active year, then add grades and sections before opening the dashboard.
             </p>
           </div>
 
