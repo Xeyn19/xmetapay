@@ -1,8 +1,8 @@
 # XMETA Pay Database Schema Explanation
 
-This document explains the purpose of the XMETA Pay database schema in `database/full-schema-v1.sql`. The schema extends the existing authentication database into the full project backend for school administration, parent access, student records, enrollment, fees, payments, receipts, wallet activity, store/canteen spending, and notifications.
+This document explains the purpose of the XMETA Pay database schema in `database/full-schema-v1.sql`. The schema extends the existing authentication database into the full project backend for company monitoring, school administration, parent access, student records, enrollment, fees, payments, receipts, wallet activity, store/canteen spending, and notifications.
 
-Related role guide: `ADMIN_ROLES.md` explains what `school_administrator`, `registrar`, and `finance_officer` can do in the admin/school portal.
+Related role guide: `ADMIN_ROLES.md` explains what company `super_admin`, `school_administrator`, `registrar`, and `finance_officer` accounts can do.
 
 ## Import Order
 
@@ -27,11 +27,11 @@ Most tables include indexes based on the screens XMETA Pay will need: student lo
 
 ### `users`
 
-This is the shared login table for both admin and parent accounts. It stores account identity, role, contact details, password hash, status, and login timestamps. It does not store plain-text passwords.
+This is the shared login table for company super admin, school admin, and parent accounts. It stores account identity, role, contact details, password hash, status, and login timestamps. It does not store plain-text passwords.
 
 Important behavior:
 
-- `role` separates admin users from parent users.
+- `role` separates company `super_admin`, school `admin`, and `parent` users.
 - Unique email and phone indexes are scoped by role, so an email or phone can be handled safely per portal.
 - `status` supports active, pending, and disabled accounts.
 - Other tables reference `users.id` when a parent pays, receives notifications, or links to a student.
@@ -46,6 +46,7 @@ Important behavior:
 - Logout revokes the active session by setting `revoked_at`.
 - Protected pages only accept sessions that are not expired, not revoked, and belong to an active user with the matching portal role.
 - `last_used_at` updates when a valid session is read.
+- Company super admin sessions use the same table and cookie model, but they are only accepted by `/super-admin/*` routes.
 
 ### `admin_profiles`
 

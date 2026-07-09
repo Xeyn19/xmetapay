@@ -1,8 +1,18 @@
 # XMETA Pay Admin Roles
 
-This guide explains the three school/admin staff roles used by XMETA Pay. All three accounts sign in through the admin/school portal, but their dashboard access is different.
+This guide explains the company super admin role and the three school/admin staff roles used by XMETA Pay.
 
-## Role Summary
+## Company Role
+
+| Auth role | Main purpose | Can do | Cannot do |
+| --- | --- | --- | --- |
+| `super_admin` | XMETA Pay company monitoring | Sign in at `/login`, view schools and school admin accounts, enable or disable school admin access | Manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
+
+The first company account is seeded through a local-only SQL file after importing the `super_admin` role migration. That seed file lives under `database/local/`, is ignored by Git, and should be deleted after phpMyAdmin import.
+
+## School Staff Role Summary
+
+All school staff accounts sign in through the admin/school portal, but their dashboard access is different.
 
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
@@ -65,7 +75,21 @@ Payment reminder history is a finance action. School administrators and finance 
 
 ## Database Source
 
-The staff role is stored in:
+The company/school portal role is stored in:
+
+```text
+users.role
+```
+
+Allowed values:
+
+```text
+admin
+parent
+super_admin
+```
+
+School staff permissions are stored in:
 
 ```text
 admin_profiles.staff_role

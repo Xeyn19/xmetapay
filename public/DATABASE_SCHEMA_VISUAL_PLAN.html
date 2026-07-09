@@ -269,7 +269,9 @@
           </div>
           <div class="card">
             <strong>Auth foundation</strong>
-            Keep the existing shared <code>users</code> table with
+            Keep the existing shared <code>users</code> table for
+            <code>super_admin</code>, <code>admin</code>, and
+            <code>parent</code> roles, with
             role-specific <code>admin_profiles</code> and
             <code>parent_profiles</code>. Admin profiles link to
             <code>schools.id</code> after manual setup.
@@ -298,7 +300,7 @@
             <tr>
               <td>Auth</td>
               <td><code>users</code>, <code>auth_sessions</code>, <code>admin_profiles</code>, <code>parent_profiles</code></td>
-              <td>Login, registration, DB-backed sessions, role redirects, and account status.</td>
+              <td>Company super admin login, portal registration/login, DB-backed sessions, role redirects, and account status.</td>
             </tr>
             <tr>
               <td>School setup</td>
@@ -752,8 +754,8 @@ flowchart TD
           <li>Use notification logs for implemented queued in-app payment reminder history with same-day duplicate prevention; add real email/SMS delivery later.</li>
         </ol>
         <div class="note">
-          No real credentials, database passwords, session secrets, seed users,
-          or exported database records belong in this document.
+          No real credentials, database passwords, session secrets, committed
+          seed users, or exported database records belong in this document.
         </div>
       </section>
     </main>

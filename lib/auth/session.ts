@@ -8,15 +8,16 @@ import type { RowDataPacket } from "mysql2/promise";
 import { pool } from "@/lib/auth/db";
 
 export type PortalRole = "admin" | "parent";
+export type AuthRole = PortalRole | "super_admin";
 export type AuthFlashToast = {
-  role: PortalRole;
+  role: AuthRole;
   title: string;
   description: string;
 };
 
 type SessionPayload = {
   userId: number;
-  role: PortalRole;
+  role: AuthRole;
   name: string;
   expiresAt: number;
 };
@@ -145,7 +146,7 @@ export async function setAuthFlashToast(toast: AuthFlashToast) {
   });
 }
 
-export async function consumeAuthFlashToast(role: PortalRole) {
+export async function consumeAuthFlashToast(role: AuthRole) {
   const cookieStore = await cookies();
   const encodedToast = cookieStore.get(flashToastCookieName)?.value;
 
@@ -176,6 +177,16 @@ export async function requireRole(role: PortalRole) {
 
   if (!session || session.role !== role) {
     redirect(`/${role}/login`);
+  }
+
+  return session;
+}
+
+export async function requireSuperAdmin() {
+  const session = await getSession();
+
+  if (!session || session.role !== "super_admin") {
+    redirect("/login");
   }
 
   return session;
@@ -216,9 +227,9 @@ function sessionSecret() {
 type AuthSessionRow = RowDataPacket & {
   id: number;
   user_id: number;
-  role: PortalRole;
+  role: AuthRole;
   expires_at: Date | string;
   name: string;
-  user_role: PortalRole;
+  user_role: AuthRole;
   user_status: "active" | "pending" | "disabled";
 };

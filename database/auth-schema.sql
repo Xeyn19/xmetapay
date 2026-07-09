@@ -6,7 +6,7 @@ USE xmetapay_db;
 
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  role ENUM('admin', 'parent') NOT NULL,
+  role ENUM('admin', 'parent', 'super_admin') NOT NULL,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(150) NOT NULL,
   phone VARCHAR(30) NULL,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS auth_sessions (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
-  role ENUM('admin', 'parent') NOT NULL,
+  role ENUM('admin', 'parent', 'super_admin') NOT NULL,
   token_hash CHAR(64) NOT NULL,
   expires_at DATETIME NOT NULL,
   last_used_at DATETIME NULL,

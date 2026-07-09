@@ -240,12 +240,14 @@
       <header>
         <h1>XMETA Pay Project Flowcharts</h1>
         <p>
-          A browser-viewable process map for how the school/admin portal and
-          parent portal work together from registration to student linking, with
-          fees, payments, receipts, wallet top-ups, store/canteen purchase recording, and reports.
+          A browser-viewable process map for company super admin monitoring,
+          plus how the school/admin portal and parent portal work together from
+          registration to student linking, with fees, payments, receipts,
+          wallet top-ups, store/canteen purchase recording, and reports.
         </p>
         <div class="meta">
           <span class="pill admin">Admin/school portal</span>
+          <span class="pill">Company super admin</span>
           <span class="pill parent">Parent portal</span>
           <span class="pill">Student linking</span>
           <span class="pill">Payments and receipts</span>
@@ -270,7 +272,7 @@
         <div class="grid">
           <div class="card">
             <strong>Implemented</strong>
-            Auth, logout, protected redirects, manual school setup, admin role permissions, student
+            Company super admin login, auth, logout, protected redirects, manual school setup, admin role permissions, student
             creation, enrollment, parent-student linking, fees, local test payments, receipts,
             payment history, wallet top-ups, store purchases, a Recharts-backed real-data overview
             for the school administrator dashboard, CSV/PDF report exports, paginated table screens
@@ -324,7 +326,35 @@ flowchart TD
 
   P --> S["Admin sees collections and reports"]
   R --> T["Admin sees wallet and store reports"]
+  U["Company super admin signs in at /login"] --> V["Monitor schools and school admin accounts"]
+  V --> W["Enable or disable school admin access"]
           </pre>
+        </div>
+      </section>
+
+      <section>
+        <h2>Company Super Admin</h2>
+        <p>
+          The company super admin is an XMETA Pay account, not a school staff
+          account. It signs in at <code>/login</code> and manages school admin
+          account access from <code>/super-admin/dashboard</code>.
+        </p>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="company-super-admin-flow.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["XMETA staff opens /login"] --> B["Find active user where role = super_admin"]
+  B --> C{"Password valid?"}
+  C -->|No| D["Show company login error"]
+  C -->|Yes| E["Create DB-backed session"]
+  E --> F["Redirect to /super-admin/dashboard"]
+  F --> G["View schools and school admin accounts"]
+  G --> H["Enable or disable school admin access"]
+  H --> I["Update users.status for role admin only"]
+          </pre>
+          <p>No impersonation or school data editing is included in the MVP. The temporary seed SQL lives under ignored local database files and should be deleted after import.</p>
         </div>
       </section>
 
@@ -627,6 +657,7 @@ flowchart TD
   K --> L{"Portal role?"}
   L -->|Admin| M["Redirect to /admin/login"]
   L -->|Parent| N["Redirect to /parent/login"]
+  L -->|Super admin| O["Redirect to /login"]
           </pre>
         </div>
       </section>

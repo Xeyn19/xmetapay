@@ -33,6 +33,15 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Adds nullable `school_year_id` stamps to payments, wallet transactions, store transactions, and notification logs.
    - Adds indexes and foreign keys for faster selected-year dashboard/report filtering.
    - Existing local history stays valid; new app writes save the active school year.
+9. If `auth-schema.sql` was already imported before company super admin access was added, import `migrations/2026-07-09-super-admin-role.sql`.
+   - Adds the `super_admin` auth role to `users` and `auth_sessions`.
+   - Required before importing the temporary local super admin seed SQL.
+
+## Temporary Super Admin Seed
+
+For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.
+
+The `database/local/` folder is ignored by Git. Delete the seed file after importing it in phpMyAdmin.
 
 ## Local Verification
 
