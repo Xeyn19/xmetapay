@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { RowDataPacket } from "mysql2/promise";
+import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 import { createSession, deleteSession, requireSuperAdmin, setAuthFlashToast } from "@/lib/auth/session";
@@ -123,6 +123,51 @@ export async function updateSchoolAdminStatusAction(formData: FormData) {
   });
   revalidatePath("/super-admin/dashboard");
   redirect("/super-admin/dashboard");
+}
+
+export async function reviewAdminRegistrationAction(formData: FormData) {
+  await requireSuperAdmin();
+
+  const userId = Number(value(formData, "userId"));
+  const decision = value(formData, "decision");
+
+  if (!Number.isInteger(userId) || userId <= 0 || !["approve", "reject"].includes(decision)) {
+    await setAuthFlashToast({
+      role: "super_admin",
+      title: "Registration not updated",
+      description: "Choose a valid pending school admin registration.",
+    });
+    redirect("/super-admin/registrations");
+  }
+
+  const nextStatus = decision === "approve" ? "active" : "disabled";
+  const [result] = await pool.execute<ResultSetHeader>(
+    `UPDATE users
+     SET status = :status
+     WHERE id = :userId
+       AND role = 'admin'
+       AND status = 'pending'`,
+    {
+      userId,
+      status: nextStatus,
+    },
+  );
+  const affectedRows = "affectedRows" in result ? Number(result.affectedRows) : 0;
+
+  await setAuthFlashToast({
+    role: "super_admin",
+    title: affectedRows > 0
+      ? decision === "approve" ? "Admin registration approved" : "Admin registration rejected"
+      : "Registration not updated",
+    description: affectedRows > 0
+      ? decision === "approve"
+        ? "The school admin can now sign in."
+        : "The school admin account is now disabled."
+      : "This registration may have already been reviewed.",
+  });
+  revalidatePath("/super-admin/dashboard");
+  revalidatePath("/super-admin/registrations");
+  redirect("/super-admin/registrations");
 }
 
 function value(formData: FormData, key: string) {

@@ -44,7 +44,7 @@ Shared login table for company super admin, school admin, and parent accounts.
 | `email` | Login/contact email |
 | `phone` | Optional login/contact phone |
 | `password_hash` | Hashed password only |
-| `status` | `active`, `pending`, or `disabled` |
+| `status` | `active`, `pending`, or `disabled`; school admin registration starts as `pending` until company super admin approval |
 | `last_login_at` | Last successful login time |
 | `created_at`, `updated_at` | Audit timestamps |
 
@@ -691,15 +691,19 @@ erDiagram
 ```mermaid
 flowchart TD
   A["Admin opens /admin/register"] --> B["Create user and admin profile only"]
-  B --> C["Redirect to setup-only onboarding"]
-  C --> D{"School setup complete?"}
-  D -->|Yes| E["Use linked school context"]
-  D -->|No| F{"staff_role is school_administrator?"}
-  F -->|No| G["Ask a school administrator to complete setup"]
-  F -->|Yes| H["Complete school setup form"]
-  H --> I["Save school, school years, one active year, grades, and sections"]
-  I --> J["Link same-school admin profiles to schools.id"]
-  J --> E
+  B --> C["Set users.status to pending"]
+  C --> D["Redirect to admin login with approval message"]
+  D --> E["Company super admin approves account"]
+  E --> F["Admin logs in"]
+  F --> G["Redirect to setup-only onboarding"]
+  G --> H{"School setup complete?"}
+  H -->|Yes| I["Use linked school context"]
+  H -->|No| J{"staff_role is school_administrator?"}
+  J -->|No| K["Ask a school administrator to complete setup"]
+  J -->|Yes| L["Complete school setup form"]
+  L --> M["Save school, school years, one active year, grades, and sections"]
+  M --> N["Link same-school admin profiles to schools.id"]
+  N --> I
 ```
 
 ### Admin Student and Enrollment Flow

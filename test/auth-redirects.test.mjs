@@ -66,9 +66,13 @@ test("dashboard route groups protect admin and parent portals by role", () => {
   assert.equal(existsSync("app/parent/(portal)/dashboard/page.tsx"), true);
 });
 
-test("admin registration redirects to setup onboarding before the real dashboard", () => {
-  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/onboarding\/school-setup" : "\/parent\/dashboard"\);/);
-  assert.match(authActions, /description: role === "admin"[\s\S]*Complete school setup to unlock the admin dashboard\./);
+test("admin registration waits for super admin approval before login", () => {
+  assert.match(authActions, /status: role === "admin" \? "pending" : "active"/);
+  assert.match(authActions, /if \(role === "parent"\) \{[\s\S]*createSession\(\{ userId: userResult\.insertId, role, name: parsed\.data\.name \}\)/);
+  assert.match(authActions, /title: "Registration submitted"/);
+  assert.match(authActions, /Your admin account is waiting for XMETA Pay approval\./);
+  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/login\?pendingApproval=1" : "\/parent\/dashboard"\);/);
+  assert.doesNotMatch(authActions, /redirect\(role === "admin" \? "\/admin\/onboarding\/school-setup"/);
 });
 
 test("logout clears the auth session and redirects by portal role", () => {

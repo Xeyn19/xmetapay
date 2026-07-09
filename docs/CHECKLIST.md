@@ -14,6 +14,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Parent login works.
 - [x] Company super admin login exists at `/login`.
 - [x] Company super admin can monitor school admin accounts and enable/disable access.
+- [x] New school/admin registrations require company super admin approval before login.
 - [x] Logout clears the session.
 - [x] Protected admin and parent dashboards redirect correctly.
 - [x] Admin/school staff roles are documented and enforced for key pages/actions.

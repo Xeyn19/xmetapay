@@ -1,4 +1,5 @@
-import { Building2, LogOut, ShieldCheck, Users, UserX } from "lucide-react";
+import Link from "next/link";
+import { Building2, Clock3, LogOut, ShieldCheck, Users, UserX } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { FlashToast } from "@/app/_components/flash-toast";
@@ -35,6 +36,13 @@ export default async function SuperAdminDashboardPage() {
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Link
+              href="/super-admin/registrations"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19]/35 bg-[#fff4f0] px-3.5 text-[12.5px] font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+            >
+              <Clock3 className="size-4" />
+              Admin registrations
+            </Link>
             <div className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] px-3 py-2 text-[12px] font-semibold text-[#5a6070]">
               Signed in as <span className="text-[#0f1117]">{session.name}</span>
             </div>
@@ -52,7 +60,7 @@ export default async function SuperAdminDashboardPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <SuperAdminKpiCard
             label="Schools"
             value={data.stats.schools}
@@ -66,6 +74,13 @@ export default async function SuperAdminDashboardPage() {
             note="Across all schools"
             icon={<Users className="size-[22px] text-[#0f1117]/10" />}
             tone="orange"
+          />
+          <SuperAdminKpiCard
+            label="Pending approval"
+            value={data.stats.pendingAdmins}
+            note="Need company review"
+            icon={<Clock3 className="size-[22px] text-[#0f1117]/10" />}
+            tone="purple"
           />
           <SuperAdminKpiCard
             label="Active admins"
@@ -161,13 +176,14 @@ function SuperAdminKpiCard({
   value: number;
   note: string;
   icon: ReactNode;
-  tone: "orange" | "green" | "red" | "blue";
+  tone: "orange" | "green" | "red" | "blue" | "purple";
 }) {
   const toneClass = {
     orange: "before:bg-[#e64a19]",
     green: "before:bg-[#43a047]",
     red: "before:bg-[#c62828]",
     blue: "before:bg-[#1565c0]",
+    purple: "before:bg-[#6a1b9a]",
   };
 
   return (

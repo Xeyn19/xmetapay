@@ -32,14 +32,15 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
     await connection.beginTransaction();
 
     const [userResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO users (role, name, email, phone, password_hash)
-       VALUES (:role, :name, :email, :phone, :passwordHash)`,
+      `INSERT INTO users (role, name, email, phone, password_hash, status)
+       VALUES (:role, :name, :email, :phone, :passwordHash, :status)`,
       {
         role: parsed.data.role,
         name: parsed.data.name,
         email: parsed.data.email,
         phone: parsed.data.phone,
         passwordHash,
+        status: role === "admin" ? "pending" : "active",
       },
     );
 
@@ -82,14 +83,20 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
     }
 
     await connection.commit();
-    await createSession({ userId: userResult.insertId, role, name: parsed.data.name });
-    await setAuthFlashToast({
-      role,
-      title: "Account created",
-      description: role === "admin"
-        ? "Complete school setup to unlock the admin dashboard."
-        : "Welcome to your parent portal.",
-    });
+    if (role === "parent") {
+      await createSession({ userId: userResult.insertId, role, name: parsed.data.name });
+      await setAuthFlashToast({
+        role,
+        title: "Account created",
+        description: "Welcome to your parent portal.",
+      });
+    } else {
+      await setAuthFlashToast({
+        role,
+        title: "Registration submitted",
+        description: "Your admin account is waiting for XMETA Pay approval.",
+      });
+    }
   } catch (error) {
     if (connection) {
       await connection.rollback();
@@ -104,7 +111,7 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
     connection?.release();
   }
 
-  redirect(role === "admin" ? "/admin/onboarding/school-setup" : "/parent/dashboard");
+  redirect(role === "admin" ? "/admin/login?pendingApproval=1" : "/parent/dashboard");
 }
 
 export async function loginAction(role: PortalRole, _state: AuthFormState = initialState, formData: FormData): Promise<AuthFormState> {
@@ -128,13 +135,33 @@ export async function loginAction(role: PortalRole, _state: AuthFormState = init
     );
     const user = rows[0];
 
-    if (!user || user.status !== "active") {
+    if (!user) {
       return { message: "Invalid login details or inactive account." };
     }
 
     const validPassword = await verifyPassword(parsed.data.password, user.password_hash);
 
     if (!validPassword) {
+      return { message: "Invalid login details or inactive account." };
+    }
+
+    if (user.status === "pending") {
+      return {
+        message: role === "admin"
+          ? "Your admin account is waiting for XMETA Pay approval."
+          : "Your account is waiting for approval.",
+      };
+    }
+
+    if (user.status === "disabled") {
+      return {
+        message: role === "admin"
+          ? "Your admin account was not approved or is currently disabled."
+          : "Your account is currently disabled.",
+      };
+    }
+
+    if (user.status !== "active") {
       return { message: "Invalid login details or inactive account." };
     }
 

@@ -31,6 +31,7 @@ Implemented:
 - Full schema import through `database/full-schema-v1.sql`.
 - Manual school setup by `school_administrator`.
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
+- Company super admin approval for new school admin registrations.
 - Company super admin monitoring for school admin accounts.
 - Admin student creation and enrollment.
 - Admin student profile selector and exact profile route `/admin/students/[studentId]`.
@@ -93,8 +94,10 @@ flowchart TD
 
   P --> S["Admin sees collections and reports"]
   R --> T["Admin sees wallet and store reports"]
-  U["Company super admin signs in at /login"] --> V["Monitor schools and school admin accounts"]
-  V --> W["Enable or disable school admin access"]
+  U["Company super admin signs in at /login"] --> V["Review pending school admin registrations"]
+  V --> W["Approve or reject admin access"]
+  W --> X["Monitor schools and school admin accounts"]
+  X --> Y["Enable or disable school admin access"]
 ```
 
 ## Company Super Admin Flow
@@ -103,7 +106,7 @@ flowchart TD
 
 Implemented.
 
-The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then monitors school records and school admin account access from `/super-admin/dashboard`.
+The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, reviews pending school admin registrations from `/super-admin/registrations`, then monitors school records and school admin account access from `/super-admin/dashboard`.
 
 ```mermaid
 flowchart TD
@@ -112,9 +115,15 @@ flowchart TD
   C -->|No| D["Show company login error"]
   C -->|Yes| E["Create DB-backed session"]
   E --> F["Redirect to /super-admin/dashboard"]
-  F --> G["View schools and school admin accounts"]
-  G --> H["Enable or disable school admin access"]
-  H --> I["Update users.status for role admin only"]
+  F --> G["Open /super-admin/registrations"]
+  G --> H["Review pending school admin accounts"]
+  H --> I{"Decision?"}
+  I -->|Approve| J["Set users.status = active"]
+  I -->|Reject| K["Set users.status = disabled"]
+  J --> L["Admin can sign in"]
+  K --> M["Admin login stays blocked"]
+  F --> N["View schools and school admin accounts"]
+  N --> O["Enable or disable school admin access"]
 ```
 
 MVP limits:
@@ -159,20 +168,24 @@ flowchart TD
   C --> D{"Email or phone already used for admin role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
-  F --> G["Insert users row with role admin"]
+  F --> G["Insert users row with role admin and status pending"]
   G --> H["Insert admin_profiles row as school_administrator"]
-  H --> I["Create DB-backed session and HttpOnly cookie"]
-  I --> J["Redirect to /admin/onboarding/school-setup"]
-  J --> K["Complete setup-only onboarding form"]
-  K --> L["Redirect to /admin/dashboard"]
+  H --> I["Redirect to /admin/login with pending approval message"]
+  I --> J["Company super admin reviews registration"]
+  J -->|Approve| K["Set users.status = active"]
+  J -->|Reject| L["Set users.status = disabled"]
 
-  M["Admin opens /admin/login"] --> N["Find active admin user by email or phone"]
+  M["Admin opens /admin/login"] --> N["Find admin user by email or phone"]
   N --> O{"Password valid?"}
   O -->|No| P["Show invalid login error"]
-  O -->|Yes| Q["Create DB-backed session and HttpOnly cookie"]
+  O -->|Pending| P2["Show waiting for XMETA Pay approval"]
+  O -->|Disabled| P3["Show not approved or disabled message"]
+  O -->|Yes and active| Q["Create DB-backed session and HttpOnly cookie"]
   Q --> R{"School setup complete?"}
-  R -->|No, school_administrator| J
-  R -->|Yes| L
+  R -->|No, school_administrator| S["Redirect to /admin/onboarding/school-setup"]
+  S --> T["Complete setup-only onboarding form"]
+  T --> U["Redirect to /admin/dashboard"]
+  R -->|Yes| U
 ```
 
 Database touchpoints:
