@@ -10,6 +10,8 @@ This guide explains the company super admin role and the three school/admin staf
 
 The first company account is seeded through a local-only SQL file after importing the `super_admin` role migration. That seed file lives under `database/local/`, is ignored by Git, and should be deleted after phpMyAdmin import.
 
+The company super admin area uses a sidebar-based XMETA Pay workspace. `/super-admin/dashboard` is for company monitoring, `/super-admin/admin-accounts` is for school admin enable/disable management, and `/super-admin/registrations` is for pending school admin approval.
+
 New school/admin registrations start as `pending`. They cannot sign in or start school setup until a company super admin approves them from `/super-admin/registrations`. Rejecting a registration keeps the account record but changes `users.status` to `disabled`.
 
 ## School Staff Role Summary

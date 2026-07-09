@@ -338,9 +338,11 @@ flowchart TD
         <h2>Company Super Admin</h2>
         <p>
           The company super admin is an XMETA Pay account, not a school staff
-          account. It signs in at <code>/login</code>, reviews pending school
-          admin registrations from <code>/super-admin/registrations</code>, and
-          manages school admin account access from <code>/super-admin/dashboard</code>.
+          account. It signs in at <code>/login</code>, then uses the sidebar-based
+          company workspace to monitor schools from <code>/super-admin/dashboard</code>,
+          manage approved school admin accounts from <code>/super-admin/admin-accounts</code>,
+          and review pending school admin registrations from
+          <code>/super-admin/registrations</code>.
         </p>
         <div class="diagram-card">
           <div class="diagram-actions">
@@ -353,14 +355,14 @@ flowchart TD
   C -->|No| D["Show company login error"]
   C -->|Yes| E["Create DB-backed session"]
   E --> F["Redirect to /super-admin/dashboard"]
-  F --> G["Open /super-admin/registrations"]
+  F --> G["Use sidebar to open /super-admin/registrations"]
   G --> H["Review pending school admin accounts"]
   H --> I{"Decision?"}
   I -->|Approve| J["Set users.status = active"]
   I -->|Reject| K["Set users.status = disabled"]
   J --> L["Admin can sign in"]
   K --> M["Admin login stays blocked"]
-  F --> N["View schools and school admin accounts"]
+  F --> N["Use sidebar to open /super-admin/admin-accounts"]
   N --> O["Enable or disable school admin access"]
           </pre>
           <p>No impersonation or school data editing is included in the MVP. The temporary seed SQL lives under ignored local database files and should be deleted after import.</p>
