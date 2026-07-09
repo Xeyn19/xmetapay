@@ -274,7 +274,9 @@
             <code>parent</code> roles, with
             role-specific <code>admin_profiles</code> and
             <code>parent_profiles</code>. Admin profiles link to
-            <code>schools.id</code> after manual setup.
+            <code>schools.id</code> after manual setup. New school admin
+            users start with <code>users.status = pending</code> until the
+            company super admin approves or rejects them.
           </div>
           <div class="card">
             <strong>Admin staff roles</strong>
@@ -300,7 +302,7 @@
             <tr>
               <td>Auth</td>
               <td><code>users</code>, <code>auth_sessions</code>, <code>admin_profiles</code>, <code>parent_profiles</code></td>
-              <td>Company super admin login, portal registration/login, DB-backed sessions, role redirects, and account status.</td>
+              <td>Company super admin login, admin registration approval, portal registration/login, DB-backed sessions, role redirects, and account status.</td>
             </tr>
             <tr>
               <td>School setup</td>
@@ -615,15 +617,19 @@ erDiagram
           <pre class="mermaid">
 flowchart TD
   A["Admin opens /admin/register"] --> B["Create user and admin profile only"]
-  B --> C["Redirect to setup-only onboarding"]
-  C --> D{"School setup complete?"}
-  D -->|Yes| E["Use linked school context"]
-  D -->|No| F{"staff_role is school_administrator?"}
-  F -->|No| G["Ask a school administrator to complete setup"]
-  F -->|Yes| H["Complete school setup form"]
-  H --> I["Save school, school years, one active year, grades, and sections"]
-  I --> J["Link same-school admin profiles to schools.id"]
-  J --> E
+  B --> C["Set users.status to pending"]
+  C --> D["Redirect to admin login with approval message"]
+  D --> E["Company super admin approves account"]
+  E --> F["Admin logs in"]
+  F --> G["Redirect to setup-only onboarding"]
+  G --> H{"School setup complete?"}
+  H -->|Yes| I["Use linked school context"]
+  H -->|No| J{"staff_role is school_administrator?"}
+  J -->|No| K["Ask a school administrator to complete setup"]
+  J -->|Yes| L["Complete school setup form"]
+  L --> M["Save school, school years, one active year, grades, and sections"]
+  M --> N["Link same-school admin profiles to schools.id"]
+  N --> I
           </pre>
         </div>
 

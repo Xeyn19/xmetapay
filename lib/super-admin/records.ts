@@ -8,6 +8,7 @@ export type SuperAdminDashboardData = {
   stats: {
     schools: number;
     adminAccounts: number;
+    pendingAdmins: number;
     activeAdmins: number;
     disabledAdmins: number;
   };
@@ -46,6 +47,7 @@ export async function getSuperAdminDashboardData(): Promise<SuperAdminDashboardD
         `SELECT
            (SELECT COUNT(*) FROM schools) AS schools,
            (SELECT COUNT(*) FROM users WHERE role = 'admin') AS admin_accounts,
+           (SELECT COUNT(*) FROM users WHERE role = 'admin' AND status = 'pending') AS pending_admins,
            (SELECT COUNT(*) FROM users WHERE role = 'admin' AND status = 'active') AS active_admins,
            (SELECT COUNT(*) FROM users WHERE role = 'admin' AND status = 'disabled') AS disabled_admins`,
       ),
@@ -95,6 +97,7 @@ export async function getSuperAdminDashboardData(): Promise<SuperAdminDashboardD
       stats: {
         schools: Number(stats[0]?.schools ?? 0),
         adminAccounts: Number(stats[0]?.admin_accounts ?? 0),
+        pendingAdmins: Number(stats[0]?.pending_admins ?? 0),
         activeAdmins: Number(stats[0]?.active_admins ?? 0),
         disabledAdmins: Number(stats[0]?.disabled_admins ?? 0),
       },
@@ -139,6 +142,7 @@ export async function getSuperAdminDashboardData(): Promise<SuperAdminDashboardD
       stats: {
         schools: 0,
         adminAccounts: adminAccounts.length,
+        pendingAdmins: adminAccounts.filter((account) => account.status === "pending").length,
         activeAdmins: adminAccounts.filter((account) => account.status === "active").length,
         disabledAdmins: adminAccounts.filter((account) => account.status === "disabled").length,
       },
@@ -195,6 +199,7 @@ function missingFullSchema(error: unknown) {
 type StatsRow = RowDataPacket & {
   schools: number;
   admin_accounts: number;
+  pending_admins: number;
   active_admins: number;
   disabled_admins: number;
 };

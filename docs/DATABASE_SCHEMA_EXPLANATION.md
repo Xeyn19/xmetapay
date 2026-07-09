@@ -33,7 +33,7 @@ Important behavior:
 
 - `role` separates company `super_admin`, school `admin`, and `parent` users.
 - Unique email and phone indexes are scoped by role, so an email or phone can be handled safely per portal.
-- `status` supports active, pending, and disabled accounts.
+- `status` supports active, pending, and disabled accounts. New school/admin registrations start as pending until a company super admin approves or rejects them.
 - Other tables reference `users.id` when a parent pays, receives notifications, or links to a student.
 
 ### `auth_sessions`

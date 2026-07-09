@@ -6,9 +6,11 @@ This guide explains the company super admin role and the three school/admin staf
 
 | Auth role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
-| `super_admin` | XMETA Pay company monitoring | Sign in at `/login`, view schools and school admin accounts, enable or disable school admin access | Manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
+| `super_admin` | XMETA Pay company monitoring | Sign in at `/login`, review pending school admin registrations, approve or reject admin access, view schools and school admin accounts, enable or disable school admin access | Manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
 
 The first company account is seeded through a local-only SQL file after importing the `super_admin` role migration. That seed file lives under `database/local/`, is ignored by Git, and should be deleted after phpMyAdmin import.
+
+New school/admin registrations start as `pending`. They cannot sign in or start school setup until a company super admin approves them from `/super-admin/registrations`. Rejecting a registration keeps the account record but changes `users.status` to `disabled`.
 
 ## School Staff Role Summary
 
@@ -39,9 +41,9 @@ All school staff accounts sign in through the admin/school portal, but their das
 
 ## Setup Rule
 
-The first real school account should be a `school_administrator`.
+The first real school account should be a `school_administrator`, but it still requires company super admin approval before it can sign in.
 
-Only a school administrator can complete `Set up school records`. After registration, a new school administrator is sent to a setup-only onboarding screen before the real dashboard is shown. The ongoing `School setup` dashboard page shows school details, all school years, the active year, selected-year grade/section editing, manual rollover preparation, and activation for upcoming years that are ready. If a registrar or finance officer signs in before setup is complete, they should see:
+Only a school administrator can complete `Set up school records`. After the pending account is approved, the new school administrator signs in and is sent to a setup-only onboarding screen before the real dashboard is shown. The ongoing `School setup` dashboard page shows school details, all school years, the active year, selected-year grade/section editing, manual rollover preparation, and activation for upcoming years that are ready. If a registrar or finance officer signs in before setup is complete, they should see:
 
 ```text
 Ask a school administrator to complete school setup first.
@@ -60,16 +62,17 @@ Only one school year is still the active/current year. For MVP safety, operation
 ## Practical Workflow
 
 1. A school administrator registers first.
-2. The school administrator completes setup-only onboarding.
-3. The school administrator reviews and edits all school years from `School setup`.
-4. The school administrator can prepare a manual rollover by selecting source-year students and a target-year section.
-5. When the next year is ready, the school administrator activates it; XMETA Pay closes the previous active year.
-6. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
-7. New operational history rows are stamped with the active school year where supported.
-8. Registrar and finance officer accounts with the same school name are linked to the existing school context.
-9. A registrar can add and enroll students in the active year.
-10. Parents link to those students by `student_reference`.
-11. A finance officer works on active-year tuition, collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented.
+2. The account stays pending until the company super admin approves it.
+3. The approved school administrator signs in and completes setup-only onboarding.
+4. The school administrator reviews and edits all school years from `School setup`.
+5. The school administrator can prepare a manual rollover by selecting source-year students and a target-year section.
+6. When the next year is ready, the school administrator activates it; XMETA Pay closes the previous active year.
+7. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
+8. New operational history rows are stamped with the active school year where supported.
+9. Registrar and finance officer accounts with the same school name are linked to the existing school context.
+10. A registrar can add and enroll students in the active year.
+11. Parents link to those students by `student_reference`.
+12. A finance officer works on active-year tuition, collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented.
 
 Payment reminder history is a finance action. School administrators and finance officers can create queued `in_app` reminder log rows for linked parents with open or partial balances. The reminder action is idempotent for the same school, linked parent, and student on the same calendar day, so repeated clicks do not create duplicate same-day reminder rows. Registrars cannot log reminders because they do not have access to finance pages. Real email and SMS notification delivery is still future work.
 
