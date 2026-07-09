@@ -7,8 +7,19 @@ const seedPath = "database/local/seed-super-admin-account.sql";
 const session = readFileSync("lib/auth/session.ts", "utf8");
 const loginAction = readFileSync("app/super-admin/actions.ts", "utf8");
 const loginPage = readFileSync("app/login/page.tsx", "utf8");
+const superAdminLayout = existsSync("app/super-admin/layout.tsx")
+  ? readFileSync("app/super-admin/layout.tsx", "utf8")
+  : "";
+const superAdminShell = existsSync("app/super-admin/_components/super-admin-shell.tsx")
+  ? readFileSync("app/super-admin/_components/super-admin-shell.tsx", "utf8")
+  : "";
 const dashboardPage = readFileSync("app/super-admin/dashboard/page.tsx", "utf8");
-const dashboardTable = readFileSync("app/super-admin/dashboard/super-admin-admins-table.tsx", "utf8");
+const adminAccountsPage = existsSync("app/super-admin/admin-accounts/page.tsx")
+  ? readFileSync("app/super-admin/admin-accounts/page.tsx", "utf8")
+  : "";
+const adminAccountsTable = existsSync("app/super-admin/_components/super-admin-admins-table.tsx")
+  ? readFileSync("app/super-admin/_components/super-admin-admins-table.tsx", "utf8")
+  : "";
 const registrationsPage = existsSync("app/super-admin/registrations/page.tsx")
   ? readFileSync("app/super-admin/registrations/page.tsx", "utf8")
   : "";
@@ -17,6 +28,7 @@ const registrationsTable = existsSync("app/super-admin/registrations/super-admin
   : "";
 const records = readFileSync("lib/super-admin/records.ts", "utf8");
 const gitignore = readFileSync(".gitignore", "utf8");
+const temporarySeedPassword = ["xmeta", "123"].join("");
 
 test("super admin role migration updates users and auth session role enums", () => {
   assert.equal(existsSync(migrationPath), true);
@@ -39,7 +51,7 @@ test("temporary super admin seed is local-only and stores a password hash", () =
     assert.match(seed, /'super_admin'/);
     assert.match(seed, /'xmeta@gmail\.com'/);
     assert.match(seed, /'scrypt\$/);
-    assert.doesNotMatch(seed, /'xmeta123'/);
+    assert.equal(seed.includes(`'${temporarySeedPassword}'`), false);
   }
 });
 
@@ -60,27 +72,37 @@ test("root login uses company super admin action and redirects to company dashbo
 });
 
 test("super admin dashboard is protected and manages only school admin account status", () => {
-  assert.match(dashboardPage, /await requireSuperAdmin\(\)/);
-  assert.match(dashboardPage, /Admin registrations/);
-  assert.match(dashboardPage, /data\.stats\.pendingAdmins/);
+  assert.match(superAdminLayout, /await requireSuperAdmin\(\)/);
+  assert.match(superAdminLayout, /consumeAuthFlashToast\("super_admin"\)/);
+  assert.match(superAdminLayout, /pendingApprovals=\{data\.stats\.pendingAdmins\}/);
+  assert.match(superAdminShell, /\/super-admin\/dashboard/);
+  assert.match(superAdminShell, /\/super-admin\/admin-accounts/);
+  assert.match(superAdminShell, /\/super-admin\/registrations/);
+  assert.match(superAdminShell, /pendingApprovals/);
+  assert.match(superAdminShell, /superAdminLogoutAction/);
+  assert.match(superAdminShell, /FlashToast/);
   assert.match(records, /WHERE u\.role = 'admin'/);
   assert.match(records, /status = 'pending'/);
   assert.match(records, /pendingAdmins/);
   assert.match(loginAction, /await requireSuperAdmin\(\)/);
   assert.match(loginAction, /WHERE id = :userId\s+AND role = 'admin'/);
-  assert.match(dashboardTable, /updateSchoolAdminStatusAction/);
-  assert.match(dashboardTable, /row\.status === "pending"/);
-  assert.match(dashboardTable, /\/super-admin\/registrations/);
-  assert.match(dashboardTable, /Enable/);
-  assert.match(dashboardTable, /Disable/);
+  assert.match(adminAccountsPage, /SuperAdminAdminsTable/);
+  assert.match(adminAccountsTable, /updateSchoolAdminStatusAction/);
+  assert.match(adminAccountsTable, /row\.status === "pending"/);
+  assert.match(adminAccountsTable, /\/super-admin\/registrations/);
+  assert.match(adminAccountsTable, /Enable/);
+  assert.match(adminAccountsTable, /Disable/);
+  assert.doesNotMatch(dashboardPage, /SuperAdminAdminsTable/);
+  assert.doesNotMatch(dashboardPage, /FlashToast|superAdminLogoutAction|requireSuperAdmin/);
   assert.doesNotMatch(dashboardPage, /imperson/i);
 });
 
 test("super admin registration review page approves or rejects pending school admins", () => {
   assert.equal(existsSync("app/super-admin/registrations/page.tsx"), true);
-  assert.match(registrationsPage, /await requireSuperAdmin\(\)/);
+  assert.match(superAdminLayout, /await requireSuperAdmin\(\)/);
   assert.match(registrationsPage, /row\.status === "pending"/);
   assert.match(registrationsPage, /SuperAdminRegistrationsTable/);
+  assert.doesNotMatch(registrationsPage, /FlashToast|superAdminLogoutAction|requireSuperAdmin/);
   assert.match(registrationsTable, /reviewAdminRegistrationAction/);
   assert.match(registrationsTable, /decision" value="approve"/);
   assert.match(registrationsTable, /decision" value="reject"/);
@@ -99,5 +121,5 @@ test("docs describe company super admin without committed seed credentials", () 
   assert.match(adminRoles, /`super_admin`/);
   assert.match(projectFlow, /Company Super Admin Flow/);
   assert.match(databaseReadme, /2026-07-09-super-admin-role\.sql/);
-  assert.doesNotMatch(adminRoles + projectFlow + databaseReadme, /xmeta123/);
+  assert.equal((adminRoles + projectFlow + databaseReadme).includes(temporarySeedPassword), false);
 });

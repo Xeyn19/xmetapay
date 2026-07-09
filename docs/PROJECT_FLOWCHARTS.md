@@ -106,7 +106,7 @@ flowchart TD
 
 Implemented.
 
-The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, reviews pending school admin registrations from `/super-admin/registrations`, then monitors school records and school admin account access from `/super-admin/dashboard`.
+The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then uses the sidebar-based company workspace to monitor schools from `/super-admin/dashboard`, manage approved school admin accounts from `/super-admin/admin-accounts`, and review pending school admin registrations from `/super-admin/registrations`.
 
 ```mermaid
 flowchart TD
@@ -115,14 +115,14 @@ flowchart TD
   C -->|No| D["Show company login error"]
   C -->|Yes| E["Create DB-backed session"]
   E --> F["Redirect to /super-admin/dashboard"]
-  F --> G["Open /super-admin/registrations"]
+  F --> G["Use sidebar to open /super-admin/registrations"]
   G --> H["Review pending school admin accounts"]
   H --> I{"Decision?"}
   I -->|Approve| J["Set users.status = active"]
   I -->|Reject| K["Set users.status = disabled"]
   J --> L["Admin can sign in"]
   K --> M["Admin login stays blocked"]
-  F --> N["View schools and school admin accounts"]
+  F --> N["Use sidebar to open /super-admin/admin-accounts"]
   N --> O["Enable or disable school admin access"]
 ```
 
