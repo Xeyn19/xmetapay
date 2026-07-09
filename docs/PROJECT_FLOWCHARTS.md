@@ -154,7 +154,7 @@ Database touchpoints:
 
 Implemented.
 
-After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, adds one or more school years, chooses exactly one active year, then creates grade levels and sections. The ongoing `/admin/school-setup` page shows all school years, lets the administrator edit sections for a selected school year, and provides manual rollover preparation. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
+After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, adds one or more school years, chooses exactly one active year, then creates grade levels and sections. The ongoing `/admin/school-setup` page shows all school years, lets the administrator edit sections for a selected school year, provides manual rollover preparation, and lets the administrator activate an upcoming year when it is ready. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
 
 ```mermaid
 flowchart TD
@@ -180,7 +180,9 @@ flowchart TD
   S --> T["Review all years and active-year structure"]
   T --> U["Edit selected-year grade and section structure"]
   U --> V["Prepare rollover into target-year sections when needed"]
-  V --> C
+  V --> W["Activate upcoming year when ready"]
+  W --> X["Close previous active year"]
+  X --> C
 ```
 
 Database touchpoints:
@@ -245,6 +247,31 @@ Database touchpoints:
 - `school_years`
 - `grade_levels`
 - `sections`
+
+### 3B. Activate Next School Year
+
+Implemented.
+
+Only a `school_administrator` can activate an upcoming school year. Activation is a protected server action that validates the target year belongs to the school, confirms the target year has sections, closes the previous active year, activates the target year, and sets the admin selected-year cookie to the new active year.
+
+```mermaid
+flowchart TD
+  A["School administrator opens School setup"] --> B["Review upcoming year counts"]
+  B --> C{"Upcoming year has sections?"}
+  C -->|No| D["Block activation and ask admin to add sections"]
+  C -->|Yes| E["Open activation confirmation"]
+  E --> F["Show target year, current year, sections, enrollments"]
+  F --> G["Submit Activate year"]
+  G --> H["Require school_administrator role"]
+  H --> I["Close current active school_years row"]
+  I --> J["Set target school_years row to active"]
+  J --> K["Set selected-year cookie to new active year"]
+  K --> L["Dashboard and new writes now use new active year"]
+```
+
+Database touchpoints:
+
+- `school_years`
 
 ### 4. Admin Student Creation And Enrollment
 

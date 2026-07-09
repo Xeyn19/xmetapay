@@ -59,6 +59,7 @@ export function ManualSchoolSetupForm({
     () => JSON.stringify(schoolYears.map(({ name, startsOn, endsOn, status }) => ({ name, startsOn, endsOn, status }))),
     [schoolYears],
   );
+  const initialDuplicateYearNames = useMemo(() => duplicateSchoolYearNames(initialData.schoolYears), [initialData.schoolYears]);
 
   function updateSchoolYear(index: number, field: "name" | "startsOn" | "endsOn", value: string) {
     setSchoolYears((current) => current.map((year, yearIndex) => yearIndex === index ? { ...year, [field]: value } : year));
@@ -299,7 +300,7 @@ export function ManualSchoolSetupForm({
               >
                 {initialData.schoolYears.filter((year) => year.id).map((year) => (
                   <option key={year.id} value={String(year.id)}>
-                    {year.name} ({year.status})
+                    {schoolYearOptionLabel(year, initialDuplicateYearNames)}
                   </option>
                 ))}
               </select>
@@ -375,4 +376,26 @@ export function ManualSchoolSetupForm({
       </div>
     </form>
   );
+}
+
+function duplicateSchoolYearNames(years: AdminSchoolSetupFormData["schoolYears"]) {
+  const counts = new Map<string, number>();
+
+  years.forEach((year) => {
+    const key = year.name.trim().toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  });
+
+  return new Set([...counts].filter(([, count]) => count > 1).map(([name]) => name));
+}
+
+function schoolYearOptionLabel(
+  year: AdminSchoolSetupFormData["schoolYears"][number],
+  duplicateNames: Set<string>,
+) {
+  const label = duplicateNames.has(year.name.toLowerCase())
+    ? `${year.name} - ${year.startsOn} to ${year.endsOn}`
+    : year.name;
+
+  return `${label} (${year.status})`;
 }

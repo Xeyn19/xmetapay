@@ -80,6 +80,7 @@ Main purpose:
 - Define upcoming, active, or closed school years.
 - Let fees, sections, enrollments, and reports be grouped by school year.
 - Prevent duplicate school year names within the same school.
+- Support the School setup activation flow: an upcoming year can become active, and the previous active year is closed automatically.
 
 ### `grade_levels`
 
@@ -365,6 +366,7 @@ The schema supports this practical backend flow:
 5. Parent registers and can be linked to a student through `student_guardians`.
 6. Admin enrolls students for the active school year.
 7. When a school year changes, the school administrator uses manual rollover to create target-year enrollments without duplicating `students`.
+8. When the upcoming year is ready, the school administrator activates it; the previous active year becomes closed.
 8. Admin creates fee types and assigns fees to one or more selected students.
 9. Parent views fee balances from `student_fee_assignments`, including tuition terms when configured.
 10. Parent records payments in `payments` for regular balances or open/partial tuition terms.

@@ -228,6 +228,116 @@ export async function prepareSchoolYearRolloverAction(formData: FormData) {
   redirect("/admin/school-setup");
 }
 
+export async function activateSchoolYearAction(formData: FormData) {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+  const targetSchoolYearId = positiveIntegerValue(formData, "schoolYearId");
+  let activatedYearName = "selected school year";
+  let connection: PoolConnection | null = null;
+
+  if (!canManageSchoolSetup(staffRole)) {
+    await setAuthFlashToast({
+      role: "admin",
+      title: "School year not activated",
+      description: "Only school administrators can activate a school year.",
+    });
+    redirect("/admin/dashboard");
+  }
+
+  if (!targetSchoolYearId) {
+    await setAuthFlashToast({
+      role: "admin",
+      title: "School year not activated",
+      description: "Choose an upcoming school year to activate.",
+    });
+    redirect("/admin/school-setup");
+  }
+
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const profile = await getAdminProfileForUpdate(connection, session.userId);
+
+    if (!profile?.school_id) {
+      throw new ActivationValidationError("Complete school setup before activating a school year.");
+    }
+
+    const targetYear = await getSchoolYearActivationTargetForUpdate(connection, profile.school_id, targetSchoolYearId);
+
+    if (!targetYear) {
+      throw new ActivationValidationError("Choose a valid school year for this school.");
+    }
+
+    activatedYearName = targetYear.name;
+
+    if (targetYear.status !== "upcoming") {
+      throw new ActivationValidationError("Only upcoming school years can be activated.");
+    }
+
+    const duplicateNameCount = await countSchoolYearsWithName(connection, profile.school_id, targetYear.name);
+
+    if (duplicateNameCount > 1) {
+      throw new ActivationValidationError("Rename duplicate school years before activating one.");
+    }
+
+    const sectionCount = await countSectionsForSchoolYear(connection, profile.school_id, targetYear.id);
+
+    if (sectionCount === 0) {
+      throw new ActivationValidationError(`Add sections for ${targetYear.name} before activating it.`);
+    }
+
+    await getActiveSchoolYearForUpdate(connection, profile.school_id);
+    await connection.execute(
+      `UPDATE school_years
+       SET status = 'closed'
+       WHERE school_id = :schoolId
+         AND status = 'active'
+         AND id <> :targetSchoolYearId`,
+      { schoolId: profile.school_id, targetSchoolYearId: targetYear.id },
+    );
+    await connection.execute(
+      `UPDATE school_years
+       SET status = 'active'
+       WHERE id = :targetSchoolYearId
+         AND school_id = :schoolId`,
+      { schoolId: profile.school_id, targetSchoolYearId: targetYear.id },
+    );
+
+    await connection.commit();
+    const cookieStore = await cookies();
+    cookieStore.set(adminSchoolYearCookieName, String(targetYear.id), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+    });
+    revalidateAdminSchoolYearPaths();
+    await setAuthFlashToast({
+      role: "admin",
+      title: "School year activated",
+      description: `${targetYear.name} is now the active year. New records will use this school year.`,
+    });
+  } catch (error) {
+    if (connection) {
+      await connection.rollback().catch(() => undefined);
+    }
+
+    await setAuthFlashToast({
+      role: "admin",
+      title: "School year not activated",
+      description: error instanceof ActivationValidationError
+        ? error.message
+        : `Unable to activate ${activatedYearName}. Check MySQL/XAMPP and try again.`,
+    });
+  } finally {
+    connection?.release();
+  }
+
+  redirect("/admin/school-setup");
+}
+
 function parseSchoolSetupForm(formData: FormData) {
   const schoolName = textValue(formData, "schoolName");
   const schoolCode = normalizeCode(textValue(formData, "schoolCode"));
@@ -553,6 +663,57 @@ async function getSchoolYearForSchool(connection: PoolConnection, schoolId: numb
   return rows[0] ?? null;
 }
 
+async function getSchoolYearActivationTargetForUpdate(connection: PoolConnection, schoolId: number, schoolYearId: number) {
+  const [rows] = await connection.execute<Array<RowDataPacket & {
+    id: number;
+    name: string;
+    status: "upcoming" | "active" | "closed";
+  }>>(
+    `SELECT id, name, status
+     FROM school_years
+     WHERE id = :schoolYearId AND school_id = :schoolId
+     LIMIT 1
+     FOR UPDATE`,
+    { schoolYearId, schoolId },
+  );
+
+  return rows[0] ?? null;
+}
+
+async function getActiveSchoolYearForUpdate(connection: PoolConnection, schoolId: number) {
+  const [rows] = await connection.execute<Array<RowDataPacket & { id: number }>>(
+    `SELECT id
+     FROM school_years
+     WHERE school_id = :schoolId AND status = 'active'
+     FOR UPDATE`,
+    { schoolId },
+  );
+
+  return rows;
+}
+
+async function countSectionsForSchoolYear(connection: PoolConnection, schoolId: number, schoolYearId: number) {
+  const [rows] = await connection.execute<Array<RowDataPacket & { section_count: number }>>(
+    `SELECT COUNT(*) AS section_count
+     FROM sections
+     WHERE school_id = :schoolId AND school_year_id = :schoolYearId`,
+    { schoolId, schoolYearId },
+  );
+
+  return Number(rows[0]?.section_count ?? 0);
+}
+
+async function countSchoolYearsWithName(connection: PoolConnection, schoolId: number, schoolYearName: string) {
+  const [rows] = await connection.execute<Array<RowDataPacket & { year_count: number }>>(
+    `SELECT COUNT(*) AS year_count
+     FROM school_years
+     WHERE school_id = :schoolId AND LOWER(name) = LOWER(:schoolYearName)`,
+    { schoolId, schoolYearName },
+  );
+
+  return Number(rows[0]?.year_count ?? 0);
+}
+
 async function getSectionForSchool(connection: PoolConnection, schoolId: number, sectionId: number) {
   const [rows] = await connection.execute<Array<RowDataPacket & {
     id: number;
@@ -632,6 +793,22 @@ function schoolCodeFor(schoolName: string, userId: number) {
   return `${initials || "SCHOOL"}-${userId}`.slice(0, 40);
 }
 
+function revalidateAdminSchoolYearPaths() {
+  [
+    "/admin/dashboard",
+    "/admin/school-setup",
+    "/admin/students",
+    "/admin/student-profile",
+    "/admin/parents",
+    "/admin/tuition",
+    "/admin/other-fees",
+    "/admin/collections",
+    "/admin/allowance",
+    "/admin/store-transactions",
+    "/admin/reports",
+  ].forEach((path) => revalidatePath(path));
+}
+
 type AdminProfileRow = RowDataPacket & {
   id: number;
   user_id: number;
@@ -644,3 +821,4 @@ type SchoolRow = RowDataPacket & {
 };
 
 class RolloverValidationError extends Error {}
+class ActivationValidationError extends Error {}

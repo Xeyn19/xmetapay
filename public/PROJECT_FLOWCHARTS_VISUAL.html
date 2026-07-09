@@ -405,7 +405,9 @@ flowchart TD
   S --> T["Review all years and selected-year structure"]
   T --> U["Edit selected-year sections"]
   U --> V["Prepare manual rollover if needed"]
-  V --> C
+  V --> W["Activate upcoming year when ready"]
+  W --> X["Close previous active year"]
+  X --> C
           </pre>
         </div>
 
@@ -449,6 +451,28 @@ flowchart TD
   H -->|No| J["Student appears in target-year views"]
   I --> K["Show rollover result"]
   J --> K
+          </pre>
+        </div>
+
+        <h3>Activate Next School Year</h3>
+        <p>Implemented: a school administrator can activate an upcoming year from School setup. Activation closes the previous active year and makes new records use the newly active year.</p>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="admin-school-year-activation.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["School administrator opens School setup"] --> B["Review upcoming year counts"]
+  B --> C{"Upcoming year has sections?"}
+  C -->|No| D["Block activation and ask admin to add sections"]
+  C -->|Yes| E["Open activation confirmation"]
+  E --> F["Show target year, current year, sections, enrollments"]
+  F --> G["Submit Activate year"]
+  G --> H["Require school_administrator role"]
+  H --> I["Close current active school_years row"]
+  I --> J["Set target school_years row to active"]
+  J --> K["Set selected-year cookie to new active year"]
+  K --> L["Dashboard and new writes now use new active year"]
           </pre>
         </div>
 

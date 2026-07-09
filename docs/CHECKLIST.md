@@ -63,13 +63,14 @@ Done when: the full schema can be imported from a clean local database without e
 - [x] Add school-year stamps to payments, wallet transactions, store transactions, and notification logs.
 - [x] Let School setup edit grade/section structure for a selected school year.
 - [x] Add manual rollover so a school administrator can promote selected students into a target year section without duplicating student master records.
+- [x] Add school-year activation so an upcoming year can become active and the previous active year closes automatically.
 - [x] Keep operational write actions tied to the active school year for MVP safety.
 - [x] Create grade levels and sections from the admin side or a safe local seed script.
 - [x] Replace hard-coded school year/dashboard school labels with database reads.
 - [x] Restrict school setup to `school_administrator`.
 - [x] Redirect new school administrators to setup-only onboarding before showing the real dashboard.
 
-Done when: the admin dashboard can load school setup data from MySQL, switch admin views by school year, keep new operational records in the active year, and prepare target-year enrollments through manual rollover.
+Done when: the admin dashboard can load school setup data from MySQL, switch admin views by school year, keep new operational records in the active year, prepare target-year enrollments through manual rollover, and activate the next school year when ready.
 
 ## Phase 3: Students And Guardian Linking
 
