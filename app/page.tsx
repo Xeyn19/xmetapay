@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getSession } from "@/lib/auth/session";
@@ -14,14 +15,21 @@ export default async function Home() {
     redirect("/parent/dashboard");
   }
 
+  if (session?.role === "super_admin") {
+    redirect("/super-admin/dashboard");
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-6xl flex-col sm:min-h-[calc(100svh-48px)]">
         <header className="flex min-h-12 items-center justify-between gap-3">
           <BrandMark />
-          <span className="hidden min-h-8 items-center rounded-lg border border-[#e64a19]/20 bg-white px-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[#bf360c] shadow-sm sm:inline-flex">
-            UI prototype
-          </span>
+          <Link
+            href="/login"
+            className="hidden min-h-9 items-center rounded-lg border border-[#e64a19]/20 bg-white px-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[#bf360c] shadow-sm transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 sm:inline-flex"
+          >
+            Company login
+          </Link>
         </header>
 
         <section className="flex flex-1 items-center py-10 sm:py-12 lg:py-16">

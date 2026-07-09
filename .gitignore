@@ -38,6 +38,9 @@ yarn-error.log*
 .env*.local
 !.env.example
 
+# local one-time database seed files
+/database/local/
+
 # vercel
 .vercel
 

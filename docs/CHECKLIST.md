@@ -12,6 +12,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Parent registration works.
 - [x] Admin/school login works.
 - [x] Parent login works.
+- [x] Company super admin login exists at `/login`.
+- [x] Company super admin can monitor school admin accounts and enable/disable access.
 - [x] Logout clears the session.
 - [x] Protected admin and parent dashboards redirect correctly.
 - [x] Admin/school staff roles are documented and enforced for key pages/actions.
@@ -193,6 +195,7 @@ Run these checks after every backend phase:
 - [ ] Run `git status --short`.
 - [ ] Confirm no local environment file is staged.
 - [ ] Confirm no database export file is staged.
+- [ ] Confirm no local `database/local/` seed SQL file is staged.
 - [ ] Confirm no real parent, student, school, payment, or credential data is staged.
 - [ ] Run a secret scan before commit for database credential keys, auth session secrets, local environment filenames, and exported private data.
 

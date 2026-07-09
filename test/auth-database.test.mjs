@@ -13,7 +13,7 @@ test("auth schema creates role-scoped users and profile indexes for MySQL", () =
   [
     "CREATE DATABASE IF NOT EXISTS xmetapay_db",
     "CREATE TABLE IF NOT EXISTS users",
-    "role ENUM('admin', 'parent') NOT NULL",
+    "role ENUM('admin', 'parent', 'super_admin') NOT NULL",
     "password_hash VARCHAR(255) NOT NULL",
     "UNIQUE KEY uq_users_role_email (role, email)",
     "UNIQUE KEY uq_users_role_phone (role, phone)",

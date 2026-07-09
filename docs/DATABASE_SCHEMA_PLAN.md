@@ -2,12 +2,13 @@
 
 ## Project Database Overview
 
-XMETA Pay uses one MySQL database for two connected portals:
+XMETA Pay uses one MySQL database for three connected access areas:
 
+- Company super admin: XMETA Pay monitoring for schools and school admin account access.
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
 - Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
-Related role guide: `ADMIN_ROLES.md` explains the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
+Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
 
 The current database already starts with shared authentication tables. The practical MVP should keep that foundation and add school, student, enrollment, billing, payment, wallet, and reporting tables around it.
 
@@ -33,12 +34,12 @@ The existing auth design is still the correct foundation.
 
 ### `users`
 
-Shared login table for both admin and parent accounts.
+Shared login table for company super admin, school admin, and parent accounts.
 
 | Column | Purpose |
 | --- | --- |
 | `id` | Primary key |
-| `role` | `admin` or `parent` |
+| `role` | `super_admin`, `admin`, or `parent` |
 | `name` | Display name |
 | `email` | Login/contact email |
 | `phone` | Optional login/contact phone |
@@ -64,7 +65,7 @@ Server-managed sessions for public web auth.
 | --- | --- |
 | `id` | Primary key |
 | `user_id` | Links to `users.id` |
-| `role` | Session portal role: `admin` or `parent` |
+| `role` | Session role: `super_admin`, `admin`, or `parent` |
 | `token_hash` | HMAC hash of the browser session token |
 | `expires_at` | Session expiry time |
 | `last_used_at` | Last valid session read |

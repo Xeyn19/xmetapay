@@ -1,6 +1,6 @@
 # XMETA Pay Project Flowcharts
 
-This document explains the whole XMETA Pay project flow from the user side and the database side. It focuses on how the admin/school portal and parent portal interact, starting from registration and continuing through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, store/canteen purchase recording, report exports, and queued in-app reminder history.
+This document explains the whole XMETA Pay project flow from the user side and the database side. It covers company super admin monitoring, plus how the admin/school portal and parent portal interact from registration through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, store/canteen purchase recording, report exports, and queued in-app reminder history.
 
 Related documents:
 
@@ -8,7 +8,7 @@ Related documents:
 - `DATABASE_SCHEMA_EXPLANATION.md` - plain-language schema explanation.
 - `DATABASE_SCHEMA_VISUAL_PLAN.html` - browser visual for the database schema.
 - `CHECKLIST.md` - backend implementation tracker.
-- `ADMIN_ROLES.md` - admin/school staff roles and dashboard permissions.
+- `ADMIN_ROLES.md` - company super admin plus admin/school staff roles and dashboard permissions.
 - `PROJECT_FLOWCHARTS_VISUAL.html` - browser visual for this project flow document.
 
 ## Status Legend
@@ -23,6 +23,7 @@ Related documents:
 
 Implemented:
 
+- Company super admin login at `/login`.
 - Admin/school registration and login.
 - Parent registration and login.
 - Logout and protected dashboard redirects.
@@ -30,6 +31,7 @@ Implemented:
 - Full schema import through `database/full-schema-v1.sql`.
 - Manual school setup by `school_administrator`.
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
+- Company super admin monitoring for school admin accounts.
 - Admin student creation and enrollment.
 - Admin student profile selector and exact profile route `/admin/students/[studentId]`.
 - Parent-to-student linking through `student_reference`.
@@ -91,7 +93,35 @@ flowchart TD
 
   P --> S["Admin sees collections and reports"]
   R --> T["Admin sees wallet and store reports"]
+  U["Company super admin signs in at /login"] --> V["Monitor schools and school admin accounts"]
+  V --> W["Enable or disable school admin access"]
 ```
+
+## Company Super Admin Flow
+
+### 0. Company Monitoring
+
+Implemented.
+
+The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then monitors school records and school admin account access from `/super-admin/dashboard`.
+
+```mermaid
+flowchart TD
+  A["XMETA staff opens /login"] --> B["Find active user where role = super_admin"]
+  B --> C{"Password valid?"}
+  C -->|No| D["Show company login error"]
+  C -->|Yes| E["Create DB-backed session"]
+  E --> F["Redirect to /super-admin/dashboard"]
+  F --> G["View schools and school admin accounts"]
+  G --> H["Enable or disable school admin access"]
+  H --> I["Update users.status for role admin only"]
+```
+
+MVP limits:
+
+- No impersonation.
+- No editing school setup, students, fees, payments, wallets, or reports.
+- No committed seed credentials; the temporary SQL seed file is local-only and should be deleted after import.
 
 ## Admin Portal Flow
 
@@ -448,7 +478,7 @@ and student_guardians.student_id = students.id
 
 Implemented.
 
-Both portals use the same `xmetapay_session` cookie, but the cookie only stores a random session token. The server stores the hashed token in `auth_sessions`, and role checks decide which dashboard is allowed.
+All portals use the same `xmetapay_session` cookie, but the cookie only stores a random session token. The server stores the hashed token in `auth_sessions`, and role checks decide which dashboard is allowed.
 
 ```mermaid
 flowchart TD
@@ -466,6 +496,7 @@ flowchart TD
   K --> L{"Portal role?"}
   L -->|Admin| M["Redirect to /admin/login"]
   L -->|Parent| N["Redirect to /parent/login"]
+  L -->|Super admin| O["Redirect to /login"]
 ```
 
 Database touchpoints:

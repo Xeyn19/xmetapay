@@ -11,6 +11,7 @@ const rootLayout = readFileSync("app/layout.tsx", "utf8");
 const flashToast = readFileSync("app/_components/flash-toast.tsx", "utf8");
 const adminLoginPage = readFileSync("app/admin/login/page.tsx", "utf8");
 const parentLoginPage = readFileSync("app/parent/login/page.tsx", "utf8");
+const companyLoginPage = readFileSync("app/login/page.tsx", "utf8");
 
 test("auth forms submit through server actions instead of static redirects", () => {
   assert.match(authUi, /"use client";/);
@@ -196,7 +197,17 @@ test("home page redirects already-authenticated users to the correct dashboard",
   assert.match(homePage, /const session = await getSession\(\);/);
   assert.match(homePage, /if \(session\?\.role === "admin"\) \{\s*redirect\("\/admin\/dashboard"\);/);
   assert.match(homePage, /if \(session\?\.role === "parent"\) \{\s*redirect\("\/parent\/dashboard"\);/);
+  assert.match(homePage, /if \(session\?\.role === "super_admin"\) \{\s*redirect\("\/super-admin\/dashboard"\);/);
   assert.match(homePage, /Choose where you want to continue/);
+  assert.match(homePage, /Company login/);
+});
+
+test("company super admin login page redirects existing sessions by role", () => {
+  assert.match(companyLoginPage, /await consumeAuthFlashToast\("super_admin"\)/);
+  assert.match(companyLoginPage, /if \(session\?\.role === "super_admin"\) \{\s*redirect\("\/super-admin\/dashboard"\);/);
+  assert.match(companyLoginPage, /if \(session\?\.role === "admin"\) \{\s*redirect\("\/admin\/dashboard"\);/);
+  assert.match(companyLoginPage, /if \(session\?\.role === "parent"\) \{\s*redirect\("\/parent\/dashboard"\);/);
+  assert.match(companyLoginPage, /Sign in to XMETA monitoring/);
 });
 
 test("flash toast allows repeated identical server-action messages", () => {
