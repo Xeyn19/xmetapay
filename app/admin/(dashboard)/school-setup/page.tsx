@@ -6,6 +6,7 @@ import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminSchoolRolloverData, getAdminSchoolSetupFormData, getAdminSchoolSetupOverview } from "@/lib/school/setup";
 
 import { ManualSchoolSetupForm } from "@/app/admin/_components/manual-school-setup-form";
+import { SchoolYearActivationControl } from "@/app/admin/_components/school-year-activation-control";
 import { SchoolYearRolloverForm } from "@/app/admin/_components/school-year-rollover-form";
 
 export default async function AdminSchoolSetupPage({
@@ -22,6 +23,7 @@ export default async function AdminSchoolSetupPage({
     getAdminSchoolSetupFormData(session.userId, setupYearId),
     getAdminSchoolRolloverData(session.userId),
   ]);
+  const duplicateYearNames = duplicateSchoolYearNames(overview.schoolYears);
 
   return (
     <div className="grid gap-5">
@@ -34,6 +36,11 @@ export default async function AdminSchoolSetupPage({
           Review every school year here. Live dashboards, enrollment, fees, wallet, store, and reports still use the active year.
         </AlertBanner>
       )}
+      {duplicateYearNames.size > 0 ? (
+        <AlertBanner tone="warn" icon={Info}>
+          Rename duplicate school years before activating a year. Duplicate names found: {[...duplicateYearNames].join(", ")}.
+        </AlertBanner>
+      ) : null}
 
       <KpiGrid>
         {overview.kpis.map((kpi) => (
@@ -51,12 +58,13 @@ export default async function AdminSchoolSetupPage({
               { label: "Sections" },
               { label: "Enrollments" },
               { label: "Fee types" },
+              { label: "Action" },
             ]}
           >
             {overview.schoolYears.map((year) => (
               <tr key={year.id}>
                 <td>
-                  <div className="font-bold text-[#0f1117]">{year.name}</div>
+                  <div className="font-bold text-[#0f1117]">{schoolYearDisplayName(year, duplicateYearNames)}</div>
                   <div className="mt-0.5 text-[11px] text-[#5a6070]">{overview.schoolName}</div>
                 </td>
                 <td>{year.startsOn} to {year.endsOn}</td>
@@ -64,6 +72,13 @@ export default async function AdminSchoolSetupPage({
                 <td className="font-bold">{year.sectionCount}</td>
                 <td className="font-bold">{year.enrollmentCount}</td>
                 <td className="font-bold">{year.feeTypeCount}</td>
+                <td>
+                  <SchoolYearActivationControl
+                    year={year}
+                    activeYear={overview.activeYear}
+                    duplicateName={duplicateYearNames.has(year.name.toLowerCase())}
+                  />
+                </td>
               </tr>
             ))}
           </AdminTable>
@@ -150,4 +165,24 @@ function parseSetupYearId(value: string | undefined) {
   const parsed = Number(value);
 
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function duplicateSchoolYearNames(years: Array<{ name: string }>) {
+  const counts = new Map<string, number>();
+
+  years.forEach((year) => {
+    const key = year.name.trim().toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  });
+
+  return new Set([...counts].filter(([, count]) => count > 1).map(([name]) => name));
+}
+
+function schoolYearDisplayName(
+  year: { name: string; startsOn: string; endsOn: string },
+  duplicateNames: Set<string>,
+) {
+  return duplicateNames.has(year.name.toLowerCase())
+    ? `${year.name} - ${year.startsOn} to ${year.endsOn}`
+    : year.name;
 }

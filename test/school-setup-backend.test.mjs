@@ -6,6 +6,7 @@ const schoolSetupPath = "lib/school/setup.ts";
 const schoolSetupActionPath = "app/admin/school-setup/actions.ts";
 const schoolSetupPagePath = "app/admin/(dashboard)/school-setup/page.tsx";
 const schoolSetupFormPath = "app/admin/_components/manual-school-setup-form.tsx";
+const schoolYearActivationControlPath = "app/admin/_components/school-year-activation-control.tsx";
 const schoolYearRolloverFormPath = "app/admin/_components/school-year-rollover-form.tsx";
 const onboardingSetupPagePath = "app/admin/onboarding/school-setup/page.tsx";
 const adminLayoutPath = "app/admin/(dashboard)/layout.tsx";
@@ -71,6 +72,7 @@ test("school setup backend helper reads admin school context from MySQL", () => 
   assert.match(helper, /export async function getAdminSchoolSetupFormData\(\s*userId: number,\s*setupSchoolYearId\?: number \| null/);
   assert.match(helper, /export async function getAdminSchoolSetupOverview\(userId: number\)/);
   assert.match(helper, /export async function getAdminSchoolRolloverData\(userId: number\)/);
+  assert.match(helper, /years\.map\(\(\{ id, name, startsOn, endsOn, status \}\) => \(\{ id, name, startsOn, endsOn, status \}\)\)/);
   assert.match(helper, /selectedSetupSchoolYearId/);
   assert.match(helper, /selectedSetupSchoolYearName/);
   assert.match(helper, /resolveSetupSchoolYear/);
@@ -117,6 +119,16 @@ test("admin manual school setup action is protected and saves submitted records"
   assert.match(action, /INSERT IGNORE INTO enrollments/);
   assert.match(action, /targetSection\.school_year_id/);
   assert.match(action, /Rollover prepared/);
+  assert.match(action, /export async function activateSchoolYearAction\(formData: FormData\)/);
+  assert.match(action, /Only school administrators can activate a school year\./);
+  assert.match(action, /targetYear\.status !== "upcoming"/);
+  assert.match(action, /countSchoolYearsWithName/);
+  assert.match(action, /Rename duplicate school years before activating one\./);
+  assert.match(action, /Add sections for \$\{targetYear\.name\} before activating it\./);
+  assert.match(action, /SET status = 'closed'/);
+  assert.match(action, /SET status = 'active'/);
+  assert.match(action, /cookieStore\.set\(adminSchoolYearCookieName, String\(targetYear\.id\)/);
+  assert.match(action, /revalidateAdminSchoolYearPaths/);
   assert.match(action, /schoolSetupRedirectTarget\(formData\)/);
   assert.match(action, /redirect\(redirectTo\)/);
   assert.match(action, /"\/admin\/onboarding\/school-setup"/);
@@ -148,6 +160,8 @@ test("admin shell renders school setup context instead of fixed prototype labels
   assert.match(shell, /const setupIncomplete = /);
   assert.match(shell, /schoolContext\.schoolName/);
   assert.match(shell, /schoolContext\.activeSchoolYear\?\.name/);
+  assert.match(shell, /duplicateSchoolYearNames\(schoolContext\.schoolYears\)/);
+  assert.match(shell, /schoolYearOptionLabel\(year, duplicateYearNames\)/);
   assert.match(shell, /schoolContext\.adminInitials/);
   assert.match(shell, /schoolContext\.staffRoleLabel/);
   assert.match(shell, /href="\/admin\/school-setup"/);
@@ -161,10 +175,12 @@ test("admin shell renders school setup context instead of fixed prototype labels
 test("manual school setup page uses protected data and editable setup form", () => {
   assert.equal(existsSync(schoolSetupPagePath), true);
   assert.equal(existsSync(schoolSetupFormPath), true);
+  assert.equal(existsSync(schoolYearActivationControlPath), true);
   assert.equal(existsSync(schoolYearRolloverFormPath), true);
   assert.equal(existsSync(onboardingSetupPagePath), true);
   const page = readFileSync(schoolSetupPagePath, "utf8");
   const form = readFileSync(schoolSetupFormPath, "utf8");
+  const activationControl = readFileSync(schoolYearActivationControlPath, "utf8");
   const rolloverForm = readFileSync(schoolYearRolloverFormPath, "utf8");
   const onboardingPage = readFileSync(onboardingSetupPagePath, "utf8");
 
@@ -174,6 +190,12 @@ test("manual school setup page uses protected data and editable setup form", () 
   assert.match(page, /getAdminSchoolRolloverData\(session\.userId\)/);
   assert.match(page, /parseSetupYearId/);
   assert.match(page, /School years/);
+  assert.match(page, /duplicateSchoolYearNames\(overview\.schoolYears\)/);
+  assert.match(page, /Rename duplicate school years before activating a year/);
+  assert.match(page, /schoolYearDisplayName\(year, duplicateYearNames\)/);
+  assert.match(page, /\{ label: "Action" \}/);
+  assert.match(page, /duplicateName=\{duplicateYearNames\.has\(year\.name\.toLowerCase\(\)\)\}/);
+  assert.match(page, /@\/app\/admin\/_components\/school-year-activation-control/);
   assert.match(page, /Active year structure/);
   assert.match(page, /Prepare next year/);
   assert.match(page, /Edit school setup/);
@@ -201,6 +223,8 @@ test("manual school setup page uses protected data and editable setup form", () 
   assert.match(form, /name="sectionSchoolYearId"/);
   assert.match(form, /selectedSetupSchoolYearId/);
   assert.match(form, /Edit sections for/);
+  assert.match(form, /initialDuplicateYearNames/);
+  assert.match(form, /schoolYearOptionLabel\(year, initialDuplicateYearNames\)/);
   assert.match(form, /name="redirectTo"/);
   assert.match(form, /name="schoolName"/);
   assert.match(form, /name="schoolCode"/);
@@ -215,8 +239,25 @@ test("manual school setup page uses protected data and editable setup form", () 
   assert.match(form, /Section A/);
   assert.match(form, /Save school setup/);
 
+  assert.match(activationControl, /"use client";/);
+  assert.match(activationControl, /activateSchoolYearAction/);
+  assert.match(activationControl, /Current year/);
+  assert.match(activationControl, /Activate year/);
+  assert.match(activationControl, /This will close the current active year\. New records will use this year\./);
+  assert.match(activationControl, /duplicateName/);
+  assert.match(activationControl, /Rename duplicate school years first so activation is clear\./);
+  assert.match(activationControl, /Add sections for \{year\.name\} before activating it\./);
+  assert.match(activationControl, /name="schoolYearId"/);
+  assert.match(activationControl, /Activate \{year\.name\}/);
+
   assert.match(rolloverForm, /"use client";/);
   assert.match(rolloverForm, /prepareSchoolYearRolloverAction/);
+  assert.match(rolloverForm, /data\.years\.filter\(\(year\) => year\.status !== "closed"\)/);
+  assert.match(rolloverForm, /year\.id !== sourceYearId && year\.status === "upcoming"/);
+  assert.match(rolloverForm, /duplicateSchoolYearNames\(rolloverYears\)/);
+  assert.match(rolloverForm, /schoolYearOptionLabel\(year, duplicateYearNames\)/);
+  assert.match(rolloverForm, /year\.startsOn/);
+  assert.match(rolloverForm, /year\.endsOn/);
   assert.match(rolloverForm, /name="sourceSchoolYearId"/);
   assert.match(rolloverForm, /name="targetSectionId"/);
   assert.match(rolloverForm, /name="studentId"/);

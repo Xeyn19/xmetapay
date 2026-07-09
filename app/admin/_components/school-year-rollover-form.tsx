@@ -9,14 +9,16 @@ import { cn } from "@/lib/utils";
 import type { AdminSchoolRolloverData } from "@/lib/school/setup";
 
 export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData }) {
-  const defaultSourceYearId = data.years.find((year) => year.status === "active")?.id ?? data.years[0]?.id ?? 0;
-  const defaultTargetYearId = data.years.find((year) => year.status === "upcoming")?.id
-    ?? data.years.find((year) => year.id !== defaultSourceYearId)?.id
+  const rolloverYears = useMemo(() => data.years.filter((year) => year.status !== "closed"), [data.years]);
+  const defaultSourceYearId = rolloverYears.find((year) => year.status === "active")?.id ?? rolloverYears[0]?.id ?? 0;
+  const defaultTargetYearId = rolloverYears.find((year) => year.status === "upcoming")?.id
+    ?? rolloverYears.find((year) => year.id !== defaultSourceYearId)?.id
     ?? 0;
   const [sourceYearId, setSourceYearId] = useState(defaultSourceYearId);
   const [targetYearId, setTargetYearId] = useState(defaultTargetYearId);
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const duplicateYearNames = useMemo(() => duplicateSchoolYearNames(rolloverYears), [rolloverYears]);
   const visibleStudents = useMemo(() => {
     const needle = query.trim().toLowerCase();
 
@@ -78,9 +80,9 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
             }}
             className={fieldControlClass}
           >
-            {data.years.map((year) => (
+            {rolloverYears.map((year) => (
               <option key={year.id} value={year.id}>
-                {year.name} ({year.status})
+                {schoolYearOptionLabel(year, duplicateYearNames)}
               </option>
             ))}
           </select>
@@ -91,9 +93,9 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
             onChange={(event) => setTargetYearId(Number(event.target.value))}
             className={fieldControlClass}
           >
-            {data.years.filter((year) => year.id !== sourceYearId).map((year) => (
+            {rolloverYears.filter((year) => year.id !== sourceYearId && year.status === "upcoming").map((year) => (
               <option key={year.id} value={year.id}>
-                {year.name} ({year.status})
+                {schoolYearOptionLabel(year, duplicateYearNames)}
               </option>
             ))}
           </select>
@@ -181,4 +183,26 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
       </div>
     </form>
   );
+}
+
+function duplicateSchoolYearNames(years: AdminSchoolRolloverData["years"]) {
+  const counts = new Map<string, number>();
+
+  years.forEach((year) => {
+    const key = year.name.trim().toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  });
+
+  return new Set([...counts].filter(([, count]) => count > 1).map(([name]) => name));
+}
+
+function schoolYearOptionLabel(
+  year: AdminSchoolRolloverData["years"][number],
+  duplicateNames: Set<string>,
+) {
+  const label = duplicateNames.has(year.name.toLowerCase())
+    ? `${year.name} - ${year.startsOn} to ${year.endsOn}`
+    : year.name;
+
+  return `${label} (${year.status})`;
 }

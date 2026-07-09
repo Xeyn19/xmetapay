@@ -57,6 +57,7 @@ export function AdminShell({
   const canRecordPayments = canUseAdminHeaderAction(schoolContext.staffRole, "record_payment");
   const canSendReminders = canUseAdminHeaderAction(schoolContext.staffRole, "send_reminder");
   const logout = logoutAction.bind(null, "admin");
+  const duplicateYearNames = duplicateSchoolYearNames(schoolContext.schoolYears);
 
   return (
     <div className="min-h-[100svh] overflow-x-hidden bg-[#f7f8fa] text-[#0f1117]">
@@ -220,7 +221,7 @@ export function AdminShell({
                 >
                   {schoolContext.schoolYears.map((year) => (
                     <option key={year.id} value={year.id}>
-                      {year.name} ({schoolYearStatusLabel(year.status)})
+                      {schoolYearOptionLabel(year, duplicateYearNames)}
                     </option>
                   ))}
                 </select>
@@ -278,4 +279,27 @@ function dashboardSubtitle(subtitle: string, schoolContext: AdminSchoolContext) 
 
 function schoolYearStatusLabel(status: "upcoming" | "active" | "closed") {
   return status[0].toUpperCase() + status.slice(1);
+}
+
+function duplicateSchoolYearNames(years: AdminSchoolContext["schoolYears"]) {
+  const counts = new Map<string, number>();
+
+  years.forEach((year) => {
+    const key = year.name.trim().toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  });
+
+  return new Set([...counts].filter(([, count]) => count > 1).map(([name]) => name));
+}
+
+function schoolYearOptionLabel(
+  year: AdminSchoolContext["schoolYears"][number],
+  duplicateNames: Set<string>,
+) {
+  const status = schoolYearStatusLabel(year.status);
+  const label = duplicateNames.has(year.name.toLowerCase())
+    ? `${year.name} - ${year.startsOn} to ${year.endsOn}`
+    : year.name;
+
+  return `${label} (${status})`;
 }

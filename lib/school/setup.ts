@@ -98,6 +98,8 @@ export type AdminSchoolRolloverData = {
   years: Array<{
     id: number;
     name: string;
+    startsOn: string;
+    endsOn: string;
     status: "upcoming" | "active" | "closed";
   }>;
   students: Array<{
@@ -474,7 +476,7 @@ export async function getAdminSchoolRolloverData(userId: number): Promise<AdminS
       warning: years.length > 1
         ? null
         : "Add another school year before preparing rollover enrollments.",
-      years: years.map(({ id, name, status }) => ({ id, name, status })),
+      years: years.map(({ id, name, startsOn, endsOn, status }) => ({ id, name, startsOn, endsOn, status })),
       students,
       targetSections,
     };
