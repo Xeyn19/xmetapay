@@ -121,6 +121,7 @@ Done when: a parent can record a local test payment and both portals show the re
 - [x] Automatically create per-student tuition terms when a templated tuition fee type is assigned.
 - [x] Add admin tuition `Manage terms` action for each student tuition assignment.
 - [x] Show tuition term schedules in the parent fee summary.
+- [x] Include tuition term schedules in the parent Fee summary PDF export.
 - [x] Let parents pay open or partial tuition terms, including early payment before the due date.
 - [x] Keep other fees and tuition without terms on the existing full-balance payment flow.
 - [x] Keep tuition term parsing, validation, saving, payable checks, payment application, and assignment recalculation in a shared server-only helper.
