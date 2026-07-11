@@ -237,7 +237,15 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(feesTable, /pagination\.pageRows\.map/);
   assert.match(feesTable, /parent-fee-summary\.csv/);
   assert.match(feesTable, /parent-fee-summary\.pdf/);
-  assert.match(feesTable, /exportRowsToPdf/);
+  assert.match(feesTable, /function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\]\)/);
+  assert.match(feesTable, /onExportPdf=\{\(\) => exportParentFeeSummaryPdf\(filteredRows\)\}/);
+  assert.match(feesTable, /rows\.flatMap/);
+  assert.match(feesTable, /`Term: \$\{term\.name\}`/);
+  assert.match(feesTable, /"Tuition term"/);
+  assert.match(feesTable, /term\.amountDue/);
+  assert.match(feesTable, /term\.dueDate/);
+  assert.match(feesTable, /startsWith\("Term:"\)/);
+  assert.doesNotMatch(feesTable, /onExportPdf=\{\(\) => exportRowsToPdf/);
   assert.match(page, /data\.hasPayableFees/);
   assert.match(page, /Pay fees/);
   assert.match(page, /No balance due/);

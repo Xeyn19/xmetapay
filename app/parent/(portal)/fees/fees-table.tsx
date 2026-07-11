@@ -1,12 +1,13 @@
 "use client";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { Fragment, useMemo, useState } from "react";
 
 import {
   DashboardTableControls,
   DashboardTablePagination,
   exportRowsToCsv,
-  exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
   usePaginatedRows,
@@ -60,17 +61,7 @@ export function ParentFeesTable({ rows }: { rows: ParentFeeRow[] }) {
             { label: "Due date", value: (row) => row.dueDate },
             { label: "Status", value: (row) => row.status },
           ])}
-          onExportPdf={() => exportRowsToPdf("parent-fee-summary.pdf", "Fee summary", filteredRows, [
-            { label: "Student", value: (row) => row.studentName },
-            { label: "Reference", value: (row) => row.studentReference },
-            { label: "Fee", value: (row) => row.feeName },
-            { label: "Category", value: (row) => row.category },
-            { label: "Billed", value: (row) => row.amountDue },
-            { label: "Paid", value: (row) => row.amountPaid },
-            { label: "Balance", value: (row) => row.balance },
-            { label: "Due date", value: (row) => row.dueDate },
-            { label: "Status", value: (row) => row.status },
-          ])}
+          onExportPdf={() => exportParentFeeSummaryPdf(filteredRows)}
           exportDisabled={filteredRows.length === 0}
         />
       </div>
@@ -153,4 +144,82 @@ export function ParentFeesTable({ rows }: { rows: ParentFeeRow[] }) {
       />
     </>
   );
+}
+
+function exportParentFeeSummaryPdf(rows: ParentFeeRow[]) {
+  const doc = new jsPDF({ orientation: "landscape" });
+  const generatedAt = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const columns = ["Student", "Reference", "Fee", "Category", "Billed", "Paid", "Balance", "Due date", "Status"];
+  const body = rows.length > 0
+    ? rows.flatMap((row) => [
+        [
+          row.studentName,
+          row.studentReference,
+          row.feeName,
+          row.category === "tuition" ? "Tuition" : "Other fee",
+          row.amountDue,
+          row.amountPaid,
+          row.balance,
+          row.dueDate,
+          row.status,
+        ],
+        ...row.terms.map((term) => [
+          "",
+          "",
+          `Term: ${term.name}`,
+          "Tuition term",
+          term.amountDue,
+          term.amountPaid,
+          term.balance,
+          term.dueDate,
+          term.status,
+        ]),
+      ])
+    : [[
+        "No records yet",
+        ...Array.from({ length: columns.length - 1 }, () => ""),
+      ]];
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("XMETA Pay", 14, 16);
+  doc.setFontSize(12);
+  doc.text("Fee summary", 14, 24);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text(`Generated: ${generatedAt}`, 14, 30);
+
+  autoTable(doc, {
+    head: [columns],
+    body,
+    margin: { left: 14, right: 14 },
+    startY: 36,
+    styles: {
+      cellPadding: 2,
+      fontSize: 7,
+      overflow: "linebreak",
+    },
+    headStyles: {
+      fillColor: [230, 74, 25],
+      textColor: [255, 255, 255],
+    },
+    didParseCell: (data) => {
+      const row = data.row.raw;
+
+      if (Array.isArray(row) && row[2]?.toString().startsWith("Term:")) {
+        data.cell.styles.fillColor = [255, 250, 247];
+        data.cell.styles.textColor = [90, 96, 112];
+
+        if (data.column.index === 2) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.textColor = [154, 52, 18];
+        }
+      }
+    },
+  });
+
+  doc.save("parent-fee-summary.pdf");
 }

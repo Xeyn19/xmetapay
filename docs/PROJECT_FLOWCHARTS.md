@@ -594,6 +594,7 @@ Due date rule:
 - Fees without terms use the assignment due date from `student_fee_assignments`.
 - Tuition with terms uses each installment due date from `tuition_payment_terms`.
 - The parent fee summary shows `See term schedule` on the main tuition row when term dates control the deadlines.
+- The parent Fee summary PDF export includes nested tuition term rows under each tuition fee.
 
 ## Wallet, Allowance, And Store Flow
 
