@@ -39,7 +39,7 @@ test("fee type term template migration and fresh schema define reusable template
   assert.ok(fullSchema.indexOf("CREATE TABLE IF NOT EXISTS fee_type_term_templates") < fullSchema.indexOf("CREATE TABLE IF NOT EXISTS student_fee_assignments"));
 });
 
-test("tuition add fee type form renders optional payment term template fields", () => {
+test("tuition add fee type form no longer renders payment term template fields", () => {
   const forms = readFileSync(feeFormsPath, "utf8");
   const termFields = readFileSync(termFieldsPath, "utf8");
   const tuitionTable = readFileSync(tuitionTablePath, "utf8");
@@ -47,38 +47,39 @@ test("tuition add fee type form renders optional payment term template fields", 
   assert.match(forms, /"use client";/);
   assert.match(forms, /useState/);
   assert.match(forms, /category === "tuition"/);
-  assert.match(forms, /Payment terms template/);
-  assert.match(forms, /TuitionTermScheduleFields/);
-  assert.match(forms, /No template yet/);
-  assert.match(forms, /feeType\.termCount/);
+  assert.doesNotMatch(forms, /Payment terms template/);
+  assert.doesNotMatch(forms, /TuitionTermScheduleFields/);
+  assert.doesNotMatch(forms, /No template yet/);
+  assert.doesNotMatch(forms, /feeType\.termCount/);
   assert.match(termFields, /"use client";/);
   assert.match(termFields, /name="termName"/);
   assert.match(termFields, /name="termAmount"/);
   assert.match(termFields, /name="termDueDate"/);
   assert.match(termFields, /Term due date/);
-  assert.match(termFields, /These dates become the parent payment deadlines after assignment/);
+  assert.match(termFields, /Term dates must be on or before the fee due date/);
   assert.match(termFields, /Rebalance to/);
   assert.match(termFields, /Term amounts must match the tuition amount/);
   assert.match(tuitionTable, /TuitionTermScheduleFields/);
-  assert.doesNotMatch(forms, /category === "other"[\s\S]*Payment terms template/);
 });
 
-test("fee actions save templates and auto-create per-student tuition terms", () => {
+test("fee actions keep terms as per-student Manage terms work", () => {
   const actions = readFileSync(feeActionsPath, "utf8");
   const terms = readFileSync(tuitionTermsPath, "utf8");
 
-  assert.match(actions, /parseTuitionTermInputs\(formData\)/);
-  assert.match(actions, /validateTuitionTermSchedule\(templateTerms, defaultAmount\)/);
-  assert.match(actions, /saveFeeTypeTermTemplate/);
+  assert.doesNotMatch(actions, /parseTuitionTermInputs\(formData\)/);
+  assert.doesNotMatch(actions, /validateTuitionTermSchedule\(templateTerms, defaultAmount\)/);
+  assert.doesNotMatch(actions, /saveFeeTypeTermTemplate/);
   assert.match(actions, /connection\.beginTransaction\(\)/);
-  assert.match(actions, /getFeeTypeTermTemplate/);
-  assert.match(actions, /createTuitionTermsFromTemplate/);
-  assert.match(actions, /existingStudentIds/);
-  assert.match(actions, /Assigned to \$\{assignedCount\} students with tuition payment terms/);
+  assert.doesNotMatch(actions, /getFeeTypeTermTemplate/);
+  assert.doesNotMatch(actions, /createTuitionTermsFromTemplate/);
+  assert.doesNotMatch(actions, /existingStudentIds/);
+  assert.doesNotMatch(actions, /Assigned to \$\{assignedCount\} students with tuition payment terms/);
   assert.match(terms, /export async function saveFeeTypeTermTemplate/);
   assert.match(terms, /INSERT INTO fee_type_term_templates/);
   assert.match(terms, /export async function getFeeTypeTermTemplate/);
   assert.match(terms, /export async function createTuitionTermsFromTemplate/);
+  assert.match(terms, /Term schedule dates cannot be later than the fee due date/);
+  assert.match(terms, /Set the fee due date before adding payment terms/);
   assert.match(terms, /scaleTuitionTermTemplate/);
   assert.match(terms, /final term absorbs|remainingCents|allocatedCents/);
   assert.match(terms, /WHERE student_fee_assignment_id = :assignmentId/);
@@ -106,5 +107,5 @@ test("docs and import notes describe fee type term templates", () => {
   assert.match(combined, /fee_type_term_templates/);
   assert.match(combined, /fee type term template/i);
   assert.match(combined, /2026-07-04-fee-type-term-templates\.sql/);
-  assert.match(combined, /automatically create per-student tuition terms/i);
+  assert.match(combined, /reserved for future template reuse/i);
 });

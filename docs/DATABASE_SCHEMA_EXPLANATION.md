@@ -173,7 +173,7 @@ Examples include tuition, miscellaneous fee, lab fee, activity fee, and allowanc
 
 ### `fee_type_term_templates`
 
-Stores optional reusable installment templates for tuition fee types.
+Stores optional reusable installment templates for tuition fee types. This table is present for future template reuse, but the current MVP keeps term creation in row-level Manage terms for each student tuition assignment.
 
 Main purpose:
 
@@ -198,7 +198,7 @@ Main purpose:
 
 This table is the main source for outstanding balances.
 
-If a tuition assignment has installment terms, the parent-facing payment deadlines come from `tuition_payment_terms.due_date`. If a fee has no terms, the parent-facing payment deadline comes from `student_fee_assignments.due_date`.
+The parent-facing payment deadline comes from `student_fee_assignments.due_date`, even when a tuition assignment has installment terms. When terms exist, `tuition_payment_terms.due_date` is shown as installment schedule detail.
 
 ### `tuition_payment_terms`
 

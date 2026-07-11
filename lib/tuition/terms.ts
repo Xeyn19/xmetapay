@@ -153,9 +153,17 @@ export function isTuitionTermPayable(status: string, balance: number) {
   return balance > 0 && (status === "open" || status === "partial");
 }
 
-export function validateTuitionTermSchedule(terms: TuitionTermInput[], remainingBalance: number) {
+export function validateTuitionTermSchedule(terms: TuitionTermInput[], remainingBalance: number, officialDueDate?: string | null) {
   if (terms.length === 0) {
     throw new TuitionTermsError("Add at least one payment term.");
+  }
+
+  if (officialDueDate) {
+    const lateTerm = terms.find((term) => term.dueDate > officialDueDate);
+
+    if (lateTerm) {
+      throw new TuitionTermsError("Term schedule dates cannot be later than the fee due date.");
+    }
   }
 
   const totalTerms = roundMoney(terms.reduce((sum, term) => sum + term.amount, 0));
@@ -323,8 +331,13 @@ export async function saveTuitionTermSchedule(
     throw new TuitionTermsError("This tuition already has paid terms. Keep the current schedule for audit safety.");
   }
 
+  if (!assignment.due_date) {
+    throw new TuitionTermsError("Set the fee due date before adding payment terms.");
+  }
+
+  const officialDueDate = formatDateForInput(assignment.due_date);
   const remainingBalance = roundMoney(decimalValue(assignment.amount_due) - decimalValue(assignment.amount_paid));
-  validateTuitionTermSchedule(params.terms, remainingBalance);
+  validateTuitionTermSchedule(params.terms, remainingBalance, officialDueDate);
 
   await connection.execute<ResultSetHeader>(
     `DELETE FROM tuition_payment_terms
@@ -358,7 +371,7 @@ export async function saveTuitionTermSchedule(
 
 export async function getParentPayableTuitionTerms(parentUserId: number) {
   const [rows] = await pool.execute<ParentPayableTuitionTerm[]>(
-    `SELECT tpt.id, tpt.student_fee_assignment_id, tpt.amount_due, tpt.amount_paid, tpt.due_date, tpt.status, tpt.term_name,
+    `SELECT tpt.id, tpt.student_fee_assignment_id, tpt.amount_due, tpt.amount_paid, sfa.due_date, tpt.status, tpt.term_name,
        ft.name AS fee_name, ft.category,
        st.id AS student_id, st.school_id, sfa.school_year_id, st.student_reference, st.first_name, st.middle_name, st.last_name
      FROM student_guardians sg
@@ -370,7 +383,7 @@ export async function getParentPayableTuitionTerms(parentUserId: number) {
      WHERE sg.parent_user_id = :parentUserId
        AND tpt.status IN ('open', 'partial')
        AND tpt.amount_due > tpt.amount_paid
-     ORDER BY st.last_name ASC, st.first_name ASC, tpt.due_date ASC, tpt.sort_order ASC`,
+     ORDER BY st.last_name ASC, st.first_name ASC, sfa.due_date IS NULL ASC, sfa.due_date ASC, tpt.sort_order ASC`,
     { parentUserId },
   );
 
@@ -518,7 +531,7 @@ async function getLockedTuitionAssignment(
   params: SaveTuitionTermScheduleParams,
 ) {
   const [rows] = await connection.execute<TuitionAssignmentRow[]>(
-    `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.status
+    `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status
      FROM student_fee_assignments sfa
      JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
      JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
@@ -626,5 +639,6 @@ type TuitionAssignmentRow = RowDataPacket & {
   id: number;
   amount_due: number | string;
   amount_paid: number | string;
+  due_date: Date | string | null;
   status: string;
 };

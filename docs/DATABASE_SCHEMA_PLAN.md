@@ -287,7 +287,7 @@ CREATE TABLE enrollment_documents (
 
 #### `fee_types`
 
-Defines tuition and other school fees. Tuition fee types can optionally have a fee type term template so the same installment schedule is reused whenever that tuition type is assigned.
+Defines tuition and other school fees. Current MVP tuition installments are managed per student assignment through `tuition_payment_terms`; `fee_type_term_templates` remains in the schema as a reserved future template layer.
 
 ```sql
 CREATE TABLE fee_types (
@@ -310,7 +310,7 @@ CREATE TABLE fee_types (
 
 #### `fee_type_term_templates`
 
-Stores reusable tuition payment term templates for a tuition fee type. This is the fee type term template layer: when admin/finance assigns a templated tuition fee to selected students, including grade/section-filtered bulk selections, the app automatically creates per-student tuition terms in `tuition_payment_terms`. Other fees do not use this table.
+Stores reusable tuition payment term templates for a tuition fee type. This table is reserved for future template reuse; the current MVP does not expose template inputs in the Add fee type modal and does not auto-create terms during fee assignment. Admin/finance creates final per-student schedules through row-level Manage terms.
 
 ```sql
 CREATE TABLE fee_type_term_templates (
