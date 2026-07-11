@@ -120,6 +120,25 @@ export async function updateTuitionAssignmentAction(formData: FormData) {
       throw new TuitionAssignmentError("This tuition has terms. Use Manage terms before changing the total amount.");
     }
 
+    if (termCount > 0) {
+      if (!dueDate) {
+        throw new TuitionAssignmentError("Fee due date is required while tuition terms exist.");
+      }
+
+      const [lateTermRows] = await connection.execute<CountRow[]>(
+        `SELECT COUNT(*) AS total
+         FROM tuition_payment_terms
+         WHERE student_fee_assignment_id = :assignmentId
+           AND status <> 'cancelled'
+           AND due_date > :dueDate`,
+        { assignmentId, dueDate },
+      );
+
+      if (Number(lateTermRows[0]?.total ?? 0) > 0) {
+        throw new TuitionAssignmentError("Fee due date cannot be earlier than an existing term schedule date.");
+      }
+    }
+
     await connection.execute<ResultSetHeader>(
       `UPDATE student_fee_assignments
        SET amount_due = :amountDue,
@@ -138,7 +157,7 @@ export async function updateTuitionAssignmentAction(formData: FormData) {
     await toast(
       "Tuition updated",
       termCount > 0
-        ? "Report details were updated. Parent deadlines still follow the term schedule."
+        ? "The official parent deadline and tuition details were updated."
         : "The parent fee deadline and tuition details were updated.",
     );
   } catch (error) {
@@ -222,4 +241,8 @@ type TuitionAssignmentRow = RowDataPacket & {
   amount_paid: number | string;
   status: string;
   term_count: number | string;
+};
+
+type CountRow = RowDataPacket & {
+  total: number | string;
 };

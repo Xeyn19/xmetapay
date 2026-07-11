@@ -128,7 +128,8 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
                       {row.terms.length > 0 ? row.termSummary : "No terms"}
                     </p>
                     <p className="mt-1 truncate text-[11px] font-medium text-[#5a6070]">
-                      {row.terms.length > 0 ? "Parents pay by term due dates" : row.dueDate ? `Fee due ${row.dueDate}` : "No fee due date"}
+                      {row.dueDate ? `Fee due ${row.dueDate}` : "No fee due date"}
+                      {row.terms.length > 0 ? " - terms are schedule notes" : ""}
                     </p>
                   </div>
                 </td>
@@ -226,7 +227,7 @@ function TuitionAssignmentEditModal({ row }: { row: TuitionReportRow }) {
                   Edit tuition assignment
                 </h2>
                 <p className="mt-1 text-[11.5px] leading-5 text-[#5a6070]">
-                  Update {row.student}&apos;s tuition report details. {hasTerms ? "Term due dates remain the parent payment deadlines." : "The fee due date is the parent payment deadline."}
+                  Update {row.student}&apos;s tuition report details. The fee due date is the official parent deadline.
                 </p>
               </div>
               <button
@@ -281,7 +282,7 @@ function TuitionAssignmentEditModal({ row }: { row: TuitionReportRow }) {
                     className="min-h-12 rounded-lg border border-black/10 bg-white px-3 text-[14px] normal-case tracking-normal text-[#0f1117] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15"
                   />
                   <span className="text-[11.5px] font-medium normal-case leading-5 tracking-normal text-[#5a6070]">
-                    {hasTerms ? "For reporting only. Parents pay by the term due dates." : "This is the parent payment deadline when no terms exist."}
+                    {hasTerms ? "Official parent deadline. Term dates must be on or before this date." : "This is the parent payment deadline."}
                   </span>
                 </label>
 
@@ -395,6 +396,7 @@ function TuitionTermsModal({ row }: { row: TuitionReportRow }) {
                   totalAmount={remainingBalance}
                   initialTerms={terms}
                   defaultTermCount={row.terms.length > 0 ? 0 : 3}
+                  latestDueDate={row.dueDate}
                   title="Student payment terms"
                   emptyText="No terms yet."
                   addLabel="Add term"

@@ -92,9 +92,8 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(forms, /Use for discounts, scholarships, or special charges/);
   assert.match(forms, /name="dueDate"/);
   assert.match(forms, /Fee due date/);
-  assert.match(forms, /Overall due date/);
-  assert.match(forms, /Parents pay by the term due dates from the template/);
-  assert.match(forms, /Used as the parent payment deadline when this tuition has no terms/);
+  assert.match(forms, /Official parent deadline\. Any payment term dates must be on or before this date/);
+  assert.match(forms, /Used as the parent payment deadline for this fee/);
   assert.match(forms, /Choose fee/);
   assert.match(forms, /Select students/);
   assert.match(forms, /Amount override and deadline/);

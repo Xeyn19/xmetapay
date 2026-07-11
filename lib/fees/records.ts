@@ -119,10 +119,11 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
       { billed: 0, paid: 0, outstanding: 0 },
     );
     const nextDue = rowsWithTerms
-      .flatMap(({ row, rawTerms }) => dueDateCandidates(row, rawTerms))
+      .flatMap(({ row }) => dueDateCandidates(row))
       .sort()[0];
     const displayRows = rowsWithTerms.map(({ row, rawTerms }) => {
-      const terms = formatFeeTerms(rawTerms);
+      const assignmentDueDate = row.due_date ? formatDate(row.due_date) : "Pending";
+      const terms = formatFeeTerms(rawTerms, assignmentDueDate);
 
       return {
         id: row.id,
@@ -133,7 +134,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         amountDue: money(row.amount_due),
         amountPaid: money(row.amount_paid),
         balance: money(Math.max(decimalValue(row.amount_due) - decimalValue(row.amount_paid), 0)),
-        dueDate: terms.length > 0 ? "See term schedule" : row.due_date ? formatDate(row.due_date) : "Pending",
+        dueDate: assignmentDueDate,
         status: labelForStatus(row.status),
         tone: feeTone(row.status, row.amount_due, row.amount_paid),
         terms,
@@ -151,7 +152,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         { label: "Total billed", value: rows.length > 0 ? money(totals.billed) : "Pending", note: rows.length > 0 ? `${rows.length} assigned fees` : "No assigned fees yet", accent: true },
         { label: "Paid", value: rows.length > 0 ? money(totals.paid) : "Pending", note: "Recorded payment allocations", tone: "green" },
         { label: "Outstanding", value: rows.length > 0 ? money(totals.outstanding) : "Pending", note: rows.length > 0 ? "Open and partial balances" : "Balances pending", tone: "red" },
-        { label: "Next due date", value: nextDue ? formatDate(nextDue) : "Pending", note: nextDue ? "Earliest unpaid fee or term due date" : "No due dates yet", tone: "blue" },
+        { label: "Next due date", value: nextDue ? formatDate(nextDue) : "Pending", note: nextDue ? "Earliest unpaid fee deadline" : "No due dates yet", tone: "blue" },
       ],
       rows: displayRows,
     };
@@ -259,27 +260,21 @@ function feeTone(status: string, amountDue: number | string, amountPaid: number 
   return "red";
 }
 
-function formatFeeTerms(terms: ReturnType<typeof parseTuitionTermsBlob>): ParentFeeTerm[] {
+function formatFeeTerms(terms: ReturnType<typeof parseTuitionTermsBlob>, assignmentDueDate: string): ParentFeeTerm[] {
   return terms.map((term) => ({
     id: term.id,
     name: term.name,
     amountDue: money(term.amountDue),
     amountPaid: money(term.amountPaid),
     balance: money(term.balance),
-    dueDate: formatDate(term.dueDate),
+    dueDate: assignmentDueDate,
     status: labelForStatus(term.status),
     payable: term.payable,
     tone: feeTone(term.status, term.amountDue, term.amountPaid),
   }));
 }
 
-function dueDateCandidates(row: ParentFeeSqlRow, terms: ReturnType<typeof parseTuitionTermsBlob>) {
-  if (terms.length > 0) {
-    return terms
-      .filter((term) => term.payable && term.balance > 0)
-      .map((term) => term.dueDate);
-  }
-
+function dueDateCandidates(row: ParentFeeSqlRow) {
   if (row.due_date && row.status !== "paid") {
     return [dateKey(row.due_date)];
   }

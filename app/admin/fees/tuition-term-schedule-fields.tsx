@@ -20,6 +20,7 @@ export function TuitionTermScheduleFields({
   title = "Payment terms",
   emptyText = "No payment term template yet.",
   addLabel = "Add term",
+  latestDueDate = null,
 }: {
   totalAmount: number;
   initialTerms?: TuitionTermScheduleInitialTerm[];
@@ -28,6 +29,7 @@ export function TuitionTermScheduleFields({
   title?: string;
   emptyText?: string;
   addLabel?: string;
+  latestDueDate?: string | null;
 }) {
   const summaryId = useId();
   const [terms, setTerms] = useState(() => initialEditableTerms(initialTerms, defaultTermCount, totalAmount));
@@ -41,8 +43,10 @@ export function TuitionTermScheduleFields({
           <div className="text-[12.5px] font-bold text-[#0f1117]">{title}</div>
           <p className="mt-1 text-[11.5px] leading-5 text-[#5a6070]">
             {optional
-              ? "Optional. Each term needs its own due date. These dates become the parent payment deadlines after assignment."
-              : "Split this tuition balance into scheduled installments. Each term due date becomes a parent payment deadline."}
+              ? "Optional. Each term needs a schedule date, but the fee due date remains the official parent deadline."
+              : latestDueDate
+                ? "Split this tuition balance into installments. Term dates must be on or before the fee due date."
+                : "Split this tuition balance into scheduled installments. Term dates are schedule details."}
           </p>
         </div>
         <span
@@ -83,6 +87,7 @@ export function TuitionTermScheduleFields({
                   name="termDueDate"
                   type="date"
                   value={term.dueDate}
+                  max={latestDueDate ?? undefined}
                   onChange={(event) => updateTerm(setTerms, term.key, "dueDate", event.target.value)}
                   className={fieldControlClass}
                   required
