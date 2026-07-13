@@ -88,6 +88,124 @@ export async function createStudentAction(formData: FormData) {
   redirect("/admin/students");
 }
 
+export async function createStudentsBatchAction(formData: FormData) {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+  let connection: PoolConnection | null = null;
+
+  try {
+    if (!canManageStudents(staffRole)) {
+      throw new Error("Your staff role cannot add or enroll students.");
+    }
+
+    const input = parseBatchStudentsForm(formData);
+
+    if (!input.ok) {
+      throw new Error(input.message);
+    }
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const setup = await getAdminSetupForUpdate(connection, session.userId);
+
+    if (!setup?.school_id || !setup.school_year_id) {
+      throw new Error("Ask a school administrator to complete school setup first.");
+    }
+
+    const duplicateRows: number[] = [];
+    const invalidRows: number[] = [];
+    const seenReferences = new Set<string>();
+    let createdCount = 0;
+
+    for (const [index, row] of input.data.entries()) {
+      const rowNumber = index + 1;
+
+      if (
+        !row.studentReference
+        || !row.firstName
+        || !row.lastName
+        || !Number.isInteger(row.gradeLevelId)
+        || row.gradeLevelId <= 0
+        || !Number.isInteger(row.sectionId)
+        || row.sectionId <= 0
+      ) {
+        invalidRows.push(rowNumber);
+        continue;
+      }
+
+      const normalizedReference = row.studentReference.toLowerCase();
+
+      if (seenReferences.has(normalizedReference) || await studentReferenceExists(connection, setup.school_id, row.studentReference)) {
+        duplicateRows.push(rowNumber);
+        continue;
+      }
+
+      seenReferences.add(normalizedReference);
+      const section = await getSection(connection, setup.school_id, setup.school_year_id, row.sectionId);
+
+      if (!section || section.grade_level_id !== row.gradeLevelId) {
+        invalidRows.push(rowNumber);
+        continue;
+      }
+
+      try {
+        const [studentResult] = await connection.execute<ResultSetHeader>(
+          `INSERT INTO students (school_id, student_reference, first_name, middle_name, last_name, birthdate, status)
+           VALUES (:schoolId, :studentReference, :firstName, :middleName, :lastName, :birthdate, 'active')`,
+          {
+            schoolId: setup.school_id,
+            studentReference: row.studentReference,
+            firstName: row.firstName,
+            middleName: row.middleName,
+            lastName: row.lastName,
+            birthdate: row.birthdate,
+          },
+        );
+
+        await connection.execute(
+          `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at)
+           VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          {
+            studentId: studentResult.insertId,
+            schoolYearId: setup.school_year_id,
+            gradeLevelId: row.gradeLevelId,
+            sectionId: row.sectionId,
+          },
+        );
+        createdCount += 1;
+      } catch (error) {
+        if (duplicateStudent(error)) {
+          duplicateRows.push(rowNumber);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    await connection.commit();
+    await setAuthFlashToast({
+      role: "admin",
+      title: createdCount > 0 ? "Students added" : "Students not added",
+      description: batchSummary(createdCount, duplicateRows, invalidRows),
+    });
+  } catch (error) {
+    if (connection) {
+      await connection.rollback().catch(() => undefined);
+    }
+
+    await setAuthFlashToast({
+      role: "admin",
+      title: "Students not added",
+      description: messageForError(error),
+    });
+  } finally {
+    connection?.release();
+  }
+
+  redirect("/admin/students");
+}
+
 function parseStudentForm(formData: FormData) {
   const data = {
     studentReference: value(formData, "studentReference"),
@@ -104,6 +222,81 @@ function parseStudentForm(formData: FormData) {
   }
 
   return { ok: true as const, data };
+}
+
+function parseBatchStudentsForm(formData: FormData) {
+  const raw = value(formData, "students");
+
+  if (!raw) {
+    return { ok: false as const, message: "Add at least one student row." };
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ok: false as const, message: "The student list could not be read. Try again." };
+  }
+
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return { ok: false as const, message: "Add at least one student row." };
+  }
+
+  if (parsed.length > 50) {
+    return { ok: false as const, message: "Add up to 50 students at a time." };
+  }
+
+  const rows: BatchStudentInput[] = [];
+
+  for (const item of parsed) {
+    rows.push({
+      studentReference: stringProperty(item, "studentReference"),
+      firstName: stringProperty(item, "firstName"),
+      middleName: stringProperty(item, "middleName") || null,
+      lastName: stringProperty(item, "lastName"),
+      birthdate: stringProperty(item, "birthdate") || null,
+      gradeLevelId: Number(stringProperty(item, "gradeLevelId")),
+      sectionId: Number(stringProperty(item, "sectionId")),
+    });
+  }
+
+  return { ok: true as const, data: rows };
+}
+
+function stringProperty(valueToCheck: unknown, key: string) {
+  if (typeof valueToCheck !== "object" || valueToCheck === null) {
+    return "";
+  }
+
+  const property = (valueToCheck as Record<string, unknown>)[key];
+  return typeof property === "string" ? property.trim() : "";
+}
+
+async function studentReferenceExists(connection: PoolConnection, schoolId: number, studentReference: string) {
+  const [rows] = await connection.execute<RowDataPacket[]>(
+    `SELECT id
+     FROM students
+     WHERE school_id = :schoolId AND LOWER(student_reference) = LOWER(:studentReference)
+     LIMIT 1`,
+    { schoolId, studentReference },
+  );
+
+  return rows.length > 0;
+}
+
+function batchSummary(createdCount: number, duplicateRows: number[], invalidRows: number[]) {
+  const parts = [`${createdCount} student${createdCount === 1 ? "" : "s"} added.`];
+
+  if (duplicateRows.length > 0) {
+    parts.push(`${duplicateRows.length} skipped because the reference already exists (row${duplicateRows.length === 1 ? "" : "s"} ${duplicateRows.join(", ")}).`);
+  }
+
+  if (invalidRows.length > 0) {
+    parts.push(`${invalidRows.length} row${invalidRows.length === 1 ? "" : "s"} need correction (row${invalidRows.length === 1 ? "" : "s"} ${invalidRows.join(", ")}).`);
+  }
+
+  return parts.join(" ");
 }
 
 async function getAdminSetupForUpdate(connection: PoolConnection, adminUserId: number) {
@@ -234,4 +427,14 @@ type SchoolMatchRow = RowDataPacket & {
 type SectionRow = RowDataPacket & {
   id: number;
   grade_level_id: number;
+};
+
+type BatchStudentInput = {
+  studentReference: string;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  birthdate: string | null;
+  gradeLevelId: number;
+  sectionId: number;
 };
