@@ -144,7 +144,7 @@ Main purpose:
 
 This table becomes the core source for enrollment dashboards and class assignments.
 
-During manual rollover, the school administrator reviews the target grade and section for each student. The system creates the new year-specific enrollment and does not copy the student master record or financial history.
+During manual rollover, the school administrator explicitly checks one or many source-year students, reviews each target grade and section, and saves only selected promote/repeat placements. The system creates the new year-specific enrollment and does not copy the student master record or financial history.
 
 ### `enrollment_documents`
 

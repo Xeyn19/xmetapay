@@ -67,7 +67,7 @@ Only one school year is still the active/current year. For MVP safety, operation
 2. The account stays pending until the company super admin approves it.
 3. The approved school administrator signs in and completes setup-only onboarding.
 4. The school administrator reviews and edits all school years from `School setup`.
-5. The school administrator can prepare a manual rollover by selecting source-year students and a target-year section.
+5. The school administrator can prepare a manual rollover by explicitly selecting one or many source-year students, reviewing each target placement, and saving only checked students.
 6. When the next year is ready, the school administrator activates it; XMETA Pay closes the previous active year.
 7. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
 8. New operational history rows are stamped with the active school year where supported.

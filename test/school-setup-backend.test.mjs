@@ -264,7 +264,7 @@ test("manual school setup page uses protected data and editable setup form", () 
   assert.match(rolloverForm, /buildPlacements/);
   assert.match(rolloverForm, /decision/);
   assert.match(rolloverForm, /promotions/);
-  assert.match(rolloverForm, /Apply to visible/);
+  assert.match(rolloverForm, /Apply to selected/);
   assert.match(rolloverForm, /Needs review/);
   assert.match(rolloverForm, /Save reviewed placements/);
   assert.match(rolloverForm, /duplicateSchoolYearNames\(rolloverYears\)/);
@@ -274,7 +274,11 @@ test("manual school setup page uses protected data and editable setup form", () 
   assert.match(rolloverForm, /name="sourceSchoolYearId"/);
   assert.match(rolloverForm, /name="targetSchoolYearId"/);
   assert.match(rolloverForm, /name="promotions"/);
-  assert.match(rolloverForm, /Select visible/);
+  assert.match(rolloverForm, /Select all visible/);
+  assert.match(rolloverForm, /Clear selection/);
+  assert.match(rolloverForm, /type="checkbox"/);
+  assert.match(rolloverForm, /selected: false/);
+  assert.match(rolloverForm, /submittedPlacements/);
   assert.match(rolloverForm, /Repeat/);
 });
 
