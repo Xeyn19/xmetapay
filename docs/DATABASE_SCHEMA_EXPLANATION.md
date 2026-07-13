@@ -144,6 +144,8 @@ Main purpose:
 
 This table becomes the core source for enrollment dashboards and class assignments.
 
+During manual rollover, the school administrator reviews the target grade and section for each student. The system creates the new year-specific enrollment and does not copy the student master record or financial history.
+
 ### `enrollment_documents`
 
 Tracks required enrollment documents.
@@ -366,7 +368,7 @@ The schema supports this practical backend flow:
 4. Admin creates student records individually or through the validated multi-student batch form; each valid student still receives its own master record.
 5. Parent registers and can be linked to a student through `student_guardians`.
 6. Admin enrolls students for the active school year.
-7. When a school year changes, the school administrator uses manual rollover to create target-year enrollments without duplicating `students`.
+7. When a school year changes, the school administrator reviews suggested promote/repeat placements and the system creates target-year `enrollments` without duplicating `students`.
 8. When the upcoming year is ready, the school administrator activates it; the previous active year becomes closed.
 8. Admin creates fee types and assigns fees to one or more selected students.
 9. Parent views fee balances from `student_fee_assignments`, including tuition terms when configured.

@@ -271,7 +271,7 @@ export function ManualSchoolSetupForm({
           <div>
             <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">Grades and sections</h2>
             <p className="mt-1 text-[11px] leading-4 text-[#5a6070]">
-              Editing {initialData.selectedSetupSchoolYearName ?? "the selected school year"}.
+              These sections are saved only for {initialData.selectedSetupSchoolYearName ?? "the selected school year"}. Grades are kept in the school catalog and can be reused in another year.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -306,6 +306,10 @@ export function ManualSchoolSetupForm({
               </select>
             </Field>
           ) : null}
+
+          <div className="rounded-lg border border-[#e64a19]/15 bg-[#fff7f3] px-3 py-2.5 text-[11px] leading-4 text-[#6b4a3f]">
+            Adding a grade makes it available to the school. Adding a section creates it for the selected school year only.
+          </div>
 
           {grades.map((grade, gradeIndex) => (
             <div key={grade.id} className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-3">

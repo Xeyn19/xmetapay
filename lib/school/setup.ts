@@ -108,10 +108,21 @@ export type AdminSchoolRolloverData = {
     name: string;
     reference: string;
     className: string;
+    gradeLevelId: number;
+    gradeSortOrder: number;
+    gradeName: string;
+    sectionName: string | null;
+  }>;
+  targetGrades: Array<{
+    id: number;
+    name: string;
+    sortOrder: number;
   }>;
   targetSections: Array<{
     id: number;
     schoolYearId: number;
+    gradeLevelId: number;
+    gradeSortOrder: number;
     schoolYearName: string;
     gradeName: string;
     sectionName: string;
@@ -461,34 +472,48 @@ export async function getAdminSchoolRolloverData(userId: number): Promise<AdminS
         warning: profile ? setupMissingSchoolWarning(profile.staff_role) : "Admin profile was not found.",
         years: [],
         students: [],
+        targetGrades: [],
         targetSections: [],
       };
     }
 
-    const [years, students, targetSections] = await Promise.all([
+    const hasGradeSortOrder = await hasGradeSortOrderColumn();
+    const [years, students, targetGrades, targetSections] = await Promise.all([
       getSchoolYearRows(school.id),
-      getRolloverStudentRows(school.id),
-      getRolloverSectionRows(school.id),
+      getRolloverStudentRows(school.id, hasGradeSortOrder),
+      getRolloverGradeRows(school.id, hasGradeSortOrder),
+      getRolloverSectionRows(school.id, hasGradeSortOrder),
     ]);
 
     return {
-      ready: years.length > 1 && students.length > 0 && targetSections.length > 0,
-      warning: years.length > 1
+      ready: years.some((year) => year.status === "upcoming") && students.length > 0 && targetSections.length > 0,
+      warning: years.some((year) => year.status === "upcoming")
         ? null
-        : "Add another school year before preparing rollover enrollments.",
+        : "Add an upcoming school year before preparing rollover enrollments.",
       years: years.map(({ id, name, startsOn, endsOn, status }) => ({ id, name, startsOn, endsOn, status })),
       students,
+      targetGrades,
       targetSections,
     };
-  } catch {
+  } catch (error) {
+    console.error("[school-rollover-data]", error instanceof Error ? error.message : error);
     return {
       ready: false,
       warning: "Rollover data is unavailable. Confirm MySQL/XAMPP and the full schema are ready.",
       years: [],
       students: [],
+      targetGrades: [],
       targetSections: [],
     };
   }
+}
+
+async function hasGradeSortOrderColumn() {
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    "SHOW COLUMNS FROM grade_levels LIKE 'sort_order'",
+  );
+
+  return rows.length > 0;
 }
 
 async function getAdminProfile(userId: number) {
@@ -814,7 +839,7 @@ function emptySetupFormData(schoolName: string): AdminSchoolSetupFormData {
   };
 }
 
-async function getRolloverStudentRows(schoolId: number) {
+async function getRolloverStudentRows(schoolId: number, hasGradeSortOrder: boolean) {
   const [rows] = await pool.execute<Array<RowDataPacket & {
     id: number;
     school_year_id: number;
@@ -823,16 +848,18 @@ async function getRolloverStudentRows(schoolId: number) {
     middle_name: string | null;
     last_name: string;
     grade_name: string;
+    grade_level_id: number;
+    grade_sort_order: number;
     section_name: string | null;
   }>>(
     `SELECT st.id, e.school_year_id, st.student_reference, st.first_name, st.middle_name, st.last_name,
-       gl.name AS grade_name, sec.name AS section_name
+       e.grade_level_id, gl.name AS grade_name, ${hasGradeSortOrder ? "gl.sort_order" : "0"} AS grade_sort_order, sec.name AS section_name
      FROM enrollments e
      JOIN students st ON st.id = e.student_id
      JOIN grade_levels gl ON gl.id = e.grade_level_id
      LEFT JOIN sections sec ON sec.id = e.section_id
      WHERE st.school_id = :schoolId AND e.status = 'enrolled'
-     ORDER BY e.school_year_id DESC, gl.sort_order ASC, st.last_name ASC, st.first_name ASC`,
+     ORDER BY e.school_year_id DESC, ${hasGradeSortOrder ? "gl.sort_order" : "gl.name"} ASC, st.last_name ASC, st.first_name ASC`,
     { schoolId },
   );
 
@@ -842,29 +869,58 @@ async function getRolloverStudentRows(schoolId: number) {
     name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(" "),
     reference: row.student_reference,
     className: [row.grade_name, row.section_name].filter(Boolean).join(" - "),
+    gradeLevelId: row.grade_level_id,
+    gradeSortOrder: Number(row.grade_sort_order ?? 0),
+    gradeName: row.grade_name,
+    sectionName: row.section_name,
   }));
 }
 
-async function getRolloverSectionRows(schoolId: number) {
+async function getRolloverGradeRows(schoolId: number, hasGradeSortOrder: boolean) {
+  const [rows] = await pool.execute<Array<RowDataPacket & {
+    id: number;
+    name: string;
+    sort_order: number;
+  }>>(
+    `SELECT id, name, ${hasGradeSortOrder ? "sort_order" : "0"} AS sort_order
+     FROM grade_levels
+     WHERE school_id = :schoolId
+     ORDER BY ${hasGradeSortOrder ? "sort_order" : "name"} ASC, name ASC`,
+    { schoolId },
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    sortOrder: Number(row.sort_order ?? 0),
+  }));
+}
+
+async function getRolloverSectionRows(schoolId: number, hasGradeSortOrder: boolean) {
   const [rows] = await pool.execute<Array<RowDataPacket & {
     id: number;
     school_year_id: number;
+    grade_level_id: number;
     school_year_name: string;
     grade_name: string;
+    grade_sort_order: number;
     section_name: string;
   }>>(
-    `SELECT sec.id, sec.school_year_id, sy.name AS school_year_name, gl.name AS grade_name, sec.name AS section_name
+    `SELECT sec.id, sec.school_year_id, sec.grade_level_id, sy.name AS school_year_name,
+       gl.name AS grade_name, ${hasGradeSortOrder ? "gl.sort_order" : "0"} AS grade_sort_order, sec.name AS section_name
      FROM sections sec
      JOIN school_years sy ON sy.id = sec.school_year_id
      JOIN grade_levels gl ON gl.id = sec.grade_level_id
      WHERE sec.school_id = :schoolId
-     ORDER BY sy.starts_on DESC, gl.sort_order ASC, sec.name ASC`,
+     ORDER BY sy.starts_on DESC, ${hasGradeSortOrder ? "gl.sort_order" : "gl.name"} ASC, sec.name ASC`,
     { schoolId },
   );
 
   return rows.map((row) => ({
     id: row.id,
     schoolYearId: row.school_year_id,
+    gradeLevelId: row.grade_level_id,
+    gradeSortOrder: Number(row.grade_sort_order ?? 0),
     schoolYearName: row.school_year_name,
     gradeName: row.grade_name,
     sectionName: row.section_name,

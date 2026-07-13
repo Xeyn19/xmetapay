@@ -241,6 +241,8 @@ CREATE TABLE student_guardians (
 
 Stores a student's enrollment per school year.
 
+The school-year rollover workflow reviews per-student promote, repeat, or skip decisions and inserts a new target-year enrollment only. The shared `students` record and all year-specific fee, payment, wallet, store, and reminder records remain separate.
+
 ```sql
 CREATE TABLE enrollments (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

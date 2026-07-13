@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CalendarDays, Edit3, Info, Layers3 } from "lucide-react";
 
 import { AlertBanner, AdminTable, DashboardCard, KpiCard, KpiGrid, StatusPill } from "@/app/admin/_components/admin-ui";
@@ -12,12 +13,13 @@ import { SchoolYearRolloverForm } from "@/app/admin/_components/school-year-roll
 export default async function AdminSchoolSetupPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ setupYearId?: string }>;
+  searchParams?: Promise<{ setupYearId?: string; edit?: string }>;
 }) {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/school-setup");
   const resolvedSearchParams = await searchParams;
   const setupYearId = parseSetupYearId(resolvedSearchParams?.setupYearId);
+  const editSetup = resolvedSearchParams?.edit === "1";
   const [overview, initialData, rolloverData] = await Promise.all([
     getAdminSchoolSetupOverview(session.userId),
     getAdminSchoolSetupFormData(session.userId, setupYearId),
@@ -73,11 +75,19 @@ export default async function AdminSchoolSetupPage({
                 <td className="font-bold">{year.enrollmentCount}</td>
                 <td className="font-bold">{year.feeTypeCount}</td>
                 <td>
-                  <SchoolYearActivationControl
-                    year={year}
-                    activeYear={overview.activeYear}
-                    duplicateName={duplicateYearNames.has(year.name.toLowerCase())}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/admin/school-setup?setupYearId=${year.id}&edit=1#edit-school-setup`}
+                      className="inline-flex min-h-10 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] transition hover:bg-[#f7f8fa] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+                    >
+                      Manage structure
+                    </Link>
+                    <SchoolYearActivationControl
+                      year={year}
+                      activeYear={overview.activeYear}
+                      duplicateName={duplicateYearNames.has(year.name.toLowerCase())}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}
@@ -87,10 +97,10 @@ export default async function AdminSchoolSetupPage({
         )}
       </DashboardCard>
 
-      <DashboardCard title={`Active year structure${overview.activeYear ? ` - ${overview.activeYear.name}` : ""}`} icon={Layers3}>
-        {overview.activeYearGrades.length > 0 ? (
+      <DashboardCard title={`Year structure${initialData.selectedSetupSchoolYearName ? ` - ${initialData.selectedSetupSchoolYearName}` : ""}`} icon={Layers3}>
+        {initialData.grades.some((grade) => grade.name.trim()) ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {overview.activeYearGrades.map((grade) => (
+            {initialData.grades.filter((grade) => grade.name.trim()).map((grade) => (
               <div key={grade.name} className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-3">
                 <div className="text-[12.5px] font-bold text-[#0f1117]">{grade.name}</div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -105,24 +115,24 @@ export default async function AdminSchoolSetupPage({
           </div>
         ) : (
           <EmptyState
-            title={overview.activeYear ? "No active-year sections yet" : "No active year selected"}
-            detail={overview.activeYear ? "Add sections for the active year." : "Choose one active school year before adding sections."}
+            title={initialData.selectedSetupSchoolYearName ? "No grades or sections for this year yet" : "No school year selected"}
+            detail={initialData.selectedSetupSchoolYearName ? `Choose Manage structure for ${initialData.selectedSetupSchoolYearName} below, then add the grades and sections used in that year.` : "Choose a school year from the table to manage its structure."}
           />
         )}
       </DashboardCard>
 
       <DashboardCard title="Prepare next year" icon={CalendarDays}>
         <div className="mb-4 max-w-3xl text-[12px] leading-5 text-[#5a6070]">
-          Promote selected students into another school year without duplicating their master student record.
+          Promote students enrolled in the selected source year into a target year without duplicating their master student record. Students not enrolled in the source year do not appear in this list.
         </div>
         <SchoolYearRolloverForm data={rolloverData} />
       </DashboardCard>
 
-      <details className="group overflow-hidden rounded-xl border border-black/[0.07] bg-white">
+      <details id="edit-school-setup" open={editSetup} className="group overflow-hidden rounded-xl border border-black/[0.07] bg-white">
         <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b border-black/[0.07] px-4 py-3.5 text-[13px] font-bold text-[#0f1117] marker:hidden sm:px-[18px]">
           <span className="flex items-center gap-2">
             <Edit3 className="size-[17px] text-[#e64a19]" />
-            Edit school setup
+            Edit school setup{initialData.selectedSetupSchoolYearName ? ` - ${initialData.selectedSetupSchoolYearName}` : ""}
           </span>
           <span className="rounded-lg border border-black/10 bg-white px-3 py-2 text-[12px] font-semibold text-[#5a6070] transition group-open:bg-[#f7f8fa]">
             Edit setup

@@ -8,6 +8,7 @@ const schoolSetupPagePath = "app/admin/(dashboard)/school-setup/page.tsx";
 const schoolSetupFormPath = "app/admin/_components/manual-school-setup-form.tsx";
 const schoolYearActivationControlPath = "app/admin/_components/school-year-activation-control.tsx";
 const schoolYearRolloverFormPath = "app/admin/_components/school-year-rollover-form.tsx";
+const rolloverServicePath = "lib/enrollment/rollover.ts";
 const onboardingSetupPagePath = "app/admin/onboarding/school-setup/page.tsx";
 const adminLayoutPath = "app/admin/(dashboard)/layout.tsx";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
@@ -116,8 +117,11 @@ test("admin manual school setup action is protected and saves submitted records"
   assert.match(action, /cookieStore\.set\(adminSchoolYearCookieName, String\(schoolYearId\)/);
   assert.match(action, /setAuthFlashToast/);
   assert.match(action, /export async function prepareSchoolYearRolloverAction\(formData: FormData\)/);
-  assert.match(action, /INSERT IGNORE INTO enrollments/);
-  assert.match(action, /targetSection\.school_year_id/);
+  assert.match(action, /applyRolloverPromotions/);
+  assert.match(action, /parseRolloverPromotions/);
+  assert.match(action, /targetSchoolYearId/);
+  assert.match(action, /promotions/);
+  assert.match(action, /cookieStore\.set\(adminSchoolYearCookieName, String\(targetSchoolYearId\)/);
   assert.match(action, /Rollover prepared/);
   assert.match(action, /export async function activateSchoolYearAction\(formData: FormData\)/);
   assert.match(action, /Only school administrators can activate a school year\./);
@@ -196,7 +200,8 @@ test("manual school setup page uses protected data and editable setup form", () 
   assert.match(page, /\{ label: "Action" \}/);
   assert.match(page, /duplicateName=\{duplicateYearNames\.has\(year\.name\.toLowerCase\(\)\)\}/);
   assert.match(page, /@\/app\/admin\/_components\/school-year-activation-control/);
-  assert.match(page, /Active year structure/);
+  assert.match(page, /Year structure/);
+  assert.match(page, /Manage structure/);
   assert.match(page, /Prepare next year/);
   assert.match(page, /Edit school setup/);
   assert.match(page, /<ManualSchoolSetupForm initialData=\{initialData\} \/>/);
@@ -254,15 +259,40 @@ test("manual school setup page uses protected data and editable setup form", () 
   assert.match(rolloverForm, /prepareSchoolYearRolloverAction/);
   assert.match(rolloverForm, /data\.years\.filter\(\(year\) => year\.status !== "closed"\)/);
   assert.match(rolloverForm, /year\.id !== sourceYearId && year\.status === "upcoming"/);
+  assert.match(rolloverForm, /data\.targetGrades/);
+  assert.match(rolloverForm, /sortOrder/);
+  assert.match(rolloverForm, /buildPlacements/);
+  assert.match(rolloverForm, /decision/);
+  assert.match(rolloverForm, /promotions/);
+  assert.match(rolloverForm, /Apply to visible/);
+  assert.match(rolloverForm, /Needs review/);
+  assert.match(rolloverForm, /Save reviewed placements/);
   assert.match(rolloverForm, /duplicateSchoolYearNames\(rolloverYears\)/);
   assert.match(rolloverForm, /schoolYearOptionLabel\(year, duplicateYearNames\)/);
   assert.match(rolloverForm, /year\.startsOn/);
   assert.match(rolloverForm, /year\.endsOn/);
   assert.match(rolloverForm, /name="sourceSchoolYearId"/);
-  assert.match(rolloverForm, /name="targetSectionId"/);
-  assert.match(rolloverForm, /name="studentId"/);
+  assert.match(rolloverForm, /name="targetSchoolYearId"/);
+  assert.match(rolloverForm, /name="promotions"/);
   assert.match(rolloverForm, /Select visible/);
-  assert.match(rolloverForm, /Prepare rollover/);
+  assert.match(rolloverForm, /Repeat/);
+});
+
+test("school-year rollover service validates reviewed placements without copying master records", () => {
+  assert.equal(existsSync(rolloverServicePath), true);
+  const service = readFileSync(rolloverServicePath, "utf8");
+
+  assert.match(service, /export async function applyRolloverPromotions/);
+  assert.match(service, /targetYear\.status !== "upcoming"/);
+  assert.match(service, /getSourceStudent/);
+  assert.match(service, /getTargetSection/);
+  assert.match(service, /targetSection\.grade_level_id !== promotion\.targetGradeLevelId/);
+  assert.match(service, /hasTargetEnrollment/);
+  assert.match(service, /INSERT INTO enrollments/);
+  assert.match(service, /status, submitted_at, enrolled_at/);
+  assert.doesNotMatch(service, /INSERT INTO students/);
+  assert.match(service, /decision === "repeat"/);
+  assert.match(service, /decision === "skip"/);
 });
 
 test("backend checklist tracks completed school setup backend slice", () => {

@@ -27,7 +27,7 @@ import {
 
 type StudentProfile = NonNullable<AdminStudentProfileRealData["student"]>;
 
-export function AdminStudentProfileSelector({ students }: { students: AdminStudentProfileSummary[] }) {
+export function AdminStudentProfileSelector({ students, schoolYearName }: { students: AdminStudentProfileSummary[]; schoolYearName: string | null }) {
   const [query, setQuery] = useState("");
   const [grade, setGrade] = useState("all");
   const [section, setSection] = useState("all");
@@ -66,7 +66,10 @@ export function AdminStudentProfileSelector({ students }: { students: AdminStude
   );
 
   return (
-    <DashboardCard title="Choose a student profile" icon={IdCard} bodyClassName="p-0">
+    <DashboardCard title={`Choose a student profile${schoolYearName ? ` - ${schoolYearName}` : ""}`} icon={IdCard} bodyClassName="p-0">
+      <div className="border-b border-black/[0.07] bg-[#f7f8fa] px-[18px] py-2.5 text-[11px] leading-4 text-[#5a6070]">
+        Showing all students in this school. Grade and section show their placement for {schoolYearName ?? "the selected school year"}; <span className="font-semibold">Pending</span> means no enrollment exists in that year yet.
+      </div>
       <div className="border-b border-black/[0.07] px-[18px] py-3">
         <DashboardTableControls
           query={query}

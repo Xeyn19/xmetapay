@@ -20,7 +20,7 @@ All school staff accounts sign in through the admin/school portal, but their das
 
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
-| `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections, prepare manual rollover enrollments, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |
+| `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections, review promote/repeat rollover placements, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |
 | `registrar` | Student and guardian records | View dashboard, add/enroll students individually or in a validated multi-student batch, view student profiles, view parent contacts | Set up school records, use finance pages, view reports |
 | `finance_officer` | Fees, payments, allowance, reminders, and reports | View dashboard, tuition, collections, other fees, allowance, store transactions, reports, log queued payment reminders, create store merchants, record wallet purchases | Set up school records, add/enroll students, manage parent contacts |
 

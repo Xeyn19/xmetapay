@@ -66,7 +66,7 @@ Done when: the full schema can be imported from a clean local database without e
 - [x] Add an admin school-year selector for viewing historical/upcoming year data.
 - [x] Add school-year stamps to payments, wallet transactions, store transactions, and notification logs.
 - [x] Let School setup edit grade/section structure for a selected school year.
-- [x] Add manual rollover so a school administrator can promote selected students into a target year section without duplicating student master records.
+- [x] Add a reviewable school-year rollover that suggests next-grade placements, supports promote/repeat/skip decisions, and never duplicates student master records.
 - [x] Add school-year activation so an upcoming year can become active and the previous active year closes automatically.
 - [x] Keep operational write actions tied to the active school year for MVP safety.
 - [x] Create grade levels and sections from the admin side or a safe local seed script.

@@ -16,7 +16,7 @@ export default async function StudentProfilePage() {
     <>
       {data.warning ? <AlertBanner tone="warn" icon={IdCard}>{data.warning}</AlertBanner> : null}
       {data.students.length > 0 ? (
-        <AdminStudentProfileSelector students={data.students} />
+        <AdminStudentProfileSelector students={data.students} schoolYearName={data.schoolYearName} />
       ) : (
         <AdminStudentProfileEmptyState />
       )}
