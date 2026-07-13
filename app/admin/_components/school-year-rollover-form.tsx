@@ -12,6 +12,7 @@ type PlacementDecision = "promote" | "repeat" | "skip";
 
 type PlacementRow = {
   studentId: number;
+  selected: boolean;
   decision: PlacementDecision;
   targetGradeLevelId: number;
   targetSectionId: number;
@@ -60,8 +61,13 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
     });
   }, [currentGrade, currentSection, query, sourceStudents]);
   const visibleIds = useMemo(() => new Set(visibleStudents.map((student) => student.id)), [visibleStudents]);
-  const selectedCount = placements.filter((placement) => placement.decision !== "skip").length;
-  const reviewCount = placements.filter((placement) => placement.decision === "skip").length;
+  const selectedCount = placements.filter((placement) => placement.selected).length;
+  const selectedVisibleCount = placements.filter((placement) => placement.selected && visibleIds.has(placement.studentId)).length;
+  const unselectedCount = sourceStudents.length - selectedCount;
+  const submittedPlacements = useMemo(
+    () => placements.filter((placement) => placement.selected && placement.decision !== "skip"),
+    [placements],
+  );
 
   function updatePlacement(studentId: number, patch: Partial<PlacementRow>) {
     setPlacements((current) => current.map((placement) => (
@@ -71,8 +77,16 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
 
   function updateDecision(studentId: number, decision: PlacementDecision) {
     updatePlacement(studentId, decision === "skip"
-      ? { decision, targetGradeLevelId: 0, targetSectionId: 0 }
-      : { decision });
+      ? { selected: false, decision }
+      : { selected: true, decision });
+  }
+
+  function toggleStudent(studentId: number, selected: boolean) {
+    setPlacements((current) => current.map((placement) => (
+      placement.studentId === studentId
+        ? { ...placement, selected, decision: selected && placement.decision === "skip" ? "promote" : placement.decision }
+        : placement
+    )));
   }
 
   function updateGrade(studentId: number, targetGradeLevelId: number) {
@@ -84,10 +98,14 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
     setPlacements((current) => current.map((placement) => (
       visibleIds.has(placement.studentId)
         ? decision === "skip"
-          ? { ...placement, decision, targetGradeLevelId: 0, targetSectionId: 0 }
-          : { ...placement, decision }
+          ? { ...placement, selected: false }
+          : { ...placement, selected: true, decision }
         : placement
     )));
+  }
+
+  function clearSelection() {
+    setPlacements((current) => current.map((placement) => ({ ...placement, selected: false })));
   }
 
   function applyBulkSection() {
@@ -98,7 +116,7 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
     }
 
     setPlacements((current) => current.map((placement) => (
-      visibleIds.has(placement.studentId)
+      visibleIds.has(placement.studentId) && placement.selected
         ? { ...placement, decision: "promote", targetGradeLevelId: section.gradeLevelId, targetSectionId: section.id }
         : placement
     )));
@@ -119,7 +137,7 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
     <form action={prepareSchoolYearRolloverAction} className="grid gap-4">
       <input type="hidden" name="sourceSchoolYearId" value={sourceYearId} />
       <input type="hidden" name="targetSchoolYearId" value={targetYearId} />
-      <input type="hidden" name="promotions" value={JSON.stringify(placements)} readOnly />
+      <input type="hidden" name="promotions" value={JSON.stringify(submittedPlacements)} readOnly />
 
       <div className="grid gap-3 lg:grid-cols-2">
         <Field label="From school year" required>
@@ -191,26 +209,26 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.07] p-3">
           <div className="text-[12px] font-semibold text-[#5a6070]">
-            {selectedCount} selected for enrollment · {reviewCount} not selected or needing review
+            {selectedCount === 1 ? "1 student selected" : `${selectedCount} students selected`} · {unselectedCount} not selected
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => selectVisible("promote")} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 text-[11.5px] font-semibold text-[#5a6070] hover:bg-[#eff1f5]">
-              <CheckSquare className="size-3.5" /> Select visible
+              <CheckSquare className="size-3.5" /> Select all visible
             </button>
-            <button type="button" onClick={() => selectVisible("skip")} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 text-[11.5px] font-semibold text-[#5a6070] hover:bg-[#eff1f5]">
-              <X className="size-3.5" /> Skip visible
+            <button type="button" onClick={clearSelection} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 text-[11.5px] font-semibold text-[#5a6070] hover:bg-[#eff1f5]">
+              <X className="size-3.5" /> Clear selection
             </button>
           </div>
         </div>
         <div className="grid gap-2 border-b border-black/[0.07] bg-[#f7f8fa] p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-          <p className="text-[11.5px] leading-5 text-[#5a6070]">Assign one target section to the filtered students when they share a class.</p>
+          <p className="text-[11.5px] leading-5 text-[#5a6070]">Assign one target section to the checked students visible in the current filter.</p>
           <div className="flex flex-col gap-2 min-[460px]:flex-row">
             <select value={bulkSectionId} onChange={(event) => setBulkSectionId(event.target.value)} className={cn(fieldControlClass, "min-[460px]:min-w-64")}>
               <option value="">Choose target section</option>
               {targetSections.map((section) => <option key={section.id} value={section.id}>{section.gradeName} - {section.sectionName}</option>)}
             </select>
-            <AdminButton type="button" tone="outline" onClick={applyBulkSection} disabled={!bulkSectionId || visibleStudents.length === 0}>
-              Apply to visible
+            <AdminButton type="button" tone="outline" onClick={applyBulkSection} disabled={!bulkSectionId || selectedVisibleCount === 0}>
+              Apply to selected
             </AdminButton>
           </div>
         </div>
@@ -218,6 +236,7 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
           <table className="min-w-[980px] w-full border-collapse text-[12px]">
             <thead>
               <tr className="bg-[#f7f8fa] text-left text-[10px] font-bold uppercase tracking-[0.04em] text-[#9ba3b8]">
+                <th className="border-b border-black/[0.07] px-3 py-2.5">Select</th>
                 <th className="border-b border-black/[0.07] px-3 py-2.5">Student</th>
                 <th className="border-b border-black/[0.07] px-3 py-2.5">Current class</th>
                 <th className="border-b border-black/[0.07] px-3 py-2.5">Decision</th>
@@ -233,19 +252,33 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
                 return (
                   <tr key={student.id} className="border-b border-black/[0.07] align-middle last:border-b-0">
                     <td className="px-3 py-3">
+                      <label className="flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-[#f7f8fa]">
+                        <input
+                          type="checkbox"
+                          checked={placement.selected}
+                          onChange={(event) => toggleStudent(student.id, event.target.checked)}
+                          aria-label={`Select ${student.name} for rollover`}
+                          className="size-4 accent-[#e64a19]"
+                        />
+                      </label>
+                    </td>
+                    <td className="px-3 py-3">
                       <div className="font-bold text-[#0f1117]">{student.name}</div>
                       <div className="font-mono text-[10.5px] text-[#5a6070]">{student.reference}</div>
                     </td>
                     <td className="px-3 py-3 text-[#5a6070]">{student.className || "Class pending"}</td>
                     <td className="px-3 py-3">
-                      <select value={placement.decision} onChange={(event) => updateDecision(student.id, event.target.value as PlacementDecision)} className="min-h-10 rounded-lg border border-black/15 bg-white px-2.5 text-[12px] font-semibold">
-                        <option value="promote">Promote</option>
-                        <option value="repeat">Repeat</option>
-                        <option value="skip">Needs review / not selected</option>
-                      </select>
+                      {placement.selected ? (
+                        <select value={placement.decision} onChange={(event) => updateDecision(student.id, event.target.value as PlacementDecision)} className="min-h-10 rounded-lg border border-black/15 bg-white px-2.5 text-[12px] font-semibold">
+                          <option value="promote">Promote</option>
+                          <option value="repeat">Repeat</option>
+                        </select>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-[#9ba3b8]">Not selected</span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
-                      {placement.decision === "skip" ? (
+                      {!placement.selected ? (
                         <span className="text-[11px] font-semibold text-[#9ba3b8]">Not selected</span>
                       ) : (
                         <select value={placement.targetGradeLevelId || ""} onChange={(event) => updateGrade(student.id, Number(event.target.value))} className="min-h-10 rounded-lg border border-black/15 bg-white px-2.5 text-[12px] font-semibold">
@@ -255,7 +288,7 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
                       )}
                     </td>
                     <td className="px-3 py-3">
-                      {placement.decision === "skip" ? (
+                      {!placement.selected ? (
                         <span className="text-[11px] font-semibold text-[#9ba3b8]">Choose Promote or Repeat first</span>
                       ) : (
                         <select value={placement.targetSectionId || ""} onChange={(event) => updatePlacement(student.id, { targetSectionId: Number(event.target.value) })} disabled={rowSections.length === 0} className="min-h-10 rounded-lg border border-black/15 bg-white px-2.5 text-[12px] font-semibold disabled:bg-[#f2f4f7]">
@@ -267,7 +300,7 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
                   </tr>
                 );
               }) : (
-                <tr><td colSpan={5} className="px-3 py-8 text-center font-semibold text-[#5a6070]">No enrolled students match the current filters.</td></tr>
+                <tr><td colSpan={6} className="px-3 py-8 text-center font-semibold text-[#5a6070]">No enrolled students match the current filters.</td></tr>
               )}
             </tbody>
           </table>
@@ -275,7 +308,7 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
       </div>
 
       <div className="flex flex-col gap-2 min-[460px]:flex-row min-[460px]:items-center min-[460px]:justify-between">
-        <p className="text-[12px] text-[#5a6070]">Only Promote and Repeat rows will be enrolled. Students needing review remain unchanged.</p>
+        <p className="text-[12px] text-[#5a6070]">Only checked students with a Promote or Repeat decision will be enrolled. Unchecked students remain unchanged.</p>
         <AdminButton type="submit" tone="primary" className="min-[460px]:w-auto" disabled={selectedCount === 0}>
           <ArrowRightLeft className="size-4" />
           Save reviewed placements
@@ -298,6 +331,7 @@ function buildPlacements(data: AdminSchoolRolloverData, sourceYearId: number, ta
 
       return {
         studentId: student.id,
+        selected: false,
         decision: nextGrade ? "promote" : "skip" as PlacementDecision,
         targetGradeLevelId: targetGrade?.id ?? 0,
         targetSectionId: matchingSection?.id ?? fallbackSection?.id ?? 0,
@@ -306,7 +340,7 @@ function buildPlacements(data: AdminSchoolRolloverData, sourceYearId: number, ta
 }
 
 function emptyPlacement(studentId: number): PlacementRow {
-  return { studentId, decision: "skip", targetGradeLevelId: 0, targetSectionId: 0 };
+  return { studentId, selected: false, decision: "skip", targetGradeLevelId: 0, targetSectionId: 0 };
 }
 
 function uniqueValues(values: string[]) {

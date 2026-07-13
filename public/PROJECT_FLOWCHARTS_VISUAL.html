@@ -480,7 +480,7 @@ flowchart TD
         </div>
 
         <h3>Manual School-Year Rollover</h3>
-        <p>Implemented: student master records are shared across years. Rollover suggests next-grade placements and lets the school administrator review promote, repeat, or skip decisions before creating target-year enrollment rows.</p>
+        <p>Implemented: student master records are shared across years. Rollover lists source-year enrollments, lets the school administrator explicitly select one or many students, review promote/repeat placements, and create target-year enrollment rows only for checked students.</p>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="admin-school-year-rollover.svg">Download SVG</button>
@@ -489,7 +489,7 @@ flowchart TD
 flowchart TD
   A["School administrator opens School setup"] --> B["Choose source and upcoming target school year"]
   B --> C["Generate next-grade and section suggestions"]
-  C --> D["Review promote, repeat, or skip decisions"]
+  C --> D["Select one or many students and review promote, repeat, or skip"]
   D --> E["Validate school administrator role and school ownership"]
   E --> F["Insert target-year enrollments only"]
   F --> G{"Student already enrolled in target year?"}
