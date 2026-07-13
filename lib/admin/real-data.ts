@@ -147,6 +147,7 @@ export type ReportsPageRealData = {
 
 export type AdminStudentProfileRealData = {
   warning: string | null;
+  schoolYearName: string | null;
   students: AdminStudentProfileSummary[];
   student: {
     id: number;
@@ -491,7 +492,7 @@ export async function getAdminStudentProfileRealData(
   const setup = await getAdminSetup(adminUserId);
 
   if (!setup.schoolId || !setup.schoolYearId) {
-    return { warning: setup.warning, students: [], student: null };
+    return { warning: setup.warning, schoolYearName: setup.schoolYearName, students: [], student: null };
   }
 
   try {
@@ -533,6 +534,7 @@ export async function getAdminStudentProfileRealData(
         warning: students.length > 0
           ? "Choose a student from the profile list to view accurate details."
           : "No student records yet. Add a student before viewing a profile.",
+        schoolYearName: setup.schoolYearName,
         students,
         student: null,
       };
@@ -549,6 +551,7 @@ export async function getAdminStudentProfileRealData(
 
     return {
       warning: null,
+      schoolYearName: setup.schoolYearName,
       students,
       student: {
         id: row.id,
@@ -590,7 +593,7 @@ export async function getAdminStudentProfileRealData(
       },
     };
   } catch {
-    return { warning: "Student profile data is unavailable. Confirm MySQL/XAMPP and the full schema are ready.", students: [], student: null };
+    return { warning: "Student profile data is unavailable. Confirm MySQL/XAMPP and the full schema are ready.", schoolYearName: setup.schoolYearName, students: [], student: null };
   }
 }
 

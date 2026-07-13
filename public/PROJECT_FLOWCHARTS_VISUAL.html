@@ -480,24 +480,23 @@ flowchart TD
         </div>
 
         <h3>Manual School-Year Rollover</h3>
-        <p>Implemented: student master records are shared across years. Rollover creates target-year enrollment rows without duplicating students.</p>
+        <p>Implemented: student master records are shared across years. Rollover suggests next-grade placements and lets the school administrator review promote, repeat, or skip decisions before creating target-year enrollment rows.</p>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="admin-school-year-rollover.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["School administrator opens School setup"] --> B["Choose source school year"]
-  B --> C["Select enrolled students from source year"]
-  C --> D["Choose target school year grade and section"]
-  D --> E["Submit Prepare rollover"]
-  E --> F["Validate school administrator role and school ownership"]
-  F --> G["Insert target-year enrollments"]
-  G --> H{"Student already enrolled in target year?"}
-  H -->|Yes| I["Skip duplicate and include in result"]
-  H -->|No| J["Student appears in target-year views"]
+  A["School administrator opens School setup"] --> B["Choose source and upcoming target school year"]
+  B --> C["Generate next-grade and section suggestions"]
+  C --> D["Review promote, repeat, or skip decisions"]
+  D --> E["Validate school administrator role and school ownership"]
+  E --> F["Insert target-year enrollments only"]
+  F --> G{"Student already enrolled in target year?"}
+  G -->|Yes| H["Skip duplicate and include in result"]
+  G -->|No| I["Student appears in target-year views"]
+  H --> K["Show rollover result"]
   I --> K["Show rollover result"]
-  J --> K
           </pre>
         </div>
 

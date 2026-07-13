@@ -267,22 +267,21 @@ Database touchpoints:
 
 Implemented.
 
-Student master records stay shared across years. Rollover creates a new `enrollments` row for the target school year; it does not duplicate the `students` row.
+Student master records stay shared across years. Rollover suggests the next grade, preserves a matching section name when possible, and lets the school administrator review promote, repeat, or skip decisions. Saving creates only new `enrollments` rows for the target school year; it does not duplicate `students` or copy fees, payments, wallets, stores, or reminders.
 
 ```mermaid
 flowchart TD
-  A["School administrator opens School setup"] --> B["Choose source school year"]
-  B --> C["Select enrolled students from source year"]
-  C --> D["Choose target school year grade and section"]
-  D --> E["Submit Prepare rollover"]
+  A["School administrator opens School setup"] --> B["Choose source and upcoming target school year"]
+  B --> C["Generate next-grade and section suggestions"]
+  C --> D["Review each student: promote, repeat, or skip"]
+  D --> E["Validate target grade and section"]
   E --> F["Require school_administrator role"]
-  F --> G["Validate source year and target section belong to school"]
-  G --> H["Insert target-year enrollments"]
-  H --> I{"Student already enrolled in target year?"}
-  I -->|Yes| J["Skip duplicate and include in result message"]
-  I -->|No| K["Student appears in target-year views"]
-  J --> L["Show rollover result"]
-  K --> L
+  F --> G["Insert target-year enrollments only"]
+  G --> H{"Student already enrolled in target year?"}
+  H -->|Yes| I["Skip duplicate and include in result message"]
+  H -->|No| J["Student appears in target-year views"]
+  I --> K["Show rollover result"]
+  J --> K
 ```
 
 Database touchpoints:

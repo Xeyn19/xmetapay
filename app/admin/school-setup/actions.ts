@@ -9,6 +9,11 @@ import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import { getAdminStaffRole } from "@/lib/admin/access";
 import { canManageSchoolSetup } from "@/lib/admin/permissions";
+import {
+  applyRolloverPromotions,
+  parseRolloverPromotions,
+  RolloverValidationError,
+} from "@/lib/enrollment/rollover";
 import { adminSchoolYearCookieName } from "@/lib/school/setup";
 
 type SetupGradeInput = {
@@ -116,7 +121,7 @@ export async function saveSchoolSetupAction(formData: FormData) {
     connection?.release();
   }
 
-  redirect("/admin/dashboard");
+  redirect(redirectTo === "/admin/onboarding/school-setup" ? "/admin/dashboard" : redirectTo);
 }
 
 export async function prepareSchoolYearRolloverAction(formData: FormData) {
@@ -133,14 +138,14 @@ export async function prepareSchoolYearRolloverAction(formData: FormData) {
   }
 
   const sourceSchoolYearId = positiveIntegerValue(formData, "sourceSchoolYearId");
-  const targetSectionId = positiveIntegerValue(formData, "targetSectionId");
-  const studentIds = selectedStudentIds(formData);
+  const targetSchoolYearId = positiveIntegerValue(formData, "targetSchoolYearId");
+  const promotions = parseRolloverPromotions(textValue(formData, "promotions"));
 
-  if (!sourceSchoolYearId || !targetSectionId || studentIds.length === 0) {
+  if (!sourceSchoolYearId || !targetSchoolYearId || promotions.length === 0) {
     await setAuthFlashToast({
       role: "admin",
       title: "Rollover not saved",
-      description: "Choose a source year, target section, and at least one student.",
+      description: "Review at least one student placement and choose both school years.",
     });
     redirect("/admin/school-setup");
   }
@@ -157,57 +162,29 @@ export async function prepareSchoolYearRolloverAction(formData: FormData) {
       throw new RolloverValidationError("Complete school setup before preparing a rollover.");
     }
 
-    const sourceYear = await getSchoolYearForSchool(connection, profile.school_id, sourceSchoolYearId);
-    const targetSection = await getSectionForSchool(connection, profile.school_id, targetSectionId);
-
-    if (!sourceYear || !targetSection) {
-      throw new RolloverValidationError("Choose valid source and target school-year records.");
-    }
-
-    if (sourceYear.id === targetSection.school_year_id) {
-      throw new RolloverValidationError("Choose a target section from a different school year.");
-    }
-
-    const students = await getSourceRolloverStudents(connection, profile.school_id, sourceSchoolYearId, studentIds);
-
-    if (students.length === 0) {
-      throw new RolloverValidationError("No selected students were found in the source year.");
-    }
-
-    let createdCount = 0;
-    let skippedCount = 0;
-
-    for (const student of students) {
-      const [result] = await connection.execute<ResultSetHeader>(
-        `INSERT IGNORE INTO enrollments (
-           student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at
-         )
-         VALUES (
-           :studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', NOW(), NOW()
-         )`,
-        {
-          studentId: student.id,
-          schoolYearId: targetSection.school_year_id,
-          gradeLevelId: targetSection.grade_level_id,
-          sectionId: targetSection.id,
-        },
-      );
-
-      if (result.affectedRows > 0) {
-        createdCount += 1;
-      } else {
-        skippedCount += 1;
-      }
-    }
+    const result = await applyRolloverPromotions(connection, {
+      schoolId: profile.school_id,
+      sourceSchoolYearId,
+      targetSchoolYearId,
+      promotions,
+    });
 
     await connection.commit();
+    const cookieStore = await cookies();
+    cookieStore.set(adminSchoolYearCookieName, String(targetSchoolYearId), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+    });
     revalidatePath("/admin/school-setup");
     revalidatePath("/admin/students");
     revalidatePath("/admin/student-profile");
     await setAuthFlashToast({
       role: "admin",
       title: "Rollover prepared",
-      description: `${createdCount} student${createdCount === 1 ? "" : "s"} enrolled in the target year.${skippedCount > 0 ? ` ${skippedCount} already had target-year enrollment.` : ""}`,
+      description: rolloverSummary(result),
     });
   } catch (error) {
     if (connection) {
@@ -226,6 +203,16 @@ export async function prepareSchoolYearRolloverAction(formData: FormData) {
   }
 
   redirect("/admin/school-setup");
+}
+
+function rolloverSummary(result: Awaited<ReturnType<typeof applyRolloverPromotions>>) {
+  return [
+    `${result.promotedCount} promoted`,
+    `${result.repeatCount} repeat placement${result.repeatCount === 1 ? "" : "s"}`,
+    `${result.skippedCount} skipped`,
+    `${result.duplicateCount} already enrolled`,
+    `${result.reviewCount} needing review`,
+  ].join(". ") + ".";
 }
 
 export async function activateSchoolYearAction(formData: FormData) {
@@ -445,15 +432,6 @@ function positiveIntegerValue(formData: FormData, key: string) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
-function selectedStudentIds(formData: FormData) {
-  const ids = formData
-    .getAll("studentId")
-    .map((value) => (typeof value === "string" ? Number(value) : NaN))
-    .filter((value) => Number.isInteger(value) && value > 0);
-
-  return [...new Set(ids)].slice(0, 200);
-}
-
 function schoolSetupRedirectTarget(formData: FormData) {
   const value = textValue(formData, "redirectTo");
 
@@ -651,18 +629,6 @@ async function resolveSectionSchoolYearId(
   return rows[0]?.id ?? activeSchoolYearId;
 }
 
-async function getSchoolYearForSchool(connection: PoolConnection, schoolId: number, schoolYearId: number) {
-  const [rows] = await connection.execute<Array<RowDataPacket & { id: number }>>(
-    `SELECT id
-     FROM school_years
-     WHERE id = :schoolYearId AND school_id = :schoolId
-     LIMIT 1`,
-    { schoolYearId, schoolId },
-  );
-
-  return rows[0] ?? null;
-}
-
 async function getSchoolYearActivationTargetForUpdate(connection: PoolConnection, schoolId: number, schoolYearId: number) {
   const [rows] = await connection.execute<Array<RowDataPacket & {
     id: number;
@@ -712,45 +678,6 @@ async function countSchoolYearsWithName(connection: PoolConnection, schoolId: nu
   );
 
   return Number(rows[0]?.year_count ?? 0);
-}
-
-async function getSectionForSchool(connection: PoolConnection, schoolId: number, sectionId: number) {
-  const [rows] = await connection.execute<Array<RowDataPacket & {
-    id: number;
-    school_year_id: number;
-    grade_level_id: number;
-  }>>(
-    `SELECT id, school_year_id, grade_level_id
-     FROM sections
-     WHERE id = :sectionId AND school_id = :schoolId
-     LIMIT 1`,
-    { sectionId, schoolId },
-  );
-
-  return rows[0] ?? null;
-}
-
-async function getSourceRolloverStudents(
-  connection: PoolConnection,
-  schoolId: number,
-  sourceSchoolYearId: number,
-  studentIds: number[],
-) {
-  const placeholders = studentIds.map((_, index) => `:studentId${index}`).join(", ");
-  const studentParams = Object.fromEntries(studentIds.map((id, index) => [`studentId${index}`, id]));
-  const [rows] = await connection.execute<Array<RowDataPacket & { id: number }>>(
-    `SELECT st.id
-     FROM students st
-     JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :sourceSchoolYearId
-     WHERE st.school_id = :schoolId
-       AND st.id IN (${placeholders})
-       AND e.status = 'enrolled'
-     ORDER BY st.id ASC
-     FOR UPDATE`,
-    { schoolId, sourceSchoolYearId, ...studentParams },
-  );
-
-  return rows;
 }
 
 async function ensureSections(
@@ -820,5 +747,4 @@ type SchoolRow = RowDataPacket & {
   id: number;
 };
 
-class RolloverValidationError extends Error {}
 class ActivationValidationError extends Error {}
