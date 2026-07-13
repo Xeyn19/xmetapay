@@ -640,11 +640,11 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Admin opens students page"] --> B["Create or search student by reference"]
-  B --> C{"Student exists?"}
-  C -->|No| D["Create student record"]
-  C -->|Yes| E["Open existing student record"]
-  D --> F["Create enrollment for active school year"]
+  A["Admin opens students page"] --> B{"Add one student or multiple?"}
+  B -->|Single| C["Create one student record"]
+  B -->|Batch| D["Validate each student row"]
+  D --> E["Create valid student records"]
+  C --> F["Create enrollment for active school year"]
   E --> F
   F --> G["Assign grade level and section"]
   G --> H["Student appears in admin student table"]

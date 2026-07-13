@@ -33,7 +33,7 @@ Implemented:
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Company super admin approval for new school admin registrations.
 - Company super admin monitoring for school admin accounts.
-- Admin student creation and enrollment.
+- Admin single-student creation and enrollment, plus validated multi-student batch enrollment.
 - Admin student profile selector and exact profile route `/admin/students/[studentId]`.
 - Parent-to-student linking through `student_reference`.
 - Parent dashboard reads linked students through `student_guardians`.
@@ -75,9 +75,11 @@ For the current backend phase, parents do not directly enroll new students from 
 flowchart TD
   A["School administrator registers or logs in"] --> B["Admin sets up school records"]
   B --> C["School, school year, grade levels, and sections exist"]
-  C --> D["School administrator or registrar creates student"]
-  D --> E["Admin creates enrollment"]
-  E --> F["Student gets official student_reference"]
+  C --> D{"Add students one at a time or in a batch?"}
+  D -->|Single| E["Create student and active-year enrollment"]
+  D -->|Batch| F["Validate each row and create valid student/enrollment records"]
+  E --> G["Student gets official student_reference"]
+  F --> G
 
   G["Parent registers or logs in"] --> H["Parent submits student_reference"]
   H --> I{"Matching student found?"}
@@ -320,7 +322,7 @@ Database touchpoints:
 
 Implemented.
 
-The school/admin side creates the official student record first. That student receives the `student_reference` that parents use for linking.
+The school/admin side creates the official student record first. Admins can use the quick single-student form or the repeatable batch form. Each valid batch row receives its own `student_reference`, grade, section, and active-year enrollment. Duplicate references are skipped and invalid rows are reported without discarding valid rows.
 
 ```mermaid
 flowchart TD

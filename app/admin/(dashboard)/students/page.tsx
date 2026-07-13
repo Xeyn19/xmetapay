@@ -6,6 +6,7 @@ import { getAdminStudentPageData } from "@/lib/students/records";
 
 import { AlertBanner, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
 import { StudentEnrollmentForm } from "./student-enrollment-form";
+import { BulkStudentEnrollmentModal } from "./bulk-student-enrollment-modal";
 import { StudentsTable } from "./students-table";
 
 export default async function StudentsPage() {
@@ -28,7 +29,18 @@ export default async function StudentsPage() {
       </KpiGrid>
 
       <div id="add-student" className="scroll-mt-32">
-        <DashboardCard title="Add student" icon={UserPlus} className="mb-5">
+        <DashboardCard
+          title="Add student"
+          icon={UserPlus}
+          className="mb-5"
+          action={
+            <BulkStudentEnrollmentModal
+              ready={data.ready}
+              gradeOptions={data.gradeOptions}
+              sectionOptions={data.sectionOptions}
+            />
+          }
+        >
           <StudentEnrollmentForm
             ready={data.ready}
             gradeOptions={data.gradeOptions}

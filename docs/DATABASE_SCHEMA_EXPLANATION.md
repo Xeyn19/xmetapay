@@ -363,7 +363,7 @@ The schema supports this practical backend flow:
 1. Admin registers and logs in through the existing auth tables.
 2. A school record is created and linked to school setup records.
 3. Admin creates one or many school years, chooses one active year, then creates grade levels and selected-year sections.
-4. Admin creates student records.
+4. Admin creates student records individually or through the validated multi-student batch form; each valid student still receives its own master record.
 5. Parent registers and can be linked to a student through `student_guardians`.
 6. Admin enrolls students for the active school year.
 7. When a school year changes, the school administrator uses manual rollover to create target-year enrollments without duplicating `students`.

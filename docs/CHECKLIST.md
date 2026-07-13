@@ -80,6 +80,7 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 
 - [x] Add backend helpers for `students` and `student_guardians`.
 - [x] Create an admin flow for adding or listing students.
+- [x] Support quick single-student enrollment and validated multi-student batch enrollment with per-row grade/section placement.
 - [x] Restrict student creation/enrollment to `school_administrator` and `registrar`.
 - [x] Link parent accounts to students using `student_reference`.
 - [x] Allow parent registration to submit one or more student references.

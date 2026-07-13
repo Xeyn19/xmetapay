@@ -8,6 +8,7 @@ const parentStudentLinkActionsPath = "app/parent/student-link/actions.ts";
 const authActionsPath = "app/auth/actions.ts";
 const adminStudentsPagePath = "app/admin/(dashboard)/students/page.tsx";
 const adminStudentFormPath = "app/admin/(dashboard)/students/student-enrollment-form.tsx";
+const adminBulkStudentFormPath = "app/admin/(dashboard)/students/bulk-student-enrollment-modal.tsx";
 const adminParentsPagePath = "app/admin/(dashboard)/parents/page.tsx";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
 const parentLayoutPath = "app/parent/(portal)/layout.tsx";
@@ -59,6 +60,38 @@ test("admin student action is protected and creates student enrollment records",
   assert.match(action, /section\.grade_level_id !== input\.data\.gradeLevelId/);
   assert.match(action, /Choose a section under the selected grade\./);
   assert.match(action, /redirect\("\/admin\/students"\)/);
+  assert.match(action, /export async function createStudentsBatchAction\(formData: FormData\)/);
+  assert.match(action, /parseBatchStudentsForm/);
+  assert.match(action, /studentReferenceExists/);
+  assert.match(action, /batchSummary/);
+  assert.match(action, /createdCount/);
+  assert.match(action, /duplicateRows/);
+  assert.match(action, /invalidRows/);
+  assert.match(action, /INSERT INTO students/);
+  assert.match(action, /INSERT INTO enrollments/);
+});
+
+test("bulk student enrollment form supports repeatable rows and per-row class placement", () => {
+  assert.equal(existsSync(adminBulkStudentFormPath), true);
+  const form = readFileSync(adminBulkStudentFormPath, "utf8");
+
+  assert.match(form, /"use client";/);
+  assert.match(form, /createStudentsBatchAction/);
+  assert.match(form, /name="students"/);
+  assert.match(form, /Add multiple students/);
+  assert.match(form, /Add student/);
+  assert.match(form, /Clear all/);
+  assert.match(form, /Save students/);
+  assert.match(form, /Student reference/);
+  assert.match(form, /First name/);
+  assert.match(form, /Middle name/);
+  assert.match(form, /Last name/);
+  assert.match(form, /Birthdate/);
+  assert.match(form, /Grade level/);
+  assert.match(form, /Section/);
+  assert.match(form, /section\.gradeLevelId === Number\(row\.gradeLevelId\)/);
+  assert.match(form, /sectionId: ""/);
+  assert.match(form, /max-w-6xl/);
 });
 
 test("parent student link action is protected and links by student reference", () => {
@@ -105,6 +138,7 @@ test("admin and parent pages use database helpers instead of mock student arrays
   assert.doesNotMatch(adminStudentsPage, /href="\/admin\/student-profile"/);
   assert.match(adminStudentForm, /createStudentAction/);
   assert.match(adminStudentForm, /<form action=\{createStudentAction\}/);
+  assert.match(adminStudentsPage, /BulkStudentEnrollmentModal/);
   assert.doesNotMatch(adminStudentsPage, /studentRows|studentsKpis/);
 
   assert.match(adminParentsPage, /getAdminParentsPageData/);
