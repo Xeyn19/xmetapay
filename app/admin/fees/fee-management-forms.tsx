@@ -38,21 +38,23 @@ export function FeeCreateTypeForm({
 }) {
   const createAction = createFeeTypeAction.bind(null, category, redirectPath);
   const label = feeLabel(category);
+  const title = category === "other" ? "Add other fee type" : "Create tuition fee type";
+  const description = category === "other"
+    ? "Create a reusable charge for this school year."
+    : "Add the fee name and its usual amount. You can still override the amount when assigning it.";
 
   return (
     <form action={createAction} className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-4">
       <div className="mb-3 flex items-center gap-2 text-[13px] font-bold text-[#0f1117]">
         <Plus className="size-4 text-[#e64a19]" />
-        Create {label} type
+        {title}
       </div>
-      <p className="mb-4 max-w-xl text-[12px] leading-5 text-[#5a6070]">
-        Add the fee name and its usual amount. You can still override the amount when assigning it.
-      </p>
+      <p className="mb-4 max-w-xl text-[12px] leading-5 text-[#5a6070]">{description}</p>
       <div className="grid gap-3 min-[560px]:grid-cols-2">
         <Field label="Fee name" required>
           <input name="name" className={fieldControlClass} placeholder={category === "tuition" ? "Tuition" : "Activity fee"} required />
         </Field>
-        <Field label="Default amount" required>
+        <Field label={category === "other" ? "Default amount per student" : "Default amount"} required>
           <input
             name="defaultAmount"
             type="number"
@@ -105,6 +107,7 @@ export function FeeAssignStudentsForm({
   const assignAction = assignStudentFeeAction.bind(null, category, redirectPath);
   const label = feeLabel(category);
   const [selectedFeeTypeId, setSelectedFeeTypeId] = useState("");
+  const [selectedStudentCount, setSelectedStudentCount] = useState(0);
   const dueDateLabel = "Fee due date";
   const dueDateHelp = category === "tuition"
     ? "Official parent deadline. Any payment term dates must be on or before this date."
@@ -114,7 +117,7 @@ export function FeeAssignStudentsForm({
     <form action={assignAction} className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-4">
       <div className="mb-3 flex items-center gap-2 text-[13px] font-bold text-[#0f1117]">
         <Receipt className="size-4 text-[#e64a19]" />
-        Assign {label} to selected students
+        {category === "other" ? "Assign other fee" : "Assign tuition fee"}
       </div>
       <div className="space-y-4">
         <FeeFormStep number="1" title="Choose fee">
@@ -139,28 +142,37 @@ export function FeeAssignStudentsForm({
 
         <FeeFormStep number="2" title="Select students">
           <Field label="Students" required>
-            <FeeStudentChecklist students={data.students} disabled={!data.ready || data.students.length === 0} />
+            <FeeStudentChecklist
+              students={data.students}
+              disabled={!data.ready || data.students.length === 0}
+              onSelectionChange={setSelectedStudentCount}
+            />
           </Field>
         </FeeFormStep>
 
-        <FeeFormStep number="3" title="Amount override and deadline">
+        <FeeFormStep number="3" title="Set amount and deadline">
           <div className="grid gap-3 min-[560px]:grid-cols-2">
             <Field label="Custom amount">
               <input name="amountDue" type="number" min="0.01" step="0.01" className={fieldControlClass} placeholder="Leave blank to use fee default" />
               <p className="mt-1.5 text-[11.5px] leading-5 text-[#5a6070]">
-                Use for discounts, scholarships, or special charges.
+                Leave blank to use the default amount. Use this for discounts or approved exceptions.
               </p>
             </Field>
             <Field label={dueDateLabel}>
               <input name="dueDate" type="date" className={fieldControlClass} />
               <p className="mt-1.5 text-[11.5px] leading-5 text-[#5a6070]">
-                {dueDateHelp}
+                {category === "other" ? "The date this fee should be paid by the parent." : dueDateHelp}
               </p>
             </Field>
           </div>
         </FeeFormStep>
       </div>
-      <AdminButton type="submit" tone="dark" className="mt-4 w-full min-[420px]:w-auto" disabled={!data.ready || data.students.length === 0 || data.feeTypes.length === 0}>
+      <AdminButton
+        type="submit"
+        tone="dark"
+        className="mt-4 w-full min-[420px]:w-auto"
+        disabled={!data.ready || data.students.length === 0 || data.feeTypes.length === 0 || !selectedFeeTypeId || selectedStudentCount === 0}
+      >
         <Receipt className="size-4" />
         Assign fee
       </AdminButton>
