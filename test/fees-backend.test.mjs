@@ -75,7 +75,8 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(forms, /export function FeeAssignStudentsForm/);
   assert.match(forms, /name="defaultAmount"/);
   assert.match(forms, /FeeStudentChecklist/);
-  assert.match(forms, /Assign \{label\} to selected students/);
+  assert.match(forms, /Assign other fee/);
+  assert.match(forms, /Assign tuition fee/);
   assert.match(studentChecklist, /name="studentIds"/);
   assert.match(studentChecklist, /Search enrolled students/);
   assert.match(studentChecklist, /All grades/);
@@ -89,14 +90,14 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(forms, /name="amountDue"/);
   assert.match(forms, /Custom amount/);
   assert.match(forms, /Leave blank to use fee default/);
-  assert.match(forms, /Use for discounts, scholarships, or special charges/);
+  assert.match(forms, /Leave blank to use the default amount\. Use this for discounts or approved exceptions/);
   assert.match(forms, /name="dueDate"/);
   assert.match(forms, /Fee due date/);
   assert.match(forms, /Official parent deadline\. Any payment term dates must be on or before this date/);
   assert.match(forms, /Used as the parent payment deadline for this fee/);
   assert.match(forms, /Choose fee/);
   assert.match(forms, /Select students/);
-  assert.match(forms, /Amount override and deadline/);
+  assert.match(forms, /Set amount and deadline/);
   assert.match(forms, /xl:grid-cols-\[0\.8fr_1\.2fr\]/);
   assert.doesNotMatch(forms, /Amount due/);
   assert.doesNotMatch(forms, /Use default/);
@@ -171,10 +172,21 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.doesNotMatch(createFormSection, /FeeStudentChecklist/);
   assert.doesNotMatch(createFormSection, /name="amountDue"/);
   assert.doesNotMatch(createFormSection, /name="dueDate"/);
+  assert.match(createFormSection, /Add other fee type/);
+  assert.match(createFormSection, /Create a reusable charge for this school year/);
+  assert.match(createFormSection, /Default amount per student/);
   assert.match(assignFormSection, /FeeStudentChecklist/);
   assert.match(assignFormSection, /name="amountDue"/);
   assert.match(assignFormSection, /name="dueDate"/);
+  assert.match(assignFormSection, /Set amount and deadline/);
+  assert.match(assignFormSection, /Leave blank to use the default amount/);
+  assert.match(assignFormSection, /The date this fee should be paid by the parent/);
+  assert.match(assignFormSection, /selectedStudentCount === 0/);
   assert.doesNotMatch(assignFormSection, /name="defaultAmount"/);
+
+  const checklist = readFileSync("app/admin/fees/fee-student-checklist.tsx", "utf8");
+  assert.match(checklist, /onSelectionChange/);
+  assert.match(checklist, /selectedIds\.length === 1 \? "student" : "students"/);
 });
 
 test("other fees real data includes paid assignment counts and screenshot-style totals", () => {

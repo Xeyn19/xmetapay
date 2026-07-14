@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckSquare, Search, Square, X } from "lucide-react";
 
 import type { AdminFeeSetupData } from "@/lib/fees/records";
@@ -12,9 +12,11 @@ type StudentOption = AdminFeeSetupData["students"][number];
 export function FeeStudentChecklist({
   students,
   disabled,
+  onSelectionChange,
 }: {
   students: StudentOption[];
   disabled: boolean;
+  onSelectionChange?: (count: number) => void;
 }) {
   const [query, setQuery] = useState("");
   const [grade, setGrade] = useState("all");
@@ -40,6 +42,10 @@ export function FeeStudentChecklist({
   const visibleIds = filteredStudents.map((student) => student.id);
   const selectedSet = new Set(selectedIds);
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedSet.has(id));
+
+  useEffect(() => {
+    onSelectionChange?.(selectedIds.length);
+  }, [onSelectionChange, selectedIds.length]);
 
   const toggleStudent = (studentId: number) => {
     setSelectedIds((current) => (
@@ -108,7 +114,7 @@ export function FeeStudentChecklist({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-[11.5px] font-medium text-[#5a6070]">
-          {selectedIds.length} selected
+          {selectedIds.length} {selectedIds.length === 1 ? "student" : "students"} selected
         </div>
         <div className="flex flex-wrap gap-2">
           <AdminButton
