@@ -88,6 +88,100 @@ export async function createStudentAction(formData: FormData) {
   redirect("/admin/students");
 }
 
+export async function enrollExistingStudentAction(formData: FormData) {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+  let connection: PoolConnection | null = null;
+
+  try {
+    if (!canManageStudents(staffRole)) {
+      throw new Error("Your staff role cannot enroll students.");
+    }
+
+    const studentId = positiveInteger(formData.get("studentId"));
+    const gradeLevelId = positiveInteger(formData.get("gradeLevelId"));
+    const sectionId = positiveInteger(formData.get("sectionId"));
+
+    if (!studentId || !gradeLevelId || !sectionId) {
+      throw new Error("Choose a student, grade, and section.");
+    }
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const setup = await getAdminSetupForUpdate(connection, session.userId);
+
+    if (!setup?.school_id || !setup.school_year_id) {
+      throw new Error("Ask a school administrator to complete school setup first.");
+    }
+
+    const [studentRows] = await connection.execute<RowDataPacket[]>(
+      `SELECT id
+       FROM students
+       WHERE id = :studentId AND school_id = :schoolId
+       LIMIT 1`,
+      { studentId, schoolId: setup.school_id },
+    );
+
+    if (studentRows.length === 0) {
+      throw new Error("That student is not part of this school.");
+    }
+
+    const [existingRows] = await connection.execute<RowDataPacket[]>(
+      `SELECT id, status
+       FROM enrollments
+       WHERE student_id = :studentId AND school_year_id = :schoolYearId
+       LIMIT 1`,
+      { studentId, schoolYearId: setup.school_year_id },
+    );
+
+    if (existingRows.length > 0) {
+      throw new Error("This student is already enrolled for the active school year.");
+    }
+
+    const section = await getSection(connection, setup.school_id, setup.school_year_id, sectionId);
+
+    if (!section || section.grade_level_id !== gradeLevelId) {
+      throw new Error("Choose a section under the selected grade.");
+    }
+
+    await connection.execute(
+      `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at)
+       VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      { studentId, schoolYearId: setup.school_year_id, gradeLevelId, sectionId },
+    );
+
+    const [nameRows] = await connection.execute<RowDataPacket[]>(
+      `SELECT first_name, last_name
+       FROM students
+       WHERE id = :studentId
+       LIMIT 1`,
+      { studentId },
+    );
+
+    await connection.commit();
+    await setAuthFlashToast({
+      role: "admin",
+      title: "Student enrolled",
+      description: `${nameRows[0]?.first_name ?? "Student"} ${nameRows[0]?.last_name ?? ""} is now enrolled for the active school year.`,
+    });
+  } catch (error) {
+    if (connection) {
+      await connection.rollback().catch(() => undefined);
+    }
+
+    await setAuthFlashToast({
+      role: "admin",
+      title: "Student not enrolled",
+      description: duplicateEnrollment(error) ? "This student is already enrolled for the active school year." : messageForError(error),
+    });
+  } finally {
+    connection?.release();
+  }
+
+  redirect("/admin/students");
+}
+
 export async function createStudentsBatchAction(formData: FormData) {
   const session = await requireRole("admin");
   const staffRole = await getAdminStaffRole(session.userId);
@@ -222,6 +316,11 @@ function parseStudentForm(formData: FormData) {
   }
 
   return { ok: true as const, data };
+}
+
+function positiveInteger(value: FormDataEntryValue | null) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function parseBatchStudentsForm(formData: FormData) {
@@ -395,6 +494,10 @@ async function getSection(
 
 function duplicateStudent(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ER_DUP_ENTRY";
+}
+
+function duplicateEnrollment(error: unknown) {
+  return Boolean(error && typeof error === "object" && "code" in error && error.code === "ER_DUP_ENTRY");
 }
 
 function messageForError(error: unknown) {
