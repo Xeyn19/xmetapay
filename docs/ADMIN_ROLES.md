@@ -21,7 +21,7 @@ All school staff accounts sign in through the admin/school portal, but their das
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
 | `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections, review promote/repeat rollover placements, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |
-| `registrar` | Student and guardian records | View dashboard, add new students, enroll existing pending students without re-entering identity details, use validated multi-student batch enrollment, view student profiles, view parent contacts | Set up school records, use finance pages, view reports |
+| `registrar` | Student and guardian records | View dashboard, add new students, enroll one or many existing pending students without re-entering identity details, use validated multi-student batch enrollment, view student profiles, view parent contacts | Set up school records, use finance pages, view reports |
 | `finance_officer` | Fees, payments, allowance, reminders, and reports | View dashboard, tuition, collections, other fees, allowance, store transactions, reports, log queued payment reminders, create store merchants, record wallet purchases | Set up school records, add/enroll students, manage parent contacts |
 
 ## Dashboard Access
@@ -72,7 +72,7 @@ Only one school year is still the active/current year. For MVP safety, operation
 7. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
 8. New operational history rows are stamped with the active school year where supported.
 9. Registrar and finance officer accounts with the same school name are linked to the existing school context.
-10. A registrar can add new students, or enroll an existing pending student by adding only the active-year grade and section. The existing name, birthdate, reference, and parent links are preserved.
+10. A registrar can add new students, or enroll one or many existing pending students by adding only their active-year grade and section. The existing names, birthdates, references, and parent links are preserved.
 11. Parents link to those students by `student_reference`.
 12. A finance officer works on active-year tuition, collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented.
 

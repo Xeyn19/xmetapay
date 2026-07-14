@@ -182,6 +182,119 @@ export async function enrollExistingStudentAction(formData: FormData) {
   redirect("/admin/students");
 }
 
+export async function enrollExistingStudentsBatchAction(formData: FormData) {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+  let connection: PoolConnection | null = null;
+
+  try {
+    if (!canManageStudents(staffRole)) {
+      throw new Error("Your staff role cannot enroll students.");
+    }
+
+    const input = parseExistingStudentPlacements(formData);
+
+    if (!input.ok) {
+      throw new Error(input.message);
+    }
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const setup = await getAdminSetupForUpdate(connection, session.userId);
+
+    if (!setup?.school_id || !setup.school_year_id) {
+      throw new Error("Ask a school administrator to complete school setup first.");
+    }
+
+    let enrolledCount = 0;
+    let duplicateCount = 0;
+    let invalidCount = 0;
+    let skippedCount = 0;
+
+    for (const placement of input.data) {
+      if (placement.studentId <= 0 || placement.gradeLevelId <= 0 || placement.sectionId <= 0) {
+        invalidCount += 1;
+        continue;
+      }
+
+      const [studentRows] = await connection.execute<RowDataPacket[]>(
+        `SELECT id
+         FROM students
+         WHERE id = :studentId AND school_id = :schoolId
+         LIMIT 1`,
+        { studentId: placement.studentId, schoolId: setup.school_id },
+      );
+
+      if (studentRows.length === 0) {
+        skippedCount += 1;
+        continue;
+      }
+
+      const [existingRows] = await connection.execute<RowDataPacket[]>(
+        `SELECT id
+         FROM enrollments
+         WHERE student_id = :studentId AND school_year_id = :schoolYearId
+         LIMIT 1`,
+        { studentId: placement.studentId, schoolYearId: setup.school_year_id },
+      );
+
+      if (existingRows.length > 0) {
+        duplicateCount += 1;
+        continue;
+      }
+
+      const section = await getSection(connection, setup.school_id, setup.school_year_id, placement.sectionId);
+
+      if (!section || section.grade_level_id !== placement.gradeLevelId) {
+        invalidCount += 1;
+        continue;
+      }
+
+      try {
+        await connection.execute(
+          `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at)
+           VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          {
+            studentId: placement.studentId,
+            schoolYearId: setup.school_year_id,
+            gradeLevelId: placement.gradeLevelId,
+            sectionId: placement.sectionId,
+          },
+        );
+        enrolledCount += 1;
+      } catch (error) {
+        if (duplicateEnrollment(error)) {
+          duplicateCount += 1;
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    await connection.commit();
+    await setAuthFlashToast({
+      role: "admin",
+      title: enrolledCount > 0 ? "Students enrolled" : "No students enrolled",
+      description: existingEnrollmentBatchSummary(enrolledCount, duplicateCount, invalidCount, skippedCount),
+    });
+  } catch (error) {
+    if (connection) {
+      await connection.rollback().catch(() => undefined);
+    }
+
+    await setAuthFlashToast({
+      role: "admin",
+      title: "Students not enrolled",
+      description: messageForError(error),
+    });
+  } finally {
+    connection?.release();
+  }
+
+  redirect("/admin/students");
+}
+
 export async function createStudentsBatchAction(formData: FormData) {
   const session = await requireRole("admin");
   const staffRole = await getAdminStaffRole(session.userId);
@@ -321,6 +434,39 @@ function parseStudentForm(formData: FormData) {
 function positiveInteger(value: FormDataEntryValue | null) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseExistingStudentPlacements(formData: FormData) {
+  const raw = value(formData, "placements");
+
+  if (!raw) {
+    return { ok: false as const, message: "Select at least one existing student." };
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ok: false as const, message: "The selected student placements could not be read. Try again." };
+  }
+
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return { ok: false as const, message: "Select at least one existing student." };
+  }
+
+  if (parsed.length > 200) {
+    return { ok: false as const, message: "Enroll up to 200 existing students at a time." };
+  }
+
+  return {
+    ok: true as const,
+    data: parsed.map((item) => ({
+      studentId: numberProperty(item, "studentId"),
+      gradeLevelId: numberProperty(item, "gradeLevelId"),
+      sectionId: numberProperty(item, "sectionId"),
+    })),
+  };
 }
 
 function parseBatchStudentsForm(formData: FormData) {
@@ -500,6 +646,17 @@ function duplicateEnrollment(error: unknown) {
   return Boolean(error && typeof error === "object" && "code" in error && error.code === "ER_DUP_ENTRY");
 }
 
+function existingEnrollmentBatchSummary(enrolled: number, duplicates: number, invalid: number, skipped: number) {
+  const parts = [
+    `${enrolled} student${enrolled === 1 ? "" : "s"} enrolled`,
+    duplicates > 0 ? `${duplicates} already enrolled` : "",
+    invalid > 0 ? `${invalid} row${invalid === 1 ? "" : "s"} need${invalid === 1 ? "s" : ""} correction` : "",
+    skipped > 0 ? `${skipped} student${skipped === 1 ? "" : "s"} skipped` : "",
+  ].filter(Boolean);
+
+  return parts.join(". ") + ".";
+}
+
 function messageForError(error: unknown) {
   return error instanceof Error
     ? error.message
@@ -510,6 +667,15 @@ function value(formData: FormData, key: string) {
   const fieldValue = formData.get(key);
 
   return typeof fieldValue === "string" ? fieldValue.trim() : "";
+}
+
+function numberProperty(value: unknown, key: string) {
+  if (!value || typeof value !== "object" || !(key in value)) {
+    return 0;
+  }
+
+  const parsed = Number((value as Record<string, unknown>)[key]);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
 }
 
 type AdminSetupRow = RowDataPacket & {

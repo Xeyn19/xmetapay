@@ -321,7 +321,7 @@ Database touchpoints:
 
 Implemented.
 
-The school/admin side creates the official student record first. Admins can use the quick single-student form or the repeatable batch form for new students. When a student already exists but has no enrollment for the selected year, admins use `Enroll an existing student`: they select the saved student and add only the active-year grade and section, without re-entering the name, birthdate, reference, or parent links. Each valid batch row receives its own `student_reference`, grade, section, and active-year enrollment. Duplicate references are skipped and invalid rows are reported without discarding valid rows.
+The school/admin side creates the official student record first. Admins can use the quick single-student form or the repeatable batch form for new students. When students already exist but have no enrollment for the active year, admins use `Enroll existing students`: they check one or many saved students, apply a shared grade/section when appropriate, review individual placements, and add only the active-year enrollment rows. Names, birthdates, references, and parent links are never re-entered. Duplicate enrollments are skipped and invalid rows are reported without discarding valid rows.
 
 ```mermaid
 flowchart TD

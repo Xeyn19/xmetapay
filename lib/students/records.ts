@@ -15,6 +15,7 @@ export type AdminStudentPageData = {
   enrollmentSchoolYearName: string | null;
   gradeOptions: Array<{ id: number; name: string }>;
   sectionOptions: Array<{ id: number; gradeLevelId: number; label: string }>;
+  enrollmentSectionOptions: Array<{ id: number; gradeLevelId: number; label: string }>;
   kpis: Array<{
     label: string;
     value: string;
@@ -137,9 +138,12 @@ export async function getAdminStudentPageData(adminUserId: number): Promise<Admi
       return emptyAdminStudentData(setup.warning ?? "Ask a school administrator to complete school setup first.");
     }
 
-    const [gradeOptions, sectionOptions, students, enrollmentCandidates] = await Promise.all([
+    const [gradeOptions, sectionOptions, enrollmentSectionOptions, students, enrollmentCandidates] = await Promise.all([
       getGradeOptions(setup.schoolId),
       getSectionOptions(setup.schoolId, setup.schoolYearId),
+      activeSetup.schoolId && activeSetup.schoolYearId
+        ? getSectionOptions(activeSetup.schoolId, activeSetup.schoolYearId)
+        : Promise.resolve([]),
       getAdminStudentRows(setup.schoolId, setup.schoolYearId),
       activeSetup.schoolId && activeSetup.schoolYearId
         ? getAdminStudentRows(activeSetup.schoolId, activeSetup.schoolYearId)
@@ -153,6 +157,7 @@ export async function getAdminStudentPageData(adminUserId: number): Promise<Admi
       enrollmentSchoolYearName: activeSetup.schoolYearName,
       gradeOptions,
       sectionOptions,
+      enrollmentSectionOptions,
       kpis: studentKpis(students, setup.schoolYearName),
       students,
       enrollmentCandidates,
@@ -696,6 +701,7 @@ function emptyAdminStudentData(warning: string): AdminStudentPageData {
     enrollmentSchoolYearName: null,
     gradeOptions: [],
     sectionOptions: [],
+    enrollmentSectionOptions: [],
     students: [],
     enrollmentCandidates: [],
     kpis: studentKpis([], null),
