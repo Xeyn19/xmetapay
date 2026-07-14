@@ -780,7 +780,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="admin-report-csv-pdf-exports.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> protected admin CSV and PDF exports for monthly revenue, collections, outstanding balances, and wallet/store activity.</p>
+          <p><strong>Implemented:</strong> protected admin CSV and PDF exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collections use fee or term allocations; wallet top-ups remain in the allowance ledger.</p>
           <pre class="mermaid">
 flowchart TD
   A["Admin opens reports page"] --> B["Require admin session"]
@@ -795,7 +795,7 @@ flowchart TD
   I --> J
   J --> K{"Report type"}
   K -->|monthly-revenue| L["Query paid payments by month"]
-  K -->|collections| M["Query payment records"]
+  K -->|collections| M["Query tuition payments through fee or term allocations"]
   K -->|outstanding-balances| N["Query assigned fee balances"]
   K -->|wallet-store| O["Query wallet top-ups and store purchases"]
   L --> P["Download selected report format"]

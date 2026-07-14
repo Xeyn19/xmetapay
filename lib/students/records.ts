@@ -230,6 +230,7 @@ export async function getParentPortalContext(parentUserId: number, fallbackName 
            FROM student_guardians sg_count
            JOIN students st_count ON st_count.id = sg_count.student_id
            JOIN student_fee_assignments sfa_count ON sfa_count.student_id = st_count.id
+           JOIN school_years sy_count ON sy_count.id = sfa_count.school_year_id AND sy_count.status = 'active'
            WHERE sg_count.parent_user_id = u.id
              AND sfa_count.status IN ('open', 'partial')
              AND sfa_count.amount_due > sfa_count.amount_paid

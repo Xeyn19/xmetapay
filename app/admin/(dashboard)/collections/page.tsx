@@ -37,7 +37,7 @@ export default async function CollectionsPage() {
       </KpiGrid>
 
       <DashboardCard
-        title="Payment collection log"
+        title="Tuition collection log"
         icon={CreditCard}
         bodyClassName="p-0"
       >

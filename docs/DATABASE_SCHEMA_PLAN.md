@@ -612,7 +612,7 @@ CREATE TABLE notification_logs (
 
 Implementation status: queued payment reminder history is implemented. School administrators and finance officers can open a reminder modal and create `payment_reminder` rows for linked parents with open or partial balances. The app prevents duplicate same-day reminder rows for the same school, linked parent, student, and selected channel. Those rows use `channel = 'email'` or `channel = 'sms'`, `status = 'queued'`, and `message_body` for the saved custom or generated reminder text. Real email/SMS delivery, scheduling, and notification-based report alerts can be added later.
 
-Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. CSV and PDF report exports are implemented for monthly revenue, collections, outstanding balances, and wallet/store activity. Real-data admin and parent table screens paginate loaded rows on screen and export filtered rows as CSV or PDF without adding report storage tables. Scheduled delivery and notification-based report alerts can be added later.
+Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. CSV and PDF report exports are implemented for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collection exports use fee or term allocations and exclude wallet-only payments. Real-data admin and parent table screens paginate loaded rows on screen and export filtered rows as CSV or PDF without adding report storage tables. Scheduled delivery and notification-based report alerts can be added later.
 
 ## Indexing Strategy
 
@@ -630,7 +630,7 @@ Use indexes based on the screens and workflows in the app.
 | Student guardian list | `student_guardians(student_id, is_primary)` |
 | Fee summary | `student_fee_assignments(student_id, status, due_date)` |
 | Tuition report | `student_fee_assignments(school_year_id, status, due_date)` |
-| Collections log | `payments(school_id, status, paid_at)` |
+| Tuition collections log | `payments(school_id, status, paid_at)` plus `payment_allocations`/`payment_term_allocations` and tuition `fee_types` |
 | Parent payment history | `payments(payer_user_id, paid_at)` |
 | Student payment history | `payments(student_id, paid_at)` |
 | Wallet ledger | `wallet_transactions(wallet_id, created_at)` |

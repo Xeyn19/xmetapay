@@ -44,7 +44,7 @@ export function CollectionsTable({ rows }: { rows: CollectionRow[] }) {
         <DashboardTableControls
           query={query}
           onQueryChange={setQuery}
-          searchPlaceholder="Search student, ref..."
+            searchPlaceholder="Search student, ref, tuition term..."
           filters={[
             { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
             { label: "Channel", value: channel, onChange: setChannel, options: toFilterOptions(rows.map((row) => row.channel), "All channels") },
@@ -105,7 +105,7 @@ export function CollectionsTable({ rows }: { rows: CollectionRow[] }) {
         ) : (
           <tr>
             <td colSpan={8} className="text-center text-[#5a6070]">
-              {rows.length === 0 ? "No payment records yet." : "No payment records match the current filters."}
+              {rows.length === 0 ? "No tuition payment records yet." : "No tuition payments match the current filters."}
             </td>
           </tr>
         )}
