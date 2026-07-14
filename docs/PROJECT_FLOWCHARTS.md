@@ -44,7 +44,8 @@ Implemented:
 - Parent local test payment flow.
 - Payment allocation to fee balances.
 - Parent receipt and payment history from MySQL.
-- Admin collections reads parent-created payment records.
+- Admin Tuition collection log reads only parent-created tuition payments identified by `payment_allocations` or `payment_term_allocations`.
+- Wallet top-ups stay in the Admin allowance ledger; store purchases stay in Store transactions.
 - Parent local wallet top-up flow.
 - Wallet balances and wallet transaction history from MySQL.
 - Parent dashboard recent wallet/store activity snapshot from MySQL.
@@ -53,7 +54,7 @@ Implemented:
 - Admin allowance ledger shows real monthly top-up stats and segmented wallet-balance filters.
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
-- Admin CSV and PDF report exports for monthly revenue, collections, outstanding balances, and wallet/store activity.
+- Admin CSV and PDF report exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity.
 - Admin and parent real-data tables paginate on screen and can export filtered rows as CSV or PDF.
 - Queued in-app payment reminder history through `notification_logs`.
 
@@ -571,7 +572,7 @@ flowchart TD
   M --> O["Create receipts row"]
   N --> O
   O --> P["Parent sees real receipt and payment history"]
-  P --> Q["Admin dashboard and collections read the same payment records"]
+  P --> Q["Admin dashboard and tuition collections read the same tuition payment records"]
 ```
 
 Database touchpoints:
@@ -666,7 +667,7 @@ flowchart TD
   J --> K
   K --> L{"Report type"}
   L -->|monthly-revenue| M["Query paid payment totals by month"]
-  L -->|collections| N["Query payment records"]
+  L -->|collections| N["Query tuition payments through fee or term allocations"]
   L -->|outstanding-balances| O["Query student fee assignment balances"]
   L -->|wallet-store| P["Query wallet top-ups and store purchases"]
   M --> Q["Download selected report format"]
@@ -678,7 +679,7 @@ flowchart TD
 Current CSV/PDF reports:
 
 - Monthly revenue
-- Collections
+- Tuition collections
 - Outstanding balances
 - Wallet and store activity
 

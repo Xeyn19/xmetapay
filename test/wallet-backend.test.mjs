@@ -145,15 +145,16 @@ test("admin allowance page uses working controls for real wallet rows", () => {
   assert.doesNotMatch(page, /Export pending/);
 });
 
-test("payment history, receipts, and admin collections label wallet top-ups", () => {
+test("payment history and parent records label wallet top-ups while admin collections stay tuition-only", () => {
   const paymentRecords = readFileSync(paymentRecordsPath, "utf8");
   const parentRecords = readFileSync(parentRecordsPath, "utf8");
-  const adminRealData = readFileSync(adminRealDataPath, "utf8");
 
-  for (const source of [paymentRecords, parentRecords, adminRealData]) {
+  for (const source of [paymentRecords, parentRecords]) {
     assert.match(source, /LEFT JOIN wallet_transactions wt ON wt\.payment_id = p\.id/);
     assert.match(source, /MAX\(CASE WHEN wt\.type = 'top_up' THEN 'Wallet top-up' END\)/);
   }
+
+  assert.doesNotMatch(readFileSync(adminRealDataPath, "utf8"), /Wallet top-up/);
 });
 
 test("docs and checklist mark wallet top-up and store transactions complete with later phases still future", () => {

@@ -334,7 +334,7 @@ Reports are generated from operational tables rather than stored in separate rep
 Current implemented CSV and PDF report exports:
 
 - Monthly revenue from paid `payments`.
-- Collections from `payments` and linked `students`.
+- Tuition collections from `payments` linked through `payment_allocations` or `payment_term_allocations` to tuition `fee_types` and `students`. Wallet-only payments are intentionally excluded from this view.
 - Outstanding balances from `student_fee_assignments`, `fee_types`, and enrollment context.
 - Wallet and store activity from `wallet_transactions`, `wallets`, `store_transactions`, and `store_merchants`.
 

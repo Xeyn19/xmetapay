@@ -111,7 +111,7 @@ Done when: admin and parent fee screens show real balances from MySQL.
 - [x] Update fee assignment status after payment.
 - [x] Generate receipt records after successful payment.
 - [x] Show parent payment history from database records.
-- [x] Show admin collections log from database records.
+- [x] Show admin tuition collections log from database records, excluding wallet-only payments.
 
 Done when: a parent can record a local test payment and both portals show the result.
 
@@ -161,7 +161,7 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 
 ### Phase 6C: Report CSV and PDF exports
 
-- [x] Add report queries for monthly revenue, collections, outstanding balances, and wallet/store summaries.
+- [x] Add report queries for monthly revenue, tuition collections, outstanding balances, and wallet/store summaries.
 - [x] Add protected admin CSV export route for report downloads.
 - [x] Replace disabled report export buttons with working CSV download links.
 - [x] Add protected admin PDF export downloads for the same report data.

@@ -17,6 +17,7 @@ import type { LucideIcon } from "lucide-react";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { getTuitionCollectionRows, getTuitionCollectionSummary } from "@/lib/admin/tuition-collections";
 import { getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 import { getTuitionTermSummary, parseTuitionTermsBlob } from "@/lib/tuition/terms";
 
@@ -345,17 +346,17 @@ export async function getAdminCollectionsPageRealData(adminUserId: number): Prom
     }
 
     const [summary, rows] = await Promise.all([
-      getPaymentSummary(setup.schoolId, setup.schoolYearId),
+      getTuitionCollectionSummary(setup.schoolId, setup.schoolYearId),
       getCollectionRows(setup.schoolId, setup.schoolYearId),
     ]);
 
     return {
       warning: null,
       kpis: [
-        { label: "Payments", value: String(summary.totalCount), note: summary.totalCount > 0 ? `${summary.paidCount} paid records` : "No payment records yet", tone: "orange", icon: CreditCard },
-        { label: "Paid amount", value: summary.paidCount > 0 ? money(summary.paidAmount) : "Pending", note: "Real payments table", tone: "green", noteTone: summary.paidCount > 0 ? "up" : "default", icon: CreditCard },
-        { label: "Pending review", value: String(summary.pendingCount), note: "Payment status pending", tone: "blue", icon: FileText },
-        { label: "Failed / voided", value: String(summary.failedCount), note: "Needs admin review", tone: "red", noteTone: summary.failedCount > 0 ? "warn" : "default", icon: Activity },
+        { label: "Tuition payments", value: String(summary.total_count), note: summary.total_count > 0 ? `${summary.paid_count} paid records` : "No tuition payments yet", tone: "orange", icon: CreditCard },
+        { label: "Tuition collected", value: summary.paid_count > 0 ? money(summary.paid_amount) : "Pending", note: "Paid tuition allocations", tone: "green", noteTone: summary.paid_count > 0 ? "up" : "default", icon: CreditCard },
+        { label: "Pending review", value: String(summary.pending_count), note: "Tuition payment status pending", tone: "blue", icon: FileText },
+        { label: "Failed / voided", value: String(summary.failed_count), note: "Needs tuition review", tone: "red", noteTone: summary.failed_count > 0 ? "warn" : "default", icon: Activity },
       ],
       rows,
     };
@@ -1057,47 +1058,7 @@ async function getOtherFeeSummary(schoolId: number, schoolYearId: number) {
 }
 
 async function getCollectionRows(schoolId: number, schoolYearId: number) {
-  const [rows] = await pool.execute<PaymentRow[]>(
-    `SELECT p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
-       st.first_name, st.middle_name, st.last_name,
-       COALESCE(gl.name, 'Not enrolled') AS grade_name,
-       COALESCE(
-         GROUP_CONCAT(DISTINCT CONCAT(term_ft.name, ' - ', tpt.term_name) ORDER BY tpt.sort_order SEPARATOR ', '),
-         GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
-         MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
-         'Payment'
-       ) AS fee_name
-     FROM payments p
-     JOIN students st ON st.id = p.student_id
-     LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
-     LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
-     LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
-     LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
-     LEFT JOIN fee_types ft ON ft.id = sfa.fee_type_id
-     LEFT JOIN payment_term_allocations pta ON pta.payment_id = p.id
-     LEFT JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
-     LEFT JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
-     LEFT JOIN fee_types term_ft ON term_ft.id = term_sfa.fee_type_id
-     LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
-     WHERE p.school_id = :schoolId
-       AND (
-         sfa.school_year_id = :schoolYearId
-         OR term_sfa.school_year_id = :schoolYearId
-         OR EXISTS (
-           SELECT 1
-           FROM wallets payment_wallet
-           JOIN enrollments payment_enrollment
-             ON payment_enrollment.student_id = payment_wallet.student_id
-            AND payment_enrollment.school_year_id = :schoolYearId
-           WHERE payment_wallet.id = wt.wallet_id
-         )
-       )
-     GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
-       st.first_name, st.middle_name, st.last_name, gl.name
-     ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC
-     LIMIT 50`,
-    { schoolId, schoolYearId },
-  );
+  const rows = await getTuitionCollectionRows(schoolId, schoolYearId, 50);
 
   return rows.map((row) => [
     row.reference_number,
@@ -1498,8 +1459,8 @@ function reportDownloads() {
       icon: BarChart3,
     },
     {
-      name: "Collections report",
-      desc: "Payment references, channels, statuses, and dates",
+      name: "Tuition collections report",
+      desc: "Tuition payment references, terms, channels, statuses, and dates",
       csvHref: "/admin/reports/export?type=collections",
       pdfHref: "/admin/reports/export?type=collections&format=pdf",
       icon: FileSpreadsheet,
@@ -1696,20 +1657,6 @@ type RecentFeeAssignmentRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string;
   grade_name: string;
-};
-
-type PaymentRow = RowDataPacket & {
-  reference_number: string;
-  amount: number | string;
-  channel: string;
-  status: string;
-  paid_at: Date | string | null;
-  created_at: Date | string;
-  first_name: string;
-  middle_name: string | null;
-  last_name: string;
-  grade_name?: string;
-  fee_name: string;
 };
 
 type NotificationRow = RowDataPacket & {

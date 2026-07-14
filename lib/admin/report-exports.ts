@@ -5,6 +5,7 @@ import autoTable from "jspdf-autotable";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { getTuitionCollectionRows } from "@/lib/admin/tuition-collections";
 import { getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 
 export const reportExportTypes = [
@@ -143,48 +144,18 @@ async function monthlyRevenueExport(schoolId: number, schoolYearId: number, cont
 }
 
 async function collectionsExport(schoolId: number, schoolYearId: number, contextLines: string[]): Promise<AdminReportExportData> {
-  const [rows] = await pool.execute<CollectionsExportRow[]>(
-    `SELECT p.reference_number, p.channel, p.status, p.amount, p.paid_at, p.created_at,
-       st.first_name, st.middle_name, st.last_name
-     FROM payments p
-     JOIN students st ON st.id = p.student_id
-     WHERE p.school_id = :schoolId
-       AND (
-         p.school_year_id = :schoolYearId
-         OR
-         EXISTS (
-           SELECT 1
-           FROM payment_allocations pa
-           JOIN student_fee_assignments paid_sfa ON paid_sfa.id = pa.student_fee_assignment_id
-           WHERE pa.payment_id = p.id AND paid_sfa.school_year_id = :schoolYearId
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM payment_term_allocations pta
-           JOIN tuition_payment_terms tpt ON tpt.id = pta.tuition_payment_term_id
-           JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
-           WHERE pta.payment_id = p.id AND term_sfa.school_year_id = :schoolYearId
-         )
-         OR EXISTS (
-           SELECT 1
-           FROM wallet_transactions wt
-           JOIN wallets w ON w.id = wt.wallet_id
-           JOIN enrollments e ON e.student_id = w.student_id AND e.school_year_id = :schoolYearId
-           WHERE wt.payment_id = p.id
-         )
-       )
-     ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC`,
-    { schoolId, schoolYearId },
-  );
+  const rows = await getTuitionCollectionRows(schoolId, schoolYearId);
 
   return reportData(
-    "Collections report",
+    "Tuition collections report",
     "xmetapay-collections",
     contextLines,
     rows,
     [
       { label: "Reference", value: (row) => row.reference_number },
       { label: "Student", value: (row) => fullName(row.first_name, row.middle_name, row.last_name) },
+      { label: "Grade", value: (row) => row.grade_name ?? "Not enrolled" },
+      { label: "Tuition record", value: (row) => row.fee_name },
       { label: "Channel", value: (row) => label(row.channel) },
       { label: "Status", value: (row) => label(row.status) },
       { label: "Amount", value: (row) => decimal(row.amount) },
@@ -361,7 +332,7 @@ function reportTitle(type: ReportExportType) {
   }
 
   if (type === "collections") {
-    return "Collections report";
+    return "Tuition collections report";
   }
 
   if (type === "outstanding-balances") {
@@ -411,18 +382,6 @@ type MonthlyRevenueExportRow = RowDataPacket & {
   month: string;
   paid_payment_count: number;
   paid_amount: number | string;
-};
-
-type CollectionsExportRow = RowDataPacket & {
-  reference_number: string;
-  channel: string;
-  status: string;
-  amount: number | string;
-  paid_at: Date | string | null;
-  created_at: Date | string;
-  first_name: string;
-  middle_name: string | null;
-  last_name: string;
 };
 
 type OutstandingBalancesExportRow = RowDataPacket & {
