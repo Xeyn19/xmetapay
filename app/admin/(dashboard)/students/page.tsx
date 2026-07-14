@@ -7,6 +7,7 @@ import { getAdminStudentPageData } from "@/lib/students/records";
 import { AlertBanner, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
 import { StudentEnrollmentForm } from "./student-enrollment-form";
 import { BulkStudentEnrollmentModal } from "./bulk-student-enrollment-modal";
+import { EnrollExistingStudentModal } from "./enroll-existing-student-modal";
 import { StudentsTable } from "./students-table";
 
 export default async function StudentsPage() {
@@ -34,11 +35,19 @@ export default async function StudentsPage() {
           icon={UserPlus}
           className="mb-5"
           action={
-            <BulkStudentEnrollmentModal
-              ready={data.ready}
-              gradeOptions={data.gradeOptions}
-              sectionOptions={data.sectionOptions}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <BulkStudentEnrollmentModal
+                ready={data.ready}
+                gradeOptions={data.gradeOptions}
+                sectionOptions={data.sectionOptions}
+              />
+              <EnrollExistingStudentModal
+              students={data.enrollmentCandidates}
+                gradeOptions={data.gradeOptions}
+                sectionOptions={data.sectionOptions}
+              schoolYearName={data.enrollmentSchoolYearName}
+              />
+            </div>
           }
         >
           <StudentEnrollmentForm

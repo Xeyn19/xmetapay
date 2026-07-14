@@ -9,6 +9,7 @@ const authActionsPath = "app/auth/actions.ts";
 const adminStudentsPagePath = "app/admin/(dashboard)/students/page.tsx";
 const adminStudentFormPath = "app/admin/(dashboard)/students/student-enrollment-form.tsx";
 const adminBulkStudentFormPath = "app/admin/(dashboard)/students/bulk-student-enrollment-modal.tsx";
+const adminExistingStudentFormPath = "app/admin/(dashboard)/students/enroll-existing-student-modal.tsx";
 const adminParentsPagePath = "app/admin/(dashboard)/parents/page.tsx";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
 const parentLayoutPath = "app/parent/(portal)/layout.tsx";
@@ -27,7 +28,7 @@ test("student records helper reads students, enrollment, and guardian links from
 
   assert.match(helper, /import "server-only";/);
   assert.match(helper, /import \{ pool \} from "@\/lib\/auth\/db";/);
-  assert.match(helper, /import \{ getResolvedAdminSchoolViewSetup \} from "@\/lib\/school\/setup";/);
+  assert.match(helper, /getResolvedAdminSchoolViewSetup/);
   assert.match(helper, /export async function getAdminStudentPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getAdminParentsPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getParentDashboardData\(parentUserId: number\)/);
@@ -61,6 +62,10 @@ test("admin student action is protected and creates student enrollment records",
   assert.match(action, /Choose a section under the selected grade\./);
   assert.match(action, /redirect\("\/admin\/students"\)/);
   assert.match(action, /export async function createStudentsBatchAction\(formData: FormData\)/);
+  assert.match(action, /export async function enrollExistingStudentAction\(formData: FormData\)/);
+  assert.match(action, /WHERE id = :studentId AND school_id = :schoolId/);
+  assert.match(action, /already enrolled for the active school year/);
+  assert.match(action, /studentId.*gradeLevelId.*sectionId/s);
   assert.match(action, /parseBatchStudentsForm/);
   assert.match(action, /studentReferenceExists/);
   assert.match(action, /batchSummary/);
@@ -69,6 +74,22 @@ test("admin student action is protected and creates student enrollment records",
   assert.match(action, /invalidRows/);
   assert.match(action, /INSERT INTO students/);
   assert.match(action, /INSERT INTO enrollments/);
+});
+
+test("existing student enrollment uses saved identity data and only creates the missing year placement", () => {
+  assert.equal(existsSync(adminExistingStudentFormPath), true);
+  const form = readFileSync(adminExistingStudentFormPath, "utf8");
+
+  assert.match(form, /Enroll an existing student/);
+  assert.match(form, /Pending students already have their identity details saved/);
+  assert.match(form, /This does not change the student’s name, birthday, reference, or parent links/);
+  assert.match(form, /name="studentId"/);
+  assert.match(form, /name="gradeLevelId"/);
+  assert.match(form, /name="sectionId"/);
+  assert.match(form, /Search name or reference/);
+  assert.match(form, /setSectionId\(0\)/);
+  assert.doesNotMatch(form, /name="birthdate"/);
+  assert.doesNotMatch(form, /name="firstName"/);
 });
 
 test("bulk student enrollment form supports repeatable rows and per-row class placement", () => {

@@ -4,7 +4,7 @@ import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 import { labelForChannel } from "@/lib/payments/records";
-import { getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
+import { getResolvedAdminSchoolSetup, getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 
 type Queryable = Pick<Pool | PoolConnection, "execute">;
 
@@ -12,6 +12,7 @@ export type AdminStudentPageData = {
   ready: boolean;
   warning: string | null;
   activeSchoolYearName: string | null;
+  enrollmentSchoolYearName: string | null;
   gradeOptions: Array<{ id: number; name: string }>;
   sectionOptions: Array<{ id: number; gradeLevelId: number; label: string }>;
   kpis: Array<{
@@ -22,6 +23,7 @@ export type AdminStudentPageData = {
     noteTone?: "default" | "up" | "warn" | "danger";
   }>;
   students: AdminStudentRow[];
+  enrollmentCandidates: AdminStudentRow[];
 };
 
 export type AdminStudentRow = {
@@ -129,25 +131,31 @@ export type ParentStudentProfileData = {
 export async function getAdminStudentPageData(adminUserId: number): Promise<AdminStudentPageData> {
   try {
     const setup = await getAdminSetup(adminUserId);
+    const activeSetup = await getResolvedAdminSchoolSetup(adminUserId);
 
     if (!setup.schoolId || !setup.schoolYearId) {
       return emptyAdminStudentData(setup.warning ?? "Ask a school administrator to complete school setup first.");
     }
 
-    const [gradeOptions, sectionOptions, students] = await Promise.all([
+    const [gradeOptions, sectionOptions, students, enrollmentCandidates] = await Promise.all([
       getGradeOptions(setup.schoolId),
       getSectionOptions(setup.schoolId, setup.schoolYearId),
       getAdminStudentRows(setup.schoolId, setup.schoolYearId),
+      activeSetup.schoolId && activeSetup.schoolYearId
+        ? getAdminStudentRows(activeSetup.schoolId, activeSetup.schoolYearId)
+        : Promise.resolve([]),
     ]);
 
     return {
       ready: true,
       warning: null,
       activeSchoolYearName: setup.schoolYearName,
+      enrollmentSchoolYearName: activeSetup.schoolYearName,
       gradeOptions,
       sectionOptions,
       kpis: studentKpis(students, setup.schoolYearName),
       students,
+      enrollmentCandidates,
     };
   } catch {
     return emptyAdminStudentData("Student records are unavailable. Confirm MySQL/XAMPP and the full schema are ready.");
@@ -685,9 +693,11 @@ function emptyAdminStudentData(warning: string): AdminStudentPageData {
     ready: false,
     warning,
     activeSchoolYearName: null,
+    enrollmentSchoolYearName: null,
     gradeOptions: [],
     sectionOptions: [],
     students: [],
+    enrollmentCandidates: [],
     kpis: studentKpis([], null),
   };
 }
