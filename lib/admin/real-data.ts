@@ -1659,6 +1659,20 @@ type RecentFeeAssignmentRow = RowDataPacket & {
   grade_name: string;
 };
 
+type PaymentRow = RowDataPacket & {
+  reference_number: string;
+  amount: number | string;
+  channel: string;
+  status: string;
+  paid_at: Date | string | null;
+  created_at: Date | string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  grade_name: string;
+  fee_name: string;
+};
+
 type NotificationRow = RowDataPacket & {
   id: number;
   type: string;
