@@ -39,13 +39,13 @@ export default async function StudentsPage() {
               <BulkStudentEnrollmentModal
                 ready={data.ready}
                 gradeOptions={data.gradeOptions}
-                sectionOptions={data.sectionOptions}
+                sectionOptions={data.enrollmentSectionOptions}
               />
               <EnrollExistingStudentModal
-              students={data.enrollmentCandidates}
+                students={data.enrollmentCandidates}
                 gradeOptions={data.gradeOptions}
-                sectionOptions={data.sectionOptions}
-              schoolYearName={data.enrollmentSchoolYearName}
+                sectionOptions={data.enrollmentSectionOptions}
+                schoolYearName={data.enrollmentSchoolYearName}
               />
             </div>
           }
@@ -53,7 +53,7 @@ export default async function StudentsPage() {
           <StudentEnrollmentForm
             ready={data.ready}
             gradeOptions={data.gradeOptions}
-            sectionOptions={data.sectionOptions}
+            sectionOptions={data.enrollmentSectionOptions}
           />
         </DashboardCard>
       </div>

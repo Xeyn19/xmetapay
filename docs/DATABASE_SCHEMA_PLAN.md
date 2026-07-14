@@ -243,6 +243,8 @@ Stores a student's enrollment per school year.
 
 The school-year rollover workflow lets an administrator explicitly select one or many source-year students, review per-student promote, repeat, or skip decisions, and insert new target-year enrollments only for checked promote/repeat rows. The shared `students` record and all year-specific fee, payment, wallet, store, and reminder records remain separate.
 
+For an existing student who is Pending in the active year, the admin can select one or many students in the bulk enrollment workflow and create only the missing `enrollments` rows. The workflow never inserts a second `students` row or re-enters identity and guardian-link data.
+
 ```sql
 CREATE TABLE enrollments (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

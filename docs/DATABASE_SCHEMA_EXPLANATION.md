@@ -107,7 +107,7 @@ Main purpose:
 
 ### `students`
 
-Stores the official student record. If an existing student is Pending for a school year, the admin can create only the missing `enrollments` row; identity and guardian-link data are not entered again.
+Stores the official student record. If existing students are Pending for a school year, the admin can select one or many and create only the missing `enrollments` rows; identity and guardian-link data are not entered again.
 
 Main purpose:
 

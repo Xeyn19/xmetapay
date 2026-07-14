@@ -30,6 +30,7 @@ test("student records helper reads students, enrollment, and guardian links from
   assert.match(helper, /import \{ pool \} from "@\/lib\/auth\/db";/);
   assert.match(helper, /getResolvedAdminSchoolViewSetup/);
   assert.match(helper, /export async function getAdminStudentPageData\(adminUserId: number\)/);
+  assert.match(helper, /enrollmentSectionOptions/);
   assert.match(helper, /export async function getAdminParentsPageData\(adminUserId: number\)/);
   assert.match(helper, /export async function getParentDashboardData\(parentUserId: number\)/);
   assert.match(helper, /export async function getParentPortalContext\(parentUserId: number/);
@@ -62,7 +63,7 @@ test("admin student action is protected and creates student enrollment records",
   assert.match(action, /Choose a section under the selected grade\./);
   assert.match(action, /redirect\("\/admin\/students"\)/);
   assert.match(action, /export async function createStudentsBatchAction\(formData: FormData\)/);
-  assert.match(action, /export async function enrollExistingStudentAction\(formData: FormData\)/);
+  assert.match(action, /export async function enrollExistingStudentsBatchAction\(formData: FormData\)/);
   assert.match(action, /WHERE id = :studentId AND school_id = :schoolId/);
   assert.match(action, /already enrolled for the active school year/);
   assert.match(action, /studentId.*gradeLevelId.*sectionId/s);
@@ -80,14 +81,16 @@ test("existing student enrollment uses saved identity data and only creates the 
   assert.equal(existsSync(adminExistingStudentFormPath), true);
   const form = readFileSync(adminExistingStudentFormPath, "utf8");
 
-  assert.match(form, /Enroll an existing student/);
-  assert.match(form, /Pending students already have their identity details saved/);
-  assert.match(form, /This does not change the student’s name, birthday, reference, or parent links/);
-  assert.match(form, /name="studentId"/);
-  assert.match(form, /name="gradeLevelId"/);
-  assert.match(form, /name="sectionId"/);
+  assert.match(form, /Enroll existing students/);
+  assert.match(form, /Their name, birthday, reference, and parent links stay unchanged/);
+  assert.match(form, /name="placements"/);
+  assert.match(form, /Select all visible/);
+  assert.match(form, /Clear selection/);
+  assert.match(form, /Apply to selected/);
+  assert.match(form, /selected: false/);
+  assert.match(form, /Only checked students with complete placements/);
   assert.match(form, /Search name or reference/);
-  assert.match(form, /setSectionId\(0\)/);
+  assert.match(form, /setBulkSectionId\(0\)/);
   assert.doesNotMatch(form, /name="birthdate"/);
   assert.doesNotMatch(form, /name="firstName"/);
 });
