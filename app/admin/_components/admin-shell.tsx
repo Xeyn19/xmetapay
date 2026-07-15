@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
+  CalendarDays,
   Database,
   Menu,
   LogOut,
@@ -180,82 +181,101 @@ export function AdminShell({
       </aside>
 
       <div className="min-h-[100svh] min-w-0 max-w-full lg:pl-60">
-        <header className="sticky top-0 z-50 flex min-w-0 max-w-full flex-col gap-3 border-b border-black/[0.07] bg-white px-4 py-3 pl-16 md:flex-row md:items-center md:justify-between lg:px-6 lg:pl-6">
-          <div className="min-w-0 max-w-full">
-            <h1 className="text-base font-bold leading-6 text-[#0f1117]">{meta.title}</h1>
-            <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{subtitle}</p>
-            {!schoolContext.databaseReady && schoolContext.warning ? (
-              <p className="mt-0.5 text-[11px] leading-4 text-[#f57c00]">{schoolContext.warning}</p>
-            ) : null}
-            {setupIncomplete ? (
-              <div className="mt-2 flex flex-col gap-2 rounded-lg border border-[#f57c00]/20 bg-[#fff7ed] px-3 py-2 min-[520px]:flex-row min-[520px]:items-center">
-                <p className="min-w-0 flex-1 text-[11.5px] leading-5 text-[#8a4b00]">
-                  {canManageSetup
-                    ? (schoolContext.warning ?? "Set up real school records before using database-backed admin pages.")
-                    : "Ask a school administrator to complete school setup first."}
-                </p>
-                {canManageSetup ? (
+        <header className="sticky top-0 z-50 min-w-0 max-w-full border-b border-black/[0.07] bg-white px-4 py-3 pl-16 sm:py-3.5 lg:px-6 lg:pl-6">
+          <div className="flex min-w-0 max-w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0 max-w-full">
+              <h1 className="text-base font-bold leading-6 text-[#0f1117]">{meta.title}</h1>
+              <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{subtitle}</p>
+              {!schoolContext.databaseReady && schoolContext.warning ? (
+                <p className="mt-0.5 text-[11px] leading-4 text-[#f57c00]">{schoolContext.warning}</p>
+              ) : null}
+              {setupIncomplete ? (
+                <div className="mt-2 flex flex-col gap-2 rounded-lg border border-[#f57c00]/20 bg-[#fff7ed] px-3 py-2 min-[520px]:flex-row min-[520px]:items-center">
+                  <p className="min-w-0 flex-1 text-[11.5px] leading-5 text-[#8a4b00]">
+                    {canManageSetup
+                      ? (schoolContext.warning ?? "Set up real school records before using database-backed admin pages.")
+                      : "Ask a school administrator to complete school setup first."}
+                  </p>
+                  {canManageSetup ? (
+                    <Link
+                      href="/admin/school-setup"
+                      className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3 text-[12px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                    >
+                      <Database className="size-4" />
+                      Set up school records
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+            <div className="flex w-full min-w-0 max-w-full flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-end xl:w-auto xl:flex-nowrap xl:justify-end">
+              {schoolContext.schoolYears.length > 0 ? (
+                <div className="w-full min-w-0 sm:w-[260px]">
+                  <form action={selectAdminSchoolYearAction}>
+                    <input type="hidden" name="redirectTo" value={redirectTo} />
+                    <label
+                      className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.04em] text-[#7a8296]"
+                      htmlFor="admin-school-year-selector"
+                    >
+                      <CalendarDays className="size-3.5 text-[#e64a19]" />
+                      Viewing school year
+                    </label>
+                    <select
+                      id="admin-school-year-selector"
+                      name="schoolYearId"
+                      defaultValue={schoolContext.selectedSchoolYear?.id ?? schoolContext.activeSchoolYear?.id ?? ""}
+                      onChange={(event) => event.currentTarget.form?.requestSubmit()}
+                      className="min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#303443] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15"
+                      title="Choose school year to view"
+                    >
+                      {schoolContext.schoolYears.map((year) => (
+                        <option key={year.id} value={year.id}>
+                          {schoolYearOptionLabel(year, duplicateYearNames)}
+                        </option>
+                      ))}
+                    </select>
+                  </form>
+                </div>
+              ) : null}
+              <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end xl:flex-nowrap">
+                {canSendReminders ? (
                   <Link
-                    href="/admin/school-setup"
-                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3 text-[12px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                    href="/admin/tuition#payment-reminders"
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3.5 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto"
                   >
-                    <Database className="size-4" />
-                    Set up school records
+                    <Send className="size-4" />
+                    Reminders
+                  </Link>
+                ) : null}
+                {canRecordPayments ? (
+                  <AdminButton
+                    disabled
+                    className="w-full sm:w-auto"
+                    title="Manual payment is coming soon"
+                    aria-label="Manual payment is coming soon"
+                  >
+                    <Plus className="size-4" />
+                    Manual payment
+                    <span className="text-[10px] font-medium">Coming soon</span>
+                  </AdminButton>
+                ) : null}
+                {canAddStudents ? (
+                  <Link
+                    href="/admin/students#add-student"
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto"
+                  >
+                    <UserPlus className="size-4" />
+                    Add student
                   </Link>
                 ) : null}
               </div>
-            ) : null}
-          </div>
-          <div className="flex w-full min-w-0 max-w-full flex-col gap-2 md:w-auto md:items-end">
-            {schoolContext.schoolYears.length > 0 ? (
-              <form action={selectAdminSchoolYearAction} className="w-full md:w-[260px]">
-                <input type="hidden" name="redirectTo" value={redirectTo} />
-                <label className="sr-only" htmlFor="admin-school-year-selector">School year</label>
-                <select
-                  id="admin-school-year-selector"
-                  name="schoolYearId"
-                  defaultValue={schoolContext.selectedSchoolYear?.id ?? schoolContext.activeSchoolYear?.id ?? ""}
-                  onChange={(event) => event.currentTarget.form?.requestSubmit()}
-                  className="min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#303443] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15"
-                  title="Choose school year to view"
-                >
-                  {schoolContext.schoolYears.map((year) => (
-                    <option key={year.id} value={year.id}>
-                      {schoolYearOptionLabel(year, duplicateYearNames)}
-                    </option>
-                  ))}
-                </select>
-              </form>
-            ) : null}
-            {!schoolContext.selectedSchoolYearIsActive && schoolContext.selectedSchoolYear ? (
-              <p className="max-w-[260px] text-[10.5px] leading-4 text-[#8a4b00]">
-                Viewing {schoolContext.selectedSchoolYear.status} year. New records stay in the active year.
-              </p>
-            ) : null}
-            <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[460px]:grid-cols-3 md:w-auto">
-            {canSendReminders ? (
-              <Link
-                href="/admin/tuition#payment-reminders"
-                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3.5 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
-              >
-                <Send className="size-4" />
-                Reminders
-              </Link>
-            ) : null}
-            {canRecordPayments ? (
-              <AdminButton disabled><Plus className="size-4" />Manual payment future</AdminButton>
-            ) : null}
-            {canAddStudents ? (
-              <Link
-                href="/admin/students#add-student"
-                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
-              >
-                <UserPlus className="size-4" />
-                Add student
-              </Link>
-            ) : null}
             </div>
           </div>
+          {!schoolContext.selectedSchoolYearIsActive && schoolContext.selectedSchoolYear ? (
+            <p className="mt-3 border-t border-[#f57c00]/15 pt-2 text-[10.5px] leading-4 text-[#8a4b00]">
+              Viewing {schoolContext.selectedSchoolYear.status} year. New records stay in the active year.
+            </p>
+          ) : null}
         </header>
 
         <main className="min-w-0 max-w-full px-4 py-5 sm:py-6 lg:px-6">{children}</main>
