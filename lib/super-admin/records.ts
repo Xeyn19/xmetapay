@@ -15,6 +15,33 @@ export type SuperAdminDashboardData = {
   schoolRows: SuperAdminSchoolRow[];
   adminRows: SuperAdminAccountRow[];
   recentAdmins: SuperAdminAccountRow[];
+  registrationTrend: SuperAdminRegistrationTrendRow[];
+  registrationTrendMeta: SuperAdminRegistrationTrendMeta;
+};
+
+export type SuperAdminRegistrationTrendRow = {
+  label: string;
+  period: string;
+  active: number;
+  pending: number;
+  disabled: number;
+  total: number;
+};
+
+export type RegistrationTrendPreset = "daily" | "weekly" | "monthly" | "custom";
+
+export type SuperAdminRegistrationTrendOptions = {
+  preset?: string;
+  from?: string;
+  to?: string;
+};
+
+export type SuperAdminRegistrationTrendMeta = {
+  preset: RegistrationTrendPreset;
+  granularity: "daily" | "weekly" | "monthly";
+  from: string;
+  to: string;
+  label: string;
 };
 
 export type SuperAdminSchoolRow = {
@@ -40,9 +67,13 @@ export type SuperAdminAccountRow = {
   createdAt: string;
 };
 
-export async function getSuperAdminDashboardData(): Promise<SuperAdminDashboardData> {
+export async function getSuperAdminDashboardData(
+  options: SuperAdminRegistrationTrendOptions = {},
+): Promise<SuperAdminDashboardData> {
+  const trendConfig = getRegistrationTrendConfig(options);
+
   try {
-    const [[stats], [schoolRows], [adminRows]] = await Promise.all([
+    const [[stats], [schoolRows], [adminRows], [registrationTrendRows]] = await Promise.all([
       pool.execute<StatsRow[]>(
         `SELECT
            (SELECT COUNT(*) FROM schools) AS schools,
@@ -89,6 +120,20 @@ export async function getSuperAdminDashboardData(): Promise<SuperAdminDashboardD
          WHERE u.role = 'admin'
          ORDER BY u.created_at DESC, u.id DESC`,
       ),
+      pool.execute<RegistrationTrendRow[]>(
+        `SELECT
+           ${trendConfig.bucketExpression} AS bucket_key,
+           SUM(u.status = 'active') AS active_count,
+           SUM(u.status = 'pending') AS pending_count,
+           SUM(u.status = 'disabled') AS disabled_count
+         FROM users u
+         WHERE u.role = 'admin'
+           AND u.created_at >= :fromDate
+           AND u.created_at < :toDate
+         GROUP BY ${trendConfig.bucketExpression}
+         ORDER BY bucket_key ASC`,
+        { fromDate: trendConfig.fromDateTime, toDate: trendConfig.toDateTime },
+      ),
     ]);
 
     const adminAccounts = adminRows.map(formatAdminRow);
@@ -113,6 +158,8 @@ export async function getSuperAdminDashboardData(): Promise<SuperAdminDashboardD
       })),
       adminRows: adminAccounts,
       recentAdmins: adminAccounts.slice(0, 5),
+      registrationTrend: buildRegistrationTrend(registrationTrendRows, trendConfig),
+      registrationTrendMeta: trendConfig.meta,
     };
   } catch (error) {
     if (!missingFullSchema(error)) {
@@ -149,7 +196,171 @@ export async function getSuperAdminDashboardData(): Promise<SuperAdminDashboardD
       schoolRows: [],
       adminRows: adminAccounts,
       recentAdmins: adminAccounts.slice(0, 5),
+      registrationTrend: buildRegistrationTrendFromAdmins(adminRows, trendConfig),
+      registrationTrendMeta: trendConfig.meta,
     };
+  }
+}
+
+function buildRegistrationTrend(rows: RegistrationTrendCounts[], config: RegistrationTrendConfig): SuperAdminRegistrationTrendRow[] {
+  const countsByBucket = new Map(rows.map((row) => [normalizeBucketKey(row.bucket_key), row]));
+  const cursor = new Date(`${config.fromDate}T00:00:00`);
+  const end = new Date(`${config.toDate}T00:00:00`);
+  const result: SuperAdminRegistrationTrendRow[] = [];
+
+  while (cursor < end) {
+    const period = getBucketKey(cursor, config.granularity);
+    const row = countsByBucket.get(period);
+    const active = Number(row?.active_count ?? 0);
+    const pending = Number(row?.pending_count ?? 0);
+    const disabled = Number(row?.disabled_count ?? 0);
+
+    result.push({
+      label: formatTrendLabel(cursor, config.granularity),
+      period,
+      active,
+      pending,
+      disabled,
+      total: active + pending + disabled,
+    });
+    advanceCursor(cursor, config.granularity);
+  }
+
+  return result;
+}
+
+function buildRegistrationTrendFromAdmins(rows: AdminRow[], config: RegistrationTrendConfig): SuperAdminRegistrationTrendRow[] {
+  const counts = new Map<string, RegistrationTrendCounts>();
+
+  rows.forEach((row) => {
+    const date = row.created_at instanceof Date ? row.created_at : new Date(row.created_at);
+    if (date < new Date(`${config.fromDate}T00:00:00`) || date >= new Date(`${config.toDate}T00:00:00`)) {
+      return;
+    }
+    const bucketKey = getBucketKey(date, config.granularity);
+    const current = counts.get(bucketKey) ?? {
+      bucket_key: bucketKey,
+      active_count: 0,
+      pending_count: 0,
+      disabled_count: 0,
+    };
+
+    if (row.status === "active") {
+      current.active_count += 1;
+    } else if (row.status === "pending") {
+      current.pending_count += 1;
+    } else {
+      current.disabled_count += 1;
+    }
+    counts.set(bucketKey, current);
+  });
+
+  return buildRegistrationTrend([...counts.values()], config);
+}
+
+function getRegistrationTrendConfig(options: SuperAdminRegistrationTrendOptions): RegistrationTrendConfig {
+  const now = new Date();
+  const preset = isTrendPreset(options.preset) ? options.preset : "monthly";
+  let granularity: RegistrationTrendConfig["granularity"] = preset === "daily"
+    ? "daily"
+    : preset === "weekly"
+      ? "weekly"
+      : "monthly";
+  let from = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  let to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  if (preset === "daily") {
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+    to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  } else if (preset === "weekly") {
+    const monday = startOfWeek(now);
+    from = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 77);
+    to = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 7);
+  } else if (preset === "custom") {
+    const requestedFrom = parseDateOnly(options.from);
+    const requestedTo = parseDateOnly(options.to);
+    if (requestedFrom && requestedTo && requestedFrom <= requestedTo) {
+      const spanDays = Math.floor((requestedTo.getTime() - requestedFrom.getTime()) / 86400000) + 1;
+      granularity = spanDays <= 45 ? "daily" : spanDays <= 180 ? "weekly" : "monthly";
+      from = granularity === "weekly" ? startOfWeek(requestedFrom) : granularity === "monthly" ? new Date(requestedFrom.getFullYear(), requestedFrom.getMonth(), 1) : requestedFrom;
+      const requestedEnd = new Date(requestedTo.getFullYear(), requestedTo.getMonth(), requestedTo.getDate() + 1);
+      to = granularity === "weekly" ? new Date(startOfWeek(requestedEnd).getTime() + 7 * 86400000) : granularity === "monthly" ? new Date(requestedEnd.getFullYear(), requestedEnd.getMonth() + 1, 1) : requestedEnd;
+    } else {
+      return getRegistrationTrendConfig({ preset: "monthly" });
+    }
+  }
+
+  const fromDate = formatDateOnly(from);
+  const toDate = formatDateOnly(to);
+  return {
+    granularity,
+    fromDate,
+    toDate,
+    fromDateTime: `${fromDate} 00:00:00`,
+    toDateTime: `${toDate} 00:00:00`,
+    bucketExpression: granularity === "daily"
+      ? "DATE(u.created_at)"
+      : granularity === "weekly"
+        ? "DATE_SUB(DATE(u.created_at), INTERVAL WEEKDAY(u.created_at) DAY)"
+        : "DATE_FORMAT(u.created_at, '%Y-%m-01')",
+    meta: {
+      preset,
+      granularity,
+      from: fromDate,
+      to: formatDateOnly(new Date(to.getTime() - 86400000)),
+      label: formatRangeLabel(from, new Date(to.getTime() - 86400000)),
+    },
+  };
+}
+
+function isTrendPreset(value: string | undefined): value is RegistrationTrendPreset {
+  return value === "daily" || value === "weekly" || value === "monthly" || value === "custom";
+}
+
+function parseDateOnly(value: string | undefined) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function startOfWeek(date: Date) {
+  const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = result.getDay();
+  result.setDate(result.getDate() - (day === 0 ? 6 : day - 1));
+  return result;
+}
+
+function formatDateOnly(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function formatRangeLabel(from: Date, to: Date) {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).formatRange(from, to);
+}
+
+function formatTrendLabel(date: Date, granularity: RegistrationTrendConfig["granularity"]) {
+  if (granularity === "monthly") {
+    return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(date);
+  }
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+}
+
+function getBucketKey(date: Date, granularity: RegistrationTrendConfig["granularity"]) {
+  const value = granularity === "weekly" ? startOfWeek(date) : new Date(date.getFullYear(), granularity === "monthly" ? date.getMonth() : date.getMonth(), granularity === "monthly" ? 1 : date.getDate());
+  return formatDateOnly(value);
+}
+
+function normalizeBucketKey(value: string | Date) {
+  return formatDateOnly(value instanceof Date ? value : new Date(String(value).slice(0, 10) + "T00:00:00"));
+}
+
+function advanceCursor(cursor: Date, granularity: RegistrationTrendConfig["granularity"]) {
+  if (granularity === "monthly") {
+    cursor.setMonth(cursor.getMonth() + 1);
+  } else {
+    cursor.setDate(cursor.getDate() + (granularity === "daily" ? 1 : 7));
   }
 }
 
@@ -226,4 +437,23 @@ type AdminRow = RowDataPacket & {
   school_name: string;
   staff_role: string;
   resolved_school_name: string | null;
+};
+
+type RegistrationTrendCounts = {
+  bucket_key: string;
+  active_count: number;
+  pending_count: number;
+  disabled_count: number;
+};
+
+type RegistrationTrendRow = RowDataPacket & RegistrationTrendCounts;
+
+type RegistrationTrendConfig = {
+  granularity: "daily" | "weekly" | "monthly";
+  fromDate: string;
+  toDate: string;
+  fromDateTime: string;
+  toDateTime: string;
+  bucketExpression: string;
+  meta: SuperAdminRegistrationTrendMeta;
 };

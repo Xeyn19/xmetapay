@@ -15,6 +15,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Company super admin login exists at `/login`.
 - [x] Company super admin uses a sidebar-based monitoring workspace.
 - [x] Company super admin can monitor schools and manage school admin accounts from a dedicated accounts page.
+- [x] Company super admin dashboard includes a Recharts-backed school-admin registration trend with daily, weekly, monthly, and custom date views.
 - [x] New school/admin registrations require company super admin approval before login.
 - [x] Logout clears the session.
 - [x] Protected admin and parent dashboards redirect correctly.
