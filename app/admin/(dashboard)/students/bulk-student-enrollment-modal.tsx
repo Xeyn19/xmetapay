@@ -24,6 +24,8 @@ type StudentDraft = {
   middleName: string;
   lastName: string;
   birthdate: string;
+  sex: string;
+  studentType: string;
   gradeLevelId: string;
   sectionId: string;
 };
@@ -63,6 +65,8 @@ export function BulkStudentEnrollmentModal({
       middleName: row.middleName,
       lastName: row.lastName,
       birthdate: row.birthdate,
+      sex: row.sex,
+      studentType: row.studentType,
       gradeLevelId: row.gradeLevelId,
       sectionId: row.sectionId,
     })),
@@ -183,6 +187,12 @@ export function BulkStudentEnrollmentModal({
                           <BatchField label="Birthdate">
                             <input value={row.birthdate} onChange={(event) => updateRow(row.key, "birthdate", event.target.value)} className={fieldControlClass} type="date" />
                           </BatchField>
+                          <BatchField label="Sex" required>
+                            <select value={row.sex} onChange={(event) => updateRow(row.key, "sex", event.target.value)} className={fieldControlClass} required><option value="">Choose sex</option><option value="male">Male</option><option value="female">Female</option></select>
+                          </BatchField>
+                          <BatchField label="Student type" required>
+                            <select value={row.studentType} onChange={(event) => updateRow(row.key, "studentType", event.target.value)} className={fieldControlClass} required><option value="">Choose type</option><option value="new">New</option><option value="transferee">Transferee</option><option value="returned">Returned</option></select>
+                          </BatchField>
                           <BatchField label="Grade level" required>
                             <select value={row.gradeLevelId} onChange={(event) => updateGrade(row.key, event.target.value)} className={fieldControlClass} required disabled={!ready}>
                               <option value="">Choose grade</option>
@@ -253,6 +263,8 @@ function createDraft(): StudentDraft {
     middleName: "",
     lastName: "",
     birthdate: "",
+    sex: "",
+    studentType: "",
     gradeLevelId: "",
     sectionId: "",
   };

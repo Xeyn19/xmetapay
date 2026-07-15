@@ -16,6 +16,7 @@ type PlacementRow = {
   decision: PlacementDecision;
   targetGradeLevelId: number;
   targetSectionId: number;
+  studentType: "new" | "transferee" | "returned";
 };
 
 export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData }) {
@@ -240,6 +241,7 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
                 <th className="border-b border-black/[0.07] px-3 py-2.5">Student</th>
                 <th className="border-b border-black/[0.07] px-3 py-2.5">Current class</th>
                 <th className="border-b border-black/[0.07] px-3 py-2.5">Decision</th>
+                <th className="border-b border-black/[0.07] px-3 py-2.5">Student type</th>
                 <th className="border-b border-black/[0.07] px-3 py-2.5">Target grade</th>
                 <th className="border-b border-black/[0.07] px-3 py-2.5">Target section</th>
               </tr>
@@ -278,6 +280,15 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
                       )}
                     </td>
                     <td className="px-3 py-3">
+                      {!placement.selected ? <span className="text-[11px] font-semibold text-[#9ba3b8]">Not selected</span> : (
+                        <select value={placement.studentType} onChange={(event) => updatePlacement(student.id, { studentType: event.target.value as PlacementRow["studentType"] })} className="min-h-10 rounded-lg border border-black/15 bg-white px-2.5 text-[12px] font-semibold">
+                          <option value="returned">Returned</option>
+                          <option value="new">New</option>
+                          <option value="transferee">Transferee</option>
+                        </select>
+                      )}
+                    </td>
+                    <td className="px-3 py-3">
                       {!placement.selected ? (
                         <span className="text-[11px] font-semibold text-[#9ba3b8]">Not selected</span>
                       ) : (
@@ -300,7 +311,7 @@ export function SchoolYearRolloverForm({ data }: { data: AdminSchoolRolloverData
                   </tr>
                 );
               }) : (
-                <tr><td colSpan={6} className="px-3 py-8 text-center font-semibold text-[#5a6070]">No enrolled students match the current filters.</td></tr>
+                <tr><td colSpan={7} className="px-3 py-8 text-center font-semibold text-[#5a6070]">No enrolled students match the current filters.</td></tr>
               )}
             </tbody>
           </table>
@@ -335,12 +346,13 @@ function buildPlacements(data: AdminSchoolRolloverData, sourceYearId: number, ta
         decision: nextGrade ? "promote" : "skip" as PlacementDecision,
         targetGradeLevelId: targetGrade?.id ?? 0,
         targetSectionId: matchingSection?.id ?? fallbackSection?.id ?? 0,
+        studentType: "returned" as const,
       };
     });
 }
 
 function emptyPlacement(studentId: number): PlacementRow {
-  return { studentId, selected: false, decision: "skip", targetGradeLevelId: 0, targetSectionId: 0 };
+  return { studentId, selected: false, decision: "skip", targetGradeLevelId: 0, targetSectionId: 0, studentType: "returned" };
 }
 
 function uniqueValues(values: string[]) {

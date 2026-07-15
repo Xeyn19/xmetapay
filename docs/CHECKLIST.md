@@ -82,6 +82,7 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Create an admin flow for adding or listing students.
 - [x] Support quick single-student enrollment and validated multi-student batch enrollment with per-row grade/section placement.
 - [x] Enroll one or many existing pending students without re-entering identity details; only active-year grade/section enrollment rows are created.
+- [x] Capture required sex on new student records and school-year student type on new, existing-student, bulk, and rollover enrollment flows; derive age from birthdate and show legacy missing values as Pending.
 - [x] Restrict student creation/enrollment to `school_administrator` and `registrar`.
 - [x] Link parent accounts to students using `student_reference`.
 - [x] Allow parent registration to submit one or more student references.

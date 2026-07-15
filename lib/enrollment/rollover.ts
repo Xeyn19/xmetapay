@@ -3,12 +3,14 @@ import "server-only";
 import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 
 export type RolloverDecision = "promote" | "repeat" | "skip";
+export type RolloverStudentType = "new" | "transferee" | "returned";
 
 export type RolloverPromotion = {
   studentId: number;
   targetGradeLevelId: number;
   targetSectionId: number;
   decision: RolloverDecision;
+  studentType: RolloverStudentType;
 };
 
 export type RolloverResult = {
@@ -43,6 +45,7 @@ export function parseRolloverPromotions(raw: string): RolloverPromotion[] {
     targetGradeLevelId: positiveInteger(item, "targetGradeLevelId"),
     targetSectionId: positiveInteger(item, "targetSectionId"),
     decision: decisionValue(item),
+    studentType: studentTypeValue(item),
   }));
 }
 
@@ -109,15 +112,16 @@ export async function applyRolloverPromotions(
 
     await connection.execute(
       `INSERT INTO enrollments (
-         student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at
+         student_id, school_year_id, grade_level_id, section_id, student_type, status, submitted_at, enrolled_at
        ) VALUES (
-         :studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', NOW(), NOW()
+         :studentId, :schoolYearId, :gradeLevelId, :sectionId, :studentType, 'enrolled', NOW(), NOW()
        )`,
       {
         studentId: sourceStudent.id,
         schoolYearId: targetSchoolYearId,
         gradeLevelId: targetSection.grade_level_id,
-        sectionId: targetSection.id,
+      sectionId: targetSection.id,
+      studentType: promotion.studentType,
       },
     );
 
@@ -223,4 +227,10 @@ function decisionValue(value: unknown): RolloverDecision {
 
   const decision = (value as Record<string, unknown>).decision;
   return decision === "promote" || decision === "repeat" ? decision : "skip";
+}
+
+function studentTypeValue(value: unknown): RolloverStudentType {
+  if (typeof value !== "object" || value === null) return "returned";
+  const type = (value as Record<string, unknown>).studentType;
+  return type === "new" || type === "transferee" || type === "returned" ? type : "returned";
 }

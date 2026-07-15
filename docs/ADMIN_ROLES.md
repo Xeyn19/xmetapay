@@ -74,7 +74,7 @@ Only one school year is still the active/current year. For MVP safety, operation
 7. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
 8. New operational history rows are stamped with the active school year where supported.
 9. Registrar and finance officer accounts with the same school name are linked to the existing school context.
-10. A registrar can add new students, or enroll one or many existing pending students by adding only their active-year grade and section. The existing names, birthdates, references, and parent links are preserved.
+10. A registrar can add new students with sex and student type, or enroll one or many existing pending students by adding only their active-year grade, section, and student type. The existing names, birthdates, sex, references, and parent links are preserved. Student age is derived from birthdate and legacy missing values show `Pending`.
 11. Parents link to those students by `student_reference`.
 12. A finance officer works on active-year tuition, tuition collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented. Tuition collections exclude wallet top-ups, which belong to the allowance ledger.
 

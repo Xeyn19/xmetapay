@@ -34,6 +34,7 @@ Implemented:
 - Company super admin approval for new school admin registrations.
 - Company super admin monitoring for school admin accounts.
 - Admin single-student creation and enrollment, plus validated multi-student batch enrollment.
+- New student records require sex; each school-year enrollment records `new`, `transferee`, or `returned` student type. Age is derived from birthdate for profiles and exports.
 - Admin student profile selector and exact profile route `/admin/students/[studentId]`.
 - Parent-to-student linking through `student_reference`.
 - Parent dashboard reads linked students through `student_guardians`.
@@ -268,7 +269,7 @@ Database touchpoints:
 
 Implemented.
 
-Student master records stay shared across years. Rollover lists only students enrolled in the source year, lets the school administrator explicitly select one or many students, suggests the next grade, preserves a matching section name when possible, and lets the administrator review promote, repeat, or skip decisions. Saving creates only new `enrollments` rows for checked promote/repeat students; it does not duplicate `students` or copy fees, payments, wallets, stores, or reminders.
+Student master records stay shared across years. Rollover lists only students enrolled in the source year, lets the school administrator explicitly select one or many students, suggests the next grade, preserves a matching section name when possible, and lets the administrator review promote, repeat, student type, or skip decisions. Saving creates only new `enrollments` rows for checked promote/repeat students, defaulting their type to `Returned`; it does not duplicate `students` or copy fees, payments, wallets, stores, or reminders.
 
 ```mermaid
 flowchart TD

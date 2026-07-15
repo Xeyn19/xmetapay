@@ -112,7 +112,7 @@ Stores the official student record. If existing students are Pending for a schoo
 Main purpose:
 
 - Keep a unique `student_reference` per school.
-- Store student name, optional birthdate, and status.
+- Store student name, optional birthdate, reusable sex, and status. Age is calculated from birthdate at read time and is never stored.
 - Link students to school records, enrollments, fees, payments, wallets, store transactions, and notifications.
 
 The `student_reference` is important because parent registration can use it to connect a parent account to the correct student.
@@ -139,10 +139,12 @@ Stores a student's enrollment record for a specific school year.
 Main purpose:
 
 - Track the student's grade level and optional section.
-- Track enrollment status from draft to submitted, enrolled, rejected, or withdrawn.
+- Track enrollment status from draft to submitted, enrolled, rejected, or withdrawn, plus the school-year classification `new`, `transferee`, or `returned`.
 - Prevent duplicate enrollment records for the same student in the same school year.
 
 This table becomes the core source for enrollment dashboards and class assignments.
+
+Legacy records may have missing sex or student type and display `Pending`. New student and enrollment writes validate these values, while rollover defaults the target enrollment type to `Returned` and allows an administrator to change it per student.
 
 During manual rollover, the school administrator explicitly checks one or many source-year students, reviews each target grade and section, and saves only selected promote/repeat placements. The system creates the new year-specific enrollment and does not copy the student master record or financial history.
 

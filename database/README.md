@@ -36,6 +36,9 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
 9. If `auth-schema.sql` was already imported before company super admin access was added, import `migrations/2026-07-09-super-admin-role.sql`.
    - Adds the `super_admin` auth role to `users` and `auth_sessions`.
    - Required before importing the temporary local super admin seed SQL.
+10. If `full-schema-v1.sql` was already imported before student demographics and enrollment types were added, import `migrations/2026-07-15-student-demographics-enrollment.sql`.
+   - Adds nullable `students.sex` and `enrollments.student_type` columns for existing data compatibility.
+   - New enrollment forms require these values; old missing values display as `Pending`.
 
 ## Temporary Super Admin Seed
 

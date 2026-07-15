@@ -58,6 +58,8 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
             { label: "Contact", value: (student) => student.guardianContact },
             { label: "Enrollment status", value: (student) => student.enrollmentStatus },
             { label: "Student status", value: (student) => student.studentStatus },
+            { label: "Sex", value: (student) => student.sex },
+            { label: "Student type", value: (student) => student.studentType },
           ])}
           onExportPdf={() => exportRowsToPdf("admin-students.pdf", "Enrolled students", filteredStudents, [
             { label: "Reference", value: (student) => student.studentReference },
@@ -68,6 +70,8 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
             { label: "Contact", value: (student) => student.guardianContact },
             { label: "Enrollment status", value: (student) => student.enrollmentStatus },
             { label: "Student status", value: (student) => student.studentStatus },
+            { label: "Sex", value: (student) => student.sex },
+            { label: "Student type", value: (student) => student.studentType },
           ])}
           exportDisabled={filteredStudents.length === 0}
         />
