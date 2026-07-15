@@ -44,6 +44,7 @@ test("admin shell renders selected-year selector and labels non-active years as 
   assert.match(shell, /name="schoolYearId"/);
   assert.match(shell, /schoolContext\.selectedSchoolYear\?\.name/);
   assert.match(shell, /schoolContext\.schoolYears\.map/);
+  assert.match(shell, /Viewing school year/);
   assert.match(shell, /New records stay in the active year/);
 });
 
