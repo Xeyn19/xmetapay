@@ -56,6 +56,8 @@ export function AdminStudentProfileSelector({ students, schoolYearName }: { stud
         student.guardians,
         student.guardianStatus,
         student.enrollmentStatus,
+        student.sex,
+        student.studentType,
       ].join(" "),
     ),
     [enrollmentStatus, grade, guardianStatus, query, section, students],
@@ -115,6 +117,8 @@ export function AdminStudentProfileSelector({ students, schoolYearName }: { stud
             { label: "Guardian link", value: (student) => student.guardianStatus },
             { label: "Enrollment status", value: (student) => student.enrollmentStatus },
             { label: "Student status", value: (student) => student.studentStatus },
+            { label: "Sex", value: (student) => student.sex },
+            { label: "Student type", value: (student) => student.studentType },
           ])}
           onExportPdf={() => exportRowsToPdf("admin-student-profiles.pdf", "Student profile selector", filteredStudents, [
             { label: "Reference", value: (student) => student.studentReference },
@@ -125,6 +129,8 @@ export function AdminStudentProfileSelector({ students, schoolYearName }: { stud
             { label: "Guardian link", value: (student) => student.guardianStatus },
             { label: "Enrollment status", value: (student) => student.enrollmentStatus },
             { label: "Student status", value: (student) => student.studentStatus },
+            { label: "Sex", value: (student) => student.sex },
+            { label: "Student type", value: (student) => student.studentType },
           ])}
           exportDisabled={filteredStudents.length === 0}
         />

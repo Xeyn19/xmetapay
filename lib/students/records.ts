@@ -5,6 +5,7 @@ import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 import { pool } from "@/lib/auth/db";
 import { labelForChannel } from "@/lib/payments/records";
 import { getResolvedAdminSchoolSetup, getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
+import { calculateAge, labelForSex, labelForStudentType } from "@/lib/students/demographics";
 
 type Queryable = Pick<Pool | PoolConnection, "execute">;
 
@@ -37,6 +38,8 @@ export type AdminStudentRow = {
   guardianContact: string;
   enrollmentStatus: string;
   studentStatus: string;
+  sex: string;
+  studentType: string;
 };
 
 export type AdminParentsPageData = {
@@ -266,12 +269,13 @@ export async function getParentStudentProfileData(
   try {
     const [rows] = await pool.execute<ParentStudentProfileRow[]>(
       `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name,
-         st.birthdate, st.status AS student_status,
+         st.birthdate, st.sex, st.status AS student_status,
          sc.name AS school_name,
          COALESCE(sy.name, 'School year pending') AS school_year_name,
          COALESCE(gl.name, 'Not enrolled') AS grade_name,
          COALESCE(sec.name, '-') AS section_name,
          COALESCE(e.status, 'pending') AS enrollment_status,
+         e.student_type,
          COALESCE(w.balance, 0) AS wallet_balance,
          COALESCE(w.status, 'not_started') AS wallet_status,
          COALESCE((
@@ -338,6 +342,9 @@ export async function getParentStudentProfileData(
           { label: "Section", value: row.section_name },
           { label: "School year", value: row.school_year_name },
           { label: "Date of birth", value: formatDate(row.birthdate) },
+          { label: "Age", value: calculateAge(row.birthdate) },
+          { label: "Sex", value: labelForSex(row.sex) },
+          { label: "Student type", value: labelForStudentType(row.student_type) },
           { label: "Enrollment status", value: enrollmentLabel },
           { label: "Student status", value: studentStatusLabel },
         ],
@@ -467,10 +474,11 @@ async function getSectionOptions(schoolId: number, schoolYearId: number) {
 
 async function getAdminStudentRows(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<AdminStudentSqlRow[]>(
-    `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.status AS student_status,
+    `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.sex, st.status AS student_status,
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
        COALESCE(sec.name, '-') AS section_name,
        COALESCE(e.status, 'pending') AS enrollment_status,
+       e.student_type,
        COALESCE(GROUP_CONCAT(DISTINCT u.name ORDER BY sg.is_primary DESC, u.name SEPARATOR ', '), 'Not linked') AS guardians,
        COALESCE(GROUP_CONCAT(DISTINCT COALESCE(u.phone, u.email) ORDER BY sg.is_primary DESC, u.name SEPARATOR ', '), 'Not on file') AS guardian_contact
      FROM students st
@@ -480,7 +488,7 @@ async function getAdminStudentRows(schoolId: number, schoolYearId: number) {
      LEFT JOIN student_guardians sg ON sg.student_id = st.id
      LEFT JOIN users u ON u.id = sg.parent_user_id
      WHERE st.school_id = :schoolId
-     GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.status, gl.name, sec.name, e.status
+     GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.sex, st.status, gl.name, sec.name, e.status, e.student_type
      ORDER BY st.created_at DESC, st.id DESC`,
     { schoolId, schoolYearId },
   );
@@ -495,6 +503,8 @@ async function getAdminStudentRows(schoolId: number, schoolYearId: number) {
     guardianContact: row.guardian_contact,
     enrollmentStatus: row.enrollment_status,
     studentStatus: row.student_status,
+    sex: labelForSex(row.sex),
+    studentType: labelForStudentType(row.student_type),
   }));
 }
 
@@ -910,6 +920,8 @@ type AdminStudentSqlRow = RowDataPacket & {
   guardian_contact: string;
   enrollment_status: string;
   student_status: string;
+  sex: string | null;
+  student_type: string | null;
 };
 
 type AdminParentSqlRow = RowDataPacket & {
@@ -987,12 +999,14 @@ type ParentStudentProfileRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string;
   birthdate: Date | string | null;
+  sex: string | null;
   student_status: string;
   school_name: string;
   school_year_name: string;
   grade_name: string;
   section_name: string;
   enrollment_status: string;
+  student_type: string | null;
   wallet_balance: number | string;
   wallet_status: string;
   monthly_spend: number | string;

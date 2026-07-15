@@ -203,6 +203,7 @@ CREATE TABLE students (
   middle_name VARCHAR(80) NULL,
   last_name VARCHAR(80) NOT NULL,
   birthdate DATE NULL,
+  sex ENUM('male', 'female') NULL,
   status ENUM('active', 'inactive', 'graduated', 'transferred') NOT NULL DEFAULT 'active',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -252,6 +253,7 @@ CREATE TABLE enrollments (
   school_year_id BIGINT UNSIGNED NOT NULL,
   grade_level_id BIGINT UNSIGNED NOT NULL,
   section_id BIGINT UNSIGNED NULL,
+  student_type ENUM('new', 'transferee', 'returned') NULL,
   status ENUM('draft', 'submitted', 'enrolled', 'rejected', 'withdrawn') NOT NULL DEFAULT 'draft',
   submitted_at DATETIME NULL,
   enrolled_at DATETIME NULL,
@@ -267,6 +269,8 @@ CREATE TABLE enrollments (
   CONSTRAINT fk_enrollments_section FOREIGN KEY (section_id) REFERENCES sections(id)
 );
 ```
+
+`students.sex` is reusable student-master data. `enrollments.student_type` is specific to the school year, so a student can be `new`, `transferee`, or `returned` in different years. Existing null values remain valid and display as `Pending`; age is calculated from `birthdate` and is never stored.
 
 #### `enrollment_documents`
 

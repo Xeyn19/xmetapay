@@ -8,6 +8,9 @@ import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import { getAdminStaffRole } from "@/lib/admin/access";
 import { canManageStudents } from "@/lib/admin/permissions";
 
+const studentSexes = new Set(["male", "female"]);
+const studentTypes = new Set(["new", "transferee", "returned"]);
+
 export async function createStudentAction(formData: FormData) {
   const session = await requireRole("admin");
   const staffRole = await getAdminStaffRole(session.userId);
@@ -40,8 +43,8 @@ export async function createStudentAction(formData: FormData) {
     }
 
     const [studentResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO students (school_id, student_reference, first_name, middle_name, last_name, birthdate, status)
-       VALUES (:schoolId, :studentReference, :firstName, :middleName, :lastName, :birthdate, 'active')`,
+      `INSERT INTO students (school_id, student_reference, first_name, middle_name, last_name, birthdate, sex, status)
+       VALUES (:schoolId, :studentReference, :firstName, :middleName, :lastName, :birthdate, :sex, 'active')`,
       {
         schoolId: setup.school_id,
         studentReference: input.data.studentReference,
@@ -49,17 +52,19 @@ export async function createStudentAction(formData: FormData) {
         middleName: input.data.middleName,
         lastName: input.data.lastName,
         birthdate: input.data.birthdate,
+        sex: input.data.sex,
       },
     );
 
     await connection.execute(
-      `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at)
-       VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, student_type, status, submitted_at, enrolled_at)
+       VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, :studentType, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
       {
         studentId: studentResult.insertId,
         schoolYearId: setup.school_year_id,
         gradeLevelId: input.data.gradeLevelId,
         sectionId: input.data.sectionId,
+        studentType: input.data.studentType,
       },
     );
 
@@ -101,8 +106,9 @@ export async function enrollExistingStudentAction(formData: FormData) {
     const studentId = positiveInteger(formData.get("studentId"));
     const gradeLevelId = positiveInteger(formData.get("gradeLevelId"));
     const sectionId = positiveInteger(formData.get("sectionId"));
+    const studentType = value(formData, "studentType");
 
-    if (!studentId || !gradeLevelId || !sectionId) {
+    if (!studentId || !gradeLevelId || !sectionId || !studentTypes.has(studentType)) {
       throw new Error("Choose a student, grade, and section.");
     }
 
@@ -146,9 +152,9 @@ export async function enrollExistingStudentAction(formData: FormData) {
     }
 
     await connection.execute(
-      `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at)
-       VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-      { studentId, schoolYearId: setup.school_year_id, gradeLevelId, sectionId },
+      `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, student_type, status, submitted_at, enrolled_at)
+       VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, :studentType, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      { studentId, schoolYearId: setup.school_year_id, gradeLevelId, sectionId, studentType },
     );
 
     const [nameRows] = await connection.execute<RowDataPacket[]>(
@@ -213,7 +219,7 @@ export async function enrollExistingStudentsBatchAction(formData: FormData) {
     let skippedCount = 0;
 
     for (const placement of input.data) {
-      if (placement.studentId <= 0 || placement.gradeLevelId <= 0 || placement.sectionId <= 0) {
+       if (placement.studentId <= 0 || placement.gradeLevelId <= 0 || placement.sectionId <= 0 || !studentTypes.has(placement.studentType)) {
         invalidCount += 1;
         continue;
       }
@@ -253,13 +259,14 @@ export async function enrollExistingStudentsBatchAction(formData: FormData) {
 
       try {
         await connection.execute(
-          `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at)
-           VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+           `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, student_type, status, submitted_at, enrolled_at)
+            VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, :studentType, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
           {
             studentId: placement.studentId,
             schoolYearId: setup.school_year_id,
             gradeLevelId: placement.gradeLevelId,
             sectionId: placement.sectionId,
+            studentType: placement.studentType,
           },
         );
         enrolledCount += 1;
@@ -332,6 +339,8 @@ export async function createStudentsBatchAction(formData: FormData) {
         !row.studentReference
         || !row.firstName
         || !row.lastName
+        || !studentSexes.has(row.sex)
+        || !studentTypes.has(row.studentType)
         || !Number.isInteger(row.gradeLevelId)
         || row.gradeLevelId <= 0
         || !Number.isInteger(row.sectionId)
@@ -358,8 +367,8 @@ export async function createStudentsBatchAction(formData: FormData) {
 
       try {
         const [studentResult] = await connection.execute<ResultSetHeader>(
-          `INSERT INTO students (school_id, student_reference, first_name, middle_name, last_name, birthdate, status)
-           VALUES (:schoolId, :studentReference, :firstName, :middleName, :lastName, :birthdate, 'active')`,
+           `INSERT INTO students (school_id, student_reference, first_name, middle_name, last_name, birthdate, sex, status)
+            VALUES (:schoolId, :studentReference, :firstName, :middleName, :lastName, :birthdate, :sex, 'active')`,
           {
             schoolId: setup.school_id,
             studentReference: row.studentReference,
@@ -367,17 +376,19 @@ export async function createStudentsBatchAction(formData: FormData) {
             middleName: row.middleName,
             lastName: row.lastName,
             birthdate: row.birthdate,
+            sex: row.sex,
           },
         );
 
         await connection.execute(
-          `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, status, submitted_at, enrolled_at)
-           VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+           `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, section_id, student_type, status, submitted_at, enrolled_at)
+            VALUES (:studentId, :schoolYearId, :gradeLevelId, :sectionId, :studentType, 'enrolled', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
           {
             studentId: studentResult.insertId,
             schoolYearId: setup.school_year_id,
             gradeLevelId: row.gradeLevelId,
             sectionId: row.sectionId,
+            studentType: row.studentType,
           },
         );
         createdCount += 1;
@@ -420,11 +431,13 @@ function parseStudentForm(formData: FormData) {
     middleName: value(formData, "middleName") || null,
     lastName: value(formData, "lastName"),
     birthdate: value(formData, "birthdate") || null,
+    sex: value(formData, "sex"),
+    studentType: value(formData, "studentType"),
     gradeLevelId: Number(value(formData, "gradeLevelId")),
     sectionId: Number(value(formData, "sectionId")),
   };
 
-  if (!data.studentReference || !data.firstName || !data.lastName || !data.gradeLevelId || !data.sectionId) {
+  if (!data.studentReference || !data.firstName || !data.lastName || !studentSexes.has(data.sex) || !studentTypes.has(data.studentType) || !data.gradeLevelId || !data.sectionId) {
     return { ok: false as const, message: "Complete the required student fields." };
   }
 
@@ -465,6 +478,7 @@ function parseExistingStudentPlacements(formData: FormData) {
       studentId: numberProperty(item, "studentId"),
       gradeLevelId: numberProperty(item, "gradeLevelId"),
       sectionId: numberProperty(item, "sectionId"),
+      studentType: stringProperty(item, "studentType"),
     })),
   };
 }
@@ -499,9 +513,11 @@ function parseBatchStudentsForm(formData: FormData) {
       studentReference: stringProperty(item, "studentReference"),
       firstName: stringProperty(item, "firstName"),
       middleName: stringProperty(item, "middleName") || null,
-      lastName: stringProperty(item, "lastName"),
-      birthdate: stringProperty(item, "birthdate") || null,
-      gradeLevelId: Number(stringProperty(item, "gradeLevelId")),
+        lastName: stringProperty(item, "lastName"),
+        birthdate: stringProperty(item, "birthdate") || null,
+        sex: stringProperty(item, "sex"),
+        studentType: stringProperty(item, "studentType"),
+        gradeLevelId: Number(stringProperty(item, "gradeLevelId")),
       sectionId: Number(stringProperty(item, "sectionId")),
     });
   }
@@ -704,6 +720,8 @@ type BatchStudentInput = {
   middleName: string | null;
   lastName: string;
   birthdate: string | null;
+  sex: string;
+  studentType: string;
   gradeLevelId: number;
   sectionId: number;
 };

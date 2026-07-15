@@ -11,6 +11,7 @@ type Placement = {
   selected: boolean;
   gradeLevelId: number;
   sectionId: number;
+  studentType: "new" | "transferee" | "returned" | "";
 };
 
 const fieldClass = "min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-[12px] text-[#0f1117] outline-none focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/10";
@@ -36,11 +37,13 @@ export function EnrollExistingStudentModal({
   const [currentSection, setCurrentSection] = useState("all");
   const [bulkGradeLevelId, setBulkGradeLevelId] = useState(0);
   const [bulkSectionId, setBulkSectionId] = useState(0);
+  const [bulkStudentType, setBulkStudentType] = useState<Placement["studentType"]>("returned");
   const [placements, setPlacements] = useState<Placement[]>(() => pendingStudents.map((student) => ({
     studentId: student.id,
     selected: false,
     gradeLevelId: 0,
     sectionId: 0,
+    studentType: "returned",
   })));
 
   const placementById = useMemo(() => new Map(placements.map((placement) => [placement.studentId, placement])), [placements]);
@@ -93,6 +96,14 @@ export function EnrollExistingStudentModal({
     )));
   }
 
+  function applyBulkStudentType() {
+    setPlacements((current) => current.map((placement) => (
+      placement.selected && visibleIds.has(placement.studentId)
+        ? { ...placement, studentType: bulkStudentType }
+        : placement
+    )));
+  }
+
   function close() {
     setOpen(false);
     setQuery("");
@@ -100,13 +111,14 @@ export function EnrollExistingStudentModal({
     setCurrentSection("all");
     setBulkGradeLevelId(0);
     setBulkSectionId(0);
-    setPlacements(pendingStudents.map((student) => ({ studentId: student.id, selected: false, gradeLevelId: 0, sectionId: 0 })));
+    setBulkStudentType("returned");
+    setPlacements(pendingStudents.map((student) => ({ studentId: student.id, selected: false, gradeLevelId: 0, sectionId: 0, studentType: "returned" })));
   }
 
   const submittedPlacements = useMemo(
     () => placements
       .filter((placement) => placement.selected)
-      .map(({ studentId, gradeLevelId, sectionId }) => ({ studentId, gradeLevelId, sectionId })),
+      .map(({ studentId, gradeLevelId, sectionId, studentType }) => ({ studentId, gradeLevelId, sectionId, studentType })),
     [placements],
   );
 
@@ -169,6 +181,7 @@ export function EnrollExistingStudentModal({
                             {selected ? <>
                               <select value={placement?.gradeLevelId || ""} onChange={(event) => selectGrade(student.id, Number(event.target.value))} className={`${fieldClass} lg:min-w-40`} aria-label={`Target grade for ${student.fullName}`}><option value="">Target grade</option>{gradeOptions.map((grade) => <option key={grade.id} value={grade.id}>{grade.name}</option>)}</select>
                               <select value={placement?.sectionId || ""} onChange={(event) => updatePlacement(student.id, { sectionId: Number(event.target.value) })} disabled={!placement?.gradeLevelId} className={`${fieldClass} lg:min-w-44`} aria-label={`Target section for ${student.fullName}`}><option value="">Target section</option>{rowSections.map((section) => <option key={section.id} value={section.id}>{section.label}</option>)}</select>
+                              <select value={placement?.studentType || ""} onChange={(event) => updatePlacement(student.id, { studentType: event.target.value as Placement["studentType"] })} className={fieldClass} aria-label={`Student type for ${student.fullName}`}><option value="">Student type</option><option value="new">New</option><option value="transferee">Transferee</option><option value="returned">Returned</option></select>
                             </> : <span className="text-[11px] font-semibold text-[#9ba3b8]">Not selected</span>}
                           </div>
                         );
@@ -183,6 +196,8 @@ export function EnrollExistingStudentModal({
                       <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[0.05em] text-[#737b8d]">Target grade<select value={bulkGradeLevelId || ""} onChange={(event) => { setBulkGradeLevelId(Number(event.target.value)); setBulkSectionId(0); }} className={fieldClass}><option value="">Choose target grade</option>{gradeOptions.map((grade) => <option key={grade.id} value={grade.id}>{grade.name}</option>)}</select></label>
                       <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[0.05em] text-[#737b8d]">Target section<select value={bulkSectionId || ""} onChange={(event) => setBulkSectionId(Number(event.target.value))} className={fieldClass} disabled={!bulkGradeLevelId}><option value="">Choose target section</option>{bulkSections.map((section) => <option key={section.id} value={section.id}>{section.label}</option>)}</select></label>
                       <button type="button" onClick={applyBulkPlacement} disabled={!bulkGradeLevelId || !bulkSectionId || selectedVisibleCount === 0} className="min-h-11 rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] hover:bg-[#fff5f2] disabled:cursor-not-allowed disabled:opacity-50">Apply to selected ({selectedVisibleCount})</button>
+                      <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[0.05em] text-[#737b8d]">Student type<select value={bulkStudentType} onChange={(event) => setBulkStudentType(event.target.value as Placement["studentType"])} className={fieldClass}><option value="returned">Returned</option><option value="new">New</option><option value="transferee">Transferee</option></select></label>
+                      <button type="button" onClick={applyBulkStudentType} disabled={selectedVisibleCount === 0} className="min-h-11 rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] hover:bg-[#fff5f2] disabled:cursor-not-allowed disabled:opacity-50">Apply type to selected ({selectedVisibleCount})</button>
                     </div>
                     <div className="mt-5 rounded-lg border border-[#e64a19]/15 bg-[#fff8f5] p-3 text-[11px] leading-5 text-[#5a6070]">
                       Selected: <strong className="text-[#0f1117]">{selectedCount}</strong>. {selectedCount === 0 ? (

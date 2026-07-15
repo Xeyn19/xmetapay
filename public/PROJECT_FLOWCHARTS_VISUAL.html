@@ -294,7 +294,9 @@
       <section>
         <h2>Whole Project Overview</h2>
         <p>
-          The admin creates the official school and student records. Parents can
+          The admin creates the official school and student records. New student records require sex, while each
+          school-year enrollment records whether the student is new, a transferee, or returned. Age is derived from
+          birthdate and legacy missing values display as Pending. Parents can
           only see students after a <code>student_guardians</code> link exists.
           New students use the single or batch enrollment forms. Existing
           students with no enrollment for the selected year use
@@ -743,7 +745,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="wallet-topup-store-phase-6b.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up, store purchase recording, parent dashboard wallet activity, selected student profile wallet activity, admin allowance monthly top-up stats, segmented allowance balance filters, and admin allowance totals that count each wallet balance once. Admin store actions now use focused <code>Create merchant</code> and <code>Record purchase</code> modals above the transaction log.</p>
+        <p><strong>Implemented:</strong> wallet top-up, store purchase recording, parent dashboard wallet activity, selected student profile wallet activity, admin allowance monthly top-up stats, segmented allowance balance filters, admin allowance totals that count each wallet balance once, and student demographic/enrollment classification fields. Admin store actions now use focused <code>Create merchant</code> and <code>Record purchase</code> modals above the transaction log.</p>
           <pre class="mermaid">
 flowchart TD
   A["Parent opens wallet page"] --> B["Read linked students through student_guardians"]

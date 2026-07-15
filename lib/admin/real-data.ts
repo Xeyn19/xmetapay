@@ -17,6 +17,7 @@ import type { LucideIcon } from "lucide-react";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { calculateAge, labelForSex, labelForStudentType } from "@/lib/students/demographics";
 import { getTuitionCollectionRows, getTuitionCollectionSummary } from "@/lib/admin/tuition-collections";
 import { getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 import { getTuitionTermSummary, parseTuitionTermsBlob } from "@/lib/tuition/terms";
@@ -182,6 +183,8 @@ export type AdminStudentProfileSummary = {
   guardianStatus: string;
   enrollmentStatus: string;
   studentStatus: string;
+  sex: string;
+  studentType: string;
 };
 
 type AdminStudentTransactionDisplay = NonNullable<AdminStudentProfileRealData["student"]>["transactions"][number];
@@ -501,10 +504,11 @@ export async function getAdminStudentProfileRealData(
     const selectedStudentClause = typeof studentId === "number" ? "AND st.id = :studentId" : "";
     const [rows] = await pool.execute<StudentProfileRow[]>(
       `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name,
-         st.birthdate, st.status AS student_status,
+         st.birthdate, st.sex, st.status AS student_status,
          COALESCE(gl.name, 'Not enrolled') AS grade_name,
          COALESCE(sec.name, '-') AS section_name,
          COALESCE(e.status, 'pending') AS enrollment_status,
+         e.student_type,
          COALESCE(w.balance, 0) AS wallet_balance,
          COALESCE(w.status, 'closed') AS wallet_status,
          COALESCE(GROUP_CONCAT(DISTINCT u.name ORDER BY sg.is_primary DESC, u.name SEPARATOR ', '), 'Not linked') AS guardian_names,
@@ -520,8 +524,8 @@ export async function getAdminStudentProfileRealData(
        LEFT JOIN parent_profiles pp ON pp.user_id = u.id
        WHERE st.school_id = :schoolId
        ${selectedStudentClause}
-       GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.birthdate, st.status,
-         gl.name, sec.name, e.status, w.balance, w.status
+       GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.birthdate, st.sex, st.status,
+         gl.name, sec.name, e.status, e.student_type, w.balance, w.status
        ORDER BY st.created_at DESC, st.id DESC
        LIMIT 1`,
       typeof studentId === "number"
@@ -567,6 +571,9 @@ export async function getAdminStudentProfileRealData(
           { label: "Student reference", value: row.student_reference },
           { label: "Grade / section", value: `${row.grade_name} - ${row.section_name}` },
           { label: "Date of birth", value: formatDate(row.birthdate) },
+          { label: "Age", value: calculateAge(row.birthdate) },
+          { label: "Sex", value: labelForSex(row.sex) },
+          { label: "Student type", value: labelForStudentType(row.student_type) },
           { label: "Enrollment status", value: labelForStatus(row.enrollment_status) },
           { label: "Student status", value: labelForStatus(row.student_status) },
         ],
@@ -601,10 +608,11 @@ export async function getAdminStudentProfileRealData(
 async function getAdminStudentProfileSummaries(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<StudentProfileSummaryRow[]>(
     `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name,
-       st.status AS student_status,
+       st.sex, st.status AS student_status,
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
        COALESCE(sec.name, '-') AS section_name,
        COALESCE(e.status, 'pending') AS enrollment_status,
+       e.student_type,
        COALESCE(GROUP_CONCAT(DISTINCT u.name ORDER BY sg.is_primary DESC, u.name SEPARATOR ', '), 'Not linked') AS guardian_names
      FROM students st
      LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
@@ -613,8 +621,8 @@ async function getAdminStudentProfileSummaries(schoolId: number, schoolYearId: n
      LEFT JOIN student_guardians sg ON sg.student_id = st.id
      LEFT JOIN users u ON u.id = sg.parent_user_id
      WHERE st.school_id = :schoolId
-     GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.status,
-       gl.name, sec.name, e.status
+     GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.sex, st.status,
+       gl.name, sec.name, e.status, e.student_type
      ORDER BY st.last_name ASC, st.first_name ASC, st.id ASC`,
     { schoolId, schoolYearId },
   );
@@ -636,6 +644,8 @@ async function getAdminStudentProfileSummaries(schoolId: number, schoolYearId: n
       guardianStatus: row.guardian_names === "Not linked" ? "Pending" : "Linked",
       enrollmentStatus: labelForStatus(row.enrollment_status),
       studentStatus: labelForStatus(row.student_status),
+      sex: labelForSex(row.sex),
+      studentType: labelForStudentType(row.student_type),
     };
   });
 }
@@ -856,7 +866,7 @@ async function getRecentPayments(schoolId: number, schoolYearId: number) {
        COALESCE(
          GROUP_CONCAT(DISTINCT CONCAT(term_ft.name, ' - ', tpt.term_name) ORDER BY tpt.sort_order SEPARATOR ', '),
          GROUP_CONCAT(DISTINCT ft.name ORDER BY ft.name SEPARATOR ', '),
-         MAX(CASE WHEN wt.type = 'top_up' THEN 'Wallet top-up' END),
+         MAX(CASE WHEN wt.type = 'top_up' THEN 'Allowance top-up' END),
          'Payment'
        ) AS fee_name
      FROM payments p
@@ -1474,7 +1484,7 @@ function reportDownloads() {
     },
     {
       name: "Wallet and store report",
-      desc: "Wallet top-ups, store purchases, and balances after",
+      desc: "Allowance top-ups, store purchases, and balances after",
       csvHref: "/admin/reports/export?type=wallet-store",
       pdfHref: "/admin/reports/export?type=wallet-store&format=pdf",
       icon: Store,
@@ -1768,10 +1778,12 @@ type StudentProfileRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string;
   birthdate: Date | string | null;
+  sex: string | null;
   student_status: string;
   grade_name: string;
   section_name: string;
   enrollment_status: string;
+  student_type: string | null;
   wallet_balance: number | string;
   wallet_status: string;
   guardian_names: string;
@@ -1786,9 +1798,11 @@ type StudentProfileSummaryRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string;
   student_status: string;
+  sex: string | null;
   grade_name: string;
   section_name: string;
   enrollment_status: string;
+  student_type: string | null;
   guardian_names: string;
 };
 

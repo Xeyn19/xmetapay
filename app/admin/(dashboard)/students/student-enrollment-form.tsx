@@ -53,6 +53,21 @@ export function StudentEnrollmentForm({
       <Field label="Birthdate">
         <input name="birthdate" className={fieldControlClass} type="date" />
       </Field>
+      <Field label="Sex" required>
+        <select name="sex" className={fieldControlClass} required defaultValue="">
+          <option value="">Choose sex</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </Field>
+      <Field label="Student type" required>
+        <select name="studentType" className={fieldControlClass} required defaultValue="">
+          <option value="">Choose type</option>
+          <option value="new">New</option>
+          <option value="transferee">Transferee</option>
+          <option value="returned">Returned</option>
+        </select>
+      </Field>
       <Field label="Grade level" required>
         <select
           name="gradeLevelId"
