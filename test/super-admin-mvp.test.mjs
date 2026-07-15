@@ -14,6 +14,9 @@ const superAdminShell = existsSync("app/super-admin/_components/super-admin-shel
   ? readFileSync("app/super-admin/_components/super-admin-shell.tsx", "utf8")
   : "";
 const dashboardPage = readFileSync("app/super-admin/dashboard/page.tsx", "utf8");
+const registrationChart = existsSync("app/super-admin/_components/super-admin-registration-trend-chart.tsx")
+  ? readFileSync("app/super-admin/_components/super-admin-registration-trend-chart.tsx", "utf8")
+  : "";
 const adminAccountsPage = existsSync("app/super-admin/admin-accounts/page.tsx")
   ? readFileSync("app/super-admin/admin-accounts/page.tsx", "utf8")
   : "";
@@ -84,6 +87,7 @@ test("super admin dashboard is protected and manages only school admin account s
   assert.match(records, /WHERE u\.role = 'admin'/);
   assert.match(records, /status = 'pending'/);
   assert.match(records, /pendingAdmins/);
+  assert.match(records, /registrationTrend/);
   assert.match(loginAction, /await requireSuperAdmin\(\)/);
   assert.match(loginAction, /WHERE id = :userId\s+AND role = 'admin'/);
   assert.match(adminAccountsPage, /SuperAdminAdminsTable/);
@@ -95,6 +99,35 @@ test("super admin dashboard is protected and manages only school admin account s
   assert.doesNotMatch(dashboardPage, /SuperAdminAdminsTable/);
   assert.doesNotMatch(dashboardPage, /FlashToast|superAdminLogoutAction|requireSuperAdmin/);
   assert.doesNotMatch(dashboardPage, /imperson/i);
+});
+
+test("super admin dashboard shows a Recharts-backed school admin registration trend", () => {
+  const packageJson = readFileSync("package.json", "utf8");
+
+  assert.match(packageJson, /"recharts":/);
+  assert.match(records, /DATE_FORMAT\(u\.created_at, '%Y-%m-01'\)/);
+  assert.match(records, /u\.role = 'admin'/);
+  assert.match(records, /fromDate/);
+  assert.match(records, /RegistrationTrendPreset/);
+  assert.match(records, /daily.*weekly.*monthly.*custom/s);
+  assert.match(records, /buildRegistrationTrend/);
+  assert.match(records, /SuperAdminRegistrationTrendRow/);
+  assert.match(registrationChart, /"use client";/);
+  assert.match(registrationChart, /from "recharts"/);
+  assert.match(registrationChart, /ResponsiveContainer/);
+  assert.match(registrationChart, /BarChart/);
+  assert.match(registrationChart, /No school admin registrations in this date range\./);
+  assert.match(registrationChart, /Daily/);
+  assert.match(registrationChart, /Weekly/);
+  assert.match(registrationChart, /Monthly/);
+  assert.match(registrationChart, /Custom/);
+  assert.match(registrationChart, /Apply dates/);
+  assert.match(registrationChart, /selectedPreset === preset\.value/);
+  assert.match(dashboardPage, /SuperAdminRegistrationTrendChart/);
+  assert.match(dashboardPage, /rows=\{data\.registrationTrend\}/);
+  assert.match(dashboardPage, /meta=\{data\.registrationTrendMeta\}/);
+  assert.match(dashboardPage, /Schools overview/);
+  assert.match(dashboardPage, /Recent school admins/);
 });
 
 test("super admin registration review page approves or rejects pending school admins", () => {

@@ -110,7 +110,7 @@ flowchart TD
 
 Implemented.
 
-The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then uses the sidebar-based company workspace to monitor schools from `/super-admin/dashboard`, manage approved school admin accounts from `/super-admin/admin-accounts`, and review pending school admin registrations from `/super-admin/registrations`.
+The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage approved school admin accounts from `/super-admin/admin-accounts`, and review pending school admin registrations from `/super-admin/registrations`.
 
 ```mermaid
 flowchart TD

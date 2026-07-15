@@ -1,10 +1,21 @@
-import { Building2, Clock3, ShieldCheck, Users, UserX } from "lucide-react";
+import { BarChart3, Building2, Clock3, ShieldCheck, Users, UserX } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { SuperAdminRegistrationTrendChart } from "../_components/super-admin-registration-trend-chart";
 import { getSuperAdminDashboardData } from "@/lib/super-admin/records";
 
-export default async function SuperAdminDashboardPage() {
-  const data = await getSuperAdminDashboardData();
+export default async function SuperAdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const query = await searchParams;
+  const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
+  const data = await getSuperAdminDashboardData({
+    preset: first(query.range),
+    from: first(query.from),
+    to: first(query.to),
+  });
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -44,6 +55,25 @@ export default async function SuperAdminDashboardPage() {
             icon={<UserX className="size-[22px] text-[#0f1117]/10" />}
             tone="red"
           />
+        </section>
+
+        <section className="mt-5 overflow-hidden rounded-xl border border-black/[0.07] bg-white">
+          <div className="flex flex-col gap-1 border-b border-black/[0.07] px-[18px] py-3.5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 text-[13px] font-bold leading-5 text-[#0f1117]">
+                <BarChart3 className="size-[17px] text-[#e64a19]" />
+                School admin registrations
+              </h2>
+              <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">Track current account status across a daily, weekly, monthly, or custom period.</p>
+            </div>
+          </div>
+          <div className="p-[18px]">
+            <SuperAdminRegistrationTrendChart
+              key={`${data.registrationTrendMeta.preset}-${data.registrationTrendMeta.from}-${data.registrationTrendMeta.to}`}
+              rows={data.registrationTrend}
+              meta={data.registrationTrendMeta}
+            />
+          </div>
         </section>
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.82fr)]">
