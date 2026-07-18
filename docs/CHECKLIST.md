@@ -178,6 +178,7 @@ Done when: school administrators and finance officers can download CSV and PDF r
 - [x] Let school administrators and finance officers send email reminders to linked parents with open or partial balances.
 - [x] Add reminder modal fields for target, reminder type, specific student, and optional message.
 - [x] Send branded plain-text and HTML email through a pooled Nodemailer SMTP transport.
+- [x] Include matching fee line items, official assignment due dates, totals, and tuition installment schedules in reminder emails.
 - [x] Update reminder rows from `queued` to `sent` with `sent_at`, or to `failed` when delivery fails.
 - [x] Prevent same-day duplicates for sent emails and recent queued attempts while allowing failed attempts to retry.
 - [x] Show historical email/SMS reminder rows on the tuition page and activity feed.

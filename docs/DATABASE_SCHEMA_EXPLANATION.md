@@ -358,7 +358,7 @@ Main purpose:
 - Connect notifications to a school, recipient user, and optionally a student.
 - Store the school year for new reminder history rows.
 
-Current implementation: school administrators and finance officers can send real payment reminder emails to linked parents with open or partial balances. The server verifies its SMTP configuration, creates an email `payment_reminder` row as `queued`, sends through a pooled Nodemailer transport, then updates the row to `sent` with `sent_at` or `failed`. Each row stores the custom or generated text in `message_body`. Sent rows and recent queued attempts block duplicate same-day email sends for the same school year, school, linked parent, and student; failed rows may be retried. The tuition page and admin activity feed read this audit history, including older email/SMS rows. SMS, scheduled delivery, and delivery webhooks remain future work.
+Current implementation: school administrators and finance officers can send real payment reminder emails to linked parents with open or partial balances. The server reads matching `student_fee_assignments`, `fee_types`, and optional `tuition_payment_terms` in bounded bulk queries, then builds matching HTML and plain-text statements. Assignment due dates remain the official deadlines; term dates are schedule details. The server verifies SMTP, creates an email `payment_reminder` row as `queued`, sends through pooled Nodemailer, then updates the row to `sent` with `sent_at` or `failed`. Each row stores the custom or generated introductory text in `message_body`. Sent rows and recent queued attempts block duplicate same-day sends; failed rows may be retried. SMS, scheduled delivery, and delivery webhooks remain future work.
 
 ## Main Data Flow
 

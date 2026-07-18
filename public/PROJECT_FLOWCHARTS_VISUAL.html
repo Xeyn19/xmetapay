@@ -815,7 +815,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="payment-reminder-history-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> real email payment reminders for linked parents with open or partial balances, with delivery history and same-day duplicate prevention.</p>
+          <p><strong>Implemented:</strong> responsive HTML and plain-text reminders with itemized active-year fee balances, official assignment deadlines, optional tuition schedule details, delivery history, and same-day duplicate prevention.</p>
           <pre class="mermaid">
 flowchart TD
   A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
@@ -829,7 +829,8 @@ flowchart TD
   G2 --> H{"Any new reminder targets?"}
   H -->|No open balances| I["Show no reminders logged"]
   H -->|Already reminded today| J["Show reminders already logged today"]
-  H -->|Yes| K["Insert queued email payment_reminder rows"]
+  H -->|Yes| H2["Bulk-load matching fee assignments and tuition terms"]
+  H2 --> K["Build itemized HTML/text and insert queued reminder rows"]
   K --> L["Commit, then send through pooled Nodemailer SMTP"]
   L --> M{"Delivery result"}
   M -->|Sent| N["Set status sent and sent_at"]
