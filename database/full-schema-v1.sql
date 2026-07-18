@@ -411,10 +411,12 @@ CREATE TABLE IF NOT EXISTS notification_logs (
   status ENUM('queued', 'sent', 'failed') NOT NULL DEFAULT 'queued',
   message_body TEXT NULL,
   sent_at DATETIME NULL,
+  archived_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   KEY idx_notification_logs_school_type_created (school_id, type, created_at),
   KEY idx_notification_logs_school_year_type_created (school_id, school_year_id, type, created_at),
+  KEY idx_notification_logs_school_year_type_archive_created (school_id, school_year_id, type, archived_at, created_at),
   KEY idx_notification_logs_recipient_created (recipient_user_id, created_at),
   KEY idx_notification_logs_student_created (student_id, created_at),
   CONSTRAINT fk_notification_logs_school FOREIGN KEY (school_id) REFERENCES schools(id),

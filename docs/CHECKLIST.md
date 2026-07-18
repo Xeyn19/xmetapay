@@ -182,9 +182,10 @@ Done when: school administrators and finance officers can download CSV and PDF r
 - [x] Update reminder rows from `queued` to `sent` with `sent_at`, or to `failed` when delivery fails.
 - [x] Prevent same-day duplicates for sent emails and recent queued attempts while allowing failed attempts to retry.
 - [x] Show historical email/SMS reminder rows on the tuition page and activity feed.
+- [x] Let school administrators and finance officers archive or restore one or many payment-reminder history rows without deleting delivery audit data.
 - [ ] Add SMS, scheduled/background notifications, delivery webhooks, bounce handling, cashier/POS portal, item catalog, refunds, real payment gateways, and real-time purchase notifications.
 
-Done when: email reminders are sent from operational fee balances, delivery results are auditable in `notification_logs`, repeated clicks are protected, and SMS remains clearly labeled future.
+Done when: email reminders are sent from operational fee balances, delivery results are auditable in `notification_logs`, active and archived history can be organized reversibly, repeated clicks remain protected even when a sent row is archived, and SMS remains clearly labeled future.
 
 ## Safe Testing Checklist
 

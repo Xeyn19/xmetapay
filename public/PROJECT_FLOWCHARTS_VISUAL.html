@@ -838,7 +838,7 @@ flowchart TD
   N --> P["Reminder history and activity feed update"]
   O --> P
           </pre>
-          <p>New reminder rows use <code>type = payment_reminder</code> and <code>channel = email</code>. They start as <code>queued</code>, then become <code>sent</code> with <code>sent_at</code> or <code>failed</code>, while <code>message_body</code> keeps the sent text. Sent and recent queued rows prevent duplicate same-day emails; failed rows may be retried. Historical SMS rows remain visible. Registrars cannot send reminders. SMS, scheduling, delivery webhooks, and bounce handling remain future work.</p>
+          <p>New reminder rows use <code>type = payment_reminder</code> and <code>channel = email</code>. They start as <code>queued</code>, then become <code>sent</code> with <code>sent_at</code> or <code>failed</code>, while <code>message_body</code> keeps the sent text. School administrators and finance officers can archive or restore selected payment-reminder rows through <code>archived_at</code>; delivery status and audit data are retained, and archived sent rows still prevent duplicate same-day emails. Historical SMS rows remain visible. Registrars cannot send or organize reminders. SMS, scheduling, delivery webhooks, bounce handling, and permanent deletion remain future work.</p>
         </div>
       </section>
 

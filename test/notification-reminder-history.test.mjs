@@ -19,6 +19,8 @@ const schemaPlanPath = "docs/DATABASE_SCHEMA_PLAN.md";
 const schemaExplanationPath = "docs/DATABASE_SCHEMA_EXPLANATION.md";
 const visualFlowchartsPath = "public/PROJECT_FLOWCHARTS_VISUAL.html";
 const visualSchemaPath = "public/DATABASE_SCHEMA_VISUAL_PLAN.html";
+const archiveMigrationPath = "database/migrations/2026-07-18-notification-log-archive.sql";
+const fullSchemaPath = "database/full-schema-v1.sql";
 
 test("admin payment reminder action queues and sends real email reminders", () => {
   assert.equal(existsSync(reminderActionsPath), true);
@@ -120,7 +122,8 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   const realData = readFileSync(realDataPath, "utf8");
 
   assert.match(page, /<PaymentReminderForm \/>/);
-  assert.match(page, /<PaymentReminderHistoryTable rows=\{data\.reminderRows\} \/>/);
+  assert.match(page, /activeRows=\{data\.reminderRows\}/);
+  assert.match(page, /archivedRows=\{data\.archivedReminderRows\}/);
   assert.match(form, /useActionState\(async \(previousState: ReminderActionState, formData: FormData\)/);
   assert.match(form, /sendPaymentReminderEmailsAction\(previousState, formData\)/);
   assert.match(form, /toast\.success/);
@@ -142,10 +145,10 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   assert.match(form, /Emails are sent immediately to linked parent email addresses/);
   assert.match(form, /name="customMessage"/);
   assert.match(form, /Custom message text is saved in reminder history/);
-  assert.match(historyTable, /usePaginatedRows\(rows, "payment-reminders"\)/);
+  assert.match(historyTable, /usePaginatedRows\(filteredRows, `\$\{view\}\|\$\{query\}\|\$\{status\}`\)/);
   assert.match(historyTable, /DashboardTablePagination/);
   assert.match(historyTable, /Message/);
-  assert.match(historyTable, /title=\{message\}/);
+  assert.match(historyTable, /title=\{row\.message\}/);
   assert.match(page, /id="payment-reminders"/);
   assert.match(page, /<DashboardCard\s+id="payment-reminders"/);
   assert.match(page, /className="mb-\[18px\] scroll-mt-24"/);
@@ -154,7 +157,7 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   assert.match(page, /records each delivery result/);
   assert.match(page, /SMS delivery remains future/);
   assert.match(page, /data\.reminderRows/);
-  assert.match(realData, /reminderRows: Array/);
+  assert.match(realData, /reminderRows: PaymentReminderHistoryRow\[\]/);
   assert.match(realData, /async function getRecentReminderRows/);
   assert.match(realData, /FROM notification_logs nl/);
   assert.match(realData, /nl\.message_body/);
@@ -171,8 +174,57 @@ test("tuition reminder history uses stable notification ids as React keys", () =
   assert.match(realData, /nl\.id AS notification_id/);
   assert.match(realData, /notificationId/);
   assert.match(historyTable, /notificationId/);
-  assert.match(historyTable, /<tr key=\{notificationId\}>/);
+  assert.match(historyTable, /<tr key=\{row\.notificationId\}>/);
   assert.doesNotMatch(historyTable, /key=\{`\$\{created\}-\$\{student\}-\$\{parent\}`\}/);
+});
+
+test("payment reminder history supports reversible row and bulk archive", () => {
+  const actions = readFileSync(reminderActionsPath, "utf8");
+  const page = readFileSync(tuitionPagePath, "utf8");
+  const historyTable = readFileSync(tuitionReminderHistoryTablePath, "utf8");
+  const realData = readFileSync(realDataPath, "utf8");
+
+  assert.match(actions, /export async function archivePaymentRemindersAction/);
+  assert.match(actions, /export async function restorePaymentRemindersAction/);
+  assert.match(actions, /await requireRole\("admin"\)/);
+  assert.match(actions, /canAccessFinance\(staffRole\)/);
+  assert.match(actions, /getResolvedAdminSchoolViewSetup/);
+  assert.match(actions, /SET archived_at = \$\{archiveAssignment\}/);
+  assert.match(actions, /type = 'payment_reminder'/);
+  assert.match(actions, /school_id = :schoolId/);
+  assert.match(actions, /school_year_id = :schoolYearId OR school_year_id IS NULL/);
+  assert.doesNotMatch(actions, /SET status = 'archived'/);
+  assert.doesNotMatch(page, /searchParams/);
+  assert.doesNotMatch(historyTable, /href="\/admin\/tuition\?reminderView=/);
+  assert.match(historyTable, /role="tablist"/);
+  assert.match(historyTable, /aria-selected=\{view === "active"\}/);
+  assert.match(historyTable, /onClick=\{\(\) => changeView\("archived"\)\}/);
+  assert.match(realData, /nl\.archived_at IS NOT NULL/);
+  assert.match(realData, /nl\.archived_at IS NULL/);
+  assert.match(historyTable, /Active reminders/);
+  assert.match(historyTable, /Archived reminders/);
+  assert.match(historyTable, /Select visible/);
+  assert.match(historyTable, /Clear selection/);
+  assert.match(historyTable, /const operationLabel = view === "archived" \? "Restore" : "Archive"/);
+  assert.match(historyTable, /\{operationLabel\} selected/);
+  assert.match(historyTable, /type="checkbox"/);
+  assert.match(historyTable, /role="alertdialog"/);
+  assert.match(historyTable, /aria-label=\{`\$\{operationLabel\} reminder for \$\{row\.student\}`\}/);
+});
+
+test("notification archive migration and fresh schema preserve delivery audit fields", () => {
+  assert.equal(existsSync(archiveMigrationPath), true);
+  const migration = readFileSync(archiveMigrationPath, "utf8");
+  const schema = readFileSync(fullSchemaPath, "utf8");
+
+  assert.match(migration, /information_schema\.COLUMNS/);
+  assert.match(migration, /COLUMN_NAME = 'archived_at'/);
+  assert.match(migration, /ALTER TABLE notification_logs ADD COLUMN archived_at DATETIME NULL/);
+  assert.match(migration, /idx_notification_logs_school_year_type_archive_created/);
+  assert.match(schema, /archived_at DATETIME NULL/);
+  assert.match(schema, /idx_notification_logs_school_year_type_archive_created/);
+  assert.doesNotMatch(migration, /DELETE FROM notification_logs/);
+  assert.doesNotMatch(migration, /UPDATE notification_logs SET status/);
 });
 
 test("admin activity feed timeline uses stable notification ids as React keys", () => {
