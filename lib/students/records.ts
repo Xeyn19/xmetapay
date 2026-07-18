@@ -196,30 +196,29 @@ export async function getAdminParentsPageData(adminUserId: number): Promise<Admi
 }
 
 export async function getParentDashboardData(parentUserId: number): Promise<ParentDashboardData> {
-  try {
-    const [linkedStudents, summary, recentPayments, walletActivity] = await Promise.all([
-      getParentLinkedStudents(parentUserId),
-      getParentPaymentSummary(parentUserId),
-      getParentRecentPayments(parentUserId),
-      getParentRecentWalletActivity(parentUserId, { limit: 5 }),
-    ]);
+  const emptySummary = {
+    paidThisMonth: 0,
+    outstanding: 0,
+    paymentCount: 0,
+    walletBalance: 0,
+    walletCount: 0,
+  };
+  const [studentsResult, summaryResult, paymentsResult, walletResult] = await Promise.allSettled([
+    getParentLinkedStudents(parentUserId),
+    getParentPaymentSummary(parentUserId),
+    getParentRecentPayments(parentUserId),
+    getParentRecentWalletActivity(parentUserId, { limit: 5 }),
+  ]);
+  const linkedStudents = studentsResult.status === "fulfilled" ? studentsResult.value : [];
+  const summary = summaryResult.status === "fulfilled" ? summaryResult.value : emptySummary;
 
-    return {
-      linkedStudents,
-      recentPayments,
-      walletActivity,
-      outstandingBalance: money(summary.outstanding),
-      metrics: parentMetrics(linkedStudents, summary),
-    };
-  } catch {
-    return {
-      linkedStudents: [],
-      recentPayments: [],
-      walletActivity: [],
-      outstandingBalance: "Pending",
-      metrics: parentMetrics([], { paidThisMonth: 0, outstanding: 0, paymentCount: 0, walletBalance: 0, walletCount: 0 }),
-    };
-  }
+  return {
+    linkedStudents,
+    recentPayments: paymentsResult.status === "fulfilled" ? paymentsResult.value : [],
+    walletActivity: walletResult.status === "fulfilled" ? walletResult.value : [],
+    outstandingBalance: summaryResult.status === "fulfilled" ? money(summary.outstanding) : "Pending",
+    metrics: parentMetrics(linkedStudents, summary),
+  };
 }
 
 export async function getParentPortalContext(parentUserId: number, fallbackName = "Parent"): Promise<ParentPortalContext> {
@@ -558,7 +557,16 @@ async function getParentLinkedStudents(parentUserId: number) {
        COALESCE(sec.name, '-') AS section_name
      FROM student_guardians sg
      JOIN students st ON st.id = sg.student_id
-     LEFT JOIN enrollments e ON e.student_id = st.id
+     LEFT JOIN enrollments e ON e.id = (
+       SELECT e_selected.id
+       FROM enrollments e_selected
+       JOIN school_years sy_selected ON sy_selected.id = e_selected.school_year_id
+       WHERE e_selected.student_id = st.id
+       ORDER BY (sy_selected.status = 'active') DESC,
+         sy_selected.starts_on DESC,
+         e_selected.id DESC
+       LIMIT 1
+     )
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      LEFT JOIN sections sec ON sec.id = e.section_id
      WHERE sg.parent_user_id = :parentUserId

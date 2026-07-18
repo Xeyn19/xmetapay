@@ -40,6 +40,10 @@ test("student records helper reads students, enrollment, and guardian links from
   assert.match(helper, /FROM student_guardians/);
   assert.match(helper, /parent_user_id = :parentUserId/);
   assert.match(helper, /WHERE sg\.parent_user_id = :parentUserId/);
+  assert.match(helper, /Promise\.allSettled/);
+  assert.match(helper, /studentsResult\.status === "fulfilled" \? studentsResult\.value : \[\]/);
+  assert.match(helper, /LEFT JOIN enrollments e ON e\.id = \(/);
+  assert.match(helper, /ORDER BY \(sy_selected\.status = 'active'\) DESC/);
   assert.match(helper, /studentId\?: number/);
   assert.match(helper, /AND st\.id = :studentId/);
   assert.match(helper, /return getResolvedAdminSchoolViewSetup\(adminUserId\)/);

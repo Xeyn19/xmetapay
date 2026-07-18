@@ -347,7 +347,7 @@
             <tr>
               <td>Notifications</td>
               <td><code>notification_logs</code></td>
-              <td>Implemented queued SMS/email payment reminder history with saved <code>message_body</code> text, school-year stamps for new rows, and once-per-day deduplication for the same school year, school, linked parent, student, and selected channel. Real delivery, receipts, low-wallet alerts, and enrollment-update notifications remain future.</td>
+              <td>Implemented SMTP email payment reminders with saved <code>message_body</code>, school-year stamps, queued/sent/failed delivery status, <code>sent_at</code>, and same-day protection for sent or recent queued attempts. Historical SMS rows remain readable; SMS delivery, low-wallet alerts, and enrollment-update notifications remain future.</td>
             </tr>
           </tbody>
         </table>
@@ -669,7 +669,7 @@ flowchart TD
   G --> H["Open reports page"]
   H --> I["Download CSV and PDF reports from operational queries"]
   I --> J["Reminder history uses notification_logs"]
-  J --> K["Scheduled delivery and email/SMS notifications remain future"]
+  J --> K["Scheduled report delivery and report-alert notifications remain future"]
           </pre>
         </div>
       </section>
@@ -757,7 +757,7 @@ flowchart TD
           <li>Add wallet and wallet transaction tables.</li>
           <li>Add store merchant and store transaction tables. These already exist in the schema and support the implemented Phase 6B write flow.</li>
           <li>Build CSV/PDF reports from operational query views and CSV/PDF filtered-row table exports from loaded dashboard rows instead of separate report storage tables.</li>
-          <li>Use notification logs for implemented queued in-app payment reminder history with same-day duplicate prevention; add real email/SMS delivery later.</li>
+          <li>Use notification logs for implemented SMTP email payment reminders: queue each row, mark delivery sent with <code>sent_at</code> or failed, and prevent duplicate same-day sends. SMS and scheduled delivery remain future.</li>
         </ol>
         <div class="note">
           No real credentials, database passwords, session secrets, committed

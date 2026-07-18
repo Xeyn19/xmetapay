@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState, useEffect, useId, useState } from "react";
-import { AlertTriangle, Send, X } from "lucide-react";
+import { MailCheck, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { logPaymentRemindersAction, type ReminderActionState } from "@/app/admin/reminders/actions";
+import { sendPaymentReminderEmailsAction, type ReminderActionState } from "@/app/admin/reminders/actions";
 import { cn } from "@/lib/utils";
 
 import { AdminButton, Field, fieldControlClass } from "../../_components/admin-ui";
@@ -21,7 +21,7 @@ export function PaymentReminderForm() {
   const [sendTo, setSendTo] = useState("all_unpaid");
   const titleId = useId();
   const [, formAction, pending] = useActionState(async (previousState: ReminderActionState, formData: FormData) => {
-    const nextState = await logPaymentRemindersAction(previousState, formData);
+    const nextState = await sendPaymentReminderEmailsAction(previousState, formData);
 
     if (nextState.status !== "idle") {
       const showToast =
@@ -58,7 +58,7 @@ export function PaymentReminderForm() {
     <>
       <AdminButton type="button" tone="primary" disabled={pending} onClick={() => setOpen(true)}>
         <Send className="size-4" />
-        Send reminders
+        Email reminders
       </AdminButton>
 
       {open ? (
@@ -77,7 +77,7 @@ export function PaymentReminderForm() {
           >
             <div className="flex items-start justify-between gap-4 border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
               <h2 id={titleId} className="text-[15px] font-bold leading-6 text-[#0f1117]">
-                Send payment reminder
+                Send payment reminder emails
               </h2>
               <button
                 type="button"
@@ -91,10 +91,10 @@ export function PaymentReminderForm() {
 
             <form action={formAction} className="overflow-y-auto">
               <div className="space-y-4 px-4 py-5 sm:px-[22px]">
-                <div className="flex items-start gap-2 rounded-lg border border-[#ffcc80] bg-[#fff8e1] px-3 py-2.5 text-[12.5px] leading-5 text-[#e65100]">
-                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                <div className="flex items-start gap-2 rounded-lg border border-[#b8d9c1] bg-[#f1faf3] px-3 py-2.5 text-[12.5px] leading-5 text-[#246b36]">
+                  <MailCheck className="mt-0.5 size-4 shrink-0" />
                   <span>
-                    This logs queued reminder history for the selected parents. Real SMS/email delivery is still future.
+                    Emails are sent immediately to linked parent email addresses. SMS reminders are not available yet.
                   </span>
                 </div>
 
@@ -123,23 +123,13 @@ export function PaymentReminderForm() {
                   </Field>
                 ) : null}
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Reminder type" required>
-                    <select name="reminderType" className={fieldControlClass} required defaultValue="tuition_due">
-                      <option value="tuition_due">Tuition due reminder</option>
-                      <option value="overdue_notice">Overdue notice</option>
-                      <option value="final_notice">Final notice</option>
-                    </select>
-                  </Field>
-
-                  <Field label="Channel" required>
-                    <select name="channel" className={fieldControlClass} required defaultValue="sms_email">
-                      <option value="sms_email">SMS + Email</option>
-                      <option value="email">Email only</option>
-                      <option value="sms">SMS only</option>
-                    </select>
-                  </Field>
-                </div>
+                <Field label="Reminder type" required>
+                  <select name="reminderType" className={fieldControlClass} required defaultValue="tuition_due">
+                    <option value="tuition_due">Tuition due reminder</option>
+                    <option value="overdue_notice">Overdue notice</option>
+                    <option value="final_notice">Final notice</option>
+                  </select>
+                </Field>
 
                 <Field label="Custom message (optional)">
                   <textarea
@@ -161,7 +151,7 @@ export function PaymentReminderForm() {
                 </AdminButton>
                 <AdminButton type="submit" tone="primary" className="w-full sm:w-auto" disabled={pending}>
                   <Send className="size-4" />
-                  {pending ? "Sending..." : "Send reminders"}
+                  {pending ? "Sending emails..." : "Send email reminders"}
                 </AdminButton>
               </div>
             </form>

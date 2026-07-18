@@ -614,7 +614,7 @@ CREATE TABLE notification_logs (
 );
 ```
 
-Implementation status: queued payment reminder history is implemented. School administrators and finance officers can open a reminder modal and create `payment_reminder` rows for linked parents with open or partial balances. The app prevents duplicate same-day reminder rows for the same school, linked parent, student, and selected channel. Those rows use `channel = 'email'` or `channel = 'sms'`, `status = 'queued'`, and `message_body` for the saved custom or generated reminder text. Real email/SMS delivery, scheduling, and notification-based report alerts can be added later.
+Implementation status: real payment reminder email delivery is implemented with Nodemailer and SMTP. School administrators and finance officers can send email reminders to linked parents with open or partial balances. New rows use `channel = 'email'`, start with `status = 'queued'`, store the custom or generated text in `message_body`, and then become `sent` with `sent_at` or `failed`. Sent emails and recent queued attempts prevent duplicate same-day sends for the same school year, school, linked parent, and student; failed attempts may be retried. Historical SMS rows remain readable. SMS delivery, scheduling, delivery webhooks, and notification-based report alerts can be added later.
 
 Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. CSV and PDF report exports are implemented for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collection exports use fee or term allocations and exclude wallet-only payments. Real-data admin and parent table screens paginate loaded rows on screen and export filtered rows as CSV or PDF without adding report storage tables. Scheduled delivery and notification-based report alerts can be added later.
 
@@ -743,7 +743,7 @@ flowchart TD
   G --> H["Open reports page"]
   H --> I["Download CSV and PDF reports from report query"]
   I --> J["Reminder history uses notification_logs"]
-  J --> K["Scheduled delivery and email/SMS notifications remain future"]
+  J --> K["Scheduled report delivery and report-alert notifications remain future"]
 ```
 
 ## Step-by-Step Parent Flowcharts
@@ -812,9 +812,9 @@ flowchart TD
 6. Add payment and receipt tables: `payments`, `payment_allocations`, `receipts`.
 7. Add wallet tables: `wallets`, `wallet_transactions`.
 8. Add store tables: `store_merchants`, `store_transactions`.
-9. Use notification logs for queued in-app payment reminder history.
+9. Use notification logs for SMTP email payment reminder delivery and queued/sent/failed history.
 10. Build CSV and PDF report exports from existing operational queries, plus filtered-row table exports from loaded dashboard data, instead of adding report storage tables.
-11. Add real notification delivery, scheduling, and report alerts later.
+11. Add SMS, scheduled/background delivery, webhooks, bounce handling, and report alerts later.
 
 ## MySQL/XAMPP Notes
 

@@ -340,7 +340,7 @@ Current implemented CSV and PDF report exports:
 - Outstanding balances from `student_fee_assignments`, `fee_types`, and enrollment context.
 - Wallet and store activity from `wallet_transactions`, `wallets`, `store_transactions`, and `store_merchants`.
 
-Scheduled reports and notification-driven report delivery are future features. Queued in-app payment reminder history is implemented separately through `notification_logs`.
+Scheduled reports and notification-driven report delivery are future features. Immediate payment reminder email delivery is implemented separately through `notification_logs` and SMTP.
 
 Real-data dashboard tables also support browser-side pagination plus CSV and PDF exports. Those table exports use the rows already loaded for the signed-in admin or parent after search/filter controls are applied, so they do not require extra database tables.
 
@@ -358,7 +358,7 @@ Main purpose:
 - Connect notifications to a school, recipient user, and optionally a student.
 - Store the school year for new reminder history rows.
 
-Current implementation: school administrators and finance officers can open a reminder modal and log queued payment reminders for linked parents with open or partial balances. The action logs at most one queued `payment_reminder` per school year, school, linked parent, student, selected channel, and calendar day. Each new reminder row stores the custom or generated text in `message_body`. The tuition page shows recent reminder history, and the admin dashboard activity feed reads the same table. This table is for audit and history. It does not send notifications by itself; real email/SMS delivery remains future work.
+Current implementation: school administrators and finance officers can send real payment reminder emails to linked parents with open or partial balances. The server verifies its SMTP configuration, creates an email `payment_reminder` row as `queued`, sends through a pooled Nodemailer transport, then updates the row to `sent` with `sent_at` or `failed`. Each row stores the custom or generated text in `message_body`. Sent rows and recent queued attempts block duplicate same-day email sends for the same school year, school, linked parent, and student; failed rows may be retried. The tuition page and admin activity feed read this audit history, including older email/SMS rows. SMS, scheduled delivery, and delivery webhooks remain future work.
 
 ## Main Data Flow
 
@@ -379,7 +379,7 @@ The schema supports this practical backend flow:
 12. Receipts are created in `receipts`.
 13. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
 14. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens paginate loaded rows and export filtered rows as CSV or PDF.
-15. Queued in-app payment reminder history is recorded in `notification_logs`; real notification delivery remains future work.
+15. Payment reminder emails are sent through SMTP and audited in `notification_logs`; SMS and scheduled/background notification delivery remain future work.
 
 ## Relationship Summary
 

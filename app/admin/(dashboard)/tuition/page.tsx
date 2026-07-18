@@ -50,7 +50,7 @@ export default async function TuitionPage() {
         action={<PaymentReminderForm />}
       >
         <div className="border-b border-black/[0.07] px-[18px] py-3 text-[12.5px] leading-5 text-[#5a6070]">
-          Creates queued reminder history for linked parents with open or partial balances. Real email and SMS delivery are still future.
+          Sends email reminders to linked parents with open or partial balances and records each delivery result. SMS delivery remains future.
         </div>
         <PaymentReminderHistoryTable rows={data.reminderRows} />
       </DashboardCard>
