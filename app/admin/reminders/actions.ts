@@ -11,6 +11,7 @@ import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import {
   EmailConfigurationError,
   sendPaymentReminderEmail,
+  type PaymentReminderFee,
   verifyEmailTransport,
 } from "@/lib/email/mailer";
 import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
@@ -72,6 +73,7 @@ export async function sendPaymentReminderEmailsAction(
     const [rows] = await connection.execute<ReminderCandidateRow[]>(
       `SELECT st.id AS student_id,
          sg.parent_user_id,
+         st.student_reference,
          st.first_name,
          st.middle_name,
          st.last_name,
@@ -106,7 +108,7 @@ export async function sendPaymentReminderEmailsAction(
                )
              )
          )
-       GROUP BY st.id, sg.parent_user_id, st.first_name, st.middle_name, st.last_name, u.name, u.email
+       GROUP BY st.id, sg.parent_user_id, st.student_reference, st.first_name, st.middle_name, st.last_name, u.name, u.email
        ORDER BY open_balance DESC, st.last_name ASC, st.first_name ASC
        LIMIT 100`,
       {
@@ -125,8 +127,20 @@ export async function sendPaymentReminderEmailsAction(
       );
     }
 
+    const feeStatements = await getReminderFeeStatements(
+      connection,
+      context.schoolId,
+      context.schoolYearId,
+      rows,
+      options,
+    );
+
     for (const row of rows) {
       const messageBody = reminderMessageFor(row, options);
+      const fees = feeStatements.get(row.student_id) ?? [];
+      const outstandingBalance = formatBalance(
+        fees.reduce((total, fee) => total + fee.balanceAmount, 0),
+      );
       const [insertResult] = await connection.execute<ResultSetHeader>(
         `INSERT INTO notification_logs (
            school_id, school_year_id, recipient_user_id, student_id, type, channel, status, message_body
@@ -148,7 +162,10 @@ export async function sendPaymentReminderEmailsAction(
         parentEmail: row.parent_email,
         parentName: row.parent_name,
         studentName: fullName(row.first_name, row.middle_name, row.last_name) || "Student",
-        outstandingBalance: formatBalance(row.open_balance),
+        studentReference: row.student_reference,
+        outstandingBalance,
+        earliestDueDate: earliestOfficialDueDate(fees),
+        fees,
         messageBody,
       });
     }
@@ -178,7 +195,10 @@ export async function sendPaymentReminderEmailsAction(
           parentEmail: reminder.parentEmail,
           parentName: reminder.parentName,
           studentName: reminder.studentName,
+          studentReference: reminder.studentReference,
           outstandingBalance: reminder.outstandingBalance,
+          earliestDueDate: reminder.earliestDueDate,
+          fees: reminder.fees,
           schoolName: context.schoolName,
           schoolYearName: context.schoolYearName,
           reminderType: options.reminderTypeLabel,
@@ -220,6 +240,105 @@ export async function sendPaymentReminderEmailsAction(
     failedCount > 0 ? "Some email reminders were not sent" : "Email reminders sent",
     summary,
   );
+}
+
+async function getReminderFeeStatements(
+  connection: PoolConnection,
+  schoolId: number,
+  schoolYearId: number,
+  candidates: ReminderCandidateRow[],
+  options: ReminderOptions,
+) {
+  const studentIds = [...new Set(candidates.map((candidate) => candidate.student_id))];
+  const params: Record<string, number> = { schoolId, schoolYearId };
+  const studentPlaceholders = studentIds.map((studentId, index) => {
+    const key = `statementStudentId${index}`;
+    params[key] = studentId;
+    return `:${key}`;
+  });
+  const scopeSql = options.sendTo === "overdue_tuition"
+    ? "AND ft.category = 'tuition' AND sfa.due_date IS NOT NULL AND sfa.due_date < CURRENT_DATE"
+    : "";
+  const [feeRows] = await connection.execute<ReminderFeeRow[]>(
+    `SELECT sfa.id AS assignment_id, sfa.student_id, ft.name AS fee_name, ft.category,
+       sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status
+     FROM student_fee_assignments sfa
+     JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     JOIN students st ON st.id = sfa.student_id
+     WHERE st.school_id = :schoolId
+       AND sfa.school_year_id = :schoolYearId
+       AND sfa.student_id IN (${studentPlaceholders.join(", ")})
+       AND sfa.status IN ('open', 'partial')
+       AND sfa.amount_due > sfa.amount_paid
+       ${scopeSql}
+     ORDER BY st.id, sfa.due_date IS NULL, sfa.due_date, ft.name, sfa.id`,
+    params,
+  );
+
+  const termsByAssignment = await getReminderTerms(connection, feeRows.map((row) => row.assignment_id));
+  const feesByStudent = new Map<number, PaymentReminderFee[]>();
+
+  for (const row of feeRows) {
+    const amountDue = decimalValue(row.amount_due);
+    const amountPaid = decimalValue(row.amount_paid);
+    const fee: PaymentReminderFee = {
+      name: row.fee_name,
+      category: row.category,
+      billed: formatBalance(amountDue),
+      paid: formatBalance(amountPaid),
+      balance: formatBalance(Math.max(0, amountDue - amountPaid)),
+      balanceAmount: Math.max(0, amountDue - amountPaid),
+      officialDueDate: formatOfficialDate(row.due_date),
+      officialDueDateValue: dateValue(row.due_date),
+      status: labelForStatus(row.status),
+      terms: termsByAssignment.get(row.assignment_id) ?? [],
+    };
+    const studentFees = feesByStudent.get(row.student_id) ?? [];
+    studentFees.push(fee);
+    feesByStudent.set(row.student_id, studentFees);
+  }
+
+  return feesByStudent;
+}
+
+async function getReminderTerms(connection: PoolConnection, assignmentIds: number[]) {
+  const termsByAssignment = new Map<number, PaymentReminderFee["terms"]>();
+
+  if (assignmentIds.length === 0) {
+    return termsByAssignment;
+  }
+
+  const params: Record<string, number> = {};
+  const placeholders = assignmentIds.map((assignmentId, index) => {
+    const key = `termAssignmentId${index}`;
+    params[key] = assignmentId;
+    return `:${key}`;
+  });
+  const [rows] = await connection.execute<ReminderTermRow[]>(
+    `SELECT student_fee_assignment_id, term_name, amount_due, amount_paid, due_date, status
+     FROM tuition_payment_terms
+     WHERE student_fee_assignment_id IN (${placeholders.join(", ")})
+       AND status <> 'cancelled'
+     ORDER BY student_fee_assignment_id, sort_order, id`,
+    params,
+  );
+
+  for (const row of rows) {
+    const amountDue = decimalValue(row.amount_due);
+    const amountPaid = decimalValue(row.amount_paid);
+    const terms = termsByAssignment.get(row.student_fee_assignment_id) ?? [];
+    terms.push({
+      name: row.term_name,
+      billed: formatBalance(amountDue),
+      paid: formatBalance(amountPaid),
+      balance: formatBalance(Math.max(0, amountDue - amountPaid)),
+      scheduleDate: formatOfficialDate(row.due_date),
+      status: labelForStatus(row.status),
+    });
+    termsByAssignment.set(row.student_fee_assignment_id, terms);
+  }
+
+  return termsByAssignment;
 }
 
 async function countEligibleReminderTargets(
@@ -445,6 +564,42 @@ function formatBalance(value: number | string) {
     : "an open balance";
 }
 
+function decimalValue(value: number | string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function dateValue(value: Date | string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatOfficialDate(value: Date | string | null) {
+  const date = dateValue(value);
+  return date
+    ? new Intl.DateTimeFormat("en-PH", { year: "numeric", month: "long", day: "numeric" }).format(date)
+    : "Not set";
+}
+
+function earliestOfficialDueDate(fees: PaymentReminderFee[]) {
+  const dates = fees
+    .map((fee) => fee.officialDueDateValue)
+    .filter((date): date is Date => date instanceof Date)
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  return dates[0]
+    ? new Intl.DateTimeFormat("en-PH", { year: "numeric", month: "long", day: "numeric" }).format(dates[0])
+    : "Not set";
+}
+
+function labelForStatus(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 function stringValue(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -479,7 +634,10 @@ type QueuedReminder = {
   parentEmail: string;
   parentName: string;
   studentName: string;
+  studentReference: string;
   outstandingBalance: string;
+  earliestDueDate: string;
+  fees: PaymentReminderFee[];
   messageBody: string;
 };
 
@@ -497,7 +655,28 @@ type ReminderCandidateRow = RowDataPacket & {
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  student_reference: string;
   parent_name: string;
   parent_email: string;
   open_balance: number | string;
+};
+
+type ReminderFeeRow = RowDataPacket & {
+  assignment_id: number;
+  student_id: number;
+  fee_name: string;
+  category: "tuition" | "other" | "allowance";
+  amount_due: number | string;
+  amount_paid: number | string;
+  due_date: Date | string | null;
+  status: string;
+};
+
+type ReminderTermRow = RowDataPacket & {
+  student_fee_assignment_id: number;
+  term_name: string;
+  amount_due: number | string;
+  amount_paid: number | string;
+  due_date: Date | string;
+  status: string;
 };

@@ -706,7 +706,8 @@ flowchart TD
   G2 --> H{"Any new reminder targets?"}
   H -->|No open balances| I["Show no reminders logged"]
   H -->|Already reminded today| J["Show reminders already logged today"]
-  H -->|Yes| K["Insert queued email payment_reminder rows with message_body"]
+  H -->|Yes| H2["Bulk-load matching fee assignments and tuition terms"]
+  H2 --> K["Build itemized HTML/text and insert queued reminder rows"]
   K --> L["Commit rows, then send through pooled Nodemailer SMTP"]
   L --> M{"Delivery result"}
   M -->|Sent| N["Set status sent and sent_at"]
@@ -720,6 +721,9 @@ Current reminder rules:
 - Only `school_administrator` and `finance_officer` can send payment reminder emails.
 - `registrar` cannot send reminders because reminders are tied to finance balances.
 - Reminder candidates must have a linked parent through `student_guardians`.
+- The server bulk-loads matching active-year fee assignments and optional tuition terms for up to 100 targets.
+- HTML and plain-text emails show the student reference, itemized billed/paid/balance amounts, official assignment due dates, and term schedule details.
+- Custom reminder text is introductory and never replaces the itemized financial statement.
 - New reminder rows use `type = payment_reminder` and `channel = email`; older email/SMS history remains visible.
 - A sent row or recently queued attempt prevents another same-day email for the same school year, school, linked parent, and student. Failed attempts may be retried.
 - Successful delivery sets `status = sent` and `sent_at`; unsuccessful delivery sets `status = failed`.
