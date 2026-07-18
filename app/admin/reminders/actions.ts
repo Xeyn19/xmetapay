@@ -8,6 +8,11 @@ import { getAdminStaffRole } from "@/lib/admin/access";
 import { canAccessFinance } from "@/lib/admin/permissions";
 import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
+import {
+  EmailConfigurationError,
+  sendPaymentReminderEmail,
+  verifyEmailTransport,
+} from "@/lib/email/mailer";
 import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
 
 export type ReminderActionState = {
@@ -17,21 +22,52 @@ export type ReminderActionState = {
   submittedAt: number;
 };
 
-export async function logPaymentRemindersAction(
+export async function sendPaymentReminderEmailsAction(
   _prevState: ReminderActionState,
   formData: FormData,
 ): Promise<ReminderActionState> {
   void _prevState;
 
   const context = await requireReminderContext();
-  let connection: PoolConnection | null = null;
+  let options: ReminderOptions;
 
   try {
-    const options = parseReminderOptions(formData);
+    options = parseReminderOptions(formData);
+    await verifyEmailTransport();
+  } catch (error) {
+    return actionToast(
+      error instanceof ReminderValidationError ? "info" : "error",
+      error instanceof ReminderValidationError ? error.title : "Email service unavailable",
+      error instanceof ReminderValidationError
+        ? error.message
+        : error instanceof EmailConfigurationError
+          ? error.message
+          : "Unable to verify the email service. Check the SMTP settings and try again.",
+    );
+  }
+
+  const queuedReminders: QueuedReminder[] = [];
+  let connection: PoolConnection | null = null;
+  let transactionCommitted = false;
+  let eligibleTargetCount = 0;
+  let availableTargetCount = 0;
+
+  try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
-    const channelBindings = bindChannels(options.channels);
     const targetFilter = buildReminderTargetFilter(options);
+    eligibleTargetCount = await countEligibleReminderTargets(
+      connection,
+      context.schoolId,
+      context.schoolYearId,
+      targetFilter,
+    );
+    availableTargetCount = await countAvailableReminderTargets(
+      connection,
+      context.schoolId,
+      context.schoolYearId,
+      targetFilter,
+    );
 
     const [rows] = await connection.execute<ReminderCandidateRow[]>(
       `SELECT st.id AS student_id,
@@ -40,6 +76,7 @@ export async function logPaymentRemindersAction(
          st.middle_name,
          st.last_name,
          u.name AS parent_name,
+         u.email AS parent_email,
          COALESCE(SUM(GREATEST(sfa.amount_due - sfa.amount_paid, 0)), 0) AS open_balance
        FROM student_fee_assignments sfa
        JOIN fee_types ft ON ft.id = sfa.fee_type_id
@@ -51,110 +88,138 @@ export async function logPaymentRemindersAction(
          AND sfa.status IN ('open', 'partial')
          AND sfa.amount_due > sfa.amount_paid
          ${targetFilter.sql}
-       GROUP BY st.id, sg.parent_user_id, st.first_name, st.middle_name, st.last_name, u.name
-       HAVING (
-         SELECT COUNT(DISTINCT existing_reminder.channel)
-         FROM notification_logs existing_reminder
-         WHERE existing_reminder.school_id = :schoolId
-           AND (existing_reminder.school_year_id = :schoolYearId OR existing_reminder.school_year_id IS NULL)
-           AND existing_reminder.recipient_user_id = sg.parent_user_id
-           AND existing_reminder.student_id = st.id
-           AND existing_reminder.type = 'payment_reminder'
-           AND existing_reminder.channel IN (${channelBindings.sql})
-           AND DATE(existing_reminder.created_at) = CURRENT_DATE
-       ) < :channelCount
+         AND NOT EXISTS (
+           SELECT 1
+           FROM notification_logs existing_reminder
+           WHERE existing_reminder.school_id = :schoolId
+             AND (existing_reminder.school_year_id = :schoolYearId OR existing_reminder.school_year_id IS NULL)
+             AND existing_reminder.recipient_user_id = sg.parent_user_id
+             AND existing_reminder.student_id = st.id
+             AND existing_reminder.type = 'payment_reminder'
+             AND existing_reminder.channel = 'email'
+             AND DATE(existing_reminder.created_at) = CURRENT_DATE
+             AND (
+               existing_reminder.status = 'sent'
+               OR (
+                 existing_reminder.status = 'queued'
+                 AND existing_reminder.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE)
+               )
+             )
+         )
+       GROUP BY st.id, sg.parent_user_id, st.first_name, st.middle_name, st.last_name, u.name, u.email
        ORDER BY open_balance DESC, st.last_name ASC, st.first_name ASC
        LIMIT 100`,
       {
         schoolId: context.schoolId,
         schoolYearId: context.schoolYearId,
-        channelCount: options.channels.length,
-        ...channelBindings.params,
         ...targetFilter.params,
       },
     );
 
     if (rows.length === 0) {
-      const eligibleCount = await countEligibleReminderTargets(
-        connection,
-        context.schoolId,
-        context.schoolYearId,
-        targetFilter,
-      );
-
       throw new ReminderValidationError(
-        eligibleCount > 0
-          ? "Each linked parent with an open balance already has a reminder for today."
+        eligibleTargetCount > 0
+          ? "Each linked parent with an open balance already has a sent or recently queued email reminder today. Failed emails may be retried."
           : "No linked parents currently have open or partial balances.",
-        eligibleCount > 0 ? "Reminders already logged today" : "No reminders logged",
+        eligibleTargetCount > 0 ? "Email reminders already sent today" : "No email reminders sent",
       );
     }
 
-    let insertedCount = 0;
-
     for (const row of rows) {
-      const existingChannels = await getExistingReminderChannels(
-        connection,
-        context.schoolId,
-        context.schoolYearId,
-        row.parent_user_id,
-        row.student_id,
-        options.channels,
+      const messageBody = reminderMessageFor(row, options);
+      const [insertResult] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO notification_logs (
+           school_id, school_year_id, recipient_user_id, student_id, type, channel, status, message_body
+         )
+         VALUES (
+           :schoolId, :schoolYearId, :recipientUserId, :studentId, 'payment_reminder', 'email', 'queued', :messageBody
+         )`,
+        {
+          schoolId: context.schoolId,
+          schoolYearId: context.schoolYearId,
+          recipientUserId: row.parent_user_id,
+          studentId: row.student_id,
+          messageBody,
+        },
       );
 
-      for (const channel of options.channels) {
-        if (existingChannels.has(channel)) {
-          continue;
-        }
-
-        await connection.execute<ResultSetHeader>(
-          `INSERT INTO notification_logs (
-             school_id, school_year_id, recipient_user_id, student_id, type, channel, status, message_body
-           )
-           VALUES (
-             :schoolId, :schoolYearId, :recipientUserId, :studentId, 'payment_reminder', :channel, 'queued', :messageBody
-           )`,
-          {
-            schoolId: context.schoolId,
-            schoolYearId: context.schoolYearId,
-            recipientUserId: row.parent_user_id,
-            studentId: row.student_id,
-            channel,
-            messageBody: reminderMessageFor(row, options),
-          },
-        );
-        insertedCount += 1;
-      }
+      queuedReminders.push({
+        notificationId: insertResult.insertId,
+        parentEmail: row.parent_email,
+        parentName: row.parent_name,
+        studentName: fullName(row.first_name, row.middle_name, row.last_name) || "Student",
+        outstandingBalance: formatBalance(row.open_balance),
+        messageBody,
+      });
     }
 
     await connection.commit();
-    revalidatePath("/admin/dashboard");
-    revalidatePath("/admin/tuition");
-
-    return actionToast(
-      "success",
-      "Payment reminders logged",
-      `${insertedCount} ${options.channelLabel.toLowerCase()} ${options.reminderTypeLabel.toLowerCase()} ${
-        insertedCount === 1 ? "record was" : "records were"
-      } queued for ${rows.length} linked parent target${rows.length === 1 ? "" : "s"}.${
-        options.customMessage ? " Custom message text was saved in reminder history." : ""
-      }`,
-    );
+    transactionCommitted = true;
   } catch (error) {
-    if (connection) {
+    if (connection && !transactionCommitted) {
       await connection.rollback().catch(() => undefined);
     }
 
     return actionToast(
       error instanceof ReminderValidationError ? "info" : "error",
-      error instanceof ReminderValidationError ? error.title : "Reminders not logged",
+      error instanceof ReminderValidationError ? error.title : "Email reminders not sent",
       error instanceof ReminderValidationError
         ? error.message
-        : "Unable to create reminder history. Check MySQL/XAMPP and try again.",
+        : "Unable to create email reminder history. Check MySQL/XAMPP and try again.",
     );
   } finally {
     connection?.release();
   }
+
+  const deliveryResults = await Promise.all(
+    queuedReminders.map(async (reminder) => {
+      try {
+        await sendPaymentReminderEmail({
+          parentEmail: reminder.parentEmail,
+          parentName: reminder.parentName,
+          studentName: reminder.studentName,
+          outstandingBalance: reminder.outstandingBalance,
+          schoolName: context.schoolName,
+          schoolYearName: context.schoolYearName,
+          reminderType: options.reminderTypeLabel,
+          messageBody: reminder.messageBody,
+        });
+        await updateReminderDeliveryStatus(reminder.notificationId, "sent");
+        return true;
+      } catch (error) {
+        logSafeDeliveryError(error);
+        await updateReminderDeliveryStatus(reminder.notificationId, "failed");
+        return false;
+      }
+    }),
+  );
+
+  const sentCount = deliveryResults.filter(Boolean).length;
+  const failedCount = deliveryResults.length - sentCount;
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/tuition");
+
+  if (sentCount === 0) {
+    return actionToast(
+      "error",
+      "Email reminders not sent",
+      `${failedCount} email reminder${failedCount === 1 ? "" : "s"} failed. Check the SMTP configuration and retry.`,
+    );
+  }
+
+  const duplicateCount = Math.max(0, eligibleTargetCount - availableTargetCount);
+  const deferredCount = Math.max(0, availableTargetCount - queuedReminders.length);
+  const summary = `${sentCount} sent, ${failedCount} failed, ${duplicateCount} already sent or queued today, ${queuedReminders.length} processed.${
+    deferredCount > 0
+      ? ` ${deferredCount} additional target${deferredCount === 1 ? " remains" : "s remain"} for another send because each request is limited to 100 emails.`
+      : ""
+  }`;
+
+  return actionToast(
+    failedCount > 0 ? "info" : "success",
+    failedCount > 0 ? "Some email reminders were not sent" : "Email reminders sent",
+    summary,
+  );
 }
 
 async function countEligibleReminderTargets(
@@ -185,56 +250,92 @@ async function countEligibleReminderTargets(
   return Number(rows[0]?.total ?? 0);
 }
 
-async function getExistingReminderChannels(
+async function countAvailableReminderTargets(
   connection: PoolConnection,
   schoolId: number,
   schoolYearId: number,
-  parentUserId: number,
-  studentId: number,
-  channels: ReminderChannel[],
+  targetFilter: ReminderTargetFilter,
 ) {
-  const channelBindings = bindChannels(channels);
-  const [rows] = await connection.execute<ReminderChannelRow[]>(
-    `SELECT channel
-     FROM notification_logs
-     WHERE school_id = :schoolId
-       AND (school_year_id = :schoolYearId OR school_year_id IS NULL)
-       AND recipient_user_id = :parentUserId
-       AND student_id = :studentId
-       AND type = 'payment_reminder'
-       AND channel IN (${channelBindings.sql})
-       AND DATE(created_at) = CURRENT_DATE`,
-    {
-      schoolId,
-      schoolYearId,
-      parentUserId,
-      studentId,
-      ...channelBindings.params,
-    },
+  const [rows] = await connection.execute<CountRow[]>(
+    `SELECT COUNT(*) AS total
+     FROM (
+       SELECT st.id AS student_id, sg.parent_user_id
+       FROM student_fee_assignments sfa
+       JOIN fee_types ft ON ft.id = sfa.fee_type_id
+       JOIN students st ON st.id = sfa.student_id
+       JOIN student_guardians sg ON sg.student_id = st.id
+       JOIN users u ON u.id = sg.parent_user_id AND u.status = 'active'
+       WHERE st.school_id = :schoolId
+         AND sfa.school_year_id = :schoolYearId
+         AND sfa.status IN ('open', 'partial')
+         AND sfa.amount_due > sfa.amount_paid
+         ${targetFilter.sql}
+         AND NOT EXISTS (
+           SELECT 1
+           FROM notification_logs existing_reminder
+           WHERE existing_reminder.school_id = :schoolId
+             AND (existing_reminder.school_year_id = :schoolYearId OR existing_reminder.school_year_id IS NULL)
+             AND existing_reminder.recipient_user_id = sg.parent_user_id
+             AND existing_reminder.student_id = st.id
+             AND existing_reminder.type = 'payment_reminder'
+             AND existing_reminder.channel = 'email'
+             AND DATE(existing_reminder.created_at) = CURRENT_DATE
+             AND (
+               existing_reminder.status = 'sent'
+               OR (
+                 existing_reminder.status = 'queued'
+                 AND existing_reminder.created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE)
+               )
+             )
+         )
+       GROUP BY st.id, sg.parent_user_id
+     ) available_targets`,
+    { schoolId, schoolYearId, ...targetFilter.params },
   );
 
-  return new Set(rows.map((row) => row.channel));
+  return Number(rows[0]?.total ?? 0);
 }
 
-async function requireReminderContext() {
+async function updateReminderDeliveryStatus(notificationId: number, status: "sent" | "failed") {
+  try {
+    await pool.execute(
+      `UPDATE notification_logs
+       SET status = :status,
+           sent_at = CASE WHEN :status = 'sent' THEN CURRENT_TIMESTAMP ELSE NULL END
+       WHERE id = :notificationId AND channel = 'email'`,
+      { notificationId, status },
+    );
+  } catch (error) {
+    logSafeDeliveryError(error);
+  }
+}
+
+async function requireReminderContext(): Promise<ReminderContext> {
   const session = await requireRole("admin");
   const staffRole = await getAdminStaffRole(session.userId);
 
   if (!canAccessFinance(staffRole)) {
-    await toast("Access limited", "Only school administrators and finance officers can log payment reminders.");
+    await toast("Access limited", "Only school administrators and finance officers can send payment reminder emails.");
     redirect("/admin/dashboard");
   }
 
   const setup = await getResolvedAdminSchoolSetup(session.userId);
 
-  if (!setup.schoolId || !setup.schoolYearId) {
+  if (!setup.schoolId || !setup.schoolYearId || !setup.schoolYearName) {
     await toast("School setup required", setup.warning ?? "Ask a school administrator to complete setup first.");
     redirect("/admin/dashboard");
   }
 
+  const [schoolRows] = await pool.execute<SchoolNameRow[]>(
+    "SELECT name FROM schools WHERE id = :schoolId LIMIT 1",
+    { schoolId: setup.schoolId },
+  );
+
   return {
     schoolId: setup.schoolId,
     schoolYearId: setup.schoolYearId,
+    schoolYearName: setup.schoolYearName,
+    schoolName: schoolRows[0]?.name ?? "Your school",
   };
 }
 
@@ -256,7 +357,7 @@ function actionToast(status: ReminderActionState["status"], title: string, descr
 }
 
 class ReminderValidationError extends Error {
-  constructor(message: string, readonly title = "Reminders not logged") {
+  constructor(message: string, readonly title = "Email reminders not sent") {
     super(message);
   }
 }
@@ -264,7 +365,6 @@ class ReminderValidationError extends Error {
 function parseReminderOptions(formData: FormData): ReminderOptions {
   const sendTo = stringValue(formData.get("sendTo"));
   const reminderType = stringValue(formData.get("reminderType"));
-  const channel = stringValue(formData.get("channel"));
   const studentReference = stringValue(formData.get("studentReference"));
   const customMessage = stringValue(formData.get("customMessage"));
 
@@ -279,8 +379,6 @@ function parseReminderOptions(formData: FormData): ReminderOptions {
   return {
     sendTo: sendTo === "overdue_tuition" || sendTo === "specific_student" ? sendTo : "all_unpaid",
     reminderType: reminderType === "overdue_notice" || reminderType === "final_notice" ? reminderType : "tuition_due",
-    channels: channelsFor(channel),
-    channelLabel: labelForReminderChannel(channel),
     reminderTypeLabel: labelForReminderType(reminderType),
     customMessage,
     studentReference,
@@ -293,8 +391,7 @@ function reminderMessageFor(row: ReminderCandidateRow, options: ReminderOptions)
   }
 
   const studentName = fullName(row.first_name, row.middle_name, row.last_name) || "your student";
-  const balance = Number(row.open_balance);
-  const balanceText = Number.isFinite(balance) ? `P${balance.toLocaleString("en-PH")}` : "an open balance";
+  const balanceText = formatBalance(row.open_balance);
 
   if (options.reminderType === "final_notice") {
     return `Final notice: ${studentName} still has ${balanceText} in unpaid school fees. Please settle this balance as soon as possible.`;
@@ -325,44 +422,6 @@ function buildReminderTargetFilter(options: ReminderOptions): ReminderTargetFilt
   return { sql: "", params: {} };
 }
 
-function bindChannels(channels: ReminderChannel[]) {
-  const params: Record<string, ReminderChannel> = {};
-  const placeholders = channels.map((channel, index) => {
-    const key = `channel${index}`;
-    params[key] = channel;
-    return `:${key}`;
-  });
-
-  return {
-    sql: placeholders.join(", "),
-    params,
-  };
-}
-
-function channelsFor(value: string): ReminderChannel[] {
-  if (value === "email") {
-    return ["email"];
-  }
-
-  if (value === "sms") {
-    return ["sms"];
-  }
-
-  return ["sms", "email"];
-}
-
-function labelForReminderChannel(value: string) {
-  if (value === "email") {
-    return "Email";
-  }
-
-  if (value === "sms") {
-    return "SMS";
-  }
-
-  return "SMS + Email";
-}
-
 function labelForReminderType(value: string) {
   if (value === "overdue_notice") {
     return "Overdue notice";
@@ -379,20 +438,35 @@ function fullName(firstName: string, middleName: string | null, lastName: string
   return [firstName, middleName, lastName].filter(Boolean).join(" ").trim();
 }
 
+function formatBalance(value: number | string) {
+  const balance = Number(value);
+  return Number.isFinite(balance)
+    ? new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(balance)
+    : "an open balance";
+}
+
 function stringValue(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-type ReminderChannel = "email" | "sms";
+function logSafeDeliveryError(error: unknown) {
+  const code = error && typeof error === "object" && "code" in error ? String(error.code) : "UNKNOWN";
+  console.error("[payment-reminder-email]", { code });
+}
 
 type ReminderOptions = {
   sendTo: "all_unpaid" | "overdue_tuition" | "specific_student";
   reminderType: "tuition_due" | "overdue_notice" | "final_notice";
-  channels: ReminderChannel[];
-  channelLabel: string;
   reminderTypeLabel: string;
   customMessage: string;
   studentReference: string;
+};
+
+type ReminderContext = {
+  schoolId: number;
+  schoolYearId: number;
+  schoolYearName: string;
+  schoolName: string;
 };
 
 type ReminderTargetFilter = {
@@ -400,12 +474,21 @@ type ReminderTargetFilter = {
   params: Record<string, string>;
 };
 
+type QueuedReminder = {
+  notificationId: number;
+  parentEmail: string;
+  parentName: string;
+  studentName: string;
+  outstandingBalance: string;
+  messageBody: string;
+};
+
 type CountRow = RowDataPacket & {
   total: number;
 };
 
-type ReminderChannelRow = RowDataPacket & {
-  channel: ReminderChannel;
+type SchoolNameRow = RowDataPacket & {
+  name: string;
 };
 
 type ReminderCandidateRow = RowDataPacket & {
@@ -415,5 +498,6 @@ type ReminderCandidateRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string;
   parent_name: string;
+  parent_email: string;
   open_balance: number | string;
 };

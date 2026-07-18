@@ -24,7 +24,7 @@ Finance pages include tuition, collections, other fees, allowance, store transac
 | --- | --- | --- | --- |
 | `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections, review promote/repeat rollover placements, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |
 | `registrar` | Student and guardian records | View dashboard, add new students, enroll one or many existing pending students without re-entering identity details, use validated multi-student batch enrollment, view student profiles, view parent contacts | Set up school records, use finance pages, view reports |
-| `finance_officer` | Fees, tuition collections, allowance, reminders, and reports | View dashboard, tuition, collections (tuition-focused), other fees, allowance, store transactions, reports, log queued payment reminders, create store merchants, record wallet purchases | Set up school records, add/enroll students, manage parent contacts |
+| `finance_officer` | Fees, tuition collections, allowance, reminders, and reports | View dashboard, tuition, collections (tuition-focused), other fees, allowance, store transactions, reports, send payment reminder emails, create store merchants, record wallet purchases | Set up school records, add/enroll students, manage parent contacts |
 
 ## Dashboard Access
 
@@ -76,9 +76,9 @@ Only one school year is still the active/current year. For MVP safety, operation
 9. Registrar and finance officer accounts with the same school name are linked to the existing school context.
 10. A registrar can add new students with sex and student type, or enroll one or many existing pending students by adding only their active-year grade, section, and student type. The existing names, birthdates, sex, references, and parent links are preserved. Student age is derived from birthdate and legacy missing values show `Pending`.
 11. Parents link to those students by `student_reference`.
-12. A finance officer works on active-year tuition, tuition collections, allowance, store transactions, queued in-app reminder history, and reports after fee/payment backend phases are implemented. Tuition collections exclude wallet top-ups, which belong to the allowance ledger.
+12. A finance officer works on active-year tuition, tuition collections, allowance, store transactions, payment reminder email history, and reports. Tuition collections exclude wallet top-ups, which belong to the allowance ledger.
 
-Payment reminder history is a finance action. School administrators and finance officers can create queued `in_app` reminder log rows for linked parents with open or partial balances. The reminder action is idempotent for the same school, linked parent, and student on the same calendar day, so repeated clicks do not create duplicate same-day reminder rows. Registrars cannot log reminders because they do not have access to finance pages. Real email and SMS notification delivery is still future work.
+Payment reminder email delivery is a finance action. School administrators and finance officers can send immediate email reminders to linked parent email addresses for open or partial balances. New rows use `channel = 'email'`; each delivery is recorded as `queued`, then updated to `sent` with `sent_at` or `failed`. A sent reminder or recently queued attempt blocks another same-day email for the same school year, school, linked parent, and student, while failed attempts may be retried. Registrars cannot send reminders because they do not have access to finance pages. SMS, scheduled delivery, and delivery webhooks remain future work.
 
 ## Database Source
 

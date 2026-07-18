@@ -172,16 +172,18 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 
 Done when: school administrators and finance officers can download CSV and PDF reports generated from operational MySQL records, and real-data table screens can paginate on screen while exporting their filtered rows in both formats.
 
-### Phase 6D: Notification reminder history
+### Phase 6D: Payment reminder emails
 
-- [x] Use `notification_logs` for queued SMS/email payment reminder history with saved reminder message text.
-- [x] Let school administrators and finance officers log reminders for linked parents with open or partial balances.
-- [x] Add reminder modal fields for target, reminder type, channel, and optional message.
-- [x] Prevent same-day duplicate reminder rows for the same school, parent, student, and selected channel.
-- [x] Show recent reminder history on the tuition page and activity feed.
-- [ ] Add real email/SMS sending, scheduled notifications, cashier/POS portal, item catalog, refunds, real payment gateways, and real-time purchase notifications.
+- [x] Use `notification_logs` for payment reminder history with saved reminder message text.
+- [x] Let school administrators and finance officers send email reminders to linked parents with open or partial balances.
+- [x] Add reminder modal fields for target, reminder type, specific student, and optional message.
+- [x] Send branded plain-text and HTML email through a pooled Nodemailer SMTP transport.
+- [x] Update reminder rows from `queued` to `sent` with `sent_at`, or to `failed` when delivery fails.
+- [x] Prevent same-day duplicates for sent emails and recent queued attempts while allowing failed attempts to retry.
+- [x] Show historical email/SMS reminder rows on the tuition page and activity feed.
+- [ ] Add SMS, scheduled/background notifications, delivery webhooks, bounce handling, cashier/POS portal, item catalog, refunds, real payment gateways, and real-time purchase notifications.
 
-Done when: payment reminder history is generated from operational fee balances, same-day clicks do not create duplicate reminder rows, while real delivery channels remain clearly labeled future.
+Done when: email reminders are sent from operational fee balances, delivery results are auditable in `notification_logs`, repeated clicks are protected, and SMS remains clearly labeled future.
 
 ## Safe Testing Checklist
 

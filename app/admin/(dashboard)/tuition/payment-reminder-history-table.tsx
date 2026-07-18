@@ -30,7 +30,9 @@ export function PaymentReminderHistoryTable({ rows }: { rows: PaymentReminderRow
               <td>{parent}</td>
               <td>{grade}</td>
               <td>{channel}</td>
-              <td className="font-semibold text-[#e64a19]">{status}</td>
+              <td>
+                <span className={statusClassName(status)}>{status}</span>
+              </td>
               <td className="max-w-[240px] truncate text-[#5a6070]" title={message}>
                 {message}
               </td>
@@ -56,4 +58,18 @@ export function PaymentReminderHistoryTable({ rows }: { rows: PaymentReminderRow
       />
     </>
   );
+}
+
+function statusClassName(status: string) {
+  const base = "inline-flex min-h-6 items-center rounded-full px-2 py-0.5 text-[11px] font-bold";
+
+  if (status.toLowerCase() === "sent") {
+    return `${base} bg-[#e7f5e9] text-[#2e7d32]`;
+  }
+
+  if (status.toLowerCase() === "failed") {
+    return `${base} bg-[#fdebec] text-[#c62828]`;
+  }
+
+  return `${base} bg-[#fff3e0] text-[#e65100]`;
 }

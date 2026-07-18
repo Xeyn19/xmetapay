@@ -689,36 +689,44 @@ Future reporting:
 - Scheduled report delivery
 - Notification-based report alerts
 
-## Payment Reminder History Flow
+## Payment Reminder Email Flow
 
-Implemented for local MVP tracking. The tuition page opens a reminder modal with target, reminder type, channel, and optional message fields. The action records queued reminder history for the selected SMS/email channel choices; it does not send real email or SMS yet.
+Implemented for MVP email delivery. The tuition page opens an email-only reminder modal with target, reminder type, optional specific-student reference, and optional message fields. The protected action verifies SMTP, queues audit rows, sends real emails to linked parent addresses through Nodemailer, and records each delivery result. SMS remains future work.
 
 ```mermaid
 flowchart TD
   A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
   B --> C{"Can access finance?"}
   C -->|No| D["Redirect to admin dashboard"]
-  C -->|Yes| E["Open Send reminders modal"]
-  E --> E2["Choose target, type, channel, and optional message"]
-  E2 --> F["Find linked parents with matching open or partial fee balances"]
-  F --> G["Exclude same-day reminders already logged for the same school, parent, student, and selected channel"]
-  G --> H{"Any new reminder targets?"}
+  C -->|Yes| E["Open Send email reminders modal"]
+  E --> E2["Choose target, type, and optional message"]
+  E2 --> F["Verify SMTP configuration"]
+  F --> G["Find linked parents with matching open or partial fee balances and real email addresses"]
+  G --> G2["Exclude sent emails and recent queued attempts already recorded today"]
+  G2 --> H{"Any new reminder targets?"}
   H -->|No open balances| I["Show no reminders logged"]
   H -->|Already reminded today| J["Show reminders already logged today"]
-  H -->|Yes| K["Insert queued payment_reminder rows with message_body"]
-  K --> L["Show reminder history on tuition page"]
-  L --> M["Dashboard activity feed shows recent reminder activity"]
-  M --> N["Real email/SMS delivery remains future"]
+  H -->|Yes| K["Insert queued email payment_reminder rows with message_body"]
+  K --> L["Commit rows, then send through pooled Nodemailer SMTP"]
+  L --> M{"Delivery result"}
+  M -->|Sent| N["Set status sent and sent_at"]
+  M -->|Failed| O["Set status failed and allow retry"]
+  N --> P["Tuition history and dashboard activity update"]
+  O --> P
 ```
 
 Current reminder rules:
 
-- Only `school_administrator` and `finance_officer` can log payment reminders.
-- `registrar` cannot log reminders because reminders are tied to finance balances.
+- Only `school_administrator` and `finance_officer` can send payment reminder emails.
+- `registrar` cannot send reminders because reminders are tied to finance balances.
 - Reminder candidates must have a linked parent through `student_guardians`.
-- The same school, linked parent, student, and selected channel can receive only one queued reminder per calendar day.
-- Reminder rows use `type = payment_reminder`, selected `channel = email` or `channel = sms`, and `status = queued`.
+- New reminder rows use `type = payment_reminder` and `channel = email`; older email/SMS history remains visible.
+- A sent row or recently queued attempt prevents another same-day email for the same school year, school, linked parent, and student. Failed attempts may be retried.
+- Successful delivery sets `status = sent` and `sent_at`; unsuccessful delivery sets `status = failed`.
 - The custom message field is stored in `notification_logs.message_body`; if it is blank, the server stores a generated default reminder message.
+- SMTP credentials stay in local/deployment environment variables. SMS, scheduling, webhooks, and bounce handling remain future work.
+
+SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`, and `APP_BASE_URL`. Gmail/Workspace uses a Google App Password rather than the account's normal password. Real values must stay in the local `.env` file or deployment environment-variable panel and must not be committed.
 
 ## Real-Data Table Export Flow
 
