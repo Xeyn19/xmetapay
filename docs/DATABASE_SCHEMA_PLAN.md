@@ -601,10 +601,12 @@ CREATE TABLE notification_logs (
   status ENUM('queued', 'sent', 'failed') NOT NULL DEFAULT 'queued',
   message_body TEXT NULL,
   sent_at DATETIME NULL,
+  archived_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   KEY idx_notification_logs_school_type_created (school_id, type, created_at),
   KEY idx_notification_logs_school_year_type_created (school_id, school_year_id, type, created_at),
+  KEY idx_notification_logs_school_year_type_archive_created (school_id, school_year_id, type, archived_at, created_at),
   KEY idx_notification_logs_recipient_created (recipient_user_id, created_at),
   KEY idx_notification_logs_student_created (student_id, created_at),
   CONSTRAINT fk_notification_logs_school FOREIGN KEY (school_id) REFERENCES schools(id),
@@ -614,7 +616,7 @@ CREATE TABLE notification_logs (
 );
 ```
 
-Implementation status: real payment reminder email delivery is implemented with Nodemailer and SMTP. School administrators and finance officers can send linked parents an itemized statement built from matching fee assignments and optional tuition terms. The assignment due date is the official deadline; term dates remain schedule details. New rows use `channel = 'email'`, start as `queued`, store the custom or generated introductory text in `message_body`, and then become `sent` with `sent_at` or `failed`. Sent emails and recent queued attempts prevent duplicate same-day sends for the same school year, school, linked parent, and student; failed attempts may be retried. Historical SMS rows remain readable. SMS delivery, scheduling, delivery webhooks, and notification-based report alerts remain future.
+Implementation status: real payment reminder email delivery is implemented with Nodemailer and SMTP. School administrators and finance officers can send linked parents an itemized statement built from matching fee assignments and optional tuition terms. The assignment due date is the official deadline; term dates remain schedule details. New rows use `channel = 'email'`, start as `queued`, store the custom or generated introductory text in `message_body`, and then become `sent` with `sent_at` or `failed`. `archived_at` provides reversible active/archived history views without changing those delivery fields or deleting audit data. Archived sent rows and recent queued attempts still prevent duplicate same-day sends; failed attempts may be retried. Historical SMS rows remain readable. SMS delivery, scheduling, delivery webhooks, and notification-based report alerts remain future.
 
 Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. CSV and PDF report exports are implemented for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collection exports use fee or term allocations and exclude wallet-only payments. Real-data admin and parent table screens paginate loaded rows on screen and export filtered rows as CSV or PDF without adding report storage tables. Scheduled delivery and notification-based report alerts can be added later.
 

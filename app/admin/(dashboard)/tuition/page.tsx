@@ -52,7 +52,10 @@ export default async function TuitionPage() {
         <div className="border-b border-black/[0.07] px-[18px] py-3 text-[12.5px] leading-5 text-[#5a6070]">
           Sends email reminders to linked parents with open or partial balances and records each delivery result. SMS delivery remains future.
         </div>
-        <PaymentReminderHistoryTable rows={data.reminderRows} />
+        <PaymentReminderHistoryTable
+          activeRows={data.reminderRows}
+          archivedRows={data.archivedReminderRows}
+        />
       </DashboardCard>
 
       <DashboardCard

@@ -14,7 +14,7 @@ import {
   type PaymentReminderFee,
   verifyEmailTransport,
 } from "@/lib/email/mailer";
-import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
+import { getResolvedAdminSchoolSetup, getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 
 export type ReminderActionState = {
   status: "idle" | "success" | "info" | "error";
@@ -22,6 +22,22 @@ export type ReminderActionState = {
   description: string;
   submittedAt: number;
 };
+
+export type ReminderArchiveActionState = ReminderActionState;
+
+export async function archivePaymentRemindersAction(
+  _prevState: ReminderArchiveActionState,
+  formData: FormData,
+): Promise<ReminderArchiveActionState> {
+  return updatePaymentReminderArchiveState(formData, "archive");
+}
+
+export async function restorePaymentRemindersAction(
+  _prevState: ReminderArchiveActionState,
+  formData: FormData,
+): Promise<ReminderArchiveActionState> {
+  return updatePaymentReminderArchiveState(formData, "restore");
+}
 
 export async function sendPaymentReminderEmailsAction(
   _prevState: ReminderActionState,
@@ -240,6 +256,77 @@ export async function sendPaymentReminderEmailsAction(
     failedCount > 0 ? "Some email reminders were not sent" : "Email reminders sent",
     summary,
   );
+}
+
+async function updatePaymentReminderArchiveState(
+  formData: FormData,
+  operation: "archive" | "restore",
+): Promise<ReminderArchiveActionState> {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+
+  if (!canAccessFinance(staffRole)) {
+    return actionToast("error", "Access limited", "Only school administrators and finance officers can manage reminder history.");
+  }
+
+  const setup = await getResolvedAdminSchoolViewSetup(session.userId);
+
+  if (!setup.schoolId || !setup.schoolYearId) {
+    return actionToast("error", "School year unavailable", setup.warning ?? "Choose a school year and try again.");
+  }
+
+  const notificationIds = [...new Set(
+    formData.getAll("notificationIds")
+      .map((value) => Number(value))
+      .filter((value) => Number.isSafeInteger(value) && value > 0),
+  )].slice(0, 100);
+
+  if (notificationIds.length === 0) {
+    return actionToast("info", "No reminders selected", "Select one or more payment reminders first.");
+  }
+
+  const params: Record<string, number> = {
+    schoolId: setup.schoolId,
+    schoolYearId: setup.schoolYearId,
+  };
+  const placeholders = notificationIds.map((notificationId, index) => {
+    const key = `notificationId${index}`;
+    params[key] = notificationId;
+    return `:${key}`;
+  });
+  const archiveAssignment = operation === "archive" ? "CURRENT_TIMESTAMP" : "NULL";
+  const currentStateFilter = operation === "archive" ? "IS NULL" : "IS NOT NULL";
+
+  try {
+    const [result] = await pool.execute<ResultSetHeader>(
+      `UPDATE notification_logs
+       SET archived_at = ${archiveAssignment}
+       WHERE id IN (${placeholders.join(", ")})
+         AND school_id = :schoolId
+         AND (school_year_id = :schoolYearId OR school_year_id IS NULL)
+         AND type = 'payment_reminder'
+         AND archived_at ${currentStateFilter}`,
+      params,
+    );
+    const affected = result.affectedRows;
+    const skipped = notificationIds.length - affected;
+
+    revalidatePath("/admin/tuition");
+
+    return actionToast(
+      "success",
+      operation === "archive" ? "Reminder history archived" : "Reminder history restored",
+      `${affected} reminder${affected === 1 ? "" : "s"} ${operation === "archive" ? "archived" : "restored"}.${
+        skipped > 0 ? ` ${skipped} skipped because they were unavailable or already updated.` : ""
+      }`,
+    );
+  } catch {
+    return actionToast(
+      "error",
+      operation === "archive" ? "Reminders not archived" : "Reminders not restored",
+      "Unable to update reminder history. Confirm the archive migration is imported and try again.",
+    );
+  }
 }
 
 async function getReminderFeeStatements(

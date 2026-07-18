@@ -41,7 +41,7 @@ Finance pages include tuition, collections, other fees, allowance, store transac
 | Allowance ledger | Yes | No | Yes |
 | Store transactions | Yes | No | Yes |
 | Financial reports | Yes | No | Yes |
-| Payment reminder history | Yes | No | Yes |
+| View, archive, and restore payment reminder history | Yes | No | Yes |
 
 ## Setup Rule
 
@@ -78,7 +78,7 @@ Only one school year is still the active/current year. For MVP safety, operation
 11. Parents link to those students by `student_reference`.
 12. A finance officer works on active-year tuition, tuition collections, allowance, store transactions, payment reminder email history, and reports. Tuition collections exclude wallet top-ups, which belong to the allowance ledger.
 
-Payment reminder email delivery is a finance action. School administrators and finance officers can send immediate, itemized email reminders to linked parent addresses for open or partial balances. Each email includes the student reference, matching fee balances, official assignment deadlines, and tuition installment schedules when present; custom text is an introduction and does not replace the statement. New rows use `channel = 'email'`; each delivery is recorded as `queued`, then updated to `sent` with `sent_at` or `failed`. A sent reminder or recently queued attempt blocks another same-day email for the same school year, school, linked parent, and student, while failed attempts may be retried. Registrars cannot send reminders. SMS, scheduled delivery, and delivery webhooks remain future work.
+Payment reminder email delivery is a finance action. School administrators and finance officers can send immediate, itemized email reminders to linked parent addresses for open or partial balances. Each email includes the student reference, matching fee balances, official assignment deadlines, and tuition installment schedules when present; custom text is an introduction and does not replace the statement. New rows use `channel = 'email'`; each delivery is recorded as `queued`, then updated to `sent` with `sent_at` or `failed`. They can archive and restore individual or selected reminder-history rows to organize the table without deleting or changing delivery results. Archived sent rows still block another same-day email for the same school year, school, linked parent, and student, while failed attempts may be retried. Registrars cannot send, archive, or restore reminders. SMS, scheduled delivery, and delivery webhooks remain future work.
 
 ## Database Source
 

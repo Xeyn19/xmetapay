@@ -75,7 +75,20 @@ export type TuitionPageRealData = {
   rows: TuitionRow[];
   outstandingByGrade: BarRow[];
   otherFeeSummary: Array<[string, string, string, string]>;
-  reminderRows: Array<[number, string, string, string, string, string, string, string]>;
+  reminderRows: PaymentReminderHistoryRow[];
+  archivedReminderRows: PaymentReminderHistoryRow[];
+};
+
+export type PaymentReminderHistoryRow = {
+  notificationId: number;
+  created: string;
+  student: string;
+  parent: string;
+  grade: string;
+  channel: string;
+  status: string;
+  message: string;
+  archivedAt: string | null;
 };
 
 export type TuitionRow = {
@@ -300,7 +313,9 @@ export async function getAdminDashboardRealData(adminUserId: number): Promise<Ad
   }
 }
 
-export async function getAdminTuitionPageRealData(adminUserId: number): Promise<TuitionPageRealData> {
+export async function getAdminTuitionPageRealData(
+  adminUserId: number,
+): Promise<TuitionPageRealData> {
   const setup = await getAdminSetup(adminUserId);
 
   if (!setup.schoolId || !setup.schoolYearId) {
@@ -308,12 +323,13 @@ export async function getAdminTuitionPageRealData(adminUserId: number): Promise<
   }
 
   try {
-    const [rows, feeSummary, outstandingByGrade, otherFeeSummary, reminderRows] = await Promise.all([
+    const [rows, feeSummary, outstandingByGrade, otherFeeSummary, reminderRows, archivedReminderRows] = await Promise.all([
       getTuitionRows(setup.schoolId, setup.schoolYearId),
       getFeeSummary(setup.schoolId, setup.schoolYearId, "tuition"),
       getOutstandingByGrade(setup.schoolId, setup.schoolYearId),
       getOtherFeeSummary(setup.schoolId, setup.schoolYearId),
-      getRecentReminderRows(setup.schoolId, setup.schoolYearId),
+      getRecentReminderRows(setup.schoolId, setup.schoolYearId, "active"),
+      getRecentReminderRows(setup.schoolId, setup.schoolYearId, "archived"),
     ]);
     const hasRows = rows.length > 0;
 
@@ -330,6 +346,7 @@ export async function getAdminTuitionPageRealData(adminUserId: number): Promise<
       outstandingByGrade,
       otherFeeSummary,
       reminderRows,
+      archivedReminderRows,
     };
   } catch {
     return emptyTuition("Tuition data is unavailable. Confirm MySQL/XAMPP and fee assignment tables are ready.");
@@ -935,9 +952,14 @@ async function getActivityFeed(schoolId: number, schoolYearId: number) {
   });
 }
 
-async function getRecentReminderRows(schoolId: number, schoolYearId: number) {
+async function getRecentReminderRows(
+  schoolId: number,
+  schoolYearId: number,
+  reminderView: "active" | "archived",
+) {
+  const archiveFilter = reminderView === "archived" ? "nl.archived_at IS NOT NULL" : "nl.archived_at IS NULL";
   const [rows] = await pool.execute<ReminderHistoryRow[]>(
-    `SELECT nl.id AS notification_id, nl.created_at, nl.channel, nl.status, nl.message_body,
+    `SELECT nl.id AS notification_id, nl.created_at, nl.channel, nl.status, nl.message_body, nl.archived_at,
        COALESCE(u.name, 'Parent pending') AS parent_name,
        COALESCE(st.first_name, '') AS first_name,
        st.middle_name,
@@ -951,24 +973,24 @@ async function getRecentReminderRows(schoolId: number, schoolYearId: number) {
      WHERE nl.school_id = :schoolId
        AND (nl.school_year_id = :schoolYearId OR nl.school_year_id IS NULL)
        AND nl.type = 'payment_reminder'
+       AND ${archiveFilter}
      ORDER BY nl.created_at DESC, nl.id DESC
-     LIMIT 8`,
+     LIMIT 500`,
     { schoolId, schoolYearId },
   );
 
   return rows.map((row) => {
-    const notificationId = row.notification_id;
-
-    return [
-      notificationId,
-      formatDateTime(row.created_at),
-      fullName(row.first_name, row.middle_name, row.last_name) || "Student pending",
-      row.parent_name,
-      row.grade_name,
-      labelForStatus(row.channel),
-      labelForStatus(row.status),
-      row.message_body ?? "Default reminder",
-    ] as TuitionPageRealData["reminderRows"][number];
+    return {
+      notificationId: row.notification_id,
+      created: formatDateTime(row.created_at),
+      student: fullName(row.first_name, row.middle_name, row.last_name) || "Student pending",
+      parent: row.parent_name,
+      grade: row.grade_name,
+      channel: labelForStatus(row.channel),
+      status: labelForStatus(row.status),
+      message: row.message_body ?? "Default reminder",
+      archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
+    };
   });
 }
 
@@ -1376,6 +1398,7 @@ function emptyTuition(warning: string | null): TuitionPageRealData {
     outstandingByGrade: [],
     otherFeeSummary: [],
     reminderRows: [],
+    archivedReminderRows: [],
   };
 }
 
@@ -1698,6 +1721,7 @@ type ReminderHistoryRow = RowDataPacket & {
   channel: string;
   status: string;
   message_body: string | null;
+  archived_at: Date | string | null;
   parent_name: string;
   first_name: string;
   middle_name: string | null;

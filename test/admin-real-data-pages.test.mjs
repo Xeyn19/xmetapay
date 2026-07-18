@@ -38,7 +38,7 @@ test("admin real-data helper reads supported MySQL schema tables with admin scho
   assert.match(helper, /export async function getAdminDashboardRealData\(adminUserId: number\)/);
   assert.match(helper, /recentFeeAssignments/);
   assert.match(helper, /getRecentFeeAssignments\(setup\.schoolId, setup\.schoolYearId\)/);
-  assert.match(helper, /export async function getAdminTuitionPageRealData\(adminUserId: number\)/);
+  assert.match(helper, /export async function getAdminTuitionPageRealData\(\s*adminUserId: number/);
   assert.match(helper, /export async function getAdminStudentProfileRealData\(\s+adminUserId: number,\s+studentId\?: number,/);
   assert.match(helper, /export type AdminStudentProfileSummary/);
   assert.match(helper, /gradeName: string;/);

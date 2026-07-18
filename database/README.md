@@ -39,6 +39,10 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
 10. If `full-schema-v1.sql` was already imported before student demographics and enrollment types were added, import `migrations/2026-07-15-student-demographics-enrollment.sql`.
    - Adds nullable `students.sex` and `enrollments.student_type` columns for existing data compatibility.
    - New enrollment forms require these values; old missing values display as `Pending`.
+11. If `full-schema-v1.sql` was already imported before reminder-history archiving was added, import `migrations/2026-07-18-notification-log-archive.sql`.
+   - Adds nullable `notification_logs.archived_at` and its selected-year history index.
+   - Keeps every delivery status, message, recipient, and sent timestamp unchanged.
+   - Safe to import more than once.
 
 ## Temporary Super Admin Seed
 

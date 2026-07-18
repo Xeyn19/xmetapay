@@ -714,6 +714,9 @@ flowchart TD
   M -->|Failed| O["Set status failed and allow retry"]
   N --> P["Tuition history and dashboard activity update"]
   O --> P
+  P --> Q{"Organize reminder history?"}
+  Q -->|Archive| R["Set archived_at and show in Archived reminders"]
+  R -->|Restore| P
 ```
 
 Current reminder rules:
@@ -728,6 +731,9 @@ Current reminder rules:
 - A sent row or recently queued attempt prevents another same-day email for the same school year, school, linked parent, and student. Failed attempts may be retried.
 - Successful delivery sets `status = sent` and `sent_at`; unsuccessful delivery sets `status = failed`.
 - The custom message field is stored in `notification_logs.message_body`; if it is blank, the server stores a generated default reminder message.
+- School administrators and finance officers can archive or restore one or many payment-reminder rows. Archive changes only `archived_at`; it does not delete the row or change delivery status, recipient, message, or sent time.
+- Active and archived reminder views use the selected admin school-year context. Archived sent reminders continue to participate in same-day duplicate protection.
+- Registrars cannot send, archive, or restore payment reminders, and no permanent-delete action is available.
 - SMTP credentials stay in local/deployment environment variables. SMS, scheduling, webhooks, and bounce handling remain future work.
 
 SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`, and `APP_BASE_URL`. Gmail/Workspace uses a Google App Password rather than the account's normal password. Real values must stay in the local `.env` file or deployment environment-variable panel and must not be committed.
