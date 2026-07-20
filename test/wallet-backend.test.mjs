@@ -11,6 +11,10 @@ const parentWalletActivityTablePath = "app/parent/(portal)/_components/parent-wa
 const parentStudentProfileViewPath = "app/parent/(portal)/student-profile/student-profile-view.tsx";
 const adminAllowanceTablePath = "app/admin/(dashboard)/allowance/allowance-table.tsx";
 const adminAllowancePagePath = "app/admin/(dashboard)/allowance/page.tsx";
+const adminAllowanceActionsPath = "app/admin/allowance/actions.ts";
+const adminAllowanceServicePath = "lib/admin/allowance-ledger.ts";
+const allowanceArchiveMigrationPath = "database/migrations/2026-07-20-wallet-ledger-archive.sql";
+const fullSchemaPath = "database/full-schema-v1.sql";
 const paymentRecordsPath = "lib/payments/records.ts";
 const parentRecordsPath = "lib/students/records.ts";
 const adminRealDataPath = "lib/admin/real-data.ts";
@@ -123,6 +127,8 @@ test("admin allowance page uses working controls for real wallet rows", () => {
   assert.match(page, /AllowanceTable/);
   assert.match(page, /Student wallet balances/);
   assert.match(page, /getAdminAllowancePageRealData/);
+  assert.match(page, /activeRows=\{data\.activeRows\}/);
+  assert.match(page, /archivedRows=\{data\.archivedRows\}/);
   assert.match(adminRealData, /label: "Active wallets"/);
   assert.match(adminRealData, /COUNT\(CASE WHEN wallet_status = 'active' THEN 1 END\) AS active_wallets/);
   assert.match(adminRealData, /label: "Top-ups this month"/);
@@ -141,8 +147,44 @@ test("admin allowance page uses working controls for real wallet rows", () => {
   assert.match(table, /admin-allowance-wallets\.pdf/);
   assert.match(table, /exportRowsToPdf/);
   assert.match(table, /filterByQuery/);
+  assert.match(table, /Active wallets/);
+  assert.match(table, /Archived wallets/);
+  assert.match(table, /Select visible/);
+  assert.match(table, /Clear selection/);
+  assert.match(table, /role="alertdialog"/);
+  assert.match(table, /setActiveWalletRows/);
+  assert.match(table, /setArchivedWalletRows/);
+  assert.match(table, /router\.refresh\(\)/);
   assert.doesNotMatch(table, /toFilterOptions/);
   assert.doesNotMatch(page, /Export pending/);
+});
+
+test("allowance archive is selected-year view metadata and never changes wallet operations", () => {
+  const actions = readFileSync(adminAllowanceActionsPath, "utf8");
+  const service = readFileSync(adminAllowanceServicePath, "utf8");
+  const migration = readFileSync(allowanceArchiveMigrationPath, "utf8");
+  const schema = readFileSync(fullSchemaPath, "utf8");
+
+  assert.match(actions, /archiveAllowanceWalletsAction/);
+  assert.match(actions, /restoreAllowanceWalletsAction/);
+  assert.match(actions, /await requireRole\("admin"\)/);
+  assert.match(actions, /canAccessFinance\(staffRole\)/);
+  assert.match(actions, /getResolvedAdminSchoolViewSetup/);
+  assert.match(actions, /slice\(0, 100\)/);
+  assert.match(service, /AllowanceLedgerArchiveScope = "active" \| "archived" \| "all"/);
+  assert.match(service, /wla\.school_year_id = :schoolYearId/);
+  assert.match(service, /INSERT INTO wallet_ledger_archives/);
+  assert.match(service, /DELETE FROM wallet_ledger_archives/);
+  assert.doesNotMatch(service, /UPDATE wallets[\s\S]*SET (balance|status)/);
+  assert.doesNotMatch(service, /UPDATE wallet_transactions/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS wallet_ledger_archives/);
+  assert.match(migration, /information_schema\.COLUMNS/);
+  assert.match(migration, /information_schema\.STATISTICS/);
+  assert.match(migration, /DECLARE CONTINUE HANDLER FOR 1060/);
+  assert.match(migration, /DECLARE CONTINUE HANDLER FOR 1061/);
+  assert.match(migration, /PRIMARY KEY \(wallet_id, school_year_id\)/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS wallet_ledger_archives/);
+  assert.match(schema, /idx_wallet_ledger_archives_year_archived_wallet/);
 });
 
 test("payment history and parent records label wallet top-ups while admin collections stay tuition-only", () => {
@@ -172,6 +214,9 @@ test("docs and checklist mark wallet top-up and store transactions complete with
   assert.match(flowcharts, /Parent local wallet top-up flow/);
   assert.match(flowcharts, /Store\/canteen purchase recording is implemented for local MVP testing/);
   assert.match(flowcharts, /Admin allowance `Total balance` should sum the current `wallets\.balance` once per wallet/);
+  assert.match(checklist, /selected-year Allowance ledger archive\/restore/);
+  assert.match(flowcharts, /wallet_ledger_archives/);
+  assert.match(visualFlowcharts, /Allowance archive and restore/);
   assert.match(visualFlowcharts, /Wallet top-up/);
   assert.match(visualFlowcharts, /Accurate wallet totals/);
 });

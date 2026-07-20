@@ -17,6 +17,7 @@ import type { LucideIcon } from "lucide-react";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { getAllowanceLedgerRows, type AllowanceLedgerSqlRow } from "@/lib/admin/allowance-ledger";
 import { calculateAge, labelForSex, labelForStudentType } from "@/lib/students/demographics";
 import { getTuitionCollectionRows, getTuitionCollectionSummary } from "@/lib/admin/tuition-collections";
 import { getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
@@ -156,7 +157,20 @@ export type OtherFeesPageRealData = {
 export type AllowancePageRealData = {
   warning: string | null;
   kpis: AdminRealKpi[];
-  rows: Array<[string, string, string, string, string, string, "Active" | "Low" | "No balance"]>;
+  activeRows: AdminAllowanceDisplayRow[];
+  archivedRows: AdminAllowanceDisplayRow[];
+};
+
+export type AdminAllowanceDisplayRow = {
+  walletId: number;
+  student: string;
+  grade: string;
+  balance: string;
+  lastTopUp: string;
+  monthSpend: string;
+  totalTopUps: string;
+  status: "Active" | "Low" | "No balance";
+  archivedAt: string | null;
 };
 
 export type StoreTransactionsPageRealData = {
@@ -438,9 +452,10 @@ export async function getAdminAllowancePageRealData(adminUserId: number): Promis
   }
 
   try {
-    const [summary, rows] = await Promise.all([
+    const [summary, activeRows, archivedRows] = await Promise.all([
       getWalletSummary(setup.schoolId, setup.schoolYearId),
-      getAllowanceRows(setup.schoolId, setup.schoolYearId),
+      getAllowanceLedgerRows(setup.schoolId, setup.schoolYearId, "active"),
+      getAllowanceLedgerRows(setup.schoolId, setup.schoolYearId, "archived"),
     ]);
 
     return {
@@ -451,7 +466,8 @@ export async function getAdminAllowancePageRealData(adminUserId: number): Promis
         { label: "Top-ups this month", value: summary.monthlyTopUps > 0 ? money(summary.monthlyTopUps) : "Pending", note: summary.monthlyTopUpCount > 0 ? `${summary.monthlyTopUpCount} top-up transaction${summary.monthlyTopUpCount === 1 ? "" : "s"}` : "No top-ups this month", tone: "green", icon: Activity },
         { label: "Store spend this month", value: summary.monthlySpend > 0 ? money(summary.monthlySpend) : "Pending", note: "Purchase transactions", tone: "teal", icon: Store },
       ],
-      rows,
+      activeRows: activeRows.map(allowanceDisplayRow),
+      archivedRows: archivedRows.map(allowanceDisplayRow),
     };
   } catch {
     return emptyAllowance("Allowance data is unavailable. Confirm MySQL/XAMPP and wallet tables are ready.");
@@ -1161,40 +1177,20 @@ async function getOtherFeeItems(schoolId: number, schoolYearId: number) {
   }));
 }
 
-async function getAllowanceRows(schoolId: number, schoolYearId: number) {
-  const [rows] = await pool.execute<AllowanceSqlRow[]>(
-    `SELECT st.first_name, st.middle_name, st.last_name,
-       COALESCE(gl.name, 'Not enrolled') AS grade_name,
-       COALESCE(w.balance, 0) AS balance,
-       MAX(CASE WHEN wt.type = 'top_up' THEN wt.created_at END) AS last_top_up_at,
-       COALESCE(SUM(CASE WHEN wt.type = 'purchase' AND wt.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN ABS(wt.amount) ELSE 0 END), 0) AS monthly_spend,
-       COALESCE(SUM(CASE WHEN wt.type = 'top_up' THEN wt.amount ELSE 0 END), 0) AS total_top_ups
-     FROM wallets w
-     JOIN students st ON st.id = w.student_id
-     JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = :schoolYearId
-     LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
-     LEFT JOIN wallet_transactions wt ON wt.wallet_id = w.id
-      AND (wt.school_year_id = :schoolYearId OR wt.school_year_id IS NULL)
-     WHERE st.school_id = :schoolId
-     GROUP BY w.id, st.first_name, st.middle_name, st.last_name, gl.name, w.balance
-     ORDER BY st.last_name ASC, st.first_name ASC`,
-    { schoolId, schoolYearId },
-  );
+function allowanceDisplayRow(row: AllowanceLedgerSqlRow): AdminAllowanceDisplayRow {
+  const balance = decimalValue(row.balance);
 
-  return rows.map((row) => {
-    const balance = decimalValue(row.balance);
-    const status = balance === 0 ? "No balance" : balance < 50 ? "Low" : "Active";
-
-    return [
-      fullName(row.first_name, row.middle_name, row.last_name),
-      row.grade_name,
-      money(balance),
-      row.last_top_up_at ? formatDateTime(row.last_top_up_at) : "Pending",
-      decimalValue(row.monthly_spend) > 0 ? money(row.monthly_spend) : "Pending",
-      decimalValue(row.total_top_ups) > 0 ? money(row.total_top_ups) : "Pending",
-      status,
-    ] as AllowancePageRealData["rows"][number];
-  });
+  return {
+    walletId: Number(row.wallet_id),
+    student: fullName(row.first_name, row.middle_name, row.last_name),
+    grade: row.grade_name,
+    balance: money(balance),
+    lastTopUp: row.last_top_up_at ? formatDateTime(row.last_top_up_at) : "Pending",
+    monthSpend: decimalValue(row.monthly_spend) > 0 ? money(row.monthly_spend) : "Pending",
+    totalTopUps: decimalValue(row.total_top_ups) > 0 ? money(row.total_top_ups) : "Pending",
+    status: balance === 0 ? "No balance" : balance < 50 ? "Low" : "Active",
+    archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
+  };
 }
 
 async function getStoreSummary(schoolId: number, schoolYearId: number) {
@@ -1464,7 +1460,8 @@ function emptyAllowance(warning: string | null): AllowancePageRealData {
       { label: "Low balance", value: "0", note: "Below P50", tone: "red", icon: Activity },
       { label: "Monthly spend", value: "Pending", note: "Purchase transactions", tone: "blue", icon: Store },
     ],
-    rows: [],
+    activeRows: [],
+    archivedRows: [],
   };
 }
 
@@ -1789,17 +1786,6 @@ type OtherFeeItemRow = RowDataPacket & {
   billed: number | string;
   collected: number | string;
   outstanding: number | string;
-};
-
-type AllowanceSqlRow = RowDataPacket & {
-  first_name: string;
-  middle_name: string | null;
-  last_name: string;
-  grade_name: string;
-  balance: number | string;
-  last_top_up_at: Date | string | null;
-  monthly_spend: number | string;
-  total_top_ups: number | string;
 };
 
 type StoreSummaryRow = RowDataPacket & {

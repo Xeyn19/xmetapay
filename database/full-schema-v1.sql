@@ -369,6 +369,19 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
   CONSTRAINT fk_wallet_transactions_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS wallet_ledger_archives (
+  wallet_id BIGINT UNSIGNED NOT NULL,
+  school_year_id BIGINT UNSIGNED NOT NULL,
+  archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (wallet_id, school_year_id),
+  KEY idx_wallet_ledger_archives_year_archived_wallet (school_year_id, archived_at, wallet_id),
+  CONSTRAINT fk_wallet_ledger_archives_wallet
+    FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_wallet_ledger_archives_school_year
+    FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS store_merchants (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   school_id BIGINT UNSIGNED NOT NULL,

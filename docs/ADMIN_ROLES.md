@@ -38,7 +38,7 @@ Finance pages include tuition, collections, other fees, allowance, store transac
 | Tuition report | Yes | No | Yes |
 | Tuition collections log, archive, and restore | Yes | No | Yes |
 | Other fees | Yes | No | Yes |
-| Allowance ledger | Yes | No | Yes |
+| Allowance ledger, archive, and restore | Yes | No | Yes |
 | Store transactions | Yes | No | Yes |
 | Financial reports | Yes | No | Yes |
 | View, archive, and restore payment reminder history | Yes | No | Yes |
@@ -76,7 +76,7 @@ Only one school year is still the active/current year. For MVP safety, operation
 9. Registrar and finance officer accounts with the same school name are linked to the existing school context.
 10. A registrar can add new students with sex and student type, or enroll one or many existing pending students by adding only their active-year grade, section, and student type. The existing names, birthdates, sex, references, and parent links are preserved. Student age is derived from birthdate and legacy missing values show `Pending`.
 11. Parents link to those students by `student_reference`.
-12. A finance officer works on active-year tuition, tuition collections, allowance, store transactions, payment reminder email history, and reports. Tuition collections exclude wallet top-ups, which belong to the allowance ledger. School administrators and finance officers can archive or restore one or many tuition collection rows to organize the selected-year log. Archive never changes payment status, allocations, receipts, balances, official reports, or parent history.
+12. A finance officer works on active-year tuition, tuition collections, allowance, store transactions, payment reminder email history, and reports. Tuition collections exclude wallet top-ups, which belong to the allowance ledger. School administrators and finance officers can archive or restore one or many tuition collection rows and selected-year Allowance wallet summaries. These archive controls organize admin views only; they never change payment records, wallet status, balances, transactions, reports, or parent history.
 
 Payment reminder email delivery is a finance action. School administrators and finance officers can send immediate, itemized email reminders to linked parent addresses for open or partial balances. Each email includes the student reference, matching fee balances, official assignment deadlines, and tuition installment schedules when present; custom text is an introduction and does not replace the statement. New rows use `channel = 'email'`; each delivery is recorded as `queued`, then updated to `sent` with `sent_at` or `failed`. They can archive and restore individual or selected reminder-history rows to organize the table without deleting or changing delivery results. Archived sent rows still block another same-day email for the same school year, school, linked parent, and student, while failed attempts may be retried. Registrars cannot send, archive, or restore reminders. SMS, scheduled delivery, and delivery webhooks remain future work.
 

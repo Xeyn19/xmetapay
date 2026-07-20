@@ -147,6 +147,7 @@ Done when: admin/finance can split a tuition balance into terms, and parents can
 - [x] Show parent wallet history and admin allowance records from MySQL.
 - [x] Calculate admin allowance total balance from one row per wallet, not from joined transaction rows.
 - [x] Show admin allowance monthly top-up stats and segmented wallet-balance filters from real wallet data.
+- [x] Add reversible selected-year Allowance ledger archive/restore without changing wallet balances, status, transactions, parent visibility, KPIs, or reports.
 
 Done when: wallet balances, top-up history, and admin allowance totals come from MySQL and do not double-count wallets with multiple transactions.
 

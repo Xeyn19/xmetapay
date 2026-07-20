@@ -10,21 +10,12 @@ import {
   KpiCard,
   KpiGrid,
 } from "../../_components/admin-ui";
-import { AllowanceTable, type AllowanceRow } from "./allowance-table";
+import { AllowanceTable } from "./allowance-table";
 
 export default async function AllowancePage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/allowance");
   const data = await getAdminAllowancePageRealData(session.userId);
-  const rows: AllowanceRow[] = data.rows.map(([student, grade, balance, lastTopUp, monthSpend, totalTopUps, status]) => ({
-    student,
-    grade,
-    balance,
-    lastTopUp,
-    monthSpend,
-    totalTopUps,
-    status,
-  }));
 
   return (
     <>
@@ -39,7 +30,11 @@ export default async function AllowancePage() {
         icon={Wallet}
         bodyClassName="p-0"
       >
-        <AllowanceTable rows={rows} />
+        <AllowanceTable
+          key={`${data.activeRows.map((row) => row.walletId).join("-")}|${data.archivedRows.map((row) => row.walletId).join("-")}`}
+          activeRows={data.activeRows}
+          archivedRows={data.archivedRows}
+        />
       </DashboardCard>
     </>
   );
