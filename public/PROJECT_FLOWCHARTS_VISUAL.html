@@ -783,7 +783,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="admin-report-csv-pdf-exports.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> protected admin CSV and PDF exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collections use fee or term allocations; wallet top-ups remain in the allowance ledger.</p>
+          <p><strong>Implemented:</strong> protected admin CSV and PDF exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collections use fee or term allocations; wallet top-ups remain in the allowance ledger. The Tuition collection log has reversible active/archived views through <code>payments.archived_at</code>; archiving does not remove records from official reports, receipts, balances, or parent history.</p>
           <pre class="mermaid">
 flowchart TD
   A["Admin opens reports page"] --> B["Require admin session"]

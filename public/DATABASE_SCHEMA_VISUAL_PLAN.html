@@ -327,7 +327,7 @@
             <tr>
               <td>Payments</td>
               <td><code>payments</code>, <code>payment_allocations</code>, <code>payment_term_allocations</code>, <code>receipts</code></td>
-              <td>Payment records, active school-year stamps for new rows, regular fee allocation, tuition term allocation, and receipt generation.</td>
+              <td>Payment records, active school-year stamps for new rows, regular fee allocation, tuition term allocation, receipt generation, and reversible <code>archived_at</code> organization for the admin Tuition collection log. Archive does not change payment status or financial history.</td>
             </tr>
             <tr>
               <td>Wallet</td>
@@ -342,7 +342,7 @@
             <tr>
               <td>Reports</td>
               <td>Operational query views</td>
-              <td>Implemented CSV and PDF exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collections use fee or term allocations; wallet-only payments remain in the allowance ledger. Real-data dashboard tables paginate loaded rows and export filtered rows as CSV or PDF.</td>
+              <td>Implemented CSV and PDF exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collections use fee or term allocations; wallet-only payments remain in the allowance ledger. Collection-log archive state is ignored by official report totals and exports. Real-data dashboard tables paginate loaded rows and export filtered rows as CSV or PDF.</td>
             </tr>
             <tr>
               <td>Notifications</td>

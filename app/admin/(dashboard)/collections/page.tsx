@@ -1,8 +1,8 @@
 import { CreditCard } from "lucide-react";
 
-import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminCollectionsPageRealData } from "@/lib/admin/real-data";
+import { requireRole } from "@/lib/auth/session";
 
 import {
   AlertBanner,
@@ -10,22 +10,12 @@ import {
   KpiCard,
   KpiGrid,
 } from "../../_components/admin-ui";
-import { CollectionsTable, type CollectionRow } from "./collections-table";
+import { CollectionsTable } from "./collections-table";
 
 export default async function CollectionsPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/collections");
   const data = await getAdminCollectionsPageRealData(session.userId);
-  const rows: CollectionRow[] = data.rows.map(([ref, student, grade, fee, amount, date, channel, status]) => ({
-    ref,
-    student,
-    grade,
-    fee,
-    amount,
-    date,
-    channel,
-    status,
-  }));
 
   return (
     <>
@@ -41,9 +31,12 @@ export default async function CollectionsPage() {
         icon={CreditCard}
         bodyClassName="p-0"
       >
-        <CollectionsTable rows={rows} />
+        <CollectionsTable
+          key={`${data.activeRows.map((row) => row.paymentId).join("-")}|${data.archivedRows.map((row) => row.paymentId).join("-")}`}
+          activeRows={data.activeRows}
+          archivedRows={data.archivedRows}
+        />
       </DashboardCard>
     </>
   );
 }
-

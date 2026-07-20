@@ -49,7 +49,8 @@ test("admin real-data helper reads supported MySQL schema tables with admin scho
   assert.match(helper, /profileHref: `\/admin\/students\/\$\{row\.id\}`/);
   assert.match(helper, /const setup = await getResolvedAdminSchoolViewSetup\(adminUserId\)/);
   assert.match(helper, /getPaymentSummary\(setup\.schoolId, setup\.schoolYearId\)/);
-  assert.match(helper, /getCollectionRows\(setup\.schoolId, setup\.schoolYearId\)/);
+  assert.match(helper, /getCollectionRows\(setup\.schoolId, setup\.schoolYearId, "active"\)/);
+  assert.match(helper, /getCollectionRows\(setup\.schoolId, setup\.schoolYearId, "archived"\)/);
   assert.doesNotMatch(helper, /FROM admin_profiles ap\s+LEFT JOIN school_years sy ON sy\.school_id = ap\.school_id/);
   assert.match(helper, /school_id = :schoolId|school_id = :schoolId/);
   assert.match(helper, /FROM students/);

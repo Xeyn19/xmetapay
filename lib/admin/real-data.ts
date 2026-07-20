@@ -115,10 +115,24 @@ export type TuitionTermRow = {
   status: string;
 };
 
+export type AdminCollectionDisplayRow = {
+  paymentId: number;
+  ref: string;
+  student: string;
+  grade: string;
+  fee: string;
+  amount: string;
+  date: string;
+  channel: string;
+  status: string;
+  archivedAt: string | null;
+};
+
 export type CollectionsPageRealData = {
   warning: string | null;
   kpis: AdminRealKpi[];
-  rows: Array<[string, string, string, string, string, string, string, string]>;
+  activeRows: AdminCollectionDisplayRow[];
+  archivedRows: AdminCollectionDisplayRow[];
 };
 
 export type OtherFeesPageRealData = {
@@ -365,9 +379,10 @@ export async function getAdminCollectionsPageRealData(adminUserId: number): Prom
       return emptyCollections(setup.warning);
     }
 
-    const [summary, rows] = await Promise.all([
+    const [summary, activeRows, archivedRows] = await Promise.all([
       getTuitionCollectionSummary(setup.schoolId, setup.schoolYearId),
-      getCollectionRows(setup.schoolId, setup.schoolYearId),
+      getCollectionRows(setup.schoolId, setup.schoolYearId, "active"),
+      getCollectionRows(setup.schoolId, setup.schoolYearId, "archived"),
     ]);
 
     return {
@@ -378,10 +393,11 @@ export async function getAdminCollectionsPageRealData(adminUserId: number): Prom
         { label: "Pending review", value: String(summary.pending_count), note: "Tuition payment status pending", tone: "blue", icon: FileText },
         { label: "Failed / voided", value: String(summary.failed_count), note: "Needs tuition review", tone: "red", noteTone: summary.failed_count > 0 ? "warn" : "default", icon: Activity },
       ],
-      rows,
+      activeRows,
+      archivedRows,
     };
   } catch {
-    return emptyCollections("Collection data is unavailable. Confirm MySQL/XAMPP and payment tables are ready.");
+    return emptyCollections("Collection data is unavailable. Confirm MySQL/XAMPP, payment tables, and the collection archive migration are ready.");
   }
 }
 
@@ -1089,19 +1105,28 @@ async function getOtherFeeSummary(schoolId: number, schoolYearId: number) {
   ] as [string, string, string, string]);
 }
 
-async function getCollectionRows(schoolId: number, schoolYearId: number) {
-  const rows = await getTuitionCollectionRows(schoolId, schoolYearId, 50);
+async function getCollectionRows(
+  schoolId: number,
+  schoolYearId: number,
+  archiveScope: "active" | "archived",
+): Promise<AdminCollectionDisplayRow[]> {
+  const rows = await getTuitionCollectionRows(schoolId, schoolYearId, {
+    archiveScope,
+    limit: 500,
+  });
 
-  return rows.map((row) => [
-    row.reference_number,
-    fullName(row.first_name, row.middle_name, row.last_name),
-    row.grade_name ?? "Not enrolled",
-    row.fee_name,
-    money(row.amount),
-    formatDateTime(row.paid_at ?? row.created_at),
-    labelForStatus(row.channel),
-    labelForStatus(row.status),
-  ] as [string, string, string, string, string, string, string, string]);
+  return rows.map((row) => ({
+    paymentId: row.id,
+    ref: row.reference_number,
+    student: fullName(row.first_name, row.middle_name, row.last_name),
+    grade: row.grade_name ?? "Not enrolled",
+    fee: row.fee_name,
+    amount: money(row.amount),
+    date: formatDateTime(row.paid_at ?? row.created_at),
+    channel: labelForStatus(row.channel),
+    status: labelForStatus(row.status),
+    archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
+  }));
 }
 
 async function getOtherFeeItems(schoolId: number, schoolYearId: number) {
@@ -1411,7 +1436,8 @@ function emptyCollections(warning: string | null): CollectionsPageRealData {
       { label: "Pending review", value: "0", note: "Payment status pending", tone: "blue", icon: FileText },
       { label: "Failed / voided", value: "0", note: "Needs admin review", tone: "red", icon: Activity },
     ],
-    rows: [],
+    activeRows: [],
+    archivedRows: [],
   };
 }
 
