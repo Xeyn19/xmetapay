@@ -201,7 +201,7 @@ Database touchpoints:
 
 Implemented.
 
-After the admin logs in, the staff profile should be linked to a real school record. A school administrator manually confirms the school, adds one or more school years, chooses exactly one active year, then creates grade levels and sections. The ongoing `/admin/school-setup` page shows all school years, lets the administrator edit sections for a selected school year, provides manual rollover preparation, and lets the administrator activate an upcoming year when it is ready. Registrar and finance officer accounts then share that same school context through `admin_profiles.school_id`; if their `school_id` is still empty, the backend falls back to an exact `school_name` match and saves the matched `school_id`.
+After the admin logs in, the staff profile should be linked to a real school record. First-time onboarding remains one guided form: confirm the school, add one or more school years, choose exactly one active year, then add initial grades and sections. Ongoing management uses a concise hub at `/admin/school-setup`; focused modals update school/year metadata, `/admin/school-setup/years/[yearId]` manages one year's structure, and `/admin/school-setup/rollover` handles reviewed promotion. Activation remains a separate confirmation on the hub. Registrar and finance officer accounts share the same school context through `admin_profiles.school_id`.
 
 ```mermaid
 flowchart TD
@@ -223,10 +223,10 @@ flowchart TD
   O --> P["Save schools, school_years, grade_levels, sections"]
   P --> Q["Update same-school admin_profiles.school_id"]
   Q --> R["Redirect back to dashboard"]
-  R --> S["Admin opens School setup overview when needed"]
-  S --> T["Review all years and active-year structure"]
-  T --> U["Edit selected-year grade and section structure"]
-  U --> V["Prepare rollover into target-year sections when needed"]
+  R --> S["Admin opens School setup overview hub"]
+  S --> T["Edit school or year metadata in focused modals"]
+  T --> U["Open selected-year structure page"]
+  U --> V["Open dedicated rollover page when needed"]
   V --> W["Activate upcoming year when ready"]
   W --> X["Close previous active year"]
   X --> C
@@ -273,7 +273,7 @@ Student master records stay shared across years. Rollover lists only students en
 
 ```mermaid
 flowchart TD
-  A["School administrator opens School setup"] --> B["Choose source and upcoming target school year"]
+  A["School administrator opens dedicated rollover page"] --> B["Choose source and upcoming target school year"]
   B --> C["Generate next-grade and section suggestions"]
   C --> D["Select one or many students and review promote, repeat, or skip"]
   D --> E["Validate target grade and section"]

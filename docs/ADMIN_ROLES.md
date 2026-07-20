@@ -47,7 +47,7 @@ Finance pages include tuition, collections, other fees, allowance, store transac
 
 The first real school account should be a `school_administrator`, but it still requires company super admin approval before it can sign in.
 
-Only a school administrator can complete `Set up school records`. After the pending account is approved, the new school administrator signs in and is sent to a setup-only onboarding screen before the real dashboard is shown. The ongoing `School setup` dashboard page shows school details, all school years, the active year, selected-year grade/section editing, manual rollover preparation, and activation for upcoming years that are ready. If a registrar or finance officer signs in before setup is complete, they should see:
+Only a school administrator can complete `Set up school records`. After approval, the new school administrator uses a guided, combined setup-only onboarding screen. Ongoing management is split for clarity: `/admin/school-setup` is the overview hub, school details and year metadata use focused modals, `/admin/school-setup/years/[yearId]` manages one year's grade/section structure, and `/admin/school-setup/rollover` handles reviewed student placement. Activation stays on the overview as a separate confirmation. If a registrar or finance officer signs in before setup is complete, they should see:
 
 ```text
 Ask a school administrator to complete school setup first.
@@ -61,7 +61,7 @@ For the MVP, this matching uses the exact school name from admin registration. A
 
 The admin shell has a school-year selector for viewing data from any configured year. The selected year changes admin dashboard labels, student lists, fee/collection views, wallet/store pages, reports, and exports.
 
-Only one school year is still the active/current year. For MVP safety, operational writes such as new enrollments, fee assignments, reminders, tuition terms, wallet/store purchase recording, parent payments, and parent wallet top-ups continue to use the active year only. Upcoming or closed years are view/report contexts, except the School setup page where a school administrator can edit that year's sections, prepare rollover enrollments, and activate an upcoming year. Activating an upcoming year automatically closes the previous active year.
+Only one school year is still the active/current year. For MVP safety, operational writes such as new enrollments, fee assignments, reminders, tuition terms, wallet/store purchase recording, parent payments, and parent wallet top-ups continue to use the active year only. Upcoming or closed years are view/report contexts, except the dedicated School setup structure and rollover workflows where a school administrator can prepare future records. Activating an upcoming year automatically closes the previous active year.
 
 ## Practical Workflow
 

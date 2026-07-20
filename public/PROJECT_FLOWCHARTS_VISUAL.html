@@ -432,6 +432,7 @@ flowchart TD
         </div>
 
         <h3>Manual School Setup</h3>
+        <p>Implemented: first-time onboarding stays guided and combined. Ongoing management uses a concise School setup hub, focused school/year modals, a selected-year structure page, and a dedicated rollover page.</p>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="manual-school-setup.svg">Download SVG</button>
@@ -456,10 +457,10 @@ flowchart TD
   O --> P["Save schools, school_years, grade_levels, sections"]
   P --> Q["Update same-school admin_profiles.school_id"]
   Q --> R["Redirect back to dashboard"]
-  R --> S["Admin opens School setup overview when needed"]
-  S --> T["Review all years and selected-year structure"]
-  T --> U["Edit selected-year sections"]
-  U --> V["Prepare manual rollover if needed"]
+  R --> S["Admin opens School setup overview hub"]
+  S --> T["Edit school or year metadata in focused modals"]
+  T --> U["Open selected-year structure page"]
+  U --> V["Open dedicated rollover page if needed"]
   V --> W["Activate upcoming year when ready"]
   W --> X["Close previous active year"]
   X --> C
@@ -495,7 +496,7 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["School administrator opens School setup"] --> B["Choose source and upcoming target school year"]
+  A["School administrator opens dedicated rollover page"] --> B["Choose source and upcoming target school year"]
   B --> C["Generate next-grade and section suggestions"]
   C --> D["Select one or many students and review promote, repeat, or skip"]
   D --> E["Validate school administrator role and school ownership"]

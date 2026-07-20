@@ -82,6 +82,7 @@ Main purpose:
 - Let fees, sections, enrollments, and reports be grouped by school year.
 - Prevent duplicate school year names within the same school.
 - Support the School setup activation flow: an upcoming year can become active, and the previous active year is closed automatically.
+- Support focused management without new schema: the setup hub edits school/year metadata, the selected-year route manages grade levels and sections, and rollover creates reviewed enrollments only.
 
 ### `grade_levels`
 

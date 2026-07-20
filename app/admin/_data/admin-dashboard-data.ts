@@ -65,7 +65,15 @@ export const pageMeta: Record<string, PageMeta> = {
   },
   "/admin/school-setup": {
     title: "School setup",
-    subtitle: "School years, grade levels, and sections",
+    subtitle: "School identity, years, and setup health",
+  },
+  "/admin/school-setup/rollover": {
+    title: "Prepare next year",
+    subtitle: "Review and place students in an upcoming school year",
+  },
+  "/admin/school-setup/year-structure": {
+    title: "Year structure",
+    subtitle: "Grade levels and sections for one school year",
   },
   "/admin/tuition": {
     title: "Tuition report",

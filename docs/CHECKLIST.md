@@ -63,7 +63,9 @@ Done when: the full schema can be imported from a clean local database without e
 - [x] Link admin profiles to a real school record.
 - [x] Share the completed school context with same-school registrar and finance staff accounts.
 - [x] Support one or many school years with exactly one active school year.
-- [x] Add a School setup overview page for all school years and active-year structure.
+- [x] Add an overview-first School setup hub with school health, all-year counts, compact active-year structure, and focused quick actions.
+- [x] Move selected-year grade/section management to `/admin/school-setup/years/[yearId]` and reviewed rollover to `/admin/school-setup/rollover`.
+- [x] Use focused modals for school identity and school-year metadata while preserving the combined first-time onboarding form.
 - [x] Add an admin school-year selector for viewing historical/upcoming year data.
 - [x] Add school-year stamps to payments, wallet transactions, store transactions, and notification logs.
 - [x] Let School setup edit grade/section structure for a selected school year.

@@ -21,6 +21,12 @@ type SetupGradeInput = {
   sections: string[];
 };
 
+type SchoolYearStructureGradeInput = {
+  id: number | null;
+  name: string;
+  sections: Array<{ id: number | null; name: string }>;
+};
+
 type SetupSchoolYearInput = {
   name: string;
   startsOn: string;
@@ -124,6 +130,109 @@ export async function saveSchoolSetupAction(formData: FormData) {
   redirect(redirectTo === "/admin/onboarding/school-setup" ? "/admin/dashboard" : redirectTo);
 }
 
+export async function updateSchoolDetailsAction(formData: FormData) {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+  const schoolName = normalizeLabel(textValue(formData, "schoolName")).slice(0, 180);
+  const schoolCode = normalizeCode(textValue(formData, "schoolCode"));
+
+  if (!canManageSchoolSetup(staffRole)) {
+    await setupActionToast("School details not saved", "Only school administrators can change school details.");
+    redirect("/admin/dashboard");
+  }
+
+  if (!schoolName || !schoolCode) {
+    await setupActionToast("School details not saved", "Enter the school name and code.");
+    redirect("/admin/school-setup");
+  }
+
+  let connection: PoolConnection | null = null;
+
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    const profile = await getAdminProfileForUpdate(connection, session.userId);
+
+    if (!profile?.school_id) {
+      throw new Error("School setup is incomplete.");
+    }
+
+    await connection.execute(
+      `UPDATE schools
+       SET name = :schoolName, code = :schoolCode
+       WHERE id = :schoolId`,
+      { schoolId: profile.school_id, schoolName, schoolCode },
+    );
+    await connection.execute(
+      `UPDATE admin_profiles
+       SET school_name = :schoolName
+       WHERE school_id = :schoolId`,
+      { schoolId: profile.school_id, schoolName },
+    );
+    await connection.commit();
+    revalidateAdminSchoolYearPaths();
+    await setupActionToast("School details saved", "The school name and code are up to date.");
+  } catch {
+    await connection?.rollback().catch(() => undefined);
+    await setupActionToast("School details not saved", "Use a unique school code and try again.");
+  } finally {
+    connection?.release();
+  }
+
+  redirect("/admin/school-setup");
+}
+
+export async function createSchoolYearAction(formData: FormData) {
+  await saveSchoolYearMetadata(formData, "create");
+}
+
+export async function updateSchoolYearAction(formData: FormData) {
+  await saveSchoolYearMetadata(formData, "update");
+}
+
+export async function saveSchoolYearStructureAction(formData: FormData) {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+  const schoolYearId = positiveIntegerValue(formData, "schoolYearId");
+  const grades = parseSchoolYearStructure(textValue(formData, "gradeSetup"));
+  const redirectTo = schoolYearId ? `/admin/school-setup/years/${schoolYearId}` : "/admin/school-setup";
+
+  if (!canManageSchoolSetup(staffRole)) {
+    await setupActionToast("Structure not saved", "Only school administrators can manage grades and sections.");
+    redirect("/admin/dashboard");
+  }
+
+  if (!schoolYearId || grades.length === 0 || grades.some((grade) => grade.sections.length === 0)) {
+    await setupActionToast("Structure not saved", "Add at least one grade and one section for every grade.");
+    redirect(redirectTo);
+  }
+
+  let connection: PoolConnection | null = null;
+
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    const profile = await getAdminProfileForUpdate(connection, session.userId);
+
+    if (!profile?.school_id || !(await schoolYearBelongsToSchool(connection, profile.school_id, schoolYearId))) {
+      throw new Error("Choose a valid school year for this school.");
+    }
+
+    await saveFocusedSchoolYearStructure(connection, profile.school_id, schoolYearId, grades);
+    await connection.commit();
+    revalidatePath(redirectTo);
+    revalidatePath("/admin/school-setup");
+    await setupActionToast("Year structure saved", "Grades and sections are ready for this school year.");
+  } catch {
+    await connection?.rollback().catch(() => undefined);
+    await setupActionToast("Structure not saved", "Check the grade and section names, then try again.");
+  } finally {
+    connection?.release();
+  }
+
+  redirect(redirectTo);
+}
+
 export async function prepareSchoolYearRolloverAction(formData: FormData) {
   const session = await requireRole("admin");
   const staffRole = await getAdminStaffRole(session.userId);
@@ -147,7 +256,7 @@ export async function prepareSchoolYearRolloverAction(formData: FormData) {
       title: "Rollover not saved",
       description: "Review at least one student placement and choose both school years.",
     });
-    redirect("/admin/school-setup");
+    redirect("/admin/school-setup/rollover");
   }
 
   let connection: PoolConnection | null = null;
@@ -202,7 +311,7 @@ export async function prepareSchoolYearRolloverAction(formData: FormData) {
     connection?.release();
   }
 
-  redirect("/admin/school-setup");
+  redirect("/admin/school-setup/rollover");
 }
 
 function rolloverSummary(result: Awaited<ReturnType<typeof applyRolloverPromotions>>) {
@@ -325,6 +434,95 @@ export async function activateSchoolYearAction(formData: FormData) {
   redirect("/admin/school-setup");
 }
 
+async function saveSchoolYearMetadata(formData: FormData, mode: "create" | "update") {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+  const schoolYearId = positiveIntegerValue(formData, "schoolYearId");
+  const name = normalizeLabel(textValue(formData, "name")).slice(0, 40);
+  const startsOn = normalizeDate(textValue(formData, "startsOn"));
+  const endsOn = normalizeDate(textValue(formData, "endsOn"));
+  const title = mode === "create" ? "School year not added" : "School year not updated";
+
+  if (!canManageSchoolSetup(staffRole)) {
+    await setupActionToast(title, "Only school administrators can manage school years.");
+    redirect("/admin/dashboard");
+  }
+
+  if (!name || !startsOn || !endsOn || new Date(startsOn) >= new Date(endsOn) || (mode === "update" && !schoolYearId)) {
+    await setupActionToast(title, "Enter a unique year name and a valid date range.");
+    redirect("/admin/school-setup");
+  }
+
+  let connection: PoolConnection | null = null;
+
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    const profile = await getAdminProfileForUpdate(connection, session.userId);
+
+    if (!profile?.school_id) {
+      throw new Error("School setup is incomplete.");
+    }
+
+    if (mode === "create") {
+      await connection.execute(
+        `INSERT INTO school_years (school_id, name, starts_on, ends_on, status)
+         VALUES (:schoolId, :name, :startsOn, :endsOn, 'upcoming')`,
+        { schoolId: profile.school_id, name, startsOn, endsOn },
+      );
+    } else {
+      const [result] = await connection.execute<ResultSetHeader>(
+        `UPDATE school_years
+         SET name = :name, starts_on = :startsOn, ends_on = :endsOn
+         WHERE id = :schoolYearId AND school_id = :schoolId`,
+        { schoolId: profile.school_id, schoolYearId, name, startsOn, endsOn },
+      );
+
+      if (result.affectedRows === 0) {
+        throw new Error("School year was not found.");
+      }
+    }
+
+    await connection.commit();
+    revalidatePath("/admin/school-setup");
+    if (schoolYearId) {
+      revalidatePath(`/admin/school-setup/years/${schoolYearId}`);
+    }
+    await setupActionToast(
+      mode === "create" ? "School year added" : "School year updated",
+      mode === "create" ? `${name} is ready for structure setup.` : `${name} details are up to date.`,
+    );
+  } catch {
+    await connection?.rollback().catch(() => undefined);
+    await setupActionToast(title, "Use a unique school-year name and try again.");
+  } finally {
+    connection?.release();
+  }
+
+  redirect("/admin/school-setup");
+}
+
+async function schoolYearBelongsToSchool(
+  connection: PoolConnection,
+  schoolId: number,
+  schoolYearId: number,
+) {
+  const [rows] = await connection.execute<Array<RowDataPacket & { id: number }>>(
+    `SELECT id
+     FROM school_years
+     WHERE id = :schoolYearId AND school_id = :schoolId
+     LIMIT 1
+     FOR UPDATE`,
+    { schoolId, schoolYearId },
+  );
+
+  return Boolean(rows[0]);
+}
+
+async function setupActionToast(title: string, description: string) {
+  await setAuthFlashToast({ role: "admin", title, description });
+}
+
 function parseSchoolSetupForm(formData: FormData) {
   const schoolName = textValue(formData, "schoolName");
   const schoolCode = normalizeCode(textValue(formData, "schoolCode"));
@@ -420,6 +618,40 @@ function parseGradeSetup(value: string) {
   } catch {
     return [];
   }
+}
+
+function parseSchoolYearStructure(value: string): SchoolYearStructureGradeInput[] {
+  try {
+    const parsed = JSON.parse(value) as Array<{
+      id?: unknown;
+      name?: unknown;
+      sections?: Array<{ id?: unknown; name?: unknown }>;
+    }>;
+    const seenGrades = new Set<string>();
+
+    return parsed.map((grade) => {
+      const name = normalizeLabel(String(grade.name ?? ""));
+      const sections = Array.isArray(grade.sections)
+        ? grade.sections.map((section) => ({
+            id: positiveInteger(section.id),
+            name: normalizeLabel(String(section.name ?? "")),
+          })).filter((section) => Boolean(section.name))
+        : [];
+      const key = name.toLowerCase();
+      if (!name || seenGrades.has(key) || new Set(sections.map((section) => section.name.toLowerCase())).size !== sections.length) {
+        throw new Error("Invalid or duplicate grade/section names.");
+      }
+      seenGrades.add(key);
+      return { id: positiveInteger(grade.id), name, sections };
+    });
+  } catch {
+    return [];
+  }
+}
+
+function positiveInteger(value: unknown) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function textValue(formData: FormData, key: string) {
@@ -702,6 +934,60 @@ async function ensureSections(
           name: sectionName,
         },
       );
+    }
+  }
+}
+
+async function saveFocusedSchoolYearStructure(
+  connection: PoolConnection,
+  schoolId: number,
+  schoolYearId: number,
+  grades: SchoolYearStructureGradeInput[],
+) {
+  for (const [index, grade] of grades.entries()) {
+    let gradeLevelId = grade.id;
+
+    if (gradeLevelId) {
+      const [ownedGrades] = await connection.execute<Array<RowDataPacket & { id: number }>>(
+        "SELECT id FROM grade_levels WHERE id = :gradeLevelId AND school_id = :schoolId LIMIT 1 FOR UPDATE",
+        { gradeLevelId, schoolId },
+      );
+      if (!ownedGrades[0]) throw new Error("Grade level does not belong to this school.");
+      await connection.execute(
+        "UPDATE grade_levels SET name = :name, sort_order = :sortOrder WHERE id = :gradeLevelId AND school_id = :schoolId",
+        { gradeLevelId, schoolId, name: grade.name, sortOrder: index + 1 },
+      );
+    } else {
+      const [result] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO grade_levels (school_id, name, sort_order)
+         VALUES (:schoolId, :name, :sortOrder)
+         ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order), id = LAST_INSERT_ID(id)`,
+        { schoolId, name: grade.name, sortOrder: index + 1 },
+      );
+      gradeLevelId = Number(result.insertId);
+    }
+
+    for (const section of grade.sections) {
+      if (section.id) {
+        const [ownedSections] = await connection.execute<Array<RowDataPacket & { id: number }>>(
+          `SELECT id FROM sections
+           WHERE id = :sectionId AND school_id = :schoolId AND school_year_id = :schoolYearId
+           LIMIT 1 FOR UPDATE`,
+          { sectionId: section.id, schoolId, schoolYearId },
+        );
+        if (!ownedSections[0]) throw new Error("Section does not belong to this school year.");
+        await connection.execute(
+          `UPDATE sections SET grade_level_id = :gradeLevelId, name = :name
+           WHERE id = :sectionId AND school_id = :schoolId AND school_year_id = :schoolYearId`,
+          { sectionId: section.id, schoolId, schoolYearId, gradeLevelId, name: section.name },
+        );
+      } else {
+        await connection.execute(
+          `INSERT INTO sections (school_id, school_year_id, grade_level_id, name)
+           VALUES (:schoolId, :schoolYearId, :gradeLevelId, :name)`,
+          { schoolId, schoolYearId, gradeLevelId, name: section.name },
+        );
+      }
     }
   }
 }

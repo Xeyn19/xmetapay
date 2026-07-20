@@ -39,9 +39,12 @@ export function AdminShell({
   const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const selectedStudentProfilePath = /^\/admin\/students\/\d+$/.test(pathname);
+  const schoolYearStructurePath = /^\/admin\/school-setup\/years\/\d+$/.test(pathname);
   const meta = selectedStudentProfilePath
     ? pageMeta["/admin/student-profile"]
-    : pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
+    : schoolYearStructurePath
+      ? pageMeta["/admin/school-setup/year-structure"]
+      : pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
   const subtitle = dashboardSubtitle(meta.subtitle, schoolContext);
   const schoolYear = schoolContext.selectedSchoolYear?.name
     ?? schoolContext.activeSchoolYear?.name
@@ -136,7 +139,8 @@ export function AdminShell({
                 {section.items.map((item) => {
                   const active = pathname === item.href
                     || (pathname === "/admin" && item.href === "/admin/dashboard")
-                    || (selectedStudentProfilePath && item.href === "/admin/student-profile");
+                    || (selectedStudentProfilePath && item.href === "/admin/student-profile")
+                    || (item.href === "/admin/school-setup" && pathname.startsWith("/admin/school-setup/"));
                   const Icon = item.icon;
                   return (
                     <Link
