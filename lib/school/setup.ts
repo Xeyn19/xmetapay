@@ -92,6 +92,19 @@ export type AdminSchoolSetupOverview = {
   }>;
 };
 
+export type AdminSchoolYearStructure = {
+  schoolName: string;
+  schoolYear: AdminSchoolYearOption;
+  grades: Array<{
+    id: number;
+    name: string;
+    sections: Array<{
+      id: number;
+      name: string;
+    }>;
+  }>;
+};
+
 export type AdminSchoolRolloverData = {
   ready: boolean;
   warning: string | null;
@@ -461,6 +474,35 @@ export async function getAdminSchoolSetupFormData(
   }
 }
 
+export async function getAdminSchoolYearStructure(
+  userId: number,
+  schoolYearId: number,
+): Promise<AdminSchoolYearStructure | null> {
+  try {
+    const profile = await getAdminProfile(userId);
+    const school = profile ? await resolveSchoolForProfile(profile) : null;
+
+    if (!school) {
+      return null;
+    }
+
+    const schoolYears = await getSchoolYearRows(school.id);
+    const schoolYear = schoolYears.find((year) => year.id === schoolYearId);
+
+    if (!schoolYear) {
+      return null;
+    }
+
+    return {
+      schoolName: school.name,
+      schoolYear,
+      grades: await getGradeSectionStructureRows(school.id, schoolYear.id),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getAdminSchoolRolloverData(userId: number): Promise<AdminSchoolRolloverData> {
   try {
     const profile = await getAdminProfile(userId);
@@ -826,6 +868,26 @@ async function getGradeSectionRows(schoolId: number, schoolYearId: number) {
     name: grade.name,
     sections: grade.sections.length > 0 ? grade.sections : [""],
   }));
+}
+
+async function getGradeSectionStructureRows(schoolId: number, schoolYearId: number) {
+  const [rows] = await pool.execute<Array<GradeSectionRow & { section_id: number | null }>>(
+    `SELECT gl.id, gl.name AS grade_name, sec.id AS section_id, sec.name AS section_name
+     FROM grade_levels gl
+     LEFT JOIN sections sec ON sec.grade_level_id = gl.id AND sec.school_year_id = :schoolYearId
+     WHERE gl.school_id = :schoolId
+     ORDER BY gl.sort_order ASC, gl.name ASC, sec.name ASC`,
+    { schoolId, schoolYearId },
+  );
+  const grades = new Map<number, AdminSchoolYearStructure["grades"][number]>();
+
+  for (const row of rows) {
+    const grade = grades.get(row.id) ?? { id: row.id, name: row.grade_name, sections: [] };
+    if (row.section_id && row.section_name) grade.sections.push({ id: row.section_id, name: row.section_name });
+    grades.set(row.id, grade);
+  }
+
+  return [...grades.values()];
 }
 
 function emptySetupFormData(schoolName: string): AdminSchoolSetupFormData {

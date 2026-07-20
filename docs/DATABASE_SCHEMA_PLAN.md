@@ -132,7 +132,7 @@ CREATE TABLE schools (
 
 #### `school_years`
 
-Stores one or many school years per school. One row should be `active` for the live dashboard, future rows can be `upcoming`, and old rows can be `closed`. The School setup activation flow turns an upcoming year into the active year and closes the previous active year.
+Stores one or many school years per school. One row should be `active` for the live dashboard, future rows can be `upcoming`, and old rows can be `closed`. The overview-first setup hub and focused year-structure/rollover routes reuse these records, so the management UX adds no table or column. Activation turns an upcoming year into the active year and closes the previous active year.
 
 ```sql
 CREATE TABLE school_years (
