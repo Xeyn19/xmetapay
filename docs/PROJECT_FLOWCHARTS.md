@@ -53,6 +53,7 @@ Implemented:
 - Parent selected student profile recent wallet/store activity from MySQL.
 - Admin allowance total balance is calculated from the current `wallets.balance` values, counting each wallet once.
 - Admin allowance ledger shows real monthly top-up stats and segmented wallet-balance filters.
+- Admin allowance ledger supports reversible Active/Archived wallet-summary views scoped to the selected school year. Archive does not disable wallets or alter parent history, balances, transactions, KPIs, or reports.
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - Admin CSV and PDF report exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity.
@@ -629,6 +630,8 @@ flowchart TD
   P --> Q["Create store_transactions row"]
   Q --> R["Parent sees spending in wallet history"]
   Q --> R2["Parent dashboard shows recent store spending"]
+  I --> U["Admin may archive selected-year wallet summary"]
+  U --> V["Wallet remains active and parent-visible"]
   Q --> R3["Selected student profile shows that student's store spending"]
   Q --> S["Admin sees store transaction report"]
   S --> T["Admin allowance total sums each wallet balance once"]
@@ -638,6 +641,7 @@ Database touchpoints:
 
 - `wallets`
 - `wallet_transactions`
+- `wallet_ledger_archives`
 - `store_merchants`
 - `store_transactions`
 - `payments`
@@ -646,6 +650,7 @@ Data accuracy rule:
 
 - Admin allowance `Total balance` should sum the current `wallets.balance` once per wallet.
 - Admin allowance `Top-ups this month` should sum current-month wallet top-up ledger rows.
+- Allowance archive/restore changes only year-scoped `wallet_ledger_archives` metadata. Current wallet balances and operational history remain unchanged and included in KPIs and reports.
 - Wallet transaction rows are used for top-up history, store purchase history, monthly spend, parent dashboard wallet activity, selected student profile wallet activity, and store reports.
 - Parent payment history stays payment-only; store purchases appear in wallet history, the dashboard wallet activity snapshot, and the selected student profile wallet activity snapshot.
 - Do not calculate total wallet balance by summing joined wallet/transaction rows, because a wallet with multiple transactions would be counted more than once.

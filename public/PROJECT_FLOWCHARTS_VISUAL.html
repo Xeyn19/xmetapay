@@ -256,6 +256,7 @@
           <span class="pill">Reminder history</span>
           <span class="pill">Accurate wallet totals</span>
           <span class="pill">Allowance balance filters</span>
+          <span class="pill">Allowance archive and restore</span>
         </div>
         <div class="links">
           <a href="PROJECT_FLOWCHARTS.md">Markdown version</a>
@@ -769,6 +770,8 @@ flowchart TD
   P --> Q["Create store_transactions row"]
   Q --> R["Parent sees spending in wallet history"]
   Q --> R2["Parent dashboard shows recent store spending"]
+  I --> U["Admin archives selected-year wallet summary"]
+  U --> V["Wallet stays usable and parent-visible"]
   Q --> R3["Selected student profile shows that student's store spending"]
   Q --> S["Admin sees store transaction report"]
   S --> T["Admin allowance total sums each wallet balance once"]

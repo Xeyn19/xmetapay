@@ -528,6 +528,23 @@ CREATE TABLE wallet_transactions (
 );
 ```
 
+#### `wallet_ledger_archives`
+
+Keeps Allowance ledger archive state separate from the operational wallet and scoped to one school year.
+
+```sql
+CREATE TABLE wallet_ledger_archives (
+  wallet_id BIGINT UNSIGNED NOT NULL,
+  school_year_id BIGINT UNSIGNED NOT NULL,
+  archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (wallet_id, school_year_id),
+  KEY idx_wallet_ledger_archives_year_archived_wallet (school_year_id, archived_at, wallet_id),
+  CONSTRAINT fk_wallet_ledger_archives_wallet FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_wallet_ledger_archives_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE CASCADE
+);
+```
+
 Dashboard calculation note:
 
 - `wallets.balance` stores the current student allowance balance.
@@ -537,6 +554,7 @@ Dashboard calculation note:
 - New wallet top-up and purchase ledger rows store `school_year_id` for selected-year admin reporting.
 - Store purchases stay out of parent payment history because they are wallet ledger events, not payment records.
 - Avoid summing `wallets.balance` after joining to `wallet_transactions`, because multiple ledger rows for the same wallet can duplicate the displayed total.
+- `wallet_ledger_archives` supports reversible Active/Archived Allowance views for the selected year only. It is excluded from wallet writes, balances, KPIs, parent history, and official reports.
 
 ### Store And Canteen
 
@@ -641,7 +659,7 @@ Use indexes based on the screens and workflows in the app.
 | Tuition collections log | `payments(school_id, school_year_id, archived_at, paid_at)` plus `payment_allocations`/`payment_term_allocations` and tuition `fee_types` |
 | Parent payment history | `payments(payer_user_id, paid_at)` |
 | Student payment history | `payments(student_id, paid_at)` |
-| Wallet ledger | `wallet_transactions(wallet_id, created_at)` |
+| Wallet ledger | `wallet_transactions(wallet_id, created_at)`; selected-year admin archive view uses `wallet_ledger_archives(school_year_id, archived_at, wallet_id)` |
 | Store report | `store_transactions(student_id, purchased_at)`, `store_transactions(merchant_id, purchased_at)` |
 | Notification history | `notification_logs(school_id, type, created_at)` |
 
@@ -814,7 +832,7 @@ flowchart TD
 4. Add enrollment tables: `enrollments`, `enrollment_documents`.
 5. Add fee tables: `fee_types`, `student_fee_assignments`.
 6. Add payment and receipt tables: `payments`, `payment_allocations`, `receipts`.
-7. Add wallet tables: `wallets`, `wallet_transactions`.
+7. Add wallet tables: `wallets`, `wallet_transactions`, `wallet_ledger_archives`.
 8. Add store tables: `store_merchants`, `store_transactions`.
 9. Use notification logs for SMTP email payment reminder delivery and queued/sent/failed history.
 10. Build CSV and PDF report exports from existing operational queries, plus filtered-row table exports from loaded dashboard data, instead of adding report storage tables.

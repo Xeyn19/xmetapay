@@ -305,6 +305,15 @@ Dashboard calculation note:
 - Store purchases should not be mixed into parent payment history because they do not create fee payment or receipt records.
 - Do not sum `wallets.balance` after joining directly to `wallet_transactions`, because one wallet can have many transaction rows and the balance would be duplicated.
 
+### `wallet_ledger_archives`
+
+Stores reversible admin-view organization for one wallet in one school year.
+
+- The composite wallet/year key prevents duplicate archive metadata.
+- Archive does not freeze or close a wallet and never changes its balance.
+- Parent wallet history, top-ups, store purchases, KPIs, and official reports ignore this metadata.
+- Restoring removes only the selected-year archive marker; the wallet and ledger remain authoritative throughout.
+
 ## Store And Canteen Tables
 
 ### `store_merchants`
@@ -399,7 +408,7 @@ The schema supports this practical backend flow:
 - `payment_allocations` applies payment money to student balances.
 - `payment_term_allocations` applies payment money to tuition installment terms.
 - `receipts` documents paid payments.
-- `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, full wallet ledger history, and the school year for new ledger rows.
+- `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, full wallet ledger history, and the school year for new ledger rows. `wallet_ledger_archives` only controls selected-year admin Allowance ledger visibility.
 - `store_transactions` records wallet spending at school merchants and stores the school year for new purchase rows.
 - Report CSV and PDF exports read from operational tables and do not require separate report storage tables.
 - `notification_logs` records communication history and stores the school year for new reminder rows.
