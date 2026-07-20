@@ -407,12 +407,14 @@ CREATE TABLE payments (
   amount DECIMAL(10,2) NOT NULL,
   status ENUM('pending', 'paid', 'failed', 'voided', 'refunded') NOT NULL DEFAULT 'pending',
   paid_at DATETIME NULL,
+  archived_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   UNIQUE KEY uq_payments_reference_number (reference_number),
   KEY idx_payments_school_status_paid_at (school_id, status, paid_at),
   KEY idx_payments_school_year_status_paid_at (school_id, school_year_id, status, paid_at),
+  KEY idx_payments_school_year_archive_paid_at (school_id, school_year_id, archived_at, paid_at),
   KEY idx_payments_student_paid_at (student_id, paid_at),
   KEY idx_payments_payer_paid_at (payer_user_id, paid_at),
   CONSTRAINT fk_payments_school FOREIGN KEY (school_id) REFERENCES schools(id),
@@ -422,7 +424,7 @@ CREATE TABLE payments (
 );
 ```
 
-`school_year_id` is nullable for older migrated records, but new payment writes store the active school year so admin selected-year reports do not have to guess from related allocation rows.
+`school_year_id` is nullable for older migrated records, but new payment writes store the active school year so admin selected-year reports do not have to guess from related allocation rows. `archived_at` powers reversible active/archived Tuition collection log views only; payment status, allocations, receipts, balances, official reports, and parent history remain authoritative and unchanged.
 
 #### `payment_allocations`
 
@@ -636,7 +638,7 @@ Use indexes based on the screens and workflows in the app.
 | Student guardian list | `student_guardians(student_id, is_primary)` |
 | Fee summary | `student_fee_assignments(student_id, status, due_date)` |
 | Tuition report | `student_fee_assignments(school_year_id, status, due_date)` |
-| Tuition collections log | `payments(school_id, status, paid_at)` plus `payment_allocations`/`payment_term_allocations` and tuition `fee_types` |
+| Tuition collections log | `payments(school_id, school_year_id, archived_at, paid_at)` plus `payment_allocations`/`payment_term_allocations` and tuition `fee_types` |
 | Parent payment history | `payments(payer_user_id, paid_at)` |
 | Student payment history | `payments(student_id, paid_at)` |
 | Wallet ledger | `wallet_transactions(wallet_id, created_at)` |

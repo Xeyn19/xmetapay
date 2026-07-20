@@ -574,7 +574,13 @@ flowchart TD
   N --> O
   O --> P["Parent sees real receipt and payment history"]
   P --> Q["Admin dashboard and tuition collections read the same tuition payment records"]
+  Q --> R["Collection log defaults to active records"]
+  R -->|Archive| S["Set payments.archived_at without changing financial data"]
+  S -->|Restore| R
+  Q --> T["KPIs and official reports continue reading all tuition payments"]
 ```
+
+- The Tuition collection log supports reversible row and bulk archive/restore. Archive changes only `payments.archived_at`; official totals, reports, receipts, balances, allocations, and parent history continue reading the complete payment record.
 
 Database touchpoints:
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { RowDataPacket } from "mysql2/promise";
+import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 
@@ -11,6 +11,7 @@ export type TuitionCollectionRow = RowDataPacket & {
   channel: string;
   status: string;
   paid_at: Date | string | null;
+  archived_at: Date | string | null;
   created_at: Date | string;
   first_name: string;
   middle_name: string | null;
@@ -27,6 +28,12 @@ export type TuitionCollectionSummary = RowDataPacket & {
   paid_amount: number | string;
 };
 
+export type TuitionCollectionArchiveScope = "active" | "archived" | "all";
+
+export type TuitionCollectionQueryOptions = {
+  archiveScope?: TuitionCollectionArchiveScope;
+  limit?: number;
+};
 const tuitionPaymentScope = `
   p.school_id = :schoolId
   AND (
@@ -77,10 +84,22 @@ export async function getTuitionCollectionSummary(schoolId: number, schoolYearId
   };
 }
 
-export async function getTuitionCollectionRows(schoolId: number, schoolYearId: number, limit?: number) {
-  const limitClause = typeof limit === "number" ? `LIMIT ${Math.max(1, Math.floor(limit))}` : "";
+export async function getTuitionCollectionRows(
+  schoolId: number,
+  schoolYearId: number,
+  options: TuitionCollectionQueryOptions = {},
+) {
+  const archiveScope = options.archiveScope ?? "all";
+  const archiveFilter = archiveScope === "active"
+    ? "AND p.archived_at IS NULL"
+    : archiveScope === "archived"
+      ? "AND p.archived_at IS NOT NULL"
+      : "";
+  const limitClause = typeof options.limit === "number"
+    ? `LIMIT ${Math.max(1, Math.floor(options.limit))}`
+    : "";
   const [rows] = await pool.execute<TuitionCollectionRow[]>(
-    `SELECT p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
+    `SELECT p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.archived_at, p.created_at,
        st.first_name, st.middle_name, st.last_name,
        gl.name AS grade_name,
        COALESCE(
@@ -106,7 +125,8 @@ export async function getTuitionCollectionRows(schoolId: number, schoolYearId: n
        ON term_ft.id = term_sfa.fee_type_id
       AND term_ft.category = 'tuition'
      WHERE ${tuitionPaymentScope}
-     GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
+       ${archiveFilter}
+     GROUP BY p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.archived_at, p.created_at,
        st.first_name, st.middle_name, st.last_name, gl.name
      ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC
      ${limitClause}`,
@@ -114,4 +134,52 @@ export async function getTuitionCollectionRows(schoolId: number, schoolYearId: n
   );
 
   return rows;
+}
+
+export async function updateTuitionCollectionArchiveState({
+  schoolId,
+  schoolYearId,
+  paymentIds,
+  operation,
+}: {
+  schoolId: number;
+  schoolYearId: number;
+  paymentIds: number[];
+  operation: "archive" | "restore";
+}) {
+  const params: Record<string, number> = { schoolId, schoolYearId };
+  const placeholders = paymentIds.map((paymentId, index) => {
+    const key = `paymentId${index}`;
+    params[key] = paymentId;
+    return `:${key}`;
+  });
+  const archiveAssignment = operation === "archive" ? "CURRENT_TIMESTAMP" : "NULL";
+
+  const [eligibleRows] = await pool.execute<Array<RowDataPacket & { id: number }>>(
+    `SELECT p.id
+     FROM payments p
+     WHERE p.id IN (${placeholders.join(", ")})
+       AND ${tuitionPaymentScope}`,
+    params,
+  );
+
+  const eligibleIds = eligibleRows.map((row) => Number(row.id));
+  if (eligibleIds.length === 0) return 0;
+
+  const updateParams: Record<string, number> = { schoolId };
+  const updatePlaceholders = eligibleIds.map((paymentId, index) => {
+    const key = `eligiblePaymentId${index}`;
+    updateParams[key] = paymentId;
+    return `:${key}`;
+  });
+
+  await pool.execute<ResultSetHeader>(
+    `UPDATE payments
+     SET archived_at = ${archiveAssignment}
+     WHERE school_id = :schoolId
+       AND id IN (${updatePlaceholders.join(", ")})`,
+    updateParams,
+  );
+
+  return eligibleIds.length;
 }

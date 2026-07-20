@@ -231,9 +231,10 @@ Main purpose:
 - Optionally record which parent user paid.
 - Store the school year for new payment history rows.
 - Store payment channel, amount, status, and paid timestamp.
+- Store `archived_at` only for reversible Tuition collection log organization.
 - Use a unique reference number for tracking.
 
-Payment status starts as pending and can become paid, failed, voided, or refunded.
+Payment status starts as pending and can become paid, failed, voided, or refunded. Archiving does not create another payment status and never changes allocations, receipts, balances, official report totals, or parent history.
 `school_year_id` is nullable for migrated history, but new payment writes store the active school year.
 
 ### `payment_allocations`
@@ -337,7 +338,7 @@ Reports are generated from operational tables rather than stored in separate rep
 Current implemented CSV and PDF report exports:
 
 - Monthly revenue from paid `payments`.
-- Tuition collections from `payments` linked through `payment_allocations` or `payment_term_allocations` to tuition `fee_types` and `students`. Wallet-only payments are intentionally excluded from this view.
+- Tuition collections from `payments` linked through `payment_allocations` or `payment_term_allocations` to tuition `fee_types` and `students`. Wallet-only payments are intentionally excluded. The Collection log can organize these rows through reversible `payments.archived_at`, while official report exports continue including active and archived payments.
 - Outstanding balances from `student_fee_assignments`, `fee_types`, and enrollment context.
 - Wallet and store activity from `wallet_transactions`, `wallets`, `store_transactions`, and `store_merchants`.
 

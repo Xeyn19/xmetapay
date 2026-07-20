@@ -44,6 +44,10 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Keeps every delivery status, message, recipient, and sent timestamp unchanged.
    - Safe to import more than once.
 
+12. If `full-schema-v1.sql` was already imported before Collection log archiving was added, import `migrations/2026-07-20-payment-collection-archive.sql`.
+   - Adds nullable `payments.archived_at` and its selected-year archive index.
+   - Archive only organizes the admin Tuition collection log; payment status, allocations, receipts, reports, balances, and parent history stay unchanged.
+   - Safe to import more than once.
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.
