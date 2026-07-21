@@ -205,6 +205,19 @@ This table is the main source for outstanding balances.
 
 The parent-facing payment deadline comes from `student_fee_assignments.due_date`, even when a tuition assignment has installment terms. When terms exist, `tuition_payment_terms.due_date` is shown as installment schedule detail.
 
+### `parent_fee_summary_archives`
+
+Stores reversible Fee summary visibility separately for each parent account.
+
+Main purpose:
+
+- Link one parent user to one settled `student_fee_assignments` row they archived.
+- Let another guardian linked to the same student keep an independent Fee summary view.
+- Keep metrics, balances, payment eligibility, tuition terms, parent history, and admin reporting based on the original financial records.
+- Restore a row by removing only its parent-specific archive metadata.
+
+Only paid or zero-balance assignments can be archived. Open and partial obligations remain visible in Current fees.
+
 ### `tuition_payment_terms`
 
 Stores per-student tuition installment schedules.

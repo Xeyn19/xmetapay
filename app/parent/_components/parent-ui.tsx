@@ -151,13 +151,15 @@ export function FeeRow({
 export function ParentTable({
   headers,
   children,
+  tableClassName,
 }: {
   headers: Array<{ label: string; className?: string }>;
   children: ReactNode;
+  tableClassName?: string;
 }) {
   return (
     <div className="overflow-x-auto overscroll-x-contain">
-      <table className="min-w-[680px] w-full table-fixed border-collapse text-[13px]">
+      <table className={cn("min-w-[680px] w-full table-fixed border-collapse text-[13px]", tableClassName)}>
         <thead>
           <tr>
             {headers.map((header) => (

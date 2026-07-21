@@ -54,6 +54,11 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Archive only organizes the selected-year admin Allowance ledger; wallet status, balance, transactions, parent history, KPIs, and reports stay unchanged.
    - Safe to import more than once.
 
+14. If `full-schema-v1.sql` was already imported before parent Fee summary archiving was added, import `migrations/2026-07-21-parent-fee-summary-archive.sql`.
+   - Adds parent-specific `parent_fee_summary_archives` metadata.
+   - Only settled fees can be archived. Fee assignments, balances, tuition terms, payments, admin views, and another guardian's view remain unchanged.
+   - Safe to import more than once.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.
