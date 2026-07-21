@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scalable Feature Design"
+  short_description: "Design maintainable XMETA Pay features safely"
+  default_prompt: "Use $scalable-feature-design to design and implement this XMETA Pay feature with scalable, maintainable boundaries."
