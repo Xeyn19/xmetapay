@@ -317,7 +317,7 @@
             <tr>
               <td>Enrollment</td>
               <td><code>enrollments</code>, <code>enrollment_documents</code></td>
-              <td>Year-specific enrollment status, grade/section assignment, and student type (<code>new</code>, <code>transferee</code>, or <code>returned</code>). Student master records also keep reusable sex data; age is derived from birthdate. Rollover and bulk enrollment create only reviewed or selected enrollment rows, never duplicate student identity or guardian-link data.</td>
+              <td>Year-specific enrollment status, grade/section assignment, and student type (<code>new</code>, <code>transferee</code>, or <code>returned</code>). The unified Add students chooser supports one new student, batch-new shared defaults with per-row overrides, and existing-student enrollment without changing the schema. Rollover and bulk enrollment create only reviewed or selected enrollment rows, never duplicate student identity or guardian-link data.</td>
             </tr>
             <tr>
               <td>Fees</td>
@@ -640,12 +640,14 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Admin opens students page"] --> B{"Add one student or multiple?"}
-  B -->|Single| C["Create one student record"]
-  B -->|Batch| D["Validate each student row"]
+  A["Admin opens students page"] --> B["Open unified Add students chooser"]
+  B -->|One new| C["Create one student record"]
+  B -->|Multiple new| D["Apply shared defaults and validate each student row"]
+  B -->|Existing| D1["Create only missing active-year enrollments"]
   D --> E["Create valid student records"]
   C --> F["Create enrollment for active school year"]
   E --> F
+  D1 --> F
   F --> G["Assign grade level and section"]
   G --> H["Student appears in admin student table"]
   H --> I["Student profile selector links to /admin/students/studentId"]

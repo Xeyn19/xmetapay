@@ -244,7 +244,7 @@ Stores a student's enrollment per school year.
 
 The school-year rollover workflow lets an administrator explicitly select one or many source-year students, review per-student promote, repeat, or skip decisions, and insert new target-year enrollments only for checked promote/repeat rows. The shared `students` record and all year-specific fee, payment, wallet, store, and reminder records remain separate.
 
-For an existing student who is Pending in the active year, the admin can select one or many students in the bulk enrollment workflow and create only the missing `enrollments` rows. The workflow never inserts a second `students` row or re-enters identity and guardian-link data.
+The admin uses one Add students chooser for three focused workflows: one new student, multiple new students with optional shared grade/section/student-type defaults and per-row overrides, or one/many existing Pending students. Existing-student enrollment creates only missing `enrollments` rows and never inserts a second `students` row or re-enters identity and guardian-link data. This workflow organization requires no schema change.
 
 ```sql
 CREATE TABLE enrollments (
@@ -740,12 +740,14 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A["Admin opens students page"] --> B{"Add one student or multiple?"}
-  B -->|Single| C["Create one student record"]
-  B -->|Batch| D["Validate each student row"]
+  A["Admin opens students page"] --> B["Open unified Add students chooser"]
+  B -->|One new| C["Create one student record"]
+  B -->|Multiple new| D["Apply shared defaults and validate each student row"]
+  B -->|Existing| D1["Create only missing active-year enrollments"]
   D --> E["Create valid student records"]
   C --> F["Create enrollment for active school year"]
   E --> F
+  D1 --> F
   F --> G["Assign grade level and section"]
   G --> H["Student appears in admin student table"]
   H --> I["Student profile selector links to /admin/students/studentId"]

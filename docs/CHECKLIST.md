@@ -83,7 +83,7 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 
 - [x] Add backend helpers for `students` and `student_guardians`.
 - [x] Create an admin flow for adding or listing students.
-- [x] Support quick single-student enrollment and validated multi-student batch enrollment with per-row grade/section placement.
+- [x] Provide one Add students chooser for single new-student entry, validated multi-student batches with shared defaults/per-row overrides, and existing-student enrollment.
 - [x] Enroll one or many existing pending students without re-entering identity details; only active-year grade/section enrollment rows are created.
 - [x] Capture required sex on new student records and school-year student type on new, existing-student, bulk, and rollover enrollment flows; derive age from birthdate and show legacy missing values as Pending.
 - [x] Restrict student creation/enrollment to `school_administrator` and `registrar`.

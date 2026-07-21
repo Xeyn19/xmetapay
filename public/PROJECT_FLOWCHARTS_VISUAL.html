@@ -299,8 +299,10 @@
           school-year enrollment records whether the student is new, a transferee, or returned. Age is derived from
           birthdate and legacy missing values display as Pending. Parents can
           only see students after a <code>student_guardians</code> link exists.
-          New students use the single or batch enrollment forms. Existing
-          students with no enrollment for the selected year use
+          One <strong>Add students</strong> chooser opens focused single-new,
+          batch-new, or existing-student workflows. New-student batches support
+          shared grade, section, and student-type defaults with per-row overrides.
+          Existing students with no enrollment for the selected year use
           <strong>Enroll existing students</strong>, which lets the admin select
           one or many, apply a shared grade/section, review individual
           placements, and add only enrollment rows without re-entering identity
@@ -316,11 +318,13 @@
 flowchart TD
   A["School administrator registers or logs in"] --> B["Admin sets up school records"]
   B --> C["School, school year, grade levels, and sections exist"]
-  C --> D{"Add students one at a time or in a batch?"}
-  D -->|Single| E["Create student and active-year enrollment"]
-  D -->|Batch| F["Validate each row and create valid student/enrollment records"]
+  C --> D["Open unified Add students chooser"]
+  D -->|One new| E["Create student and active-year enrollment"]
+  D -->|Multiple new| F["Apply shared defaults and validate each student row"]
+  D -->|Existing| F1["Create only missing active-year enrollments"]
   E --> G["Student gets official student_reference"]
   F --> G
+  F1 --> G
 
   G["Parent registers or logs in"] --> H["Parent submits student_reference"]
   H --> I{"Matching student found?"}
