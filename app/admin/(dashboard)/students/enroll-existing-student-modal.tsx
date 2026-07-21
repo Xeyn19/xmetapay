@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckSquare, Search, UserRoundPlus, X } from "lucide-react";
 
 import type { AdminStudentRow } from "@/lib/students/records";
@@ -17,11 +17,15 @@ type Placement = {
 const fieldClass = "min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-[12px] text-[#0f1117] outline-none focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/10";
 
 export function EnrollExistingStudentModal({
+  open,
+  onClose,
   students,
   gradeOptions,
   sectionOptions,
   schoolYearName,
 }: {
+  open: boolean;
+  onClose: () => void;
   students: AdminStudentRow[];
   gradeOptions: Array<{ id: number; name: string }>;
   sectionOptions: Array<{ id: number; gradeLevelId: number; label: string }>;
@@ -31,7 +35,6 @@ export function EnrollExistingStudentModal({
     () => students.filter((student) => student.enrollmentStatus.toLowerCase() !== "enrolled"),
     [students],
   );
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [currentGrade, setCurrentGrade] = useState("all");
   const [currentSection, setCurrentSection] = useState("all");
@@ -67,6 +70,15 @@ export function EnrollExistingStudentModal({
   const selectedVisibleCount = placements.filter((placement) => placement.selected && visibleIds.has(placement.studentId)).length;
   const incompleteSelectedCount = placements.filter((placement) => placement.selected && (!placement.gradeLevelId || !placement.sectionId)).length;
   const bulkSections = sectionOptions.filter((section) => section.gradeLevelId === bulkGradeLevelId);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => event.key === "Escape" && close();
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  // close intentionally resets all modal state before invoking the parent callback.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function updatePlacement(studentId: number, patch: Partial<Placement>) {
     setPlacements((current) => current.map((placement) => placement.studentId === studentId ? { ...placement, ...patch } : placement));
@@ -105,7 +117,7 @@ export function EnrollExistingStudentModal({
   }
 
   function close() {
-    setOpen(false);
+    onClose();
     setQuery("");
     setCurrentGrade("all");
     setCurrentSection("all");
@@ -122,18 +134,7 @@ export function EnrollExistingStudentModal({
     [placements],
   );
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-black/10 bg-white px-3.5 text-[12.5px] font-semibold text-[#0f1117] transition hover:border-[#e64a19]/35 hover:bg-[#fff5f2] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
-      >
-        <UserRoundPlus className="size-4" />
-        Enroll existing students
-      </button>
-
-      {open ? (
+  return open ? (
         <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-[#0f1117]/45 px-3 py-6 backdrop-blur-sm sm:px-6">
           <button type="button" aria-label="Close enroll existing students dialog" className="fixed inset-0 cursor-default" onClick={close} />
           <section role="dialog" aria-modal="true" aria-labelledby="enroll-existing-title" className="relative flex max-h-[calc(100svh-48px)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-black/[0.07] bg-white shadow-2xl">
@@ -224,9 +225,7 @@ export function EnrollExistingStudentModal({
             </form>
           </section>
         </div>
-      ) : null}
-    </>
-  );
+  ) : null;
 }
 
 function uniqueValues(values: string[]) {

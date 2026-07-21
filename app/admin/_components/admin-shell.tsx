@@ -265,11 +265,11 @@ export function AdminShell({
                 ) : null}
                 {canAddStudents ? (
                   <Link
-                    href="/admin/students#add-student"
+                    href="/admin/students?intake=choose"
                     className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto"
                   >
                     <UserPlus className="size-4" />
-                    Add student
+                    Add students
                   </Link>
                 ) : null}
               </div>

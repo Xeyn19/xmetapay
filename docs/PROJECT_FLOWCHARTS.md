@@ -33,7 +33,7 @@ Implemented:
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Company super admin approval for new school admin registrations.
 - Company super admin monitoring for school admin accounts.
-- Admin single-student creation and enrollment, plus validated multi-student batch enrollment.
+- Unified Add students chooser for single-new, batch-new, and existing-student active-year enrollment.
 - New student records require sex; each school-year enrollment records `new`, `transferee`, or `returned` student type. Age is derived from birthdate for profiles and exports.
 - Admin student profile selector and exact profile route `/admin/students/[studentId]`.
 - Parent-to-student linking through `student_reference`.
@@ -78,11 +78,13 @@ For the current backend phase, parents do not directly enroll new students from 
 flowchart TD
   A["School administrator registers or logs in"] --> B["Admin sets up school records"]
   B --> C["School, school year, grade levels, and sections exist"]
-  C --> D{"Add students one at a time or in a batch?"}
-  D -->|Single| E["Create student and active-year enrollment"]
-  D -->|Batch| F["Validate each row and create valid student/enrollment records"]
+  C --> D["Open unified Add students chooser"]
+  D -->|One new| E["Create student and active-year enrollment"]
+  D -->|Multiple new| F["Apply shared defaults, validate rows, and create valid student/enrollment records"]
+  D -->|Existing| F1["Select saved students and create only missing active-year enrollments"]
   E --> G["Student gets official student_reference"]
   F --> G
+  F1 --> G
 
   G["Parent registers or logs in"] --> H["Parent submits student_reference"]
   H --> I{"Matching student found?"}
@@ -324,14 +326,14 @@ Database touchpoints:
 
 Implemented.
 
-The school/admin side creates the official student record first. Admins can use the quick single-student form or the repeatable batch form for new students. When students already exist but have no enrollment for the active year, admins use `Enroll existing students`: they check one or many saved students, apply a shared grade/section when appropriate, review individual placements, and add only the active-year enrollment rows. Names, birthdates, references, and parent links are never re-entered. Duplicate enrollments are skipped and invalid rows are reported without discarding valid rows.
+The school/admin side creates the official student record first. One `Add students` chooser opens focused workflows for one new student, multiple new students, or existing students. New-student batches can apply shared grade, section, and student-type defaults before individual overrides; duplicate references and incomplete rows are identified before submission, while server validation remains authoritative. Existing students with no active-year enrollment are selected without re-entering names, birthdates, references, or parent links. Valid rows remain independent and duplicate enrollments are skipped safely.
 
 ```mermaid
 flowchart TD
   A["Admin opens /admin/students"] --> B{"School setup complete?"}
   B -->|No| C["Show setup required message"]
   B -->|Yes| D["Load active school year, grade levels, and sections"]
-  D --> E["Admin submits student form"]
+  D --> E["Admin chooses one new, multiple new, or existing students"]
   E --> F["Validate student_reference, first name, last name, grade, and section"]
   F --> G{"student_reference already exists in this school?"}
   G -->|Yes| H["Show duplicate reference error"]

@@ -5,15 +5,13 @@ import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminStudentPageData } from "@/lib/students/records";
 
 import { AlertBanner, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
-import { StudentEnrollmentForm } from "./student-enrollment-form";
-import { BulkStudentEnrollmentModal } from "./bulk-student-enrollment-modal";
-import { EnrollExistingStudentModal } from "./enroll-existing-student-modal";
+import { StudentIntake } from "./student-intake";
 import { StudentsTable } from "./students-table";
 
-export default async function StudentsPage() {
+export default async function StudentsPage({ searchParams }: { searchParams: Promise<{ intake?: string | string[] }> }) {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/students");
-  const data = await getAdminStudentPageData(session.userId);
+  const [data, query] = await Promise.all([getAdminStudentPageData(session.userId), searchParams]);
 
   return (
     <>
@@ -29,32 +27,25 @@ export default async function StudentsPage() {
         ))}
       </KpiGrid>
 
-      <div id="add-student" className="scroll-mt-32">
+      <div id="add-students" className="scroll-mt-32">
         <DashboardCard
-          title="Add student"
+          title="Student enrollment"
           icon={UserPlus}
           className="mb-5"
           action={
-            <div className="flex flex-wrap items-center gap-2">
-              <BulkStudentEnrollmentModal
-                ready={data.ready}
-                gradeOptions={data.gradeOptions}
-                sectionOptions={data.enrollmentSectionOptions}
-              />
-              <EnrollExistingStudentModal
-                students={data.enrollmentCandidates}
-                gradeOptions={data.gradeOptions}
-                sectionOptions={data.enrollmentSectionOptions}
-                schoolYearName={data.enrollmentSchoolYearName}
-              />
-            </div>
+            <StudentIntake
+              initialOpen={query.intake === "choose"}
+              ready={data.ready}
+              gradeOptions={data.gradeOptions}
+              sectionOptions={data.enrollmentSectionOptions}
+              existingStudents={data.enrollmentCandidates}
+              schoolYearName={data.enrollmentSchoolYearName}
+            />
           }
         >
-          <StudentEnrollmentForm
-            ready={data.ready}
-            gradeOptions={data.gradeOptions}
-            sectionOptions={data.enrollmentSectionOptions}
-          />
+          <p className="max-w-3xl text-[12px] leading-5 text-[#5a6070]">
+            Add one student, create a batch of new student records, or enroll students who already exist for the active school year.
+          </p>
         </DashboardCard>
       </div>
 

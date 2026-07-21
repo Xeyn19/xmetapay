@@ -108,7 +108,7 @@ Main purpose:
 
 ### `students`
 
-Stores the official student record. If existing students are Pending for a school year, the admin can select one or many and create only the missing `enrollments` rows; identity and guardian-link data are not entered again.
+Stores the official student record. The admin Add students chooser separates one new student, multiple new students, and existing-student enrollment. If existing students are Pending for a school year, the admin can select one or many and create only the missing `enrollments` rows; identity and guardian-link data are not entered again. This unified workflow does not change the schema.
 
 Main purpose:
 
@@ -379,7 +379,7 @@ The schema supports this practical backend flow:
 1. Admin registers and logs in through the existing auth tables.
 2. A school record is created and linked to school setup records.
 3. Admin creates one or many school years, chooses one active year, then creates grade levels and selected-year sections.
-4. Admin creates student records individually or through the validated multi-student batch form; each valid student still receives its own master record.
+4. Admin opens the unified Add students chooser, then creates one student, creates a validated batch using optional shared class defaults, or enrolls existing students. Each valid new student still receives an independent master record.
 5. Parent registers and can be linked to a student through `student_guardians`.
 6. Admin enrolls students for the active school year.
 7. When a school year changes, the school administrator reviews suggested promote/repeat placements and the system creates target-year `enrollments` without duplicating `students`.

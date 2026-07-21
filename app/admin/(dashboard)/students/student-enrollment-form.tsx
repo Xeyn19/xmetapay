@@ -22,10 +22,12 @@ export function StudentEnrollmentForm({
   ready,
   gradeOptions,
   sectionOptions,
+  onCancel,
 }: {
   ready: boolean;
   gradeOptions: GradeOption[];
   sectionOptions: SectionOption[];
+  onCancel?: () => void;
 }) {
   const [gradeLevelId, setGradeLevelId] = useState("");
   const [sectionId, setSectionId] = useState("");
@@ -37,7 +39,7 @@ export function StudentEnrollmentForm({
   const sectionDisabled = !ready || !gradeLevelId || filteredSectionOptions.length === 0;
 
   return (
-    <form action={createStudentAction} className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-4">
+    <form action={createStudentAction} className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
       <Field label="Student reference" required>
         <input name="studentReference" className={fieldControlClass} placeholder="e.g. BWA-2025-0312" required />
       </Field>
@@ -111,11 +113,16 @@ export function StudentEnrollmentForm({
           ))}
         </select>
       </Field>
-      <div className="flex items-end">
+      <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3 sm:justify-end">
+        {onCancel ? (
+          <AdminButton type="button" tone="outline" className="w-full sm:w-auto" onClick={onCancel}>
+            Cancel
+          </AdminButton>
+        ) : null}
         <AdminButton
           type="submit"
           tone="primary"
-          className="w-full"
+          className="w-full sm:w-auto"
           disabled={!ready || (Boolean(gradeLevelId) && filteredSectionOptions.length === 0)}
         >
           <UserPlus className="size-4" />

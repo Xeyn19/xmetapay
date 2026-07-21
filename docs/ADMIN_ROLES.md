@@ -23,7 +23,7 @@ Finance pages include tuition, collections, other fees, allowance, store transac
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
 | `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections, review promote/repeat rollover placements, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |
-| `registrar` | Student and guardian records | View dashboard, add new students, enroll one or many existing pending students without re-entering identity details, use validated multi-student batch enrollment, view student profiles, view parent contacts | Set up school records, use finance pages, view reports |
+| `registrar` | Student and guardian records | View dashboard, use the unified Add students chooser to add new students individually or in a validated batch, or enroll existing pending students, view student profiles, view parent contacts | Set up school records, use finance pages, view reports |
 | `finance_officer` | Fees, tuition collections, allowance, reminders, and reports | View dashboard, tuition, collections (tuition-focused), other fees, allowance, store transactions, reports, send payment reminder emails, create store merchants, record wallet purchases | Set up school records, add/enroll students, manage parent contacts |
 
 ## Dashboard Access
@@ -74,7 +74,7 @@ Only one school year is still the active/current year. For MVP safety, operation
 7. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
 8. New operational history rows are stamped with the active school year where supported.
 9. Registrar and finance officer accounts with the same school name are linked to the existing school context.
-10. A registrar can add new students with sex and student type, or enroll one or many existing pending students by adding only their active-year grade, section, and student type. The existing names, birthdates, sex, references, and parent links are preserved. Student age is derived from birthdate and legacy missing values show `Pending`.
+10. A registrar uses one `Add students` chooser to add one new student, add a batch with shared grade/section/student-type defaults and per-row overrides, or enroll one or many existing pending students. Existing-student enrollment adds only active-year grade, section, and student type; names, birthdates, sex, references, and parent links are preserved. Student age is derived from birthdate and legacy missing values show `Pending`.
 11. Parents link to those students by `student_reference`.
 12. A finance officer works on active-year tuition, tuition collections, allowance, store transactions, payment reminder email history, and reports. Tuition collections exclude wallet top-ups, which belong to the allowance ledger. School administrators and finance officers can archive or restore one or many tuition collection rows and selected-year Allowance wallet summaries. These archive controls organize admin views only; they never change payment records, wallet status, balances, transactions, reports, or parent history.
 
