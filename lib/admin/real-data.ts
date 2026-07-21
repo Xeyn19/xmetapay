@@ -64,7 +64,6 @@ export type AdminDashboardRealData = {
   administratorKpis: AdminRealKpi[];
   tuitionByGrade: BarRow[];
   monthlySummary: SummaryRow[];
-  recentFeeAssignments: Array<[string, string, string, string, string, string]>;
   recentPayments: Array<[string, string, string, string, string, string]>;
   activityFeed: TimelineRow[];
 };
@@ -245,14 +244,13 @@ export async function getAdminDashboardRealData(adminUserId: number): Promise<Ad
   }
 
   try {
-    const [studentSummary, feeSummary, paymentSummary, walletSummary, tuitionByGrade, recentFeeAssignments, recentPayments, activityFeed] =
+    const [studentSummary, feeSummary, paymentSummary, walletSummary, tuitionByGrade, recentPayments, activityFeed] =
       await Promise.all([
         getStudentSummary(setup.schoolId, setup.schoolYearId),
         getFeeSummary(setup.schoolId, setup.schoolYearId),
         getPaymentSummary(setup.schoolId, setup.schoolYearId),
         getWalletSummary(setup.schoolId, setup.schoolYearId),
         getTuitionByGrade(setup.schoolId, setup.schoolYearId),
-        getRecentFeeAssignments(setup.schoolId, setup.schoolYearId),
         getRecentPayments(setup.schoolId, setup.schoolYearId),
         getActivityFeed(setup.schoolId, setup.schoolYearId),
       ]);
@@ -332,7 +330,6 @@ export async function getAdminDashboardRealData(adminUserId: number): Promise<Ad
         { label: "Allowance top-ups this month", value: walletSummary.monthlyTopUps > 0 ? money(walletSummary.monthlyTopUps) : "Pending", tone: walletSummary.monthlyTopUps > 0 ? "green" : "default" },
         { label: "Store transactions this month", value: walletSummary.storeSpend > 0 ? money(walletSummary.storeSpend) : "Pending", tone: walletSummary.storeSpend > 0 ? "blue" : "default" },
       ],
-      recentFeeAssignments,
       recentPayments,
       activityFeed,
     };
@@ -881,33 +878,6 @@ async function getOutstandingByGrade(schoolId: number, schoolYearId: number) {
   return barRows(rows);
 }
 
-async function getRecentFeeAssignments(schoolId: number, schoolYearId: number) {
-  const [rows] = await pool.execute<RecentFeeAssignmentRow[]>(
-    `SELECT sfa.created_at, sfa.amount_due, sfa.amount_paid, sfa.status,
-       ft.name AS fee_name, ft.category,
-       st.first_name, st.middle_name, st.last_name,
-       COALESCE(gl.name, 'Not enrolled') AS grade_name
-     FROM student_fee_assignments sfa
-     JOIN fee_types ft ON ft.id = sfa.fee_type_id
-     JOIN students st ON st.id = sfa.student_id
-     LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = sfa.school_year_id
-     LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
-     WHERE st.school_id = :schoolId AND sfa.school_year_id = :schoolYearId
-     ORDER BY sfa.created_at DESC, sfa.id DESC
-     LIMIT 6`,
-    { schoolId, schoolYearId },
-  );
-
-  return rows.map((row) => [
-    formatDateTime(row.created_at),
-    fullName(row.first_name, row.middle_name, row.last_name),
-    row.grade_name,
-    row.fee_name,
-    money(Math.max(decimalValue(row.amount_due) - decimalValue(row.amount_paid), 0)),
-    labelForStatus(row.status),
-  ] as AdminDashboardRealData["recentFeeAssignments"][number]);
-}
-
 async function getRecentPayments(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<PaymentRow[]>(
     `SELECT p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
@@ -1399,7 +1369,6 @@ function emptyDashboard(warning: string | null): AdminDashboardRealData {
     ],
     tuitionByGrade: [],
     monthlySummary: pendingSummary(),
-    recentFeeAssignments: [],
     recentPayments: [],
     activityFeed: [],
   };
@@ -1700,19 +1669,6 @@ type WalletSummaryRow = RowDataPacket & {
 type GradeAmountRow = RowDataPacket & {
   label: string | null;
   amount: number | string;
-};
-
-type RecentFeeAssignmentRow = RowDataPacket & {
-  created_at: Date | string;
-  amount_due: number | string;
-  amount_paid: number | string;
-  status: string;
-  fee_name: string;
-  category: string;
-  first_name: string;
-  middle_name: string | null;
-  last_name: string;
-  grade_name: string;
 };
 
 type PaymentRow = RowDataPacket & {
