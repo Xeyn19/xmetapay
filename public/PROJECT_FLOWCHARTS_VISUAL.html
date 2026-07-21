@@ -742,8 +742,12 @@ flowchart TD
   N --> O
   O --> P["Parent sees real receipt and payment history"]
   P --> Q["Admin dashboard and collections read the same payment records"]
+  A --> R["Parent opens Current or Archived fees"]
+  R --> S{"Settled fee?"}
+  S -->|Yes| T["Archive or restore parent-specific visibility"]
+  S -->|No| U["Keep outstanding fee in Current fees"]
           </pre>
-          <p>Tuition terms are implemented as per-student schedules managed from each tuition assignment row. Parents can pay open or partial installments early. The assignment due date is the official parent-facing deadline, and term schedule dates must be on or before that date. Parent payment rows and term rows show the main assignment due date. The parent Fee summary PDF includes nested tuition term rows under each tuition fee. Other fees remain on the normal full-balance fee assignment flow.</p>
+          <p>Tuition terms are implemented as per-student schedules managed from each tuition assignment row. Parents can pay open or partial installments early. The assignment due date is the official parent-facing deadline, and term schedule dates must be on or before that date. Parent payment rows and term rows show the main assignment due date. The parent Fee summary PDF includes nested tuition term rows under each tuition fee. Parents can archive or restore only paid or zero-balance fee rows through parent-specific metadata; balances, school records, admin reports, payment history, and another guardian's view remain unchanged. Other fees remain on the normal full-balance fee assignment flow.</p>
         </div>
 
         <h3>Wallet, Allowance, And Store</h3>

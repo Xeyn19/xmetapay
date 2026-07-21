@@ -31,7 +31,8 @@ export type ParentFeePageData = {
     tone?: "orange" | "green" | "red" | "blue" | "amber" | "muted";
     accent?: boolean;
   }>;
-  rows: ParentFeeRow[];
+  activeRows: ParentFeeRow[];
+  archivedRows: ParentFeeRow[];
   hasPayableFees: boolean;
   warning: string | null;
 };
@@ -48,6 +49,8 @@ export type ParentFeeRow = {
   dueDate: string;
   status: string;
   tone: "green" | "amber" | "red" | "muted";
+  archivedAt: string | null;
+  archiveEligible: boolean;
   terms: ParentFeeTerm[];
 };
 
@@ -124,6 +127,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
     const displayRows = rowsWithTerms.map(({ row, rawTerms }) => {
       const assignmentDueDate = row.due_date ? formatDate(row.due_date) : "Pending";
       const terms = formatFeeTerms(rawTerms, assignmentDueDate);
+      const balanceValue = Math.max(decimalValue(row.amount_due) - decimalValue(row.amount_paid), 0);
 
       return {
         id: row.id,
@@ -133,13 +137,17 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         category: row.category,
         amountDue: money(row.amount_due),
         amountPaid: money(row.amount_paid),
-        balance: money(Math.max(decimalValue(row.amount_due) - decimalValue(row.amount_paid), 0)),
+        balance: money(balanceValue),
         dueDate: assignmentDueDate,
         status: labelForStatus(row.status),
         tone: feeTone(row.status, row.amount_due, row.amount_paid),
+        archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
+        archiveEligible: row.status === "paid" || balanceValue <= 0,
         terms,
       };
     });
+    const activeRows = displayRows.filter((row) => !row.archivedAt);
+    const archivedRows = displayRows.filter((row) => row.archivedAt);
 
     return {
       warning: null,
@@ -154,7 +162,8 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         { label: "Outstanding", value: rows.length > 0 ? money(totals.outstanding) : "Pending", note: rows.length > 0 ? "Open and partial balances" : "Balances pending", tone: "red" },
         { label: "Next due date", value: nextDue ? formatDate(nextDue) : "Pending", note: nextDue ? "Earliest unpaid fee deadline" : "No due dates yet", tone: "blue" },
       ],
-      rows: displayRows,
+      activeRows,
+      archivedRows,
     };
   } catch {
     return {
@@ -166,7 +175,8 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         { label: "Outstanding", value: "Pending", note: "Balances pending", tone: "red" },
         { label: "Next due date", value: "Pending", note: "Due dates pending", tone: "blue" },
       ],
-      rows: [],
+      activeRows: [],
+      archivedRows: [],
     };
   }
 }
@@ -219,6 +229,7 @@ async function getParentFeeRows(parentUserId: number) {
     `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
        ft.name AS fee_name, ft.category,
        st.student_reference, st.first_name, st.middle_name, st.last_name,
+       pfsa.archived_at,
        GROUP_CONCAT(
          DISTINCT CONCAT_WS(
            '~',
@@ -236,11 +247,15 @@ async function getParentFeeRows(parentUserId: number) {
      JOIN student_fee_assignments sfa ON sfa.student_id = st.id
      JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
      JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     LEFT JOIN parent_fee_summary_archives pfsa
+       ON pfsa.parent_user_id = :parentUserId
+      AND pfsa.student_fee_assignment_id = sfa.id
      LEFT JOIN tuition_payment_terms tpt ON tpt.student_fee_assignment_id = sfa.id AND tpt.status <> 'cancelled'
      WHERE sg.parent_user_id = :parentUserId
        AND sfa.status <> 'cancelled'
      GROUP BY sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
-       ft.name, ft.category, st.student_reference, st.first_name, st.middle_name, st.last_name
+        ft.name, ft.category, st.student_reference, st.first_name, st.middle_name, st.last_name,
+        pfsa.archived_at
      ORDER BY sfa.due_date IS NULL ASC, sfa.due_date ASC, st.last_name ASC, ft.name ASC`,
     { parentUserId },
   );
@@ -317,6 +332,19 @@ function formatDate(value: Date | string) {
   });
 }
 
+function formatDateTime(value: Date | string) {
+  const parsed = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(parsed);
+}
+
 function dateKey(value: Date | string) {
   if (value instanceof Date) {
     return value.toISOString().slice(0, 10);
@@ -362,5 +390,6 @@ type ParentFeeSqlRow = RowDataPacket & {
   first_name: string;
   middle_name: string | null;
   last_name: string;
+  archived_at: Date | string | null;
   terms_blob: string | null;
 };

@@ -581,6 +581,10 @@ flowchart TD
   R -->|Archive| S["Set payments.archived_at without changing financial data"]
   S -->|Restore| R
   Q --> T["KPIs and official reports continue reading all tuition payments"]
+  A --> U["Parent opens Current or Archived fees"]
+  U --> V{"Settled fee?"}
+  V -->|Yes| W["Archive or restore parent-specific visibility"]
+  V -->|No| X["Keep outstanding fee in Current fees"]
 ```
 
 - The Tuition collection log supports reversible row and bulk archive/restore. Archive changes only `payments.archived_at`; official totals, reports, receipts, balances, allocations, and parent history continue reading the complete payment record.
@@ -603,6 +607,8 @@ Due date rule:
 - Tuition term schedule dates must be on or before the official assignment due date.
 - Parent-facing payment rows and term rows show the main assignment due date as the deadline.
 - The parent Fee summary PDF export includes nested tuition term rows under each tuition fee.
+- The parent Fee summary has local Current/Archived views. Only paid or zero-balance assignments can be archived, and `parent_fee_summary_archives` changes visibility for that parent only.
+- Fee metrics, payable counts, payments, tuition terms, admin reports, and another linked guardian's view continue using the authoritative records.
 
 ## Wallet, Allowance, And Store Flow
 

@@ -15,6 +15,10 @@ const adminDashboardPagePath = "app/admin/(dashboard)/dashboard/page.tsx";
 const adminDashboardRecentTablesPath = "app/admin/(dashboard)/dashboard/dashboard-recent-tables.tsx";
 const parentFeesPagePath = "app/parent/(portal)/fees/page.tsx";
 const parentFeesTablePath = "app/parent/(portal)/fees/fees-table.tsx";
+const parentFeeArchiveActionsPath = "app/parent/fees/actions.ts";
+const parentFeeArchiveServicePath = "lib/fees/parent-archive.ts";
+const parentFeeArchiveMigrationPath = "database/migrations/2026-07-21-parent-fee-summary-archive.sql";
+const fullSchemaPath = "database/full-schema-v1.sql";
 const parentPortalDataPath = "app/parent/_data/parent-portal-data.ts";
 const checklistPath = "docs/CHECKLIST.md";
 
@@ -237,8 +241,8 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(feesTable, /pagination\.pageRows\.map/);
   assert.match(feesTable, /parent-fee-summary\.csv/);
   assert.match(feesTable, /parent-fee-summary\.pdf/);
-  assert.match(feesTable, /function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\]\)/);
-  assert.match(feesTable, /onExportPdf=\{\(\) => exportParentFeeSummaryPdf\(filteredRows\)\}/);
+  assert.match(feesTable, /function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\], includeArchived: boolean\)/);
+  assert.match(feesTable, /onExportPdf=\{\(\) => exportParentFeeSummaryPdf\(filteredRows, view === "archived"\)\}/);
   assert.match(feesTable, /rows\.flatMap/);
   assert.match(feesTable, /`Term: \$\{term\.name\}`/);
   assert.match(feesTable, /"Tuition term"/);
@@ -252,6 +256,78 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.doesNotMatch(page, /feeSummary/);
   assert.doesNotMatch(parentPortalData, /export const feeSummary/);
   assert.doesNotMatch(parentPortalData, /Fee backend pending/);
+});
+
+test("parent Fee summary archive is parent-specific and preserves financial truth", () => {
+  const helper = readFileSync(feeRecordsPath, "utf8");
+  const service = readFileSync(parentFeeArchiveServicePath, "utf8");
+  const actions = readFileSync(parentFeeArchiveActionsPath, "utf8");
+
+  assert.match(helper, /LEFT JOIN parent_fee_summary_archives pfsa/);
+  assert.match(helper, /pfsa\.parent_user_id = :parentUserId/);
+  assert.match(helper, /activeRows: ParentFeeRow\[\]/);
+  assert.match(helper, /archivedRows: ParentFeeRow\[\]/);
+  assert.match(helper, /archiveEligible: row\.status === "paid" \|\| balanceValue <= 0/);
+  assert.match(helper, /const totals = rows\.reduce/);
+  assert.match(helper, /const activeRows = displayRows\.filter/);
+  assert.match(helper, /const archivedRows = displayRows\.filter/);
+
+  assert.match(service, /import "server-only"/);
+  assert.match(service, /student_guardians sg/);
+  assert.match(service, /sg\.parent_user_id = :parentUserId/);
+  assert.match(service, /sy\.status = 'active'/);
+  assert.match(service, /sfa\.status = 'paid' OR sfa\.amount_paid >= sfa\.amount_due/);
+  assert.match(service, /INSERT IGNORE INTO parent_fee_summary_archives/);
+  assert.match(service, /DELETE FROM parent_fee_summary_archives/);
+  assert.doesNotMatch(service, /UPDATE student_fee_assignments|UPDATE payments|DELETE FROM student_fee_assignments/);
+
+  assert.match(actions, /export async function archiveParentFeeAssignmentsAction/);
+  assert.match(actions, /export async function restoreParentFeeAssignmentsAction/);
+  assert.match(actions, /await requireRole\("parent"\)/);
+  assert.match(actions, /\.slice\(0, 100\)/);
+  assert.match(actions, /updatedIds/);
+  assert.match(actions, /revalidatePath\("\/parent\/fees"\)/);
+});
+
+test("parent Fee summary archive table switches locally with selection and immediate row movement", () => {
+  const table = readFileSync(parentFeesTablePath, "utf8");
+  const page = readFileSync(parentFeesPagePath, "utf8");
+
+  assert.match(page, /activeRows=\{data\.activeRows\}/);
+  assert.match(page, /archivedRows=\{data\.archivedRows\}/);
+  assert.match(table, /Current fees/);
+  assert.match(table, /Archived fees/);
+  assert.match(table, /role="tablist"/);
+  assert.match(table, /Select visible/);
+  assert.match(table, /Clear selection/);
+  assert.match(table, /const operationLabel = view === "archived" \? "Restore" : "Archive"/);
+  assert.match(table, /\{operationLabel\} selected/);
+  assert.match(table, /row\.archiveEligible/);
+  assert.match(table, /Outstanding fees cannot be archived/);
+  assert.match(table, /setActiveFeeRows/);
+  assert.match(table, /setArchivedFeeRows/);
+  assert.match(table, /result\.updatedIds/);
+  assert.match(table, /role="alertdialog"/);
+  assert.match(table, /router\.refresh\(\)/);
+  assert.match(table, /pagination\.pageRows/);
+  assert.match(table, /exportParentFeeSummaryPdf\(filteredRows/);
+  assert.match(table, /`Term: \$\{term\.name\}`/);
+});
+
+test("parent Fee summary archive migration and fresh schema use separate metadata", () => {
+  assert.equal(existsSync(parentFeeArchiveMigrationPath), true);
+  const migration = readFileSync(parentFeeArchiveMigrationPath, "utf8");
+  const schema = readFileSync(fullSchemaPath, "utf8");
+
+  for (const source of [migration, schema]) {
+    assert.match(source, /CREATE TABLE IF NOT EXISTS parent_fee_summary_archives/);
+    assert.match(source, /PRIMARY KEY \(parent_user_id, student_fee_assignment_id\)/);
+    assert.match(source, /idx_parent_fee_archives_parent_archived_assignment/);
+    assert.match(source, /FOREIGN KEY \(parent_user_id\) REFERENCES users\(id\)/);
+    assert.match(source, /FOREIGN KEY \(student_fee_assignment_id\) REFERENCES student_fee_assignments\(id\)/);
+  }
+
+  assert.doesNotMatch(migration, /ALTER TABLE student_fee_assignments|ADD COLUMN archived_at/);
 });
 
 test("checklist marks Phase 4 fees backend complete before Phase 5 payment work", () => {
