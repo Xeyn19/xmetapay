@@ -34,11 +34,10 @@ test("school administrator dashboard uses the new layout while staff dashboards 
   assert.match(dashboard, /SchoolAdministratorDashboard/);
   assert.match(dashboard, /TuitionCollectedByGradeChart/);
   assert.match(dashboard, /RecentPaymentsTable rows=\{payments\}/);
-  assert.match(dashboard, /RecentFeeAssignmentsTable rows=\{feeAssignments\} action=\{feeAssignmentAction\}/);
-  assert.match(dashboard, /DashboardRecentTables/);
   assert.match(dashboard, /BarList rows=\{data\.tuitionByGrade\}/);
-  assert.match(recentTables, /export function RecentFeeAssignmentsTable/);
   assert.match(recentTables, /export function RecentPaymentsTable/);
+  assert.doesNotMatch(dashboard, /RecentFeeAssignmentsTable|DashboardRecentTables|feeAssignmentAction/);
+  assert.doesNotMatch(recentTables, /Recent fee assignments|RecentFeeAssignmentsTable/);
 });
 
 test("admin dashboard real data returns numeric chart rows and top-up-today KPIs", () => {

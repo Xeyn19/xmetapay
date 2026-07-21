@@ -204,33 +204,22 @@ test("other fees real data includes paid assignment counts and screenshot-style 
   assert.match(helper, /Active fee types/);
 });
 
-test("admin dashboard shows assigned fees before payment records exist", () => {
+test("admin dashboard omits fee assignment management while dedicated finance pages retain it", () => {
   const helper = readFileSync("lib/admin/real-data.ts", "utf8");
   const dashboard = readFileSync(adminDashboardPagePath, "utf8");
   const dashboardRecentTables = readFileSync(adminDashboardRecentTablesPath, "utf8");
+  const tuitionPage = readFileSync(tuitionPagePath, "utf8");
+  const otherFeesPage = readFileSync(otherFeesPagePath, "utf8");
 
-  assert.match(helper, /async function getRecentFeeAssignments/);
-  assert.match(helper, /FROM student_fee_assignments sfa/);
-  assert.match(helper, /ORDER BY sfa\.created_at DESC, sfa\.id DESC/);
-  assert.match(dashboard, /getAdminFeeSetupData\(session\.userId, "tuition"\)/);
+  assert.doesNotMatch(helper, /getRecentFeeAssignments|recentFeeAssignments/);
   assert.match(dashboard, /getAdminStaffRole\(session\.userId\)/);
-  assert.match(dashboard, /canAccessFinance\(staffRole\)/);
-  assert.match(dashboard, /const feeAssignmentAction = canManageFinance/);
-  assert.match(dashboard, /<DashboardFeeAssignmentActions feeSetup=\{feeSetup\} \/>/);
-  assert.match(dashboard, /triggerLabel="Assign fee"/);
-  assert.match(dashboard, /triggerLabel="Add fee type"/);
-  assert.match(dashboard, /triggerIcon="receipt"/);
-  assert.match(dashboard, /triggerIcon="plus"/);
-  assert.doesNotMatch(dashboard, /triggerIcon=\{Receipt\}/);
-  assert.doesNotMatch(dashboard, /triggerIcon=\{Plus\}/);
-  assert.match(dashboard, /<FeeAssignStudentsForm category="tuition" redirectPath="\/admin\/tuition" data=\{feeSetup\} \/>/);
-  assert.match(dashboard, /<FeeCreateTypeForm category="tuition" redirectPath="\/admin\/tuition" data=\{feeSetup\} \/>/);
-  assert.match(dashboardRecentTables, /Recent fee assignments/);
-  assert.match(dashboardRecentTables, /feeAssignmentAction\?: ReactNode/);
-  assert.match(dashboardRecentTables, /action=\{action\}/);
-  assert.match(dashboard, /DashboardRecentTables/);
-  assert.match(dashboardRecentTables, /No fee assignments yet/);
-  assert.match(dashboard, /Assigned balances appear below/);
+  assert.match(dashboard, /RecentPaymentsTable rows=\{payments\}/);
+  assert.doesNotMatch(dashboard, /getAdminFeeSetupData|DashboardFeeAssignmentActions|triggerLabel="Assign fee"|triggerLabel="Add fee type"/);
+  assert.doesNotMatch(dashboardRecentTables, /Recent fee assignments|RecentFeeAssignmentsTable/);
+  assert.match(tuitionPage, /triggerLabel="Assign fee"/);
+  assert.match(tuitionPage, /triggerLabel="Add fee type"/);
+  assert.match(otherFeesPage, /triggerLabel="Assign fee"/);
+  assert.match(otherFeesPage, /triggerLabel="Add fee type"/);
 });
 
 test("parent fees page reads real balances instead of static fee summary", () => {
