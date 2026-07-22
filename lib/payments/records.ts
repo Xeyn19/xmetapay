@@ -3,6 +3,7 @@ import "server-only";
 import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { isParentPaymentHistoryArchiveEligible } from "@/lib/payments/parent-history-archive";
 import { getParentPayableTuitionTerms, type ParentPayableTuitionTerm } from "@/lib/tuition/terms";
 
 export type PaymentChannel = "cash" | "card" | "online_banking" | "gcash" | "maya";
@@ -46,17 +47,23 @@ export type ParentReceiptData = {
   warning: string | null;
 };
 
+export type ParentPaymentHistoryRow = {
+  paymentId: number;
+  receiptId: number | null;
+  referenceNumber: string;
+  paidAt: string;
+  studentName: string;
+  description: string;
+  amount: string;
+  channel: string;
+  status: string;
+  archivedAt: string | null;
+  archiveEligible: boolean;
+};
+
 export type ParentPaymentHistoryData = {
-  rows: Array<{
-    receiptId: number | null;
-    referenceNumber: string;
-    paidAt: string;
-    studentName: string;
-    description: string;
-    amount: string;
-    channel: string;
-    status: string;
-  }>;
+  activeRows: ParentPaymentHistoryRow[];
+  archivedRows: ParentPaymentHistoryRow[];
   warning: string | null;
 };
 
@@ -150,8 +157,32 @@ export async function getParentReceiptData(
 
 export async function getParentPaymentHistoryData(parentUserId: number): Promise<ParentPaymentHistoryData> {
   try {
-    const [rows] = await pool.execute<ParentPaymentHistoryRow[]>(
-      `SELECT r.id AS receipt_id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
+    const [activeRows, archivedRows] = await Promise.all([
+      getParentPaymentHistoryRows(parentUserId, "active"),
+      getParentPaymentHistoryRows(parentUserId, "archived"),
+    ]);
+
+    return {
+      warning: null,
+      activeRows,
+      archivedRows,
+    };
+  } catch {
+    return {
+      activeRows: [],
+      archivedRows: [],
+      warning: "Payment history is unavailable. Confirm MySQL/XAMPP and the full schema are ready.",
+    };
+  }
+}
+
+async function getParentPaymentHistoryRows(parentUserId: number, archiveScope: "active" | "archived") {
+  const archiveClause = archiveScope === "archived"
+    ? "AND ppha.payment_id IS NOT NULL"
+    : "AND ppha.payment_id IS NULL";
+  const [rows] = await pool.execute<ParentPaymentHistoryDbRow[]>(
+      `SELECT p.id AS payment_id, r.id AS receipt_id, p.reference_number, p.amount, p.channel, p.status,
+         p.paid_at, p.created_at, ppha.archived_at,
          st.first_name, st.middle_name, st.last_name,
          COALESCE(
            GROUP_CONCAT(DISTINCT CONCAT(term_ft.name, ' - ', tpt.term_name) ORDER BY tpt.sort_order SEPARATOR ', '),
@@ -171,33 +202,31 @@ export async function getParentPaymentHistoryData(parentUserId: number): Promise
        LEFT JOIN student_fee_assignments term_sfa ON term_sfa.id = tpt.student_fee_assignment_id
        LEFT JOIN fee_types term_ft ON term_ft.id = term_sfa.fee_type_id
        LEFT JOIN wallet_transactions wt ON wt.payment_id = p.id
+       LEFT JOIN parent_payment_history_archives ppha
+         ON ppha.payment_id = p.id
+        AND ppha.parent_user_id = :parentUserId
        WHERE p.payer_user_id = :parentUserId
-       GROUP BY r.id, p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at,
+         ${archiveClause}
+       GROUP BY r.id, p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at, ppha.archived_at,
          st.first_name, st.middle_name, st.last_name
        ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC
        LIMIT 50`,
       { parentUserId },
     );
 
-    return {
-      warning: null,
-      rows: rows.map((row) => ({
-        receiptId: row.receipt_id,
-        referenceNumber: row.reference_number,
-        paidAt: formatDate(row.paid_at ?? row.created_at),
-        studentName: fullName(row.first_name, row.middle_name, row.last_name),
-        description: row.description,
-        amount: money(row.amount),
-        channel: labelForChannel(row.channel),
-        status: labelForStatus(row.status),
-      })),
-    };
-  } catch {
-    return {
-      rows: [],
-      warning: "Payment history is unavailable. Confirm MySQL/XAMPP and the full schema are ready.",
-    };
-  }
+  return rows.map((row) => ({
+    paymentId: Number(row.payment_id),
+    receiptId: row.receipt_id,
+    referenceNumber: row.reference_number,
+    paidAt: formatDate(row.paid_at ?? row.created_at),
+    studentName: fullName(row.first_name, row.middle_name, row.last_name),
+    description: row.description,
+    amount: money(row.amount),
+    channel: labelForChannel(row.channel),
+    status: labelForStatus(row.status),
+    archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
+    archiveEligible: isParentPaymentHistoryArchiveEligible(row.status),
+  }));
 }
 
 async function getParentPayableFees(parentUserId: number) {
@@ -356,7 +385,8 @@ type ParentReceiptRow = RowDataPacket & {
   paid_items: string;
 };
 
-type ParentPaymentHistoryRow = RowDataPacket & {
+type ParentPaymentHistoryDbRow = RowDataPacket & {
+  payment_id: number;
   receipt_id: number | null;
   reference_number: string;
   amount: number | string;
@@ -368,4 +398,5 @@ type ParentPaymentHistoryRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string;
   description: string;
+  archived_at: Date | string | null;
 };

@@ -248,6 +248,19 @@ Main purpose:
 - Use a unique reference number for tracking.
 
 Payment status starts as pending and can become paid, failed, voided, or refunded. Archiving does not create another payment status and never changes allocations, receipts, balances, official report totals, or parent history.
+
+### `parent_payment_history_archives`
+
+Stores reversible Payment history visibility for the parent who created a payment.
+
+Main purpose:
+
+- Link one parent user to one payment row they archived.
+- Keep parent organization separate from the admin Tuition collection log's `payments.archived_at` field.
+- Allow paid, failed, voided, and refunded rows to move between Current and Archived views while pending rows remain visible.
+- Preserve receipts, fee or term allocations, wallet top-ups, balances, reports, dashboard totals, and the original payment status.
+
+Restoring removes only the parent-specific metadata. Payment history remains payment-focused, so store purchases continue to appear only in wallet history.
 `school_year_id` is nullable for migrated history, but new payment writes store the active school year.
 
 ### `payment_allocations`

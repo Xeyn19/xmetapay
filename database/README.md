@@ -59,6 +59,11 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Only settled fees can be archived. Fee assignments, balances, tuition terms, payments, admin views, and another guardian's view remain unchanged.
    - Safe to import more than once.
 
+15. If `full-schema-v1.sql` was already imported before parent Payment history archiving was added, import `migrations/2026-07-22-parent-payment-history-archive.sql`.
+   - Adds parent-specific `parent_payment_history_archives` metadata.
+   - Finished payments can be organized without changing receipts, allocations, balances, admin collections, reports, or another parent's records.
+   - Safe to import more than once.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.

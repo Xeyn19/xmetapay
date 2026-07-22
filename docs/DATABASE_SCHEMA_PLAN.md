@@ -446,6 +446,26 @@ CREATE TABLE payments (
 
 `school_year_id` is nullable for older migrated records, but new payment writes store the active school year so admin selected-year reports do not have to guess from related allocation rows. `archived_at` powers reversible active/archived Tuition collection log views only; payment status, allocations, receipts, balances, official reports, and parent history remain authoritative and unchanged.
 
+#### `parent_payment_history_archives`
+
+Keeps reversible Payment history organization private to the paying parent and separate from admin collection archiving.
+
+```sql
+CREATE TABLE parent_payment_history_archives (
+  parent_user_id BIGINT UNSIGNED NOT NULL,
+  payment_id BIGINT UNSIGNED NOT NULL,
+  archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (parent_user_id, payment_id),
+  KEY idx_parent_payment_archives_parent_archived_payment (parent_user_id, archived_at, payment_id),
+  KEY idx_parent_payment_archives_payment (payment_id),
+  CONSTRAINT fk_parent_payment_archives_parent FOREIGN KEY (parent_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_parent_payment_archives_payment FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
+);
+```
+
+Only finished payment statuses are archive-eligible; pending payments remain in Current payments. Archive metadata never changes receipts, allocations, balances, wallet top-ups, reports, or payment status.
+
 #### `payment_allocations`
 
 Splits one payment across one or more student fee balances.
@@ -677,7 +697,7 @@ Use indexes based on the screens and workflows in the app.
 | Fee summary | `student_fee_assignments(student_id, status, due_date)` plus parent-specific `parent_fee_summary_archives(parent_user_id, archived_at, student_fee_assignment_id)` |
 | Tuition report | `student_fee_assignments(school_year_id, status, due_date)` |
 | Tuition collections log | `payments(school_id, school_year_id, archived_at, paid_at)` plus `payment_allocations`/`payment_term_allocations` and tuition `fee_types` |
-| Parent payment history | `payments(payer_user_id, paid_at)` |
+| Parent payment history | `payments(payer_user_id, paid_at)` plus parent-specific `parent_payment_history_archives(parent_user_id, archived_at, payment_id)` |
 | Student payment history | `payments(student_id, paid_at)` |
 | Wallet ledger | `wallet_transactions(wallet_id, created_at)`; selected-year admin archive view uses `wallet_ledger_archives(school_year_id, archived_at, wallet_id)` |
 | Store report | `store_transactions(student_id, purchased_at)`, `store_transactions(merchant_id, purchased_at)` |

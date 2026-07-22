@@ -18,7 +18,11 @@ export default async function HistoryPage() {
         icon={History}
         bodyClassName="p-0"
       >
-        <ParentPaymentHistoryTable rows={data.rows} />
+        <ParentPaymentHistoryTable
+          key={`${data.activeRows.map((row) => row.paymentId).join("-")}|${data.archivedRows.map((row) => row.paymentId).join("-")}`}
+          activeRows={data.activeRows}
+          archivedRows={data.archivedRows}
+        />
       </ParentCard>
     </>
   );

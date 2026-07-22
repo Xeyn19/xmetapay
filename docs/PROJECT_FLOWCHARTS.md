@@ -609,6 +609,7 @@ Due date rule:
 - The parent Fee summary PDF export includes nested tuition term rows under each tuition fee.
 - The parent Fee summary has local Current/Archived views. Only paid or zero-balance assignments can be archived, and `parent_fee_summary_archives` changes visibility for that parent only.
 - Fee metrics, payable counts, payments, tuition terms, admin reports, and another linked guardian's view continue using the authoritative records.
+- Parent Payment history has separate local Current/Archived views backed by `parent_payment_history_archives`. Finished payments can be organized, pending payments stay visible, and receipts, allocations, wallet top-ups, admin collections, reports, and dashboard totals remain unchanged.
 
 ## Wallet, Allowance, And Store Flow
 
