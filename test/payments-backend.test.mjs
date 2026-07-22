@@ -9,6 +9,10 @@ const paymentFormPath = "app/parent/(portal)/pay-tuition/payment-form.tsx";
 const receiptPagePath = "app/parent/(portal)/receipt/page.tsx";
 const historyPagePath = "app/parent/(portal)/history/page.tsx";
 const historyTablePath = "app/parent/(portal)/history/history-table.tsx";
+const historyActionsPath = "app/parent/history/actions.ts";
+const historyArchiveServicePath = "lib/payments/parent-history-archive.ts";
+const historyArchiveMigrationPath = "database/migrations/2026-07-22-parent-payment-history-archive.sql";
+const fullSchemaPath = "database/full-schema-v1.sql";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
 const parentDashboardTablePath = "app/parent/(portal)/dashboard/parent-recent-payments-table.tsx";
 const parentRecordsPath = "lib/students/records.ts";
@@ -70,6 +74,8 @@ test("parent payment pages use real database helpers instead of static payment a
   assert.match(receiptPage, /searchParams: Promise<\{ receiptId\?: string \}>/);
   assert.match(historyPage, /getParentPaymentHistoryData\(session\.userId\)/);
   assert.match(historyPage, /ParentPaymentHistoryTable/);
+  assert.match(historyPage, /activeRows=\{data\.activeRows\}/);
+  assert.match(historyPage, /archivedRows=\{data\.archivedRows\}/);
   assert.match(historyTable, /DashboardTableControls/);
   assert.match(historyTable, /usePaginatedRows/);
   assert.match(historyTable, /DashboardTablePagination/);
@@ -80,6 +86,60 @@ test("parent payment pages use real database helpers instead of static payment a
   assert.doesNotMatch(parentPortalData, /export const payableFees/);
   assert.doesNotMatch(parentPortalData, /export const paymentMethods/);
   assert.doesNotMatch(parentPortalData, /export const historyRows/);
+});
+
+test("parent Payment history archive metadata is parent-specific and financially isolated", () => {
+  const helper = readFileSync(paymentRecordsPath, "utf8");
+  const service = readFileSync(historyArchiveServicePath, "utf8");
+  const actions = readFileSync(historyActionsPath, "utf8");
+
+  assert.match(helper, /LEFT JOIN parent_payment_history_archives ppha/);
+  assert.match(helper, /activeRows: ParentPaymentHistoryRow\[\]/);
+  assert.match(helper, /archivedRows: ParentPaymentHistoryRow\[\]/);
+  assert.match(helper, /archiveEligible: isParentPaymentHistoryArchiveEligible/);
+  assert.match(service, /import "server-only"/);
+  assert.match(service, /INSERT IGNORE INTO parent_payment_history_archives/);
+  assert.match(service, /DELETE FROM parent_payment_history_archives/);
+  assert.match(service, /p\.payer_user_id = :parentUserId/);
+  assert.match(service, /sg\.parent_user_id = :parentUserId/);
+  assert.match(service, /p\.status IN \('paid', 'failed', 'voided', 'refunded'\)/);
+  assert.doesNotMatch(service, /UPDATE payments/);
+  assert.doesNotMatch(service, /UPDATE receipts/);
+  assert.doesNotMatch(service, /UPDATE payment_allocations/);
+  assert.match(actions, /await requireRole\("parent"\)/);
+  assert.match(actions, /export async function archiveParentPaymentHistoryAction/);
+  assert.match(actions, /export async function restoreParentPaymentHistoryAction/);
+  assert.match(actions, /\.slice\(0, 100\)/);
+});
+
+test("parent Payment history archive views switch locally and preserve exports and receipt links", () => {
+  const table = readFileSync(historyTablePath, "utf8");
+
+  assert.match(table, /Current payments/);
+  assert.match(table, /Archived payments/);
+  assert.match(table, /useState<"active" \| "archived">\("active"\)/);
+  assert.match(table, /Select visible/);
+  assert.match(table, /Clear selection/);
+  assert.match(table, /Archive selected/);
+  assert.match(table, /Restore selected/);
+  assert.match(table, /row\.archiveEligible/);
+  assert.match(table, /Pending payments cannot be archived/);
+  assert.match(table, /router\.refresh\(\)/);
+  assert.match(table, /parent-payment-history-archived\.csv/);
+  assert.match(table, /parent-payment-history-archived\.pdf/);
+  assert.match(table, /\/parent\/receipt\?receiptId=/);
+  assert.match(table, /pagination\.pageRows\.map/);
+});
+
+test("parent Payment history archive migration and fresh schema are idempotent", () => {
+  for (const path of [historyArchiveMigrationPath, fullSchemaPath]) {
+    const source = readFileSync(path, "utf8");
+    assert.match(source, /CREATE TABLE IF NOT EXISTS parent_payment_history_archives/);
+    assert.match(source, /PRIMARY KEY \(parent_user_id, payment_id\)/);
+    assert.match(source, /FOREIGN KEY \(parent_user_id\) REFERENCES users\(id\)/);
+    assert.match(source, /FOREIGN KEY \(payment_id\) REFERENCES payments\(id\)/);
+    assert.match(source, /ON DELETE CASCADE/);
+  }
 });
 
 test("parent dashboard reflects real payment summary and recent payment rows", () => {

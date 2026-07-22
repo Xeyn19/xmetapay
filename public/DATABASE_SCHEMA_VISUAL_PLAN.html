@@ -326,8 +326,8 @@
             </tr>
             <tr>
               <td>Payments</td>
-              <td><code>payments</code>, <code>payment_allocations</code>, <code>payment_term_allocations</code>, <code>receipts</code></td>
-              <td>Payment records, active school-year stamps for new rows, regular fee allocation, tuition term allocation, receipt generation, and reversible <code>archived_at</code> organization for the admin Tuition collection log. Archive does not change payment status or financial history.</td>
+              <td><code>payments</code>, <code>parent_payment_history_archives</code>, <code>payment_allocations</code>, <code>payment_term_allocations</code>, <code>receipts</code></td>
+              <td>Payment records, active school-year stamps, allocations, receipts, admin Tuition collection organization through <code>payments.archived_at</code>, and separate parent-specific Payment history archive metadata. Neither archive path changes payment status or financial history.</td>
             </tr>
             <tr>
               <td>Wallet</td>
@@ -718,6 +718,8 @@ flowchart TD
   H --> I["Update student fee balances and statuses"]
   I --> J["Create receipt"]
   J --> K["Show receipt and payment history"]
+  K --> K2["Parent switches Current or Archived payments"]
+  K2 --> K3["Write or remove parent_payment_history_archives metadata"]
   A --> L["Parent switches Current or Archived fees"]
   L --> M{"Paid or zero balance?"}
   M -->|Yes| N["Write parent_fee_summary_archives metadata"]
