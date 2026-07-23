@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { FlashToast } from "@/app/_components/flash-toast";
-import { BrandMark } from "@/app/_components/auth-ui";
+import { AuthCard, PublicPageShell } from "@/app/_components/auth-ui";
 import { SuperAdminLoginForm } from "./super-admin-login-form";
 import { consumeAuthFlashToast, getSession } from "@/lib/auth/session";
 
@@ -35,30 +35,28 @@ export default async function CompanyLoginPage({
     : await consumeAuthFlashToast("super_admin");
 
   return (
-    <main className="min-h-[100svh] bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-4xl flex-col sm:min-h-[calc(100svh-48px)]">
-        <header className="flex min-h-12 items-center justify-between gap-3">
-          <BrandMark />
-          <Link
-            href="/"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-button-outline bg-white px-3 py-2 text-sm font-semibold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 sm:px-4"
-          >
-            Choose portal
-          </Link>
-        </header>
-
-        <section className="flex flex-1 items-center justify-center py-6 sm:py-8">
-          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+    <PublicPageShell
+      headerAction={
+        <Link
+          href="/"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-button-outline bg-white px-3 py-2 text-sm font-semibold text-[#bf360c] shadow-sm transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 sm:px-4"
+        >
+          All portals
+        </Link>
+      }
+    >
+        <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
+          <AuthCard>
             <FlashToast toast={toast} />
             <div className="mb-5">
-              <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#e64a19]">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e64a19]">
                 Company access
               </p>
-              <h1 className="mt-2 text-2xl font-bold leading-tight text-[#11131a]">
-                Sign in to XMETA monitoring
+              <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-[#11131a]">
+                Company sign in
               </h1>
               <p className="mt-2 text-sm leading-6 text-zinc-600">
-                Monitor schools and manage school admin account access.
+                Monitor schools and manage admin access.
               </p>
             </div>
             <SuperAdminLoginForm />
@@ -68,12 +66,11 @@ export default async function CompanyLoginPage({
                 href="/"
                 className="rounded-md font-bold text-[#bf360c] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
               >
-                Choose your portal
+                View public portals
               </Link>
             </div>
-          </div>
+          </AuthCard>
         </section>
-      </div>
-    </main>
+    </PublicPageShell>
   );
 }

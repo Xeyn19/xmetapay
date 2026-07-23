@@ -4,6 +4,8 @@ This document explains the purpose of the XMETA Pay database schema in `database
 
 Related role guide: `ADMIN_ROLES.md` explains what company `super_admin`, `school_administrator`, `registrar`, and `finance_officer` accounts can do.
 
+The public entry and authentication screens reuse this foundation: admins and parents can register through their role-specific routes, while company super admins use sign-in-only `/login`. This separation is a UI and authorization rule and does not require another authentication table.
+
 ## Import Order
 
 The database is split into two SQL files so the current authentication work stays stable.

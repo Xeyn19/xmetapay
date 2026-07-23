@@ -32,10 +32,49 @@ export function BrandMark() {
           XMETA Pay
         </span>
         <span className="block truncate text-xs font-medium text-zinc-500">
-          School payment portal
+          School payments, simplified
         </span>
       </span>
     </Link>
+  );
+}
+
+export function PublicPageShell({
+  children,
+  headerAction,
+}: {
+  children: React.ReactNode;
+  headerAction?: React.ReactNode;
+}) {
+  return (
+    <main className="min-h-[100svh] overflow-x-hidden bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-5xl flex-col sm:min-h-[calc(100svh-48px)]">
+        <header className="flex min-h-12 items-center justify-between gap-3">
+          <BrandMark />
+          {headerAction}
+        </header>
+        {children}
+      </div>
+    </main>
+  );
+}
+
+export function AuthCard({
+  children,
+  wide = false,
+}: {
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative w-full overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-[0_16px_45px_rgba(17,19,26,0.08)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[#e64a19] sm:p-7",
+        wide ? "max-w-4xl lg:p-8" : "max-w-md",
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -52,20 +91,18 @@ export function PortalAuthLayout({
   const isLogin = mode === "login";
 
   return (
-    <main className="min-h-[100svh] bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-4xl flex-col sm:min-h-[calc(100svh-48px)]">
-        <header className="flex min-h-12 items-center justify-between gap-3">
-          <BrandMark />
-          <Link
-            href="/"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-button-outline bg-white px-3 py-2 text-sm font-semibold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 sm:px-4"
-          >
-            Choose portal
-          </Link>
-        </header>
-
-        <section className={isLogin ? "flex flex-1 items-center justify-center py-6 sm:py-8" : "flex flex-1 items-center justify-center py-8 sm:py-10 lg:py-12"}>
-          <div className={isLogin ? "w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6" : "w-full max-w-4xl rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 lg:p-8"}>
+    <PublicPageShell
+      headerAction={
+        <Link
+          href="/"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-button-outline bg-white px-3 py-2 text-sm font-semibold text-[#bf360c] shadow-sm transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 sm:px-4"
+        >
+          All portals
+        </Link>
+      }
+    >
+        <section className={isLogin ? "flex flex-1 items-center justify-center py-8 sm:py-10" : "flex flex-1 items-start justify-center py-8 sm:py-10 lg:py-12"}>
+          <AuthCard wide={!isLogin}>
             {children}
             <div className={isLogin ? "mt-5 border-t border-zinc-100 pt-4 text-center text-sm text-zinc-600" : "mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-600"}>
               {mode === "login" ? "New to this portal?" : "Already have access?"}{" "}
@@ -76,10 +113,9 @@ export function PortalAuthLayout({
                 {mode === "login" ? "Create an account" : "Sign in instead"}
               </Link>
             </div>
-          </div>
+          </AuthCard>
         </section>
-      </div>
-    </main>
+    </PublicPageShell>
   );
 }
 
@@ -127,13 +163,13 @@ export function AuthForm({
     <form action={action} className={isLogin ? "space-y-4" : "space-y-5 sm:space-y-6"}>
       <AuthToastListener state={state} mode={mode} portal={portal} />
       <div>
-        <p className={isLogin ? "text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#e64a19]" : "text-[0.7rem] font-bold uppercase tracking-[0.16em] text-[#e64a19] sm:text-xs sm:tracking-[0.18em]"}>
+        <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e64a19]">
           {portal === "admin" ? "Admin access" : "Family access"}
         </p>
-        <h2 className={isLogin ? "mt-2 text-2xl font-bold leading-tight text-[#11131a]" : "mt-3 text-2xl font-bold leading-tight tracking-tight text-[#11131a] sm:text-3xl"}>
+        <h1 className={isLogin ? "mt-2 text-2xl font-bold leading-tight tracking-tight text-[#11131a]" : "mt-2 text-2xl font-bold leading-tight tracking-tight text-[#11131a] sm:text-3xl"}>
           {title}
-        </h2>
-        <p className={isLogin ? "mt-2 text-sm leading-6 text-zinc-600" : "mt-2 max-w-2xl text-sm leading-6 text-zinc-600 sm:text-base sm:leading-7"}>
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
           {subtitle}
         </p>
       </div>
@@ -345,39 +381,27 @@ export function PortalCard({
   href,
   registerHref,
   variant,
-  tags,
 }: {
   title: string;
   description: string;
   href: string;
   registerHref: string;
   variant: Portal;
-  tags: string[];
 }) {
   const isAdmin = variant === "admin";
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-5 text-left text-[#11131a] shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md sm:p-6 lg:p-7">
-      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#e8f1ff] text-[#2f68b7] ring-1 ring-[#2f68b7]/10">
+    <article className="flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-5 text-left text-[#11131a] shadow-[0_12px_35px_rgba(17,19,26,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[#e64a19]/30 hover:shadow-[0_16px_40px_rgba(17,19,26,0.09)] sm:p-6">
+      <div className="flex size-11 items-center justify-center rounded-lg bg-[#fff1ec] text-[#d84315] ring-1 ring-[#e64a19]/10">
         {isAdmin ? <SettingsIcon /> : <PeopleIcon />}
       </div>
-      <h2 className="mt-5 text-xl font-bold leading-tight tracking-tight sm:text-2xl">
+      <h2 className="mt-4 text-xl font-bold leading-tight tracking-tight">
         {title}
       </h2>
-      <p className="mt-3 flex-1 text-sm leading-7 text-zinc-600 sm:text-base">
+      <p className="mt-2 flex-1 text-sm leading-6 text-zinc-600">
         {description}
       </p>
-      <div className="mt-5 flex flex-wrap gap-2">
-        {tags.map((tag) => (
-          <span
-            key={tag}
-            className="inline-flex min-h-7 items-center rounded-md bg-[#f1f3f5] px-3 text-[11px] font-bold text-zinc-700"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
-      <div className="mt-6 flex flex-col gap-3 min-[420px]:flex-row">
+      <div className="mt-5 flex flex-col gap-3 min-[420px]:flex-row">
         <Link
           href={href}
           className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[#e64a19] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"

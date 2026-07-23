@@ -10,6 +10,8 @@ XMETA Pay uses one MySQL database for three connected access areas:
 
 Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
 
+The public entry page exposes admin and parent portal choices. Company super-admin access remains a separate sign-in-only route at `/login`; the schema does not support public company-account registration.
+
 The current database already starts with shared authentication tables. The practical MVP should keep that foundation and add school, student, enrollment, billing, payment, wallet, and reporting tables around it.
 
 Recommended database defaults for XAMPP MySQL:

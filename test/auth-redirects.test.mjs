@@ -38,7 +38,8 @@ test("auth pages show fields that match the role-specific schema", () => {
   assert.match(adminLoginPage, /placeholder: "admin@school\.edu\.ph or 0917 000 0000"/);
   assert.doesNotMatch(adminLoginPage, /type: "email"/);
 
-  assert.match(adminRegisterPage, /Create the school owner account/);
+  assert.match(adminRegisterPage, /Register your school owner account for approval/);
+  assert.doesNotMatch(adminRegisterPage, /Brentwood Academy of Las Pinas/);
   assert.doesNotMatch(adminRegisterPage, /name: "staffRole"/);
   assert.doesNotMatch(adminRegisterPage, /label: "Staff role"/);
   assert.doesNotMatch(adminRegisterPage, /Finance officer|Registrar|School administrator/);
@@ -202,8 +203,10 @@ test("home page redirects already-authenticated users to the correct dashboard",
   assert.match(homePage, /if \(session\?\.role === "admin"\) \{\s*redirect\("\/admin\/dashboard"\);/);
   assert.match(homePage, /if \(session\?\.role === "parent"\) \{\s*redirect\("\/parent\/dashboard"\);/);
   assert.match(homePage, /if \(session\?\.role === "super_admin"\) \{\s*redirect\("\/super-admin\/dashboard"\);/);
-  assert.match(homePage, /Choose where you want to continue/);
+  assert.match(homePage, /School payments, made simple/);
   assert.match(homePage, /Company login/);
+  assert.doesNotMatch(homePage, /Brentwood Academy of Las Pinas/);
+  assert.doesNotMatch(homePage, /registerHref="\/login"/);
 });
 
 test("company super admin login page redirects existing sessions by role", () => {
@@ -211,7 +214,18 @@ test("company super admin login page redirects existing sessions by role", () =>
   assert.match(companyLoginPage, /if \(session\?\.role === "super_admin"\) \{\s*redirect\("\/super-admin\/dashboard"\);/);
   assert.match(companyLoginPage, /if \(session\?\.role === "admin"\) \{\s*redirect\("\/admin\/dashboard"\);/);
   assert.match(companyLoginPage, /if \(session\?\.role === "parent"\) \{\s*redirect\("\/parent\/dashboard"\);/);
-  assert.match(companyLoginPage, /Sign in to XMETA monitoring/);
+  assert.match(companyLoginPage, /Company sign in/);
+  assert.doesNotMatch(companyLoginPage, /register|Create an account/i);
+});
+
+test("public auth screens share the branded shell without changing form contracts", () => {
+  assert.match(authUi, /export function PublicPageShell/);
+  assert.match(authUi, /export function AuthCard/);
+  assert.match(authUi, /School payments, simplified/);
+  assert.match(authUi, /min-h-12 w-full/);
+  assert.match(authUi, /focus-visible:ring/);
+  assert.match(adminLoginPage, /name: "email"/);
+  assert.match(parentLoginPage, /name: "identifier"/);
 });
 
 test("flash toast allows repeated identical server-action messages", () => {

@@ -13,6 +13,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Admin/school login works.
 - [x] Parent login works.
 - [x] Company super admin login exists at `/login`.
+- [x] The public entry page routes school admins and parents to their own sign-in and registration pages while company access remains sign-in-only.
 - [x] Company super admin uses a sidebar-based monitoring workspace.
 - [x] Company super admin can monitor schools and manage school admin accounts from a dedicated accounts page.
 - [x] Company super admin dashboard includes a Recharts-backed school-admin registration trend with daily, weekly, monthly, and custom date views.
