@@ -275,18 +275,6 @@ export async function getParentStudentProfileData(
          COALESCE(sec.name, '-') AS section_name,
          COALESCE(e.status, 'pending') AS enrollment_status,
          e.student_type,
-         COALESCE(w.balance, 0) AS wallet_balance,
-         COALESCE(w.status, 'not_started') AS wallet_status,
-         COALESCE((
-           SELECT SUM(CASE WHEN wt_spend.type = 'purchase' AND wt_spend.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') THEN ABS(wt_spend.amount) ELSE 0 END)
-           FROM wallet_transactions wt_spend
-           WHERE wt_spend.wallet_id = w.id
-         ), 0) AS monthly_spend,
-         (
-           SELECT MAX(wt_topup.created_at)
-           FROM wallet_transactions wt_topup
-           WHERE wt_topup.wallet_id = w.id AND wt_topup.type = 'top_up'
-         ) AS last_top_up_at,
          u.name AS parent_name, u.email, u.phone, u.status AS parent_status,
          pp.relationship
        FROM student_guardians sg
@@ -298,7 +286,6 @@ export async function getParentStudentProfileData(
        LEFT JOIN school_years sy ON sy.id = e.school_year_id
        LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
        LEFT JOIN sections sec ON sec.id = e.section_id
-       LEFT JOIN wallets w ON w.student_id = st.id
        WHERE sg.parent_user_id = :parentUserId
        ${selectedStudentClause}
        ORDER BY sg.is_primary DESC, st.last_name ASC, st.first_name ASC,
@@ -313,7 +300,14 @@ export async function getParentStudentProfileData(
       return { context, student: null };
     }
 
-    const walletActivity = await getParentRecentWalletActivity(parentUserId, { studentId: row.id, limit: 10 });
+    const [walletSummaryResult, walletActivityResult] = await Promise.allSettled([
+      getParentStudentWalletSummary(parentUserId, row.id),
+      getParentRecentWalletActivity(parentUserId, { studentId: row.id, limit: 10 }),
+    ]);
+    const walletSummary =
+      walletSummaryResult.status === "fulfilled" ? walletSummaryResult.value : null;
+    const walletActivity =
+      walletActivityResult.status === "fulfilled" ? walletActivityResult.value : [];
     const fullStudentName = fullName(row.first_name, row.middle_name, row.last_name);
     const gradeSection = [row.grade_name, row.section_name !== "-" ? row.section_name : null].filter(Boolean).join(" - ");
     const enrollmentLabel = labelForStatus(row.enrollment_status);
@@ -355,17 +349,55 @@ export async function getParentStudentProfileData(
           { label: "Portal access", value: labelForStatus(row.parent_status) },
         ],
         walletDetails: [
-          { label: "Current balance", value: money(row.wallet_balance) },
-          { label: "Monthly spend", value: money(row.monthly_spend) },
-          { label: "Last top-up", value: row.last_top_up_at ? formatDateTime(row.last_top_up_at) : "No top-up yet" },
-          { label: "Status", value: row.wallet_status === "not_started" ? "Ready for top-up" : labelForStatus(row.wallet_status) },
+          { label: "Current balance", value: money(walletSummary?.wallet_balance) },
+          { label: "Monthly spend", value: money(walletSummary?.monthly_spend) },
+          { label: "Last top-up", value: walletSummary?.last_top_up_at ? formatDateTime(walletSummary.last_top_up_at) : "No top-up yet" },
+          { label: "Status", value: !walletSummary || walletSummary.wallet_status === "not_started" ? "Ready for top-up" : labelForStatus(walletSummary.wallet_status) },
         ],
         walletActivity,
       },
     };
-  } catch {
-    return { context, student: null };
+  } catch (error) {
+    throw error;
   }
+}
+
+async function getParentStudentWalletSummary(
+  parentUserId: number,
+  studentId: number,
+) {
+  const [rows] = await pool.execute<ParentStudentWalletSummaryRow[]>(
+    `SELECT
+       COALESCE(w.balance, 0) AS wallet_balance,
+       COALESCE(w.status, 'not_started') AS wallet_status,
+       COALESCE((
+         SELECT SUM(
+           CASE
+             WHEN wt_spend.type = 'purchase'
+               AND wt_spend.created_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
+             THEN ABS(wt_spend.amount)
+             ELSE 0
+           END
+         )
+         FROM wallet_transactions wt_spend
+         WHERE wt_spend.wallet_id = w.id
+       ), 0) AS monthly_spend,
+       (
+         SELECT MAX(wt_topup.created_at)
+         FROM wallet_transactions wt_topup
+         WHERE wt_topup.wallet_id = w.id
+           AND wt_topup.type = 'top_up'
+       ) AS last_top_up_at
+     FROM student_guardians sg
+     JOIN students st ON st.id = sg.student_id
+     LEFT JOIN wallets w ON w.student_id = st.id
+     WHERE sg.parent_user_id = :parentUserId
+       AND st.id = :studentId
+     LIMIT 1`,
+    { parentUserId, studentId },
+  );
+
+  return rows[0] ?? null;
 }
 
 export async function linkParentToStudentByReference(
@@ -1015,15 +1047,18 @@ type ParentStudentProfileRow = RowDataPacket & {
   section_name: string;
   enrollment_status: string;
   student_type: string | null;
-  wallet_balance: number | string;
-  wallet_status: string;
-  monthly_spend: number | string;
-  last_top_up_at: Date | string | null;
   parent_name: string;
   email: string;
   phone: string | null;
   parent_status: string;
   relationship: string | null;
+};
+
+type ParentStudentWalletSummaryRow = RowDataPacket & {
+  wallet_balance: number | string;
+  wallet_status: string;
+  monthly_spend: number | string;
+  last_top_up_at: Date | string | null;
 };
 
 type ParentProfileRow = RowDataPacket & {
