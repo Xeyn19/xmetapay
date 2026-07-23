@@ -6,8 +6,8 @@ export default function AdminRegisterPage() {
       <AuthForm
         portal="admin"
         mode="register"
-        title="Create admin access"
-        subtitle="Create the school owner account for XMETA Pay. Staff accounts can be managed later from the admin workspace."
+        title="Create admin account"
+        subtitle="Register your school owner account for approval."
         fields={[
           {
             label: "Admin name",
@@ -17,7 +17,7 @@ export default function AdminRegisterPage() {
           {
             label: "School name",
             name: "schoolName",
-            placeholder: "Brentwood Academy of Las Pinas",
+            placeholder: "Your school name",
           },
           {
             label: "School email",

@@ -29,8 +29,8 @@ export default async function AdminLoginPage({
       <AuthForm
         portal="admin"
         mode="login"
-        title="Sign in to admin"
-        subtitle="Use your school-issued account to open the admin operations dashboard."
+        title="Admin sign in"
+        subtitle="Access your school workspace."
         fields={[
           {
             label: "Email or phone",

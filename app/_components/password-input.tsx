@@ -10,6 +10,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import { cn } from "@/lib/utils"
 
 type PasswordInputProps = Omit<ComponentProps<"input">, "type">
 
@@ -22,12 +23,13 @@ export function PasswordInput({ className, ...props }: PasswordInputProps) {
       <InputGroupInput
         {...props}
         type={visible ? "text" : "password"}
-        className={className}
+        className={cn("min-h-12", className)}
       />
       <InputGroupAddon align="inline-end">
         <InputGroupButton
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
+          className="size-11"
           size="icon-sm"
           type="button"
           onClick={() => setVisible((current) => !current)}

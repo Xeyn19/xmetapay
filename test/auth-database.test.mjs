@@ -182,7 +182,7 @@ test("parent registration renders multi-student reference controls", () => {
   const parentRegister = readFileSync(parentRegisterPath, "utf8");
   const authUi = readFileSync(authUiPath, "utf8");
 
-  assert.match(parentRegister, /one or more existing student records/);
+  assert.match(parentRegister, /Connect your account to your student records/);
   assert.match(parentRegister, /name: "studentReferences"/);
   assert.match(parentRegister, /type: "studentReferences"/);
   assert.doesNotMatch(parentRegister, /name: "studentReference"/);

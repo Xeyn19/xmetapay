@@ -2,6 +2,8 @@
 
 This guide explains the company super admin role and the three school/admin staff roles used by XMETA Pay.
 
+The public XMETA Pay entry page offers school-admin and parent/guardian portal choices. Company super admins use the separate `/login` link and do not have a public registration route.
+
 ## Company Role
 
 | Auth role | Main purpose | Can do | Cannot do |

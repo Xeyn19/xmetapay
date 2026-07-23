@@ -29,8 +29,8 @@ export default async function ParentLoginPage({
       <AuthForm
         portal="parent"
         mode="login"
-        title="Sign in to parent portal"
-        subtitle="Open your family dashboard to view linked students, fees, and allowance wallets."
+        title="Parent sign in"
+        subtitle="Access your family payment dashboard."
         fields={[
           {
             label: "Email or mobile number",

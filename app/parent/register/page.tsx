@@ -7,7 +7,7 @@ export default function ParentRegisterPage() {
         portal="parent"
         mode="register"
         title="Create parent account"
-        subtitle="Link your guardian profile to one or more existing student records from the school."
+        subtitle="Connect your account to your student records."
         fields={[
           {
             label: "Guardian name",

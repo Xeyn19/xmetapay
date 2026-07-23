@@ -10,11 +10,13 @@ test.describe("XMETA Pay portal entry", () => {
 
     await expect(
       page.getByRole("heading", {
-        name: /choose where you want to continue/i,
+        name: /school payments, made simple/i,
       })
     ).toBeVisible();
     await expect(page.getByText("School Admin")).toBeVisible();
     await expect(page.getByText("Parent / Guardian")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Company login" })).toHaveAttribute("href", "/login");
+    await expect(page.getByText("Brentwood Academy of Las Pinas")).toHaveCount(0);
     await expectBrandLogo(page);
   });
 
@@ -63,7 +65,7 @@ test.describe("XMETA Pay portal entry", () => {
 
     await expect(page).toHaveURL("/admin/login");
     await expect(
-      page.getByRole("heading", { name: /sign in to admin/i })
+      page.getByRole("heading", { name: /admin sign in/i })
     ).toBeVisible();
   });
 
@@ -80,8 +82,24 @@ test.describe("XMETA Pay portal entry", () => {
 
     await expect(page).toHaveURL("/parent/login");
     await expect(
-      page.getByRole("heading", { name: /sign in to parent portal/i })
+      page.getByRole("heading", { name: /parent sign in/i })
     ).toBeVisible();
+  });
+
+  test("public entry stays usable at supported responsive widths", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+
+      const metrics = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      }));
+
+      expect(metrics.scrollWidth).toBe(metrics.clientWidth);
+      await expect(page.getByRole("link", { name: "Company login" })).toBeVisible();
+      await expectBrandLogo(page);
+    }
   });
 });
 
