@@ -27,7 +27,7 @@ test("auth forms submit through server actions instead of static redirects", () 
   assert.match(authUi, /minLength=\{field\.name === "password" \? 8 : undefined\}/);
   assert.match(authUi, /Use at least 8 characters\./);
   assert.doesNotMatch(authUi, /Remember me/);
-  assert.doesNotMatch(authUi, /Forgot password\?/);
+  assert.match(authUi, /Forgot password\?/);
 });
 
 test("auth pages show fields that match the role-specific schema", () => {

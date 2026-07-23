@@ -12,7 +12,7 @@ The database is split into two SQL files so the current authentication work stay
 
 1. `database/auth-schema.sql`
    - Creates the `xmetapay_db` database.
-   - Creates shared authentication tables: `users`, `auth_sessions`, `admin_profiles`, and `parent_profiles`.
+   - Creates shared authentication tables: `users`, `auth_sessions`, `password_reset_challenges`, `admin_profiles`, and `parent_profiles`.
    - Must be imported first because the full schema references `users.id`.
 2. `database/full-schema-v1.sql`
    - Adds the full MVP database layer.
@@ -47,6 +47,18 @@ Important behavior:
 - Sessions can expire through `expires_at`.
 - Logout revokes the active session by setting `revoked_at`.
 - Protected pages only accept sessions that are not expired, not revoked, and belong to an active user with the matching portal role.
+
+### `password_reset_challenges`
+
+This stores one active password-recovery challenge per user. It keeps only HMAC hashes of the opaque browser challenge token and six-digit OTP; plaintext reset codes are never stored.
+
+Important behavior:
+
+- OTP codes expire after five minutes and cannot be resent for 60 seconds.
+- Send counters enforce five emails per account per hour, while failed attempts invalidate a code after five incorrect submissions.
+- Successful OTP verification opens a ten-minute password-entry window.
+- Completing a reset consumes the challenge and revokes all existing `auth_sessions` for that user.
+- Only active accounts receive or complete recovery; password reset never changes `users.status`.
 - `last_used_at` updates when a valid session is read.
 - Company super admin sessions use the same table and cookie model, but they are only accepted by `/super-admin/*` routes.
 

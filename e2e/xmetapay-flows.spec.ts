@@ -26,6 +26,9 @@ test.describe("XMETA Pay portal entry", () => {
     "/admin/register",
     "/parent/login",
     "/parent/register",
+    "/admin/forgot-password",
+    "/parent/forgot-password",
+    "/forgot-password",
   ]) {
     test(`${route} shows the shared brand logo`, async ({ page }) => {
       await page.goto(route);
@@ -86,6 +89,29 @@ test.describe("XMETA Pay portal entry", () => {
     ).toBeVisible();
   });
 
+  for (const [loginRoute, recoveryRoute] of [
+    ["/admin/login", "/admin/forgot-password"],
+    ["/parent/login", "/parent/forgot-password"],
+    ["/login", "/forgot-password"],
+  ]) {
+    test(`${loginRoute} opens its role-specific recovery page`, async ({ page }) => {
+      await page.goto(loginRoute);
+
+      const forgotPassword = page.getByRole("link", {
+        name: "Forgot password?",
+      });
+      await expect(forgotPassword).toHaveAttribute("href", recoveryRoute);
+      await forgotPassword.click();
+
+      await expect(page).toHaveURL(recoveryRoute);
+      await expect(
+        page.getByRole("heading", { name: "Forgot your password?" }),
+      ).toBeVisible();
+      await expect(page.getByLabel("Account email")).toBeVisible();
+      await expectBrandLogo(page);
+    });
+  }
+
   test("public entry stays usable at supported responsive widths", async ({ page }) => {
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
@@ -99,6 +125,48 @@ test.describe("XMETA Pay portal entry", () => {
       expect(metrics.scrollWidth).toBe(metrics.clientWidth);
       await expect(page.getByRole("link", { name: "Company login" })).toBeVisible();
       await expectBrandLogo(page);
+    }
+  });
+
+  test("password recovery request pages stay usable at supported responsive widths", async ({ page }) => {
+    for (const route of [
+      "/admin/forgot-password",
+      "/parent/forgot-password",
+      "/forgot-password",
+    ]) {
+      for (const width of [320, 375, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(route);
+
+        await expect(
+          page.getByRole("heading", { name: "Forgot your password?" }),
+        ).toBeVisible();
+        await expect(page.getByLabel("Account email")).toBeVisible();
+        await expect(
+          page.getByRole("button", { name: "Send reset code" }),
+        ).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+        await expectBrandLogo(page);
+      }
+    }
+  });
+
+  test("password recovery presents the OTP stage without revealing an unknown account", async ({ page }) => {
+    await page.goto("/admin/forgot-password");
+    await page.getByLabel("Account email").fill("unknown-recovery-user@example.com");
+    await page.getByRole("button", { name: "Send reset code" }).click();
+
+    await expect(page.getByLabel("Six-digit code")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Verify code" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Resend code in \d+s/ }),
+    ).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Use a different email" })).toBeVisible();
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expectNoHorizontalOverflow(page);
+      await expect(page.getByLabel("Six-digit code")).toBeInViewport();
     }
   });
 });

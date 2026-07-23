@@ -27,6 +27,7 @@ Implemented:
 - Company super admin login at `/login`.
 - Admin/school registration and login.
 - Parent registration and login.
+- Role-specific email OTP password recovery for active company, admin, and parent accounts.
 - Logout and protected dashboard redirects.
 - Local MySQL/XAMPP database connection through environment variables.
 - Full schema import through `database/full-schema-v1.sql`.
@@ -493,6 +494,35 @@ Parent can view student data only when:
 student_guardians.parent_user_id = signed_in_parent_user_id
 and student_guardians.student_id = students.id
 ```
+
+## Password Recovery Flow
+
+Implemented.
+
+```mermaid
+flowchart TD
+  A["User selects Forgot password from the matching login page"] --> B["Submit account email and portal role"]
+  B --> C{"Active role-matched account?"}
+  C -->|No| D["Return the same generic code-sent response"]
+  C -->|Yes| E["Store HMAC token and OTP hashes with 5-minute expiry"]
+  E --> F["Send six-digit OTP through configured SMTP"]
+  F --> G["User enters OTP"]
+  G --> H{"Valid, unexpired, under 5 attempts?"}
+  H -->|No| I["Show safe error or require a new code"]
+  H -->|Yes| J["Open 10-minute password reset window"]
+  J --> K["Hash and save new password"]
+  K --> L["Consume challenge and revoke all user sessions"]
+  L --> M["Redirect to matching login with success message"]
+```
+
+Resend is server-enforced after 60 seconds and limited to five sends per account per rolling hour. Unknown, pending, and disabled accounts receive the same request response but no email. Password recovery never changes approval or disabled status.
+
+Database touchpoints:
+
+- `users`
+- `password_reset_challenges`
+- `auth_sessions`
+- `xmetapay_password_reset` HttpOnly cookie containing only the raw random challenge token
 
 ## Session Guard And Logout Flow
 

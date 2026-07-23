@@ -38,6 +38,13 @@ type PaymentReminderEmail = {
   messageBody: string;
 };
 
+type PasswordResetOtpEmail = {
+  email: string;
+  name: string;
+  otp: string;
+  portalLabel: string;
+};
+
 type EmailConfiguration = {
   host: string;
   port: number;
@@ -90,6 +97,39 @@ export async function sendPaymentReminderEmail(reminder: PaymentReminderEmail) {
     subject,
     text: paymentReminderText(reminder, config.parentPortalUrl),
     html: paymentReminderHtml(reminder, config.parentPortalUrl),
+  });
+}
+
+export async function sendPasswordResetOtpEmail(reset: PasswordResetOtpEmail) {
+  const emailTransport = getTransporter();
+  const config = getEmailConfiguration();
+  const subject = "Your XMETA Pay password reset code";
+  const name = reset.name.trim() || "XMETA Pay user";
+
+  await emailTransport.sendMail({
+    from: {
+      name: config.fromName,
+      address: config.fromEmail,
+    },
+    to: {
+      name,
+      address: reset.email,
+    },
+    subject,
+    text: [
+      `Hello ${name},`,
+      "",
+      `Your XMETA Pay ${reset.portalLabel} password reset code is: ${reset.otp}`,
+      "",
+      "This code expires in 5 minutes. Do not share it with anyone.",
+      "If you did not request a password reset, you can ignore this email.",
+      "",
+      "XMETA Pay",
+    ].join("\n"),
+    html: passwordResetOtpHtml({
+      ...reset,
+      name,
+    }),
   });
 }
 
@@ -215,6 +255,37 @@ function paymentReminderText(reminder: PaymentReminderEmail, parentPortalUrl: st
     "",
     "This is an automated payment reminder from XMETA Pay.",
   ].join("\n");
+}
+
+function passwordResetOtpHtml(reset: PasswordResetOtpEmail) {
+  const name = escapeHtml(reset.name);
+  const otp = escapeHtml(reset.otp);
+  const portalLabel = escapeHtml(reset.portalLabel);
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+  </head>
+  <body style="margin:0;background:#f4f5f7;font-family:Arial,sans-serif;color:#11131a;">
+    <div style="padding:24px 12px;">
+      <div style="max-width:520px;margin:0 auto;overflow:hidden;border:1px solid #e4e7ec;border-radius:8px;background:#ffffff;">
+        <div style="background:#11131a;padding:18px 24px;color:#ffffff;">
+          <strong style="font-size:18px;">XMETA Pay</strong>
+          <div style="margin-top:4px;color:#c7cad1;font-size:13px;">Secure ${portalLabel} access</div>
+        </div>
+        <div style="padding:24px;">
+          <p style="margin:0 0 14px;line-height:1.6;">Hello ${name},</p>
+          <p style="margin:0 0 18px;line-height:1.6;">Enter this code to continue resetting your password:</p>
+          <div style="margin:0 0 18px;padding:16px;border:1px solid #f4b6a5;border-radius:8px;background:#fff4f0;text-align:center;color:#bf360c;font-size:30px;font-weight:700;letter-spacing:8px;">${otp}</div>
+          <p style="margin:0 0 8px;color:#5f6673;font-size:13px;line-height:1.6;">This code expires in 5 minutes. Do not share it with anyone.</p>
+          <p style="margin:0;color:#5f6673;font-size:13px;line-height:1.6;">If you did not request a password reset, you can ignore this email.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>`;
 }
 
 function paymentReminderHtml(reminder: PaymentReminderEmail, parentPortalUrl: string) {
