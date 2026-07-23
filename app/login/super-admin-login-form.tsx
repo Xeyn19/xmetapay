@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -58,6 +59,15 @@ export function SuperAdminLoginForm() {
         />
         {state.errors?.password ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{state.errors.password}</span> : null}
       </label>
+
+      <div className="text-right">
+        <Link
+          href="/forgot-password"
+          className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-bold text-[#bf360c] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
+        >
+          Forgot password?
+        </Link>
+      </div>
 
       {state.message ? (
         <p className="rounded-lg border border-[#f4b6a5] bg-[#fff4f0] px-3 py-2 text-sm font-semibold text-[#9f2f12]" aria-live="polite">

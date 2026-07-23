@@ -82,6 +82,12 @@ KEY idx_auth_sessions_user_revoked_expires (user_id, revoked_at, expires_at),
 KEY idx_auth_sessions_role_expires (role, expires_at)
 ```
 
+### `password_reset_challenges`
+
+One row per user owns the current email OTP password-recovery lifecycle. The table stores HMAC hashes for the browser challenge and OTP, five-minute OTP expiry, 60-second resend timing, a rolling hourly send counter, failed attempts, verification/reset expiry, and one-time consumption.
+
+The user foreign key uses `ON DELETE CASCADE`. A successful password update and challenge consumption occur in one transaction, which also revokes every open `auth_sessions` row for that user. Account status is never modified by password recovery.
+
 ### `admin_profiles`
 
 One admin profile per admin user.

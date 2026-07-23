@@ -23,6 +23,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Admin/school staff roles are documented and enforced for key pages/actions.
 - [x] Local database environment file is ignored by Git.
 - [x] Auth uses database-backed `auth_sessions` with hashed tokens and logout revocation.
+- [x] Active admin, parent, and company accounts support SMTP-delivered six-digit OTP password recovery with expiry, resend cooldown, attempt limits, and session revocation.
 - [x] Admin dashboard pages use MySQL-backed reads where tables exist, with honest pending/empty states where feature data is not created yet.
 - [x] School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - [x] Student, enrollment, and guardian-linking backend is implemented.

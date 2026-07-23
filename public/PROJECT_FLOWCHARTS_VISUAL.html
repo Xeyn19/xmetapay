@@ -292,7 +292,7 @@
         <div class="grid">
           <div class="card">
             <strong>Implemented</strong>
-            Public admin and parent portal entry with separate company sign-in, company super admin login, school admin registration approval, auth, logout, protected redirects, manual school setup, admin role permissions, student
+            Public admin and parent portal entry with separate company sign-in, company super admin login, role-specific email OTP password recovery, school admin registration approval, auth, logout, protected redirects, manual school setup, admin role permissions, student
             single and batch student creation, enrollment, parent-student linking, fees, local test payments, receipts,
             payment history, wallet top-ups, store purchases, a Recharts-backed real-data overview
             for the school administrator dashboard, CSV/PDF report exports, paginated table screens
@@ -684,6 +684,27 @@ flowchart TD
   E --> J["Parent can retry after admin fixes or creates student"]
           </pre>
         </div>
+
+        <h3>Password Recovery</h3>
+        <p>Active company, school-admin, and parent accounts use the recovery link on their matching login page. Unknown or inactive accounts receive the same safe request response without an email.</p>
+        <div class="diagram-card">
+          <div class="diagram-actions">
+            <button type="button" data-diagram-download="svg" data-file-name="password-recovery-flow.svg">Download SVG</button>
+          </div>
+          <pre class="mermaid">
+flowchart TD
+  A["Open role-specific Forgot password page"] --> B["Submit account email"]
+  B --> C{"Active matching account?"}
+  C -->|No| D["Return generic code-sent response"]
+  C -->|Yes| E["Store hashed challenge and 6-digit OTP"]
+  E --> F["Send OTP through SMTP"]
+  F --> G["Verify within 5 minutes and 5 attempts"]
+  G --> H["Open 10-minute password reset window"]
+  H --> I["Update password, consume challenge, revoke sessions"]
+  I --> J["Return to matching login"]
+          </pre>
+        </div>
+        <p>Resend unlocks after 60 seconds and is limited to five sends per account per rolling hour. Password recovery does not change account status.</p>
 
         <h3>Session Guard And Logout</h3>
         <div class="diagram-card">

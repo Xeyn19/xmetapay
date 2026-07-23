@@ -4,6 +4,8 @@ This guide explains the company super admin role and the three school/admin staf
 
 The public XMETA Pay entry page offers school-admin and parent/guardian portal choices. Company super admins use the separate `/login` link and do not have a public registration route.
 
+Active company, school-admin, and parent accounts can request an email OTP from their role-specific login page. Password recovery never approves a pending account or re-enables a disabled account, and a successful reset revokes the user's existing sessions.
+
 ## Company Role
 
 | Auth role | Main purpose | Can do | Cannot do |

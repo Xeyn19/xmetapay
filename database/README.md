@@ -64,6 +64,11 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Finished payments can be organized without changing receipts, allocations, balances, admin collections, reports, or another parent's records.
    - Safe to import more than once.
 
+16. If `auth-schema.sql` was already imported before OTP password recovery was added, import `migrations/2026-07-23-password-reset-otp.sql`.
+   - Adds one secure `password_reset_challenges` row per user.
+   - Stores only hashed challenge tokens and OTP codes, plus expiration, resend, attempt, verification, and consumption metadata.
+   - Safe to import more than once.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.
@@ -79,5 +84,6 @@ After importing both files:
 3. Register a test parent account.
 4. Log in and log out from both portals.
 5. Confirm protected admin and parent dashboards still redirect after logout.
+6. Request and complete one local OTP password reset after SMTP is configured.
 
 Do not commit database exports, real school data, parent data, student data, payment data, credentials, or local environment files.

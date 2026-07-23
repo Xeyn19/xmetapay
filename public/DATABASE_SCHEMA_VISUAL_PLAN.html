@@ -292,7 +292,8 @@
             <code>super_admin</code>, <code>admin</code>, and
             <code>parent</code> roles, with
             role-specific <code>admin_profiles</code> and
-            <code>parent_profiles</code>. Admin profiles link to
+            <code>parent_profiles</code>, plus one secure
+            <code>password_reset_challenges</code> row per user. Admin profiles link to
             <code>schools.id</code> after manual setup. New school admin
             users start with <code>users.status = pending</code> until the
             company super admin approves or rejects them. Admins and parents
@@ -322,8 +323,8 @@
           <tbody>
             <tr>
               <td>Auth</td>
-              <td><code>users</code>, <code>auth_sessions</code>, <code>admin_profiles</code>, <code>parent_profiles</code></td>
-              <td>Company super admin login, admin registration approval, portal registration/login, DB-backed sessions, role redirects, and account status.</td>
+              <td><code>users</code>, <code>auth_sessions</code>, <code>password_reset_challenges</code>, <code>admin_profiles</code>, <code>parent_profiles</code></td>
+              <td>Company super admin login, admin registration approval, portal registration/login, hashed OTP recovery challenges, DB-backed sessions, role redirects, and account status.</td>
             </tr>
             <tr>
               <td>School setup</td>
