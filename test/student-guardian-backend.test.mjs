@@ -345,6 +345,24 @@ test("parent student profile helper can read a selected linked student only", ()
   assert.match(helper, /typeof studentId === "number" \? \{ parentUserId, studentId \} : \{ parentUserId \}/);
 });
 
+test("linked student profiles survive unavailable optional wallet data", () => {
+  const helper = readFileSync(studentRecordsPath, "utf8");
+  const profileHelper = helper.slice(
+    helper.indexOf("export async function getParentStudentProfileData"),
+    helper.indexOf("async function getParentStudentWalletSummary"),
+  );
+  const walletHelper = helper.slice(
+    helper.indexOf("async function getParentStudentWalletSummary"),
+    helper.indexOf("export async function linkParentToStudentByReference"),
+  );
+
+  assert.doesNotMatch(profileHelper, /LEFT JOIN wallets/);
+  assert.match(profileHelper, /Promise\.allSettled/);
+  assert.match(profileHelper, /walletSummaryResult\.status === "fulfilled"/);
+  assert.match(profileHelper, /walletActivityResult\.status === "fulfilled"/);
+  assert.match(walletHelper, /WHERE sg\.parent_user_id = :parentUserId\s+AND st\.id = :studentId/);
+});
+
 test("parent profile fallback shows selector instead of first linked student details", () => {
   const parentProfile = readFileSync(parentStudentProfilePath, "utf8");
   const parentProfileView = readFileSync(parentStudentProfileViewPath, "utf8");
