@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 
 import { loginAction, registerAction, type AuthFormState } from "@/app/auth/actions";
 import { AuthToastListener } from "./auth-toast-listener";
+import { BrandLogo } from "./brand-logo";
 import { PasswordInput } from "./password-input";
 import { cn } from "@/lib/utils";
 
@@ -25,9 +26,7 @@ export function BrandMark() {
       href="/"
       className="inline-flex min-w-0 items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#e64a19] text-sm font-bold text-white shadow-sm">
-        XP
-      </span>
+      <BrandLogo />
       <span className="min-w-0">
         <span className="block truncate text-base font-bold tracking-tight text-[#11131a]">
           XMETA Pay

@@ -9,7 +9,6 @@ import {
   Menu,
   LogOut,
   Plus,
-  ReceiptText,
   Send,
   Settings,
   UserPlus,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { logoutAction } from "@/app/auth/actions";
+import { BrandLogo } from "@/app/_components/brand-logo";
 import { selectAdminSchoolYearAction } from "@/app/admin/school-year/actions";
 import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
@@ -99,9 +99,7 @@ export function AdminShell({
       >
         <div className="shrink-0 border-b border-white/[0.07] px-4 pb-3 pt-4">
           <div className="mb-1.5 flex items-center gap-2.5">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-[7px] bg-[#e64a19]">
-              <ReceiptText className="size-[17px]" />
-            </span>
+            <BrandLogo size="compact" />
             <span className="min-w-0 truncate text-sm font-bold tracking-[-0.02em]">XMETA Pay</span>
           </div>
           <div className="space-y-0.5 text-[10.5px] leading-4 text-white/40">

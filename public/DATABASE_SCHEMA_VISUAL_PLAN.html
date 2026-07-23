@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>XMETA Pay Visual Database Schema Plan</title>
+    <link rel="icon" href="/xmetapay-logo.jpg" type="image/jpeg" />
     <style>
       :root {
         color-scheme: light;
@@ -41,6 +42,21 @@
         border-bottom: 1px solid var(--line);
         margin-bottom: 28px;
         padding-bottom: 24px;
+      }
+
+      .brand-lockup {
+        align-items: center;
+        display: flex;
+        gap: 14px;
+      }
+
+      .brand-logo {
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgb(15 23 42 / 12%);
+        flex: 0 0 auto;
+        height: 48px;
+        object-fit: cover;
+        width: 48px;
       }
 
       h1,
@@ -239,7 +255,10 @@
   <body>
     <main>
       <header>
-        <h1>XMETA Pay Visual Database Schema Plan</h1>
+        <div class="brand-lockup">
+          <img class="brand-logo" src="/xmetapay-logo.jpg" alt="" width="48" height="48" data-brand-logo />
+          <h1>XMETA Pay Visual Database Schema Plan</h1>
+        </div>
         <p>
           A browser-viewable version of the full practical MVP database plan for
           the admin/school dashboard and parent portal. This file is

@@ -1,6 +1,7 @@
-import { CheckCircle2, LogOut, ReceiptText } from "lucide-react";
+import { CheckCircle2, LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
 
+import { BrandLogo } from "@/app/_components/brand-logo";
 import { FlashToast } from "@/app/_components/flash-toast";
 import { logoutAction } from "@/app/auth/actions";
 import { ManualSchoolSetupForm } from "@/app/admin/_components/manual-school-setup-form";
@@ -34,9 +35,7 @@ export default async function AdminSchoolSetupOnboardingPage() {
       <div className="mx-auto grid w-full max-w-5xl gap-5">
         <header className="flex flex-col gap-4 rounded-xl border border-black/[0.07] bg-white px-4 py-4 shadow-sm min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-[9px] bg-[#e64a19] text-white">
-              <ReceiptText className="size-5" />
-            </span>
+            <BrandLogo />
             <div className="min-w-0">
               <p className="text-sm font-bold tracking-[-0.02em]">XMETA Pay</p>
               <p className="truncate text-[12px] leading-5 text-[#5a6070]">

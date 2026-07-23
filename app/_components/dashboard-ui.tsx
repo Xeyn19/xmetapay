@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandMark } from "./auth-ui";
+import { BrandLogo } from "./brand-logo";
 
 type Stat = {
   label: string;
@@ -34,9 +35,7 @@ export function AdminDashboardShell() {
     <main className="min-h-screen bg-[#f7f8fa] text-[#11131a] lg:grid lg:grid-cols-[248px_1fr]">
       <aside className="bg-[#11131a] px-5 py-6 text-white lg:min-h-screen">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e64a19] text-sm font-bold">
-            XP
-          </span>
+          <BrandLogo />
           <div>
             <div className="font-bold">XMETA Pay</div>
             <div className="text-xs text-zinc-400">Admin dashboard</div>
