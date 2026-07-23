@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, Receipt, Wallet, X } from "lucide-react";
+import { LogOut, Menu, Wallet, X } from "lucide-react";
 import { useState } from "react";
 
 import { logoutAction } from "@/app/auth/actions";
+import { BrandLogo } from "@/app/_components/brand-logo";
 import type { ParentPortalContext } from "@/lib/students/records";
 import { cn } from "@/lib/utils";
 import { parentNavSections, parentPageMeta, settingsIcon } from "../_data/parent-portal-data";
@@ -62,9 +63,7 @@ export function ParentShell({
       >
         <div className="shrink-0 border-b border-black/[0.08] px-[18px] pb-3.5 pt-4">
           <div className="mb-1.5 flex items-center gap-2.5">
-            <span className="flex size-[34px] items-center justify-center rounded-lg bg-[#e64a19] text-white">
-              <Receipt className="size-[18px]" />
-            </span>
+            <BrandLogo size="compact" />
             <span className="min-w-0 truncate text-[15px] font-semibold">XMETA Pay</span>
           </div>
           <div className="space-y-0.5 text-[11px] leading-4 text-[#6b6b6b]">

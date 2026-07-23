@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext } from "@playwright/test";
+import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { createHmac, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import mysql from "mysql2/promise";
@@ -15,6 +15,39 @@ test.describe("XMETA Pay portal entry", () => {
     ).toBeVisible();
     await expect(page.getByText("School Admin")).toBeVisible();
     await expect(page.getByText("Parent / Guardian")).toBeVisible();
+    await expectBrandLogo(page);
+  });
+
+  for (const route of [
+    "/login",
+    "/admin/login",
+    "/admin/register",
+    "/parent/login",
+    "/parent/register",
+  ]) {
+    test(`${route} shows the shared brand logo`, async ({ page }) => {
+      await page.goto(route);
+
+      await expectBrandLogo(page);
+    });
+  }
+
+  for (const route of [
+    "/PROJECT_FLOWCHARTS_VISUAL.html",
+    "/DATABASE_SCHEMA_VISUAL_PLAN.html",
+  ]) {
+    test(`${route} shows the documentation brand logo`, async ({ page }) => {
+      await page.goto(route);
+
+      await expectBrandLogo(page);
+    });
+  }
+
+  test("root metadata exposes the XMETA Pay app icon", async ({ page }) => {
+    await page.goto("/");
+
+    const icon = page.locator('link[rel="icon"]');
+    await expect(icon).toHaveAttribute("href", /\/icon\.png\?/);
   });
 
   test("school admin sign in opens the admin login page", async ({ page }) => {
@@ -102,6 +135,7 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: route.heading })
       ).toBeVisible();
+      await expectBrandLogo(page);
     }
   });
 
@@ -160,6 +194,7 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: route.heading })
       ).toBeVisible();
+      await expectBrandLogo(page);
     }
   });
 
@@ -208,7 +243,24 @@ test.describe("XMETA Pay dashboard protection", () => {
   });
 });
 
-async function addDatabaseSessionCookie(context: BrowserContext, role: "admin" | "parent") {
+test.describe("XMETA Pay super admin branding", () => {
+  test.beforeEach(async ({ context }) => {
+    await addDatabaseSessionCookie(context, "super_admin");
+  });
+
+  test("company dashboard renders the shared brand logo", async ({ page }) => {
+    await page.goto("/super-admin/dashboard", { waitUntil: "domcontentloaded" });
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Super admin dashboard" })
+    ).toBeVisible();
+    await expectBrandLogo(page);
+  });
+});
+
+type E2ERole = "admin" | "parent" | "super_admin";
+
+async function addDatabaseSessionCookie(context: BrowserContext, role: E2ERole) {
   const userId = await ensureE2EUser(role);
   const token = randomBytes(32).toString("base64url");
   const tokenHash = createHmac("sha256", testSessionSecret()).update(token).digest("hex");
@@ -238,10 +290,15 @@ async function addDatabaseSessionCookie(context: BrowserContext, role: "admin" |
   ]);
 }
 
-async function ensureE2EUser(role: "admin" | "parent") {
+async function ensureE2EUser(role: E2ERole) {
   const connection = await mysql.createConnection(databaseConfig());
-  const profileName = role === "admin" ? "E2E Admin" : "E2E Parent";
-  const email = role === "admin" ? "e2e-admin@xmetapay.test" : "e2e-parent@xmetapay.test";
+  const profiles = {
+    admin: { name: "E2E Admin", email: "e2e-admin@xmetapay.test" },
+    parent: { name: "E2E Parent", email: "e2e-parent@xmetapay.test" },
+    super_admin: { name: "E2E Super Admin", email: "e2e-super-admin@xmetapay.test" },
+  } as const;
+  const profileName = profiles[role].name;
+  const email = profiles[role].email;
 
   try {
     await connection.execute(
@@ -273,7 +330,7 @@ async function ensureE2EUser(role: "admin" | "parent") {
            staff_role = VALUES(staff_role)`,
         { userId },
       );
-    } else {
+    } else if (role === "parent") {
       await connection.execute(
         `INSERT INTO parent_profiles (user_id, student_name, student_reference, relationship)
          VALUES (:userId, 'E2E Student', 'E2E-001', 'guardian')
@@ -306,6 +363,14 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
   expect(overflow).toBeLessThanOrEqual(1);
+}
+
+async function expectBrandLogo(page: Page) {
+  const logo = page.locator("[data-brand-logo]");
+
+  await expect(logo).toBeVisible();
+  await expect(logo).toHaveAttribute("src", /xmetapay-logo\.jpg/);
+  await expect.poll(() => logo.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
 }
 
 function testSessionSecret() {
