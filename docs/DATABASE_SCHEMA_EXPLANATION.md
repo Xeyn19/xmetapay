@@ -231,7 +231,7 @@ Main purpose:
 - Restore a row by removing only its parent-specific archive metadata.
 - Permanently remove an archived row from one parent's Fee summary by setting `deleted_at`, without deleting the archive audit row or any financial record.
 
-Only paid or zero-balance assignments can be archived or permanently removed. Open and partial obligations remain visible in Current fees. `deleted_at` is irreversible through the parent portal, but the authoritative assignment, payments, receipts, tuition terms, metrics, reports, and another guardian's view remain available.
+Only settled assignments can be archived or removed. `deleted_at` starts a 30-day recovery window calculated with database time. Eligible recovery clears only `deleted_at`, retaining `archived_at`; expired rows remain viewable as Permanently hidden.
 
 ### `tuition_payment_terms`
 
@@ -276,7 +276,7 @@ Main purpose:
 - Permanently remove a finished archived row from one parent's Payment history and exports by setting `deleted_at`.
 - Preserve receipts, fee or term allocations, wallet top-ups, balances, reports, dashboard totals, and the original payment status.
 
-Restoring removes only non-deleted parent-specific metadata. A `deleted_at` tombstone cannot be restored or re-archived through the parent portal, but it never deletes the payment or its related financial records. Payment history remains payment-focused, so store purchases continue to appear only in wallet history.
+Normal Archived restore removes non-deleted metadata. Removed recovery is available for 30 days using database time and clears only `deleted_at`, returning the row to Archived. Expired tombstones remain viewable as Permanently hidden and never delete financial records.
 `school_year_id` is nullable for migrated history, but new payment writes store the active school year.
 
 ### `payment_allocations`

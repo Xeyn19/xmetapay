@@ -19,6 +19,7 @@ import {
 import {
   archiveParentFeeAssignmentsAction,
   permanentlyDeleteParentFeeAssignmentsAction,
+  recoverRemovedParentFeeAssignmentsAction,
   restoreParentFeeAssignmentsAction,
   type ParentFeeArchiveActionState,
 } from "@/app/parent/fees/actions";
@@ -38,27 +39,32 @@ const initialActionState: ParentFeeArchiveActionState = {
 
 type FeeConfirmation = {
   ids: number[];
-  operation: "archive" | "restore" | "delete";
+  operation: "archive" | "restore" | "delete" | "recover";
 };
+
+type FeeView = "active" | "archived" | "removed";
 
 export function ParentFeesTable({
   activeRows,
   archivedRows,
+  removedRows,
 }: {
   activeRows: ParentFeeRow[];
   archivedRows: ParentFeeRow[];
+  removedRows: ParentFeeRow[];
 }) {
   const router = useRouter();
-  const [view, setView] = useState<"active" | "archived">("active");
+  const [view, setView] = useState<FeeView>("active");
   const [activeFeeRows, setActiveFeeRows] = useState(activeRows);
   const [archivedFeeRows, setArchivedFeeRows] = useState(archivedRows);
+  const [removedFeeRows, setRemovedFeeRows] = useState(removedRows);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [confirmation, setConfirmation] = useState<FeeConfirmation | null>(null);
   const [pending, startActionTransition] = useTransition();
-  const rows = view === "archived" ? archivedFeeRows : activeFeeRows;
+  const rows = view === "archived" ? archivedFeeRows : view === "removed" ? removedFeeRows : activeFeeRows;
   const operationLabel = view === "archived" ? "Restore" : "Archive";
 
   const filteredRows = useMemo(
@@ -75,6 +81,9 @@ export function ParentFeesTable({
         row.category,
         row.status,
         row.dueDate,
+        row.deletedAt,
+        row.recoverableUntil,
+        row.removalState,
         ...row.terms.flatMap((term) => [term.name, term.status, term.dueDate]),
       ].join(" "),
     ),
@@ -82,16 +91,16 @@ export function ParentFeesTable({
   );
   const pagination = usePaginatedRows(filteredRows, `${view}|${query}|${category}|${status}`);
   const selectablePageIds = pagination.pageRows
-    .filter((row) => view === "archived" || row.archiveEligible)
+    .filter((row) => view === "removed" ? row.canRecover : view === "archived" || row.archiveEligible)
     .map((row) => row.id);
   const rowIds = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
   const validSelectedIds = selectedIds.filter((id) => rowIds.has(id));
   const selectedSet = new Set(validSelectedIds);
   const allSelectablePageRowsSelected = selectablePageIds.length > 0
     && selectablePageIds.every((id) => selectedSet.has(id));
-  const exportColumns = feeExportColumns(view === "archived");
+  const exportColumns = feeExportColumns(view);
 
-  const changeView = (nextView: "active" | "archived") => {
+  const changeView = (nextView: FeeView) => {
     setView(nextView);
     setQuery("");
     setCategory("all");
@@ -101,6 +110,7 @@ export function ParentFeesTable({
   };
 
   const toggleRow = (row: ParentFeeRow) => {
+    if (view === "removed" && !row.canRecover) return;
     if (view === "active" && !row.archiveEligible) return;
     setSelectedIds((current) => current.includes(row.id)
       ? current.filter((id) => id !== row.id)
@@ -115,7 +125,9 @@ export function ParentFeesTable({
       ? archiveParentFeeAssignmentsAction
       : submittedOperation === "restore"
         ? restoreParentFeeAssignmentsAction
-        : permanentlyDeleteParentFeeAssignmentsAction;
+        : submittedOperation === "delete"
+          ? permanentlyDeleteParentFeeAssignmentsAction
+          : recoverRemovedParentFeeAssignmentsAction;
     const formData = new FormData();
     confirmation.ids.forEach((id) => formData.append("feeAssignmentIds", String(id)));
     setConfirmation(null);
@@ -151,9 +163,26 @@ export function ParentFeesTable({
           ...current.filter((row) => !updatedSet.has(row.id)),
         ]);
       } else {
-        setArchivedFeeRows((current) =>
-          current.filter((row) => !updatedSet.has(row.id)),
-        );
+        if (submittedOperation === "delete") {
+          const movedRows = archivedFeeRows
+            .filter((row) => updatedSet.has(row.id))
+            .map((row) => ({
+              ...row,
+              deletedAt: "Just now",
+              recoverableUntil: "30 days from now",
+              recoveryDaysRemaining: 30,
+              canRecover: true,
+              removalState: "recoverable" as const,
+            }));
+          setArchivedFeeRows((current) => current.filter((row) => !updatedSet.has(row.id)));
+          setRemovedFeeRows((current) => [...movedRows, ...current.filter((row) => !updatedSet.has(row.id))]);
+        } else {
+          const movedRows = removedFeeRows
+            .filter((row) => updatedSet.has(row.id))
+            .map((row) => ({ ...row, deletedAt: null, recoverableUntil: null, recoveryDaysRemaining: 0, canRecover: false, removalState: null }));
+          setRemovedFeeRows((current) => current.filter((row) => !updatedSet.has(row.id)));
+          setArchivedFeeRows((current) => [...movedRows, ...current.filter((row) => !updatedSet.has(row.id))]);
+        }
       }
 
       setSelectedIds((current) => current.filter((id) => !updatedSet.has(id)));
@@ -163,23 +192,28 @@ export function ParentFeesTable({
 
   const hasRows = rows.length > 0;
   const hasFilters = query.trim().length > 0 || category !== "all" || status !== "all";
-  const columnCount = view === "archived" ? 10 : 9;
+  const columnCount = view === "active" ? 9 : view === "archived" ? 10 : 12;
   const confirmationLabel = confirmation?.operation === "archive"
     ? "Archive"
     : confirmation?.operation === "restore"
       ? "Restore"
-      : "Permanently delete";
+      : confirmation?.operation === "recover"
+        ? "Restore to Archived"
+        : "Remove from view";
 
   return (
     <>
       <div className="flex flex-col gap-3 border-b border-black/[0.08] px-4 py-3 sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="inline-flex min-h-11 rounded-[10px] border border-black/10 bg-[#f2f1ef] p-1" role="tablist" aria-label="Fee summary view">
+          <div className="grid min-h-11 w-full grid-cols-3 rounded-[10px] border border-black/10 bg-[#f2f1ef] p-1 sm:w-auto" role="tablist" aria-label="Fee summary view">
             <button type="button" role="tab" aria-selected={view === "active"} onClick={() => changeView("active")} className={viewTabClass(view === "active")}>
-              Current fees ({activeFeeRows.length})
+              Current ({activeFeeRows.length})
             </button>
             <button type="button" role="tab" aria-selected={view === "archived"} onClick={() => changeView("archived")} className={viewTabClass(view === "archived")}>
-              Archived fees ({archivedFeeRows.length})
+              Archived ({archivedFeeRows.length})
+            </button>
+            <button type="button" role="tab" aria-selected={view === "removed"} onClick={() => changeView("removed")} className={viewTabClass(view === "removed")}>
+              Removed ({removedFeeRows.length})
             </button>
           </div>
           <p className="text-[12px] text-[#6b6b6b]">
@@ -202,11 +236,11 @@ export function ParentFeesTable({
             setStatus("all");
           }}
           onExport={() => exportRowsToCsv(
-            view === "archived" ? "parent-fee-summary-archived.csv" : "parent-fee-summary.csv",
+            view === "archived" ? "parent-fee-summary-archived.csv" : view === "removed" ? "parent-fee-summary-removed.csv" : "parent-fee-summary.csv",
             filteredRows,
             exportColumns,
           )}
-          onExportPdf={() => exportParentFeeSummaryPdf(filteredRows, view === "archived")}
+          onExportPdf={() => exportParentFeeSummaryPdf(filteredRows, view)}
           exportDisabled={filteredRows.length === 0}
         />
 
@@ -221,13 +255,13 @@ export function ParentFeesTable({
             type="button"
             onClick={() => setConfirmation({
               ids: validSelectedIds,
-              operation: view === "archived" ? "restore" : "archive",
+              operation: view === "removed" ? "recover" : view === "archived" ? "restore" : "archive",
             })}
             disabled={validSelectedIds.length === 0 || pending}
             className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60"
           >
-            {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-            {operationLabel} selected
+            {view !== "active" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+            {view === "removed" ? "Restore selected to Archived" : `${operationLabel} selected`}
           </button>
           {view === "archived" ? (
             <button
@@ -240,7 +274,7 @@ export function ParentFeesTable({
               className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#c62828] bg-[#c62828] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#8e1b1b] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#c62828]/25 disabled:pointer-events-none disabled:opacity-60"
             >
               <Trash2 className="size-4" />
-              Delete selected
+              Remove selected
             </button>
           ) : null}
         </div>
@@ -248,6 +282,10 @@ export function ParentFeesTable({
         {view === "active" ? (
           <p className="text-[11.5px] leading-5 text-[#6b6b6b]">
             Only paid or zero-balance fees can be archived. Outstanding fees stay in Current fees until settled.
+          </p>
+        ) : view === "removed" ? (
+          <p className="text-[11.5px] leading-5 text-[#6b6b6b]">
+            Removed fees can be restored to Archived for 30 days. After the deadline they remain visible as Permanently hidden and cannot be restored.
           </p>
         ) : null}
       </div>
@@ -264,12 +302,17 @@ export function ParentFeesTable({
           { label: "Due date", className: "w-[130px]" },
           { label: "Status", className: "w-[100px]" },
           ...(view === "archived" ? [{ label: "Archived", className: "w-[150px]" }] : []),
-          { label: "Action", className: view === "archived" ? "w-[120px] text-center" : "w-[72px] text-center" },
+          ...(view === "removed" ? [
+            { label: "Removed", className: "w-[145px]" },
+            { label: "Recovery", className: "w-[180px]" },
+            { label: "State", className: "w-[145px]" },
+          ] : []),
+          { label: "Action", className: view === "archived" ? "w-[120px] text-center" : "w-[90px] text-center" },
         ]}
       >
         {pagination.pageRows.length > 0 ? (
           pagination.pageRows.map((row) => {
-            const selectable = view === "archived" || row.archiveEligible;
+            const selectable = view === "removed" ? row.canRecover : view === "archived" || row.archiveEligible;
             return (
               <Fragment key={row.id}>
                 <tr>
@@ -292,6 +335,16 @@ export function ParentFeesTable({
                   <td>{row.dueDate}</td>
                   <td><StatusPill tone={row.tone}>{row.status}</StatusPill></td>
                   {view === "archived" ? <td className="font-mono text-[11px] text-[#6b6b6b]">{row.archivedAt ?? "Pending"}</td> : null}
+                  {view === "removed" ? (
+                    <>
+                      <td className="font-mono text-[11px] text-[#6b6b6b]">{row.deletedAt ?? "Pending"}</td>
+                      <td>
+                        <div className="text-[12px] font-medium">{row.recoverableUntil ?? "Expired"}</div>
+                        <div className="text-[11px] text-[#6b6b6b]">{row.canRecover ? `${row.recoveryDaysRemaining} day${row.recoveryDaysRemaining === 1 ? "" : "s"} remaining` : "Recovery period ended"}</div>
+                      </td>
+                      <td><StatusPill tone={row.canRecover ? "amber" : "muted"}>{row.canRecover ? "Recoverable" : "Permanently hidden"}</StatusPill></td>
+                    </>
+                  ) : null}
                   <td>
                     <div className="flex min-h-11 items-center justify-center gap-1">
                       <Button
@@ -300,14 +353,14 @@ export function ParentFeesTable({
                         size="icon"
                         onClick={() => selectable && setConfirmation({
                           ids: [row.id],
-                          operation: view === "archived" ? "restore" : "archive",
+                          operation: view === "removed" ? "recover" : view === "archived" ? "restore" : "archive",
                         })}
                         disabled={!selectable || pending}
                         className="size-11 text-[#6b6b6b] hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19]"
-                        aria-label={selectable ? `${operationLabel} ${row.feeName} for ${row.studentName}` : `${row.feeName} cannot be archived until settled`}
-                        title={selectable ? `${operationLabel} fee` : "Outstanding fees cannot be archived"}
+                        aria-label={selectable ? `${view === "removed" ? "Restore to Archived" : operationLabel} ${row.feeName} for ${row.studentName}` : view === "removed" ? `${row.feeName} recovery period has ended` : `${row.feeName} cannot be archived until settled`}
+                        title={selectable ? `${view === "removed" ? "Restore to Archived" : operationLabel} fee` : view === "removed" ? "Recovery period ended" : "Outstanding fees cannot be archived"}
                       >
-                        {!selectable ? <LockKeyhole className="size-4" /> : view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+                        {!selectable ? <LockKeyhole className="size-4" /> : view !== "active" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
                       </Button>
                       {view === "archived" ? (
                         <Button
@@ -320,8 +373,8 @@ export function ParentFeesTable({
                           })}
                           disabled={pending}
                           className="size-11 border-[#c62828]/25 text-[#c62828] hover:border-[#c62828]/50 hover:bg-[#fff1f1] hover:text-[#8e1b1b]"
-                          aria-label={`Permanently delete ${row.feeName} for ${row.studentName}`}
-                          title="Permanently delete fee from this parent view"
+                          aria-label={`Remove ${row.feeName} for ${row.studentName} from view`}
+                          title="Remove fee from view"
                         >
                           <Trash2 className="size-4" />
                         </Button>
@@ -395,7 +448,9 @@ export function ParentFeesTable({
             </h3>
             <p className="mt-2 text-[13px] leading-5 text-[#6b6b6b]">
               {confirmation.operation === "delete"
-                ? "This cannot be undone in the parent portal. The fees disappear from this parent's Fee summary, while school records, balances, tuition terms, payments, receipts, reports, and another guardian's view stay unchanged."
+                ? "The fees move to Removed and can be restored to Archived for 30 days. After that they remain visible as Permanently hidden, while all school and financial records stay unchanged."
+                : confirmation.operation === "recover"
+                  ? "Recoverable fees return to Archived. Expired rows are ignored by the server and remain Permanently hidden."
                 : confirmation.operation === "restore"
                   ? "Restored fees return to Current fees. Payments, balances, tuition terms, and school records stay unchanged."
                   : "Archived fees move out of Current fees for this parent account only. Payment and school records stay unchanged."}
@@ -432,7 +487,7 @@ function viewTabClass(active: boolean) {
   );
 }
 
-function feeExportColumns(includeArchived: boolean): ExportColumn<ParentFeeRow>[] {
+function feeExportColumns(view: FeeView): ExportColumn<ParentFeeRow>[] {
   return [
     { label: "Student", value: (row) => row.studentName },
     { label: "Reference", value: (row) => row.studentReference },
@@ -443,24 +498,30 @@ function feeExportColumns(includeArchived: boolean): ExportColumn<ParentFeeRow>[
     { label: "Balance", value: (row) => row.balance },
     { label: "Due date", value: (row) => row.dueDate },
     { label: "Status", value: (row) => row.status },
-    ...(includeArchived ? [{ label: "Archived", value: (row: ParentFeeRow) => row.archivedAt }] : []),
+    ...(view === "archived" ? [{ label: "Archived", value: (row: ParentFeeRow) => row.archivedAt }] : []),
+    ...(view === "removed" ? [
+      { label: "Removed", value: (row: ParentFeeRow) => row.deletedAt },
+      { label: "Recovery deadline", value: (row: ParentFeeRow) => row.recoverableUntil },
+      { label: "State", value: (row: ParentFeeRow) => row.canRecover ? "Recoverable" : "Permanently hidden" },
+    ] : []),
   ];
 }
 
-function emptyState(view: "active" | "archived", hasRows: boolean, hasFilters: boolean) {
+function emptyState(view: FeeView, hasRows: boolean, hasFilters: boolean) {
   if (hasRows && hasFilters) return "No fee records match the current filters.";
   if (view === "archived") return "No archived fees yet.";
+  if (view === "removed") return "No removed fees yet.";
   return "No assigned fees yet.";
 }
 
-function exportParentFeeSummaryPdf(rows: ParentFeeRow[], includeArchived: boolean) {
+function exportParentFeeSummaryPdf(rows: ParentFeeRow[], view: FeeView) {
   const doc = new jsPDF({ orientation: "landscape" });
   const generatedAt = new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
-  const columns = ["Student", "Reference", "Fee", "Category", "Billed", "Paid", "Balance", "Due date", "Status", ...(includeArchived ? ["Archived"] : [])];
+  const columns = ["Student", "Reference", "Fee", "Category", "Billed", "Paid", "Balance", "Due date", "Status", ...(view === "archived" ? ["Archived"] : []), ...(view === "removed" ? ["Removed", "Recovery deadline", "State"] : [])];
   const body = rows.length > 0
     ? rows.flatMap((row) => [
-        [row.studentName, row.studentReference, row.feeName, row.category === "tuition" ? "Tuition" : "Other fee", row.amountDue, row.amountPaid, row.balance, row.dueDate, row.status, ...(includeArchived ? [row.archivedAt ?? "Pending"] : [])],
-        ...row.terms.map((term) => ["", "", `Term: ${term.name}`, "Tuition term", term.amountDue, term.amountPaid, term.balance, term.dueDate, term.status, ...(includeArchived ? [""] : [])]),
+        [row.studentName, row.studentReference, row.feeName, row.category === "tuition" ? "Tuition" : "Other fee", row.amountDue, row.amountPaid, row.balance, row.dueDate, row.status, ...(view === "archived" ? [row.archivedAt ?? "Pending"] : []), ...(view === "removed" ? [row.deletedAt ?? "Pending", row.recoverableUntil ?? "Expired", row.canRecover ? "Recoverable" : "Permanently hidden"] : [])],
+        ...row.terms.map((term) => ["", "", `Term: ${term.name}`, "Tuition term", term.amountDue, term.amountPaid, term.balance, term.dueDate, term.status, ...(view === "archived" ? [""] : []), ...(view === "removed" ? ["", "", ""] : [])]),
       ])
     : [["No records yet", ...Array.from({ length: columns.length - 1 }, () => "")]];
 
@@ -468,7 +529,7 @@ function exportParentFeeSummaryPdf(rows: ParentFeeRow[], includeArchived: boolea
   doc.setFontSize(16);
   doc.text("XMETA Pay", 14, 16);
   doc.setFontSize(12);
-  doc.text(includeArchived ? "Archived fee summary" : "Current fee summary", 14, 24);
+  doc.text(view === "archived" ? "Archived fee summary" : view === "removed" ? "Removed fee history" : "Current fee summary", 14, 24);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.text(`Generated: ${generatedAt}`, 14, 30);
@@ -493,5 +554,5 @@ function exportParentFeeSummaryPdf(rows: ParentFeeRow[], includeArchived: boolea
     },
   });
 
-  doc.save(includeArchived ? "parent-fee-summary-archived.pdf" : "parent-fee-summary.pdf");
+  doc.save(view === "archived" ? "parent-fee-summary-archived.pdf" : view === "removed" ? "parent-fee-summary-removed.pdf" : "parent-fee-summary.pdf");
 }

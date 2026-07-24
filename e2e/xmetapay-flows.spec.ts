@@ -325,11 +325,16 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: "Fee summary" }),
       ).toBeVisible();
+      const removedTab = page.getByRole("tab", { name: /Removed/ });
+      await removedTab.focus();
+      await page.keyboard.press("Enter");
+      await expect(removedTab).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByText(/restored to Archived for 30 days/)).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
   });
 
-  test("parent Payment history permanent-removal controls stay usable at supported responsive widths", async ({ page }) => {
+  test("parent Payment history removal recovery stays usable at supported responsive widths", async ({ page }) => {
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/parent/history", { waitUntil: "domcontentloaded" });
@@ -337,8 +342,13 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: "Payment history" }),
       ).toBeVisible();
-      await page.getByRole("tab", { name: /Archived payments/ }).click();
-      await expect(page.getByRole("button", { name: "Delete selected" })).toBeVisible();
+      await page.getByRole("tab", { name: /Archived/ }).click();
+      await expect(page.getByRole("button", { name: "Remove selected" })).toBeVisible();
+      const removedTab = page.getByRole("tab", { name: /Removed/ });
+      await removedTab.focus();
+      await page.keyboard.press("Enter");
+      await expect(removedTab).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByText(/restored to Archived for 30 days/)).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
   });

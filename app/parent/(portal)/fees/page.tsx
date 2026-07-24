@@ -34,7 +34,7 @@ export default async function FeesPage() {
         }
         bodyClassName="p-0"
       >
-        <ParentFeesTable activeRows={data.activeRows} archivedRows={data.archivedRows} />
+        <ParentFeesTable activeRows={data.activeRows} archivedRows={data.archivedRows} removedRows={data.removedRows} />
       </ParentCard>
     </>
   );

@@ -785,13 +785,17 @@ flowchart TD
   A --> R["Parent opens Current or Archived fees"]
   R --> S{"Settled fee?"}
   S -->|Yes| T["Archive or restore parent-specific visibility"]
-  T -->|Permanent remove from Archived| V["Set parent_fee_summary_archives.deleted_at"]
+  T -->|Remove from Archived| V["Set deleted_at; recover for 30 days"]
+  V -->|Recoverable| V2["Clear deleted_at; return to Archived"]
+  V -->|Expired| V3["Keep visible as Permanently hidden"]
   P --> P2["Parent opens Current or Archived payments"]
   P2 -->|Archive or restore finished payment| P3["Update parent_payment_history_archives metadata"]
-  P3 -->|Permanent remove from Archived| P4["Set parent_payment_history_archives.deleted_at"]
+  P3 -->|Remove from Archived| P4["Set deleted_at; recover for 30 days"]
+  P4 -->|Recoverable| P5["Clear deleted_at; return to Archived"]
+  P4 -->|Expired| P6["Keep visible as Permanently hidden"]
   S -->|No| U["Keep outstanding fee in Current fees"]
           </pre>
-          <p>Tuition terms are implemented as per-student schedules managed from each tuition assignment row. Parents can pay open or partial installments early. The assignment due date is the official parent-facing deadline, and term schedule dates must be on or before that date. Parent payment rows and term rows show the main assignment due date. The parent Fee summary PDF includes nested tuition term rows under each tuition fee. Parents can archive or restore only paid or zero-balance fee rows through parent-specific metadata. Archived rows can also be permanently removed from that parent's lists and exports through a <code>deleted_at</code> tombstone; balances, metrics, school records, admin reports, payment history, receipts, and another guardian's view remain unchanged. Parent Payment history has the same parent-specific Current and Archived organization for finished payments. Archived payment rows can be permanently removed from that parent's history and exports through their own <code>deleted_at</code> tombstone; pending payments, receipts, allocations, wallet top-ups, balances, dashboard activity, reports, and audit records remain unchanged. Other fees remain on the normal full-balance fee assignment flow.</p>
+          <p>Parent Fee summary and Payment history use Current, Archived, and Removed views. Archive remains reversible indefinitely. Remove sets parent-specific <code>deleted_at</code> metadata and starts a database-timed 30-day recovery window; eligible recovery clears only that tombstone and returns the row to Archived. Expired rows remain visible and exportable as Permanently hidden. Financial, school, and audit records remain unchanged.</p>
         </div>
 
         <h3>Wallet, Allowance, And Store</h3>

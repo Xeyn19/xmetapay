@@ -4,7 +4,7 @@ import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 
-export type ParentPaymentHistoryArchiveOperation = "archive" | "restore" | "delete";
+export type ParentPaymentHistoryArchiveOperation = "archive" | "restore" | "delete" | "recover";
 
 const ARCHIVEABLE_STATUSES = ["paid", "failed", "voided", "refunded"] as const;
 
@@ -31,7 +31,9 @@ export async function updateParentPaymentHistoryArchiveState({
       ? await archiveFinishedPayments(connection, parentUserId, uniqueIds)
       : operation === "restore"
         ? await restorePayments(connection, parentUserId, uniqueIds)
-        : await permanentlyHidePayments(connection, parentUserId, uniqueIds);
+        : operation === "delete"
+          ? await permanentlyHidePayments(connection, parentUserId, uniqueIds)
+          : await recoverRemovedPayments(connection, parentUserId, uniqueIds);
     await connection.commit();
     return updatedIds;
   } catch (error) {
@@ -40,6 +42,46 @@ export async function updateParentPaymentHistoryArchiveState({
   } finally {
     connection.release();
   }
+}
+
+async function recoverRemovedPayments(
+  connection: PoolConnection,
+  parentUserId: number,
+  paymentIds: number[],
+) {
+  const { placeholders, params } = idParams(paymentIds);
+  const [rows] = await connection.execute<ArchiveIdRow[]>(
+    `SELECT ppha.payment_id
+     FROM parent_payment_history_archives ppha
+     JOIN payments p
+       ON p.id = ppha.payment_id
+      AND p.payer_user_id = :parentUserId
+     JOIN students st ON st.id = p.student_id
+     JOIN student_guardians sg
+       ON sg.student_id = st.id
+      AND sg.parent_user_id = :parentUserId
+     WHERE ppha.parent_user_id = :parentUserId
+       AND ppha.deleted_at IS NOT NULL
+       AND DATE_ADD(ppha.deleted_at, INTERVAL 30 DAY) > CURRENT_TIMESTAMP
+       AND ppha.payment_id IN (${placeholders})
+     FOR UPDATE`,
+    { parentUserId, ...params },
+  );
+  const recoveredIds = rows.map((row) => Number(row.payment_id));
+
+  if (recoveredIds.length === 0) return [];
+
+  const recoverable = idParams(recoveredIds);
+  await connection.execute(
+    `UPDATE parent_payment_history_archives
+     SET deleted_at = NULL
+     WHERE parent_user_id = :parentUserId
+       AND deleted_at IS NOT NULL
+       AND DATE_ADD(deleted_at, INTERVAL 30 DAY) > CURRENT_TIMESTAMP
+       AND payment_id IN (${recoverable.placeholders})`,
+    { parentUserId, ...recoverable.params },
+  );
+  return recoveredIds;
 }
 
 async function archiveFinishedPayments(

@@ -77,6 +77,7 @@ test("parent payment pages use real database helpers instead of static payment a
   assert.match(historyPage, /ParentPaymentHistoryTable/);
   assert.match(historyPage, /activeRows=\{data\.activeRows\}/);
   assert.match(historyPage, /archivedRows=\{data\.archivedRows\}/);
+  assert.match(historyPage, /removedRows=\{data\.removedRows\}/);
   assert.match(historyTable, /DashboardTableControls/);
   assert.match(historyTable, /usePaginatedRows/);
   assert.match(historyTable, /DashboardTablePagination/);
@@ -97,11 +98,12 @@ test("parent Payment history archive metadata is parent-specific and financially
   assert.match(helper, /LEFT JOIN parent_payment_history_archives ppha/);
   assert.match(helper, /activeRows: ParentPaymentHistoryRow\[\]/);
   assert.match(helper, /archivedRows: ParentPaymentHistoryRow\[\]/);
+  assert.match(helper, /removedRows: ParentPaymentHistoryRow\[\]/);
   assert.match(helper, /archiveEligible: isParentPaymentHistoryArchiveEligible/);
   assert.match(service, /import "server-only"/);
   assert.match(service, /INSERT IGNORE INTO parent_payment_history_archives/);
   assert.match(service, /DELETE FROM parent_payment_history_archives/);
-  assert.match(service, /ParentPaymentHistoryArchiveOperation = "archive" \| "restore" \| "delete"/);
+  assert.match(service, /ParentPaymentHistoryArchiveOperation = "archive" \| "restore" \| "delete" \| "recover"/);
   assert.match(service, /SET deleted_at = CURRENT_TIMESTAMP/);
   assert.match(service, /ppha\.deleted_at IS NULL/);
   assert.ok(
@@ -118,31 +120,50 @@ test("parent Payment history archive metadata is parent-specific and financially
   assert.match(actions, /export async function archiveParentPaymentHistoryAction/);
   assert.match(actions, /export async function restoreParentPaymentHistoryAction/);
   assert.match(actions, /export async function permanentlyDeleteParentPaymentHistoryAction/);
+  assert.match(actions, /export async function recoverRemovedParentPaymentHistoryAction/);
   assert.match(actions, /\.slice\(0, 100\)/);
 });
 
 test("parent Payment history archive views switch locally and preserve exports and receipt links", () => {
   const table = readFileSync(historyTablePath, "utf8");
 
-  assert.match(table, /Current payments/);
-  assert.match(table, /Archived payments/);
-  assert.match(table, /useState<"active" \| "archived">\("active"\)/);
+  assert.match(table, /type HistoryView = "active" \| "archived" \| "removed"/);
+  assert.match(table, /Removed \(\{removedPaymentRows\.length\}\)/);
   assert.match(table, /Select visible/);
   assert.match(table, /Clear selection/);
   assert.match(table, /Archive selected/);
   assert.match(table, /Restore selected/);
-  assert.match(table, /Delete selected/);
+  assert.match(table, /Remove selected/);
   assert.match(table, /operation: "delete"/);
-  assert.match(table, /Permanently delete/);
-  assert.match(table, /cannot be undone in the parent portal/);
+  assert.match(table, /Remove from view/);
+  assert.match(table, /restored to Archived for 30 days/);
+  assert.match(table, /Restore to Archived/);
+  assert.match(table, /Permanently hidden/);
   assert.match(table, /type="button" autoFocus/);
   assert.match(table, /row\.archiveEligible/);
   assert.match(table, /Pending payments cannot be archived/);
   assert.match(table, /router\.refresh\(\)/);
   assert.match(table, /parent-payment-history-archived\.csv/);
   assert.match(table, /parent-payment-history-archived\.pdf/);
+  assert.match(table, /parent-payment-history-removed\.csv/);
+  assert.match(table, /parent-payment-history-removed\.pdf/);
+  assert.match(table, /Restore selected to Archived/);
+  assert.match(table, /Permanently hidden/);
   assert.match(table, /\/parent\/receipt\?receiptId=/);
   assert.match(table, /pagination\.pageRows\.map/);
+});
+
+test("parent Payment history removal recovery is database-timed and returns only to Archived", () => {
+  const helper = readFileSync(paymentRecordsPath, "utf8");
+  const service = readFileSync(historyArchiveServicePath, "utf8");
+
+  assert.match(helper, /DATE_ADD\(ppha\.deleted_at, INTERVAL 30 DAY\)/);
+  assert.match(helper, /CURRENT_TIMESTAMP/);
+  assert.match(helper, /recoveryDaysRemaining/);
+  assert.match(service, /DATE_ADD\(ppha\.deleted_at, INTERVAL 30 DAY\) > CURRENT_TIMESTAMP/);
+  assert.match(service, /SET deleted_at = NULL/);
+  assert.match(service, /FOR UPDATE/);
+  assert.doesNotMatch(service, /SET archived_at = NULL/);
 });
 
 test("parent Payment history permanent removal uses an idempotent parent-only tombstone", () => {

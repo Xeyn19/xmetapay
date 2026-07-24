@@ -242,8 +242,8 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(feesTable, /pagination\.pageRows\.map/);
   assert.match(feesTable, /parent-fee-summary\.csv/);
   assert.match(feesTable, /parent-fee-summary\.pdf/);
-  assert.match(feesTable, /function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\], includeArchived: boolean\)/);
-  assert.match(feesTable, /onExportPdf=\{\(\) => exportParentFeeSummaryPdf\(filteredRows, view === "archived"\)\}/);
+  assert.match(feesTable, /function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\], view: FeeView\)/);
+  assert.match(feesTable, /onExportPdf=\{\(\) => exportParentFeeSummaryPdf\(filteredRows, view\)\}/);
   assert.match(feesTable, /rows\.flatMap/);
   assert.match(feesTable, /`Term: \$\{term\.name\}`/);
   assert.match(feesTable, /"Tuition term"/);
@@ -268,15 +268,17 @@ test("parent Fee summary archive is parent-specific and preserves financial trut
   assert.match(helper, /pfsa\.parent_user_id = :parentUserId/);
   assert.match(helper, /activeRows: ParentFeeRow\[\]/);
   assert.match(helper, /archivedRows: ParentFeeRow\[\]/);
+  assert.match(helper, /removedRows: ParentFeeRow\[\]/);
   assert.match(helper, /archiveEligible: row\.status === "paid" \|\| balanceValue <= 0/);
   assert.match(helper, /const totals = rows\.reduce/);
   assert.match(helper, /const activeRows = visibleRows\.filter/);
   assert.match(helper, /const visibleRows = displayRows\.filter\(\(row\) => !row\.deletedAt\)/);
   assert.match(helper, /const archivedRows = visibleRows\.filter/);
+  assert.match(helper, /const removedRows = displayRows\.filter\(\(row\) => row\.deletedAt\)/);
   assert.match(helper, /deletedAt: row\.deleted_at/);
 
   assert.match(service, /import "server-only"/);
-  assert.match(service, /ParentFeeArchiveOperation = "archive" \| "restore" \| "delete"/);
+  assert.match(service, /ParentFeeArchiveOperation = "archive" \| "restore" \| "delete" \| "recover"/);
   assert.match(service, /student_guardians sg/);
   assert.match(service, /sg\.parent_user_id = :parentUserId/);
   assert.match(service, /sy\.status = 'active'/);
@@ -294,6 +296,7 @@ test("parent Fee summary archive is parent-specific and preserves financial trut
   assert.match(actions, /export async function archiveParentFeeAssignmentsAction/);
   assert.match(actions, /export async function restoreParentFeeAssignmentsAction/);
   assert.match(actions, /export async function permanentlyDeleteParentFeeAssignmentsAction/);
+  assert.match(actions, /export async function recoverRemovedParentFeeAssignmentsAction/);
   assert.match(actions, /await requireRole\("parent"\)/);
   assert.match(actions, /\.slice\(0, 100\)/);
   assert.match(actions, /updatedIds/);
@@ -306,29 +309,50 @@ test("parent Fee summary archive table switches locally with selection and immed
 
   assert.match(page, /activeRows=\{data\.activeRows\}/);
   assert.match(page, /archivedRows=\{data\.archivedRows\}/);
-  assert.match(table, /Current fees/);
-  assert.match(table, /Archived fees/);
+  assert.match(page, /removedRows=\{data\.removedRows\}/);
+  assert.match(table, /type FeeView = "active" \| "archived" \| "removed"/);
+  assert.match(table, /Removed \(\{removedFeeRows\.length\}\)/);
   assert.match(table, /role="tablist"/);
   assert.match(table, /Select visible/);
   assert.match(table, /Clear selection/);
   assert.match(table, /const operationLabel = view === "archived" \? "Restore" : "Archive"/);
   assert.match(table, /\{operationLabel\} selected/);
-  assert.match(table, /Delete selected/);
+  assert.match(table, /Remove selected/);
   assert.match(table, /operation: "delete"/);
-  assert.match(table, /Permanently delete/);
-  assert.match(table, /cannot be undone in the parent portal/);
+  assert.match(table, /Remove from view/);
+  assert.match(table, /restored to Archived for 30 days/);
+  assert.match(table, /Restore to Archived/);
+  assert.match(table, /Permanently hidden/);
   assert.match(table, /type="button" autoFocus/);
   assert.match(table, /setArchivedFeeRows\(\(current\) =>\s+current\.filter/);
   assert.match(table, /row\.archiveEligible/);
   assert.match(table, /Outstanding fees cannot be archived/);
   assert.match(table, /setActiveFeeRows/);
   assert.match(table, /setArchivedFeeRows/);
+  assert.match(table, /setRemovedFeeRows/);
+  assert.match(table, /Restore selected to Archived/);
+  assert.match(table, /Permanently hidden/);
+  assert.match(table, /parent-fee-summary-removed\.csv/);
+  assert.match(table, /parent-fee-summary-removed\.pdf/);
   assert.match(table, /result\.updatedIds/);
   assert.match(table, /role="alertdialog"/);
   assert.match(table, /router\.refresh\(\)/);
   assert.match(table, /pagination\.pageRows/);
   assert.match(table, /exportParentFeeSummaryPdf\(filteredRows/);
   assert.match(table, /`Term: \$\{term\.name\}`/);
+});
+
+test("parent Fee summary removal recovery is database-timed and returns only to Archived", () => {
+  const helper = readFileSync(feeRecordsPath, "utf8");
+  const service = readFileSync(parentFeeArchiveServicePath, "utf8");
+
+  assert.match(helper, /DATE_ADD\(pfsa\.deleted_at, INTERVAL 30 DAY\)/);
+  assert.match(helper, /CURRENT_TIMESTAMP/);
+  assert.match(helper, /recoveryDaysRemaining/);
+  assert.match(service, /DATE_ADD\(pfsa\.deleted_at, INTERVAL 30 DAY\) > CURRENT_TIMESTAMP/);
+  assert.match(service, /SET deleted_at = NULL/);
+  assert.match(service, /FOR UPDATE/);
+  assert.doesNotMatch(service, /SET archived_at = NULL/);
 });
 
 test("parent Fee summary archive migration and fresh schema use separate metadata", () => {

@@ -639,11 +639,11 @@ Due date rule:
 - Tuition term schedule dates must be on or before the official assignment due date.
 - Parent-facing payment rows and term rows show the main assignment due date as the deadline.
 - The parent Fee summary PDF export includes nested tuition term rows under each tuition fee.
-- The parent Fee summary has local Current/Archived views. Only paid or zero-balance assignments can be archived. Archived rows can be restored or permanently removed for that parent by setting `parent_fee_summary_archives.deleted_at`.
-- Permanent removal has row and bulk confirmation, cannot be undone in the parent portal, and excludes the row from that parent's lists and exports.
+- The parent Fee summary has Current, Archived, and Removed views. Archive remains reversible indefinitely; Remove sets `parent_fee_summary_archives.deleted_at` and starts a database-timed 30-day recovery window.
+- Recoverable rows return to Archived by clearing only `deleted_at`. Expired rows remain visible and exportable as Permanently hidden.
 - Fee metrics, payable counts, payments, tuition terms, admin reports, and another linked guardian's view continue using the authoritative records.
-- Parent Payment history has separate local Current/Archived views backed by `parent_payment_history_archives`. Finished payments can be archived or restored, and archived rows can be permanently removed for that parent by setting `deleted_at`.
-- Permanent removal has row and bulk confirmation, cannot be undone in the parent portal, and excludes the row from that parent's Payment history and exports. Pending payments, receipts, allocations, wallet top-ups, balances, dashboard activity, admin collections, reports, and audit records remain unchanged.
+- Parent Payment history has Current, Archived, and Removed views. Remove starts the same 30-day recovery window; eligible recovery returns rows to Archived, while expired rows remain visible and exportable as Permanently hidden.
+- Pending payments, receipts, allocations, balances, dashboard activity, reports, and audit records remain unchanged.
 
 ## Wallet, Allowance, And Store Flow
 
