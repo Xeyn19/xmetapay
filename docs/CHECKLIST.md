@@ -107,6 +107,7 @@ Done when: admins can manage students and parents can add or view multiple linke
 - [x] Replace parent fee summary mock rows with database rows.
 - [x] Calculate open, partial, and paid balances from database values.
 - [x] Add parent-specific Fee summary archive/restore for settled fees without changing financial records or another guardian's view.
+- [x] Add irreversible parent-specific removal for archived settled Fee summary rows while preserving authoritative financial records and metrics.
 
 Done when: admin and parent fee screens show real balances from MySQL.
 

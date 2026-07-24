@@ -50,6 +50,7 @@ export type ParentFeeRow = {
   status: string;
   tone: "green" | "amber" | "red" | "muted";
   archivedAt: string | null;
+  deletedAt: string | null;
   archiveEligible: boolean;
   terms: ParentFeeTerm[];
 };
@@ -142,12 +143,14 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         status: labelForStatus(row.status),
         tone: feeTone(row.status, row.amount_due, row.amount_paid),
         archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
+        deletedAt: row.deleted_at ? formatDateTime(row.deleted_at) : null,
         archiveEligible: row.status === "paid" || balanceValue <= 0,
         terms,
       };
     });
-    const activeRows = displayRows.filter((row) => !row.archivedAt);
-    const archivedRows = displayRows.filter((row) => row.archivedAt);
+    const visibleRows = displayRows.filter((row) => !row.deletedAt);
+    const activeRows = visibleRows.filter((row) => !row.archivedAt);
+    const archivedRows = visibleRows.filter((row) => row.archivedAt);
 
     return {
       warning: null,
@@ -229,7 +232,7 @@ async function getParentFeeRows(parentUserId: number) {
     `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
        ft.name AS fee_name, ft.category,
        st.student_reference, st.first_name, st.middle_name, st.last_name,
-       pfsa.archived_at,
+       pfsa.archived_at, pfsa.deleted_at,
        GROUP_CONCAT(
          DISTINCT CONCAT_WS(
            '~',
@@ -255,7 +258,7 @@ async function getParentFeeRows(parentUserId: number) {
        AND sfa.status <> 'cancelled'
      GROUP BY sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
         ft.name, ft.category, st.student_reference, st.first_name, st.middle_name, st.last_name,
-        pfsa.archived_at
+        pfsa.archived_at, pfsa.deleted_at
      ORDER BY sfa.due_date IS NULL ASC, sfa.due_date ASC, st.last_name ASC, ft.name ASC`,
     { parentUserId },
   );
@@ -391,5 +394,6 @@ type ParentFeeSqlRow = RowDataPacket & {
   middle_name: string | null;
   last_name: string;
   archived_at: Date | string | null;
+  deleted_at: Date | string | null;
   terms_blob: string | null;
 };

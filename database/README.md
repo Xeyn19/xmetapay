@@ -69,6 +69,11 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Stores only hashed challenge tokens and OTP codes, plus expiration, resend, attempt, verification, and consumption metadata.
    - Safe to import more than once.
 
+17. If `full-schema-v1.sql` was already imported before permanent parent Fee summary removal was added, import `migrations/2026-07-24-parent-fee-permanent-hide.sql`.
+   - Adds nullable `parent_fee_summary_archives.deleted_at` tombstone metadata.
+   - Permanently removes settled archived fees from one parent's Fee summary without deleting fee assignments, balances, tuition terms, payments, receipts, reports, or another guardian's view.
+   - Safe to import more than once.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.
@@ -85,5 +90,6 @@ After importing both files:
 4. Log in and log out from both portals.
 5. Confirm protected admin and parent dashboards still redirect after logout.
 6. Request and complete one local OTP password reset after SMTP is configured.
+7. Archive a settled parent fee, permanently remove it, and confirm school financial records remain available.
 
 Do not commit database exports, real school data, parent data, student data, payment data, credentials, or local environment files.

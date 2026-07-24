@@ -615,6 +615,7 @@ flowchart TD
   A --> U["Parent opens Current or Archived fees"]
   U --> V{"Settled fee?"}
   V -->|Yes| W["Archive or restore parent-specific visibility"]
+  W -->|Permanent remove from Archived| Y["Set parent_fee_summary_archives.deleted_at"]
   V -->|No| X["Keep outstanding fee in Current fees"]
 ```
 
@@ -638,7 +639,8 @@ Due date rule:
 - Tuition term schedule dates must be on or before the official assignment due date.
 - Parent-facing payment rows and term rows show the main assignment due date as the deadline.
 - The parent Fee summary PDF export includes nested tuition term rows under each tuition fee.
-- The parent Fee summary has local Current/Archived views. Only paid or zero-balance assignments can be archived, and `parent_fee_summary_archives` changes visibility for that parent only.
+- The parent Fee summary has local Current/Archived views. Only paid or zero-balance assignments can be archived. Archived rows can be restored or permanently removed for that parent by setting `parent_fee_summary_archives.deleted_at`.
+- Permanent removal has row and bulk confirmation, cannot be undone in the parent portal, and excludes the row from that parent's lists and exports.
 - Fee metrics, payable counts, payments, tuition terms, admin reports, and another linked guardian's view continue using the authoritative records.
 - Parent Payment history has separate local Current/Archived views backed by `parent_payment_history_archives`. Finished payments can be organized, pending payments stay visible, and receipts, allocations, wallet top-ups, admin collections, reports, and dashboard totals remain unchanged.
 
