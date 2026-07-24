@@ -4,7 +4,7 @@ import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 
-export type ParentPaymentHistoryArchiveOperation = "archive" | "restore";
+export type ParentPaymentHistoryArchiveOperation = "archive" | "restore" | "delete";
 
 const ARCHIVEABLE_STATUSES = ["paid", "failed", "voided", "refunded"] as const;
 
@@ -29,7 +29,9 @@ export async function updateParentPaymentHistoryArchiveState({
     await connection.beginTransaction();
     const updatedIds = operation === "archive"
       ? await archiveFinishedPayments(connection, parentUserId, uniqueIds)
-      : await restorePayments(connection, parentUserId, uniqueIds);
+      : operation === "restore"
+        ? await restorePayments(connection, parentUserId, uniqueIds)
+        : await permanentlyHidePayments(connection, parentUserId, uniqueIds);
     await connection.commit();
     return updatedIds;
   } catch (error) {
@@ -86,6 +88,56 @@ async function restorePayments(
   return updatedIds;
 }
 
+async function permanentlyHidePayments(
+  connection: PoolConnection,
+  parentUserId: number,
+  paymentIds: number[],
+) {
+  const updatedIds = await getOwnedDeletableArchivedIds(connection, parentUserId, paymentIds);
+
+  if (updatedIds.length === 0) {
+    return [];
+  }
+
+  const { placeholders, params } = idParams(updatedIds);
+  await connection.execute(
+    `UPDATE parent_payment_history_archives
+     SET deleted_at = CURRENT_TIMESTAMP
+     WHERE parent_user_id = :parentUserId
+       AND deleted_at IS NULL
+       AND payment_id IN (${placeholders})`,
+    { parentUserId, ...params },
+  );
+  return updatedIds;
+}
+
+async function getOwnedDeletableArchivedIds(
+  connection: PoolConnection,
+  parentUserId: number,
+  paymentIds: number[],
+) {
+  const { placeholders, params } = idParams(paymentIds);
+  const [rows] = await connection.execute<ArchiveIdRow[]>(
+    `SELECT ppha.payment_id
+     FROM parent_payment_history_archives ppha
+     JOIN payments p
+       ON p.id = ppha.payment_id
+      AND p.payer_user_id = :parentUserId
+     JOIN students st ON st.id = p.student_id
+     JOIN student_guardians sg
+       ON sg.student_id = st.id
+      AND sg.parent_user_id = :parentUserId
+     WHERE ppha.parent_user_id = :parentUserId
+       AND ppha.deleted_at IS NULL
+       AND ppha.payment_id IN (${placeholders})
+       AND p.status IN ('paid', 'failed', 'voided', 'refunded')
+     FOR UPDATE`,
+    { parentUserId, ...params },
+  );
+
+  return rows.map((row) => Number(row.payment_id));
+}
+
 async function getOwnedArchivedIds(
   connection: PoolConnection,
   parentUserId: number,
@@ -103,7 +155,9 @@ async function getOwnedArchivedIds(
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
      WHERE ppha.parent_user_id = :parentUserId
-       AND ppha.payment_id IN (${placeholders})`,
+       AND ppha.deleted_at IS NULL
+       AND ppha.payment_id IN (${placeholders})
+     FOR UPDATE`,
     { parentUserId, ...params },
   );
 

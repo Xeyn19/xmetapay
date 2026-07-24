@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, CheckSquare, LockKeyhole, X } from "lucide-react";
+import { Archive, ArchiveRestore, CheckSquare, LockKeyhole, Trash2, X } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ import {
 } from "@/app/_components/table-controls";
 import {
   archiveParentPaymentHistoryAction,
+  permanentlyDeleteParentPaymentHistoryAction,
   restoreParentPaymentHistoryAction,
   type ParentPaymentHistoryArchiveActionState,
 } from "@/app/parent/history/actions";
@@ -35,6 +36,11 @@ const initialActionState: ParentPaymentHistoryArchiveActionState = {
   submittedAt: 0,
 };
 
+type Confirmation = {
+  ids: number[];
+  operation: "archive" | "restore" | "delete";
+};
+
 export function ParentPaymentHistoryTable({
   activeRows,
   archivedRows,
@@ -50,7 +56,7 @@ export function ParentPaymentHistoryTable({
   const [status, setStatus] = useState("all");
   const [channel, setChannel] = useState("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [confirmationIds, setConfirmationIds] = useState<number[]>([]);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [pending, startActionTransition] = useTransition();
   const rows = view === "archived" ? archivedPaymentRows : activePaymentRows;
   const operationLabel = view === "archived" ? "Restore" : "Archive";
@@ -92,7 +98,7 @@ export function ParentPaymentHistoryTable({
     setStatus("all");
     setChannel("all");
     setSelectedIds([]);
-    setConfirmationIds([]);
+    setConfirmation(null);
   };
 
   const toggleRow = (row: ParentPaymentHistoryRow) => {
@@ -103,13 +109,16 @@ export function ParentPaymentHistoryTable({
   };
 
   const confirmAction = () => {
-    const submittedView = view;
-    const action = submittedView === "archived"
-      ? restoreParentPaymentHistoryAction
-      : archiveParentPaymentHistoryAction;
+    if (!confirmation) return;
+    const submittedOperation = confirmation.operation;
+    const action = submittedOperation === "archive"
+      ? archiveParentPaymentHistoryAction
+      : submittedOperation === "restore"
+        ? restoreParentPaymentHistoryAction
+        : permanentlyDeleteParentPaymentHistoryAction;
     const formData = new FormData();
-    confirmationIds.forEach((id) => formData.append("paymentIds", String(id)));
-    setConfirmationIds([]);
+    confirmation.ids.forEach((id) => formData.append("paymentIds", String(id)));
+    setConfirmation(null);
 
     startActionTransition(async () => {
       const result = await action(initialActionState, formData);
@@ -123,7 +132,7 @@ export function ParentPaymentHistoryTable({
       if (result.status !== "success") return;
 
       const updatedSet = new Set(result.updatedIds);
-      if (submittedView === "active") {
+      if (submittedOperation === "archive") {
         const movedRows = activePaymentRows
           .filter((row) => updatedSet.has(row.paymentId))
           .map((row) => ({ ...row, archivedAt: "Just now" }));
@@ -132,7 +141,7 @@ export function ParentPaymentHistoryTable({
           ...movedRows,
           ...current.filter((row) => !updatedSet.has(row.paymentId)),
         ]);
-      } else {
+      } else if (submittedOperation === "restore") {
         const movedRows = archivedPaymentRows
           .filter((row) => updatedSet.has(row.paymentId))
           .map((row) => ({ ...row, archivedAt: null }));
@@ -141,6 +150,8 @@ export function ParentPaymentHistoryTable({
           ...movedRows,
           ...current.filter((row) => !updatedSet.has(row.paymentId)),
         ]);
+      } else {
+        setArchivedPaymentRows((current) => current.filter((row) => !updatedSet.has(row.paymentId)));
       }
 
       setSelectedIds((current) => current.filter((id) => !updatedSet.has(id)));
@@ -204,10 +215,16 @@ export function ParentPaymentHistoryTable({
           <button type="button" onClick={() => setSelectedIds([])} disabled={validSelectedIds.length === 0} className={secondaryButtonClass}>
             <X className="size-4" /> Clear selection
           </button>
-          <button type="button" onClick={() => setConfirmationIds(validSelectedIds)} disabled={validSelectedIds.length === 0 || pending} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60">
+          <button type="button" onClick={() => setConfirmation({ ids: validSelectedIds, operation: view === "archived" ? "restore" : "archive" })} disabled={validSelectedIds.length === 0 || pending} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60">
             {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
             {view === "archived" ? "Restore selected" : "Archive selected"}
           </button>
+          {view === "archived" ? (
+            <button type="button" onClick={() => setConfirmation({ ids: validSelectedIds, operation: "delete" })} disabled={validSelectedIds.length === 0 || pending} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-red-600 bg-white px-3.5 text-[13px] font-medium text-red-700 transition hover:bg-red-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-red-600/25 disabled:pointer-events-none disabled:opacity-60">
+              <Trash2 className="size-4" />
+              Delete selected
+            </button>
+          ) : null}
         </div>
 
         {view === "active" ? (
@@ -229,7 +246,7 @@ export function ParentPaymentHistoryTable({
           { label: "Channel", className: "w-[120px]" },
           { label: "Status", className: "w-[100px]" },
           ...(view === "archived" ? [{ label: "Archived", className: "w-[150px]" }] : []),
-          { label: "Action", className: "w-[72px] text-center" },
+          { label: "Action", className: view === "archived" ? "w-[120px] text-center" : "w-[72px] text-center" },
         ]}
       >
         {pagination.pageRows.length > 0 ? (
@@ -261,7 +278,7 @@ export function ParentPaymentHistoryTable({
                     type="button"
                     variant="outline"
                     size="icon"
-                    onClick={() => selectable && setConfirmationIds([row.paymentId])}
+                    onClick={() => selectable && setConfirmation({ ids: [row.paymentId], operation: view === "archived" ? "restore" : "archive" })}
                     disabled={!selectable || pending}
                     className="size-11 text-[#6b6b6b] hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19]"
                     aria-label={selectable ? `${operationLabel} payment ${row.referenceNumber}` : `Payment ${row.referenceNumber} cannot be archived while pending`}
@@ -269,6 +286,20 @@ export function ParentPaymentHistoryTable({
                   >
                     {!selectable ? <LockKeyhole className="size-4" /> : view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
                   </Button>
+                  {view === "archived" ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setConfirmation({ ids: [row.paymentId], operation: "delete" })}
+                      disabled={pending}
+                      className="ml-2 size-11 border-red-200 text-red-700 hover:border-red-400 hover:bg-red-50 hover:text-red-800"
+                      aria-label={`Permanently delete payment ${row.referenceNumber}`}
+                      title="Permanently delete payment"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  ) : null}
                 </td>
               </tr>
             );
@@ -292,25 +323,29 @@ export function ParentPaymentHistoryTable({
         tone="parent"
       />
 
-      {confirmationIds.length > 0 ? (
+      {confirmation ? (
         <div className="fixed inset-0 z-[220] grid place-items-center bg-[#1a1a1a]/45 px-4 py-6 backdrop-blur-sm">
-          <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmationIds([])} aria-label="Close confirmation" />
+          <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmation(null)} aria-label="Close confirmation" />
           <section role="alertdialog" aria-modal="true" aria-labelledby="parent-payment-archive-title" className="relative w-full max-w-md rounded-xl border border-black/[0.08] bg-white p-5 shadow-2xl sm:p-6">
-            <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-[#fbe9e7] text-[#e64a19]">
-              {view === "archived" ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
+            <div className={cn("mb-4 flex size-10 items-center justify-center rounded-lg", confirmation.operation === "delete" ? "bg-red-50 text-red-700" : "bg-[#fbe9e7] text-[#e64a19]")}>
+              {confirmation.operation === "delete" ? <Trash2 className="size-5" /> : confirmation.operation === "restore" ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
             </div>
             <h3 id="parent-payment-archive-title" className="text-[17px] font-semibold text-[#1a1a1a]">
-              {operationLabel} {confirmationIds.length === 1 ? "this payment" : `${confirmationIds.length} payments`}?
+              {confirmation.operation === "delete"
+                ? `Permanently delete ${confirmation.ids.length === 1 ? "this payment" : `${confirmation.ids.length} payments`}?`
+                : `${confirmation.operation === "restore" ? "Restore" : "Archive"} ${confirmation.ids.length === 1 ? "this payment" : `${confirmation.ids.length} payments`}?`}
             </h3>
             <p className="mt-2 text-[13px] leading-5 text-[#6b6b6b]">
-              {view === "archived"
-                ? "Restored records return to Current payments. Receipts, balances, allocations, and school records stay unchanged."
-                : "Archived records move out of Current payments for this parent account only. Receipts and financial records stay unchanged."}
+              {confirmation.operation === "delete"
+                ? "This cannot be undone in the parent portal. The payment disappears from this parent's Payment history and exports, while receipts, balances, allocations, dashboard activity, and school records remain preserved."
+                : confirmation.operation === "restore"
+                  ? "Restored records return to Current payments. Receipts, balances, allocations, and school records stay unchanged."
+                  : "Archived records move out of Current payments for this parent account only. Receipts and financial records stay unchanged."}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setConfirmationIds([])} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>
-              <button type="button" onClick={confirmAction} disabled={pending} className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[#e64a19] px-4 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:opacity-60 sm:w-auto">
-                {pending ? "Updating..." : `${operationLabel} payments`}
+              <button type="button" autoFocus onClick={() => setConfirmation(null)} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>
+              <button type="button" onClick={confirmAction} disabled={pending} className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 text-[13px] font-medium text-white transition focus:outline-none focus-visible:ring-3 disabled:opacity-60 sm:w-auto", confirmation.operation === "delete" ? "bg-red-700 hover:bg-red-800 focus-visible:ring-red-600/25" : "bg-[#e64a19] hover:bg-[#bf360c] focus-visible:ring-[#e64a19]/25")}>
+                {pending ? "Updating..." : confirmation.operation === "delete" ? "Permanently delete" : `${confirmation.operation === "restore" ? "Restore" : "Archive"} payments`}
               </button>
             </div>
           </section>

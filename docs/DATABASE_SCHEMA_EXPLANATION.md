@@ -266,16 +266,17 @@ Payment status starts as pending and can become paid, failed, voided, or refunde
 
 ### `parent_payment_history_archives`
 
-Stores reversible Payment history visibility for the parent who created a payment.
+Stores Payment history visibility for the parent who created a payment, including reversible archive state and irreversible parent-facing removal.
 
 Main purpose:
 
 - Link one parent user to one payment row they archived.
 - Keep parent organization separate from the admin Tuition collection log's `payments.archived_at` field.
 - Allow paid, failed, voided, and refunded rows to move between Current and Archived views while pending rows remain visible.
+- Permanently remove a finished archived row from one parent's Payment history and exports by setting `deleted_at`.
 - Preserve receipts, fee or term allocations, wallet top-ups, balances, reports, dashboard totals, and the original payment status.
 
-Restoring removes only the parent-specific metadata. Payment history remains payment-focused, so store purchases continue to appear only in wallet history.
+Restoring removes only non-deleted parent-specific metadata. A `deleted_at` tombstone cannot be restored or re-archived through the parent portal, but it never deletes the payment or its related financial records. Payment history remains payment-focused, so store purchases continue to appear only in wallet history.
 `school_year_id` is nullable for migrated history, but new payment writes store the active school year.
 
 ### `payment_allocations`

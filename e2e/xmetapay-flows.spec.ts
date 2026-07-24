@@ -272,6 +272,7 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       { path: "/parent/dashboard", heading: "Dashboard" },
       { path: "/parent/fees", heading: "Fee summary" },
       { path: "/parent/pay-tuition", heading: "Pay tuition & fees" },
+      { path: "/parent/history", heading: "Payment history" },
       { path: "/parent/wallet", heading: "Wallet & allowance top-up" },
     ];
 
@@ -324,6 +325,20 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: "Fee summary" }),
       ).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
+  test("parent Payment history permanent-removal controls stay usable at supported responsive widths", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/parent/history", { waitUntil: "domcontentloaded" });
+
+      await expect(
+        page.getByRole("heading", { level: 1, name: "Payment history" }),
+      ).toBeVisible();
+      await page.getByRole("tab", { name: /Archived payments/ }).click();
+      await expect(page.getByRole("button", { name: "Delete selected" })).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
   });
