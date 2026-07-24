@@ -27,7 +27,17 @@ export async function restoreParentFeeAssignmentsAction(
   return updateArchiveState(formData, "restore");
 }
 
-async function updateArchiveState(formData: FormData, operation: "archive" | "restore") {
+export async function permanentlyDeleteParentFeeAssignmentsAction(
+  _prevState: ParentFeeArchiveActionState,
+  formData: FormData,
+): Promise<ParentFeeArchiveActionState> {
+  return updateArchiveState(formData, "delete");
+}
+
+async function updateArchiveState(
+  formData: FormData,
+  operation: "archive" | "restore" | "delete",
+) {
   const session = await requireRole("parent");
   const assignmentIds = [...new Set(
     formData.getAll("feeAssignmentIds")
@@ -48,26 +58,52 @@ async function updateArchiveState(formData: FormData, operation: "archive" | "re
     revalidatePath("/parent/fees");
 
     if (updatedIds.length === 0) {
+      const title = operation === "archive"
+        ? "Fee not archived"
+        : operation === "restore"
+          ? "Fee not restored"
+          : "Fee not removed";
+      const description = operation === "archive"
+        ? "Only paid or zero-balance fees can be archived."
+        : operation === "restore"
+          ? "The selected fee is no longer available in archived fees."
+          : "Only settled fees that are still in Archived fees can be permanently removed.";
+
       return actionState(
         "info",
-        operation === "archive" ? "Fee not archived" : "Fee not restored",
-        operation === "archive"
-          ? "Only paid or zero-balance fees can be archived."
-          : "The selected fee is no longer available in archived fees.",
+        title,
+        description,
       );
     }
 
+    const title = operation === "archive"
+      ? "Fee summary archived"
+      : operation === "restore"
+        ? "Fee summary restored"
+        : "Fee permanently removed";
+    const operationLabel = operation === "archive"
+      ? "archived"
+      : operation === "restore"
+        ? "restored"
+        : "removed";
+
     return actionState(
       "success",
-      operation === "archive" ? "Fee summary archived" : "Fee summary restored",
-      `${updatedIds.length} fee${updatedIds.length === 1 ? "" : "s"} ${operation === "archive" ? "archived" : "restored"}.`,
+      title,
+      `${updatedIds.length} fee${updatedIds.length === 1 ? "" : "s"} ${operation === "delete" ? "permanently " : ""}${operationLabel}.`,
       updatedIds,
     );
   } catch {
+    const title = operation === "archive"
+      ? "Fees not archived"
+      : operation === "restore"
+        ? "Fees not restored"
+        : "Fees not removed";
+
     return actionState(
       "error",
-      operation === "archive" ? "Fees not archived" : "Fees not restored",
-      "Unable to update Fee summary. Confirm the parent fee archive migration is imported and try again.",
+      title,
+      "Unable to update Fee summary. Confirm the parent fee visibility migrations are imported and try again.",
     );
   }
 }

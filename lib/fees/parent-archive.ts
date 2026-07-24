@@ -4,7 +4,7 @@ import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 
-export type ParentFeeArchiveOperation = "archive" | "restore";
+export type ParentFeeArchiveOperation = "archive" | "restore" | "delete";
 
 export async function updateParentFeeArchiveState({
   parentUserId,
@@ -27,7 +27,9 @@ export async function updateParentFeeArchiveState({
     await connection.beginTransaction();
     const updatedIds = operation === "archive"
       ? await archiveSettledFees(connection, parentUserId, uniqueIds)
-      : await restoreFees(connection, parentUserId, uniqueIds);
+      : operation === "restore"
+        ? await restoreFees(connection, parentUserId, uniqueIds)
+        : await permanentlyHideFees(connection, parentUserId, uniqueIds);
     await connection.commit();
     return updatedIds;
   } catch (error) {
@@ -87,6 +89,33 @@ async function restoreFees(
   return updatedIds;
 }
 
+async function permanentlyHideFees(
+  connection: PoolConnection,
+  parentUserId: number,
+  assignmentIds: number[],
+) {
+  const updatedIds = await getOwnedDeletableArchivedIds(
+    connection,
+    parentUserId,
+    assignmentIds,
+  );
+
+  if (updatedIds.length === 0) {
+    return [];
+  }
+
+  const { placeholders, params } = idParams(updatedIds);
+  await connection.execute(
+    `UPDATE parent_fee_summary_archives
+     SET deleted_at = CURRENT_TIMESTAMP
+     WHERE parent_user_id = :parentUserId
+       AND deleted_at IS NULL
+       AND student_fee_assignment_id IN (${placeholders})`,
+    { parentUserId, ...params },
+  );
+  return updatedIds;
+}
+
 async function getOwnedArchivedIds(
   connection: PoolConnection,
   parentUserId: number,
@@ -105,7 +134,38 @@ async function getOwnedArchivedIds(
        ON sy.id = sfa.school_year_id
       AND sy.status = 'active'
      WHERE pfsa.parent_user_id = :parentUserId
-       AND pfsa.student_fee_assignment_id IN (${placeholders})`,
+       AND pfsa.deleted_at IS NULL
+       AND pfsa.student_fee_assignment_id IN (${placeholders})
+     FOR UPDATE`,
+    { parentUserId, ...params },
+  );
+
+  return rows.map((row) => Number(row.student_fee_assignment_id));
+}
+
+async function getOwnedDeletableArchivedIds(
+  connection: PoolConnection,
+  parentUserId: number,
+  assignmentIds: number[],
+) {
+  const { placeholders, params } = idParams(assignmentIds);
+  const [rows] = await connection.execute<ArchiveIdRow[]>(
+    `SELECT pfsa.student_fee_assignment_id
+     FROM parent_fee_summary_archives pfsa
+     JOIN student_fee_assignments sfa ON sfa.id = pfsa.student_fee_assignment_id
+     JOIN students st ON st.id = sfa.student_id
+     JOIN student_guardians sg
+       ON sg.student_id = st.id
+      AND sg.parent_user_id = :parentUserId
+     JOIN school_years sy
+       ON sy.id = sfa.school_year_id
+      AND sy.status = 'active'
+     WHERE pfsa.parent_user_id = :parentUserId
+       AND pfsa.deleted_at IS NULL
+       AND pfsa.student_fee_assignment_id IN (${placeholders})
+       AND sfa.status <> 'cancelled'
+       AND (sfa.status = 'paid' OR sfa.amount_paid >= sfa.amount_due)
+     FOR UPDATE`,
     { parentUserId, ...params },
   );
 

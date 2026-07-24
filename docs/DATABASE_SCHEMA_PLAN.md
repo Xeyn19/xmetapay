@@ -374,23 +374,25 @@ CREATE TABLE student_fee_assignments (
 
 #### `parent_fee_summary_archives`
 
-Keeps reversible Fee summary organization private to each parent account. It never changes the fee assignment or another guardian's view.
+Keeps Fee summary organization private to each parent account. It supports reversible archive/restore plus an irreversible parent-facing tombstone, and never changes the fee assignment or another guardian's view.
 
 ```sql
 CREATE TABLE parent_fee_summary_archives (
   parent_user_id BIGINT UNSIGNED NOT NULL,
   student_fee_assignment_id BIGINT UNSIGNED NOT NULL,
   archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
 
   PRIMARY KEY (parent_user_id, student_fee_assignment_id),
   KEY idx_parent_fee_archives_parent_archived_assignment (parent_user_id, archived_at, student_fee_assignment_id),
+  KEY idx_parent_fee_archives_parent_deleted_archived_assignment (parent_user_id, deleted_at, archived_at, student_fee_assignment_id),
   KEY idx_parent_fee_archives_assignment (student_fee_assignment_id),
   CONSTRAINT fk_parent_fee_archives_parent FOREIGN KEY (parent_user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_parent_fee_archives_assignment FOREIGN KEY (student_fee_assignment_id) REFERENCES student_fee_assignments(id) ON DELETE CASCADE
 );
 ```
 
-The parent portal permits archiving only paid or zero-balance assignments. KPIs, payable counts, admin reports, receipts, payment history, and tuition terms continue reading the authoritative fee and payment tables.
+The parent portal permits archiving and permanent removal only for paid or zero-balance assignments. `deleted_at` removes a row from that parent's Current/Archived lists and exports without changing KPIs, payable counts, admin reports, receipts, payment history, tuition terms, or another guardian's view.
 
 #### `tuition_payment_terms`
 
@@ -702,7 +704,7 @@ Use indexes based on the screens and workflows in the app.
 | Grade/section lists | `enrollments(grade_level_id, section_id)` |
 | Parent linked students | `student_guardians(parent_user_id)` |
 | Student guardian list | `student_guardians(student_id, is_primary)` |
-| Fee summary | `student_fee_assignments(student_id, status, due_date)` plus parent-specific `parent_fee_summary_archives(parent_user_id, archived_at, student_fee_assignment_id)` |
+| Fee summary | `student_fee_assignments(student_id, status, due_date)` plus parent-specific `parent_fee_summary_archives(parent_user_id, archived_at, deleted_at, student_fee_assignment_id)` |
 | Tuition report | `student_fee_assignments(school_year_id, status, due_date)` |
 | Tuition collections log | `payments(school_id, school_year_id, archived_at, paid_at)` plus `payment_allocations`/`payment_term_allocations` and tuition `fee_types` |
 | Parent payment history | `payments(payer_user_id, paid_at)` plus parent-specific `parent_payment_history_archives(parent_user_id, archived_at, payment_id)` |

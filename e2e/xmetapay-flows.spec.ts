@@ -315,6 +315,18 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
     await expect(parentDrawer).not.toBeInViewport();
     await expectNoHorizontalOverflow(page);
   });
+
+  test("parent Fee summary stays usable at supported responsive widths", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/parent/fees", { waitUntil: "domcontentloaded" });
+
+      await expect(
+        page.getByRole("heading", { level: 1, name: "Fee summary" }),
+      ).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
 });
 
 test.describe("XMETA Pay dashboard protection", () => {

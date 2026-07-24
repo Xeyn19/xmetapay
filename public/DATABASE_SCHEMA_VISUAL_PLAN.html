@@ -344,7 +344,7 @@
             <tr>
               <td>Fees</td>
               <td><code>fee_types</code>, <code>fee_type_term_templates</code>, <code>student_fee_assignments</code>, <code>parent_fee_summary_archives</code>, <code>tuition_payment_terms</code></td>
-              <td>Tuition, other fees, grade/section-filtered selected-student bulk assignment, due dates, balances, per-student tuition terms, and parent-specific archive metadata for settled Fee summary rows. Archive never changes financial records, admin reporting, or another guardian's view. Fee type term templates remain schema-ready for future reuse.</td>
+              <td>Tuition, other fees, grade/section-filtered selected-student bulk assignment, due dates, balances, per-student tuition terms, and parent-specific archive/permanent-hide metadata for settled Fee summary rows. Archive, restore, and <code>deleted_at</code> tombstones never change financial records, metrics, admin reporting, or another guardian's view. Fee type term templates remain schema-ready for future reuse.</td>
             </tr>
             <tr>
               <td>Payments</td>
@@ -745,6 +745,7 @@ flowchart TD
   A --> L["Parent switches Current or Archived fees"]
   L --> M{"Paid or zero balance?"}
   M -->|Yes| N["Write parent_fee_summary_archives metadata"]
+  N -->|Permanent remove from Archived| P["Set deleted_at tombstone"]
   M -->|No| O["Keep fee visible in Current fees"]
           </pre>
         </div>

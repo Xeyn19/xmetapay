@@ -221,7 +221,7 @@ The parent-facing payment deadline comes from `student_fee_assignments.due_date`
 
 ### `parent_fee_summary_archives`
 
-Stores reversible Fee summary visibility separately for each parent account.
+Stores Fee summary visibility separately for each parent account.
 
 Main purpose:
 
@@ -229,8 +229,9 @@ Main purpose:
 - Let another guardian linked to the same student keep an independent Fee summary view.
 - Keep metrics, balances, payment eligibility, tuition terms, parent history, and admin reporting based on the original financial records.
 - Restore a row by removing only its parent-specific archive metadata.
+- Permanently remove an archived row from one parent's Fee summary by setting `deleted_at`, without deleting the archive audit row or any financial record.
 
-Only paid or zero-balance assignments can be archived. Open and partial obligations remain visible in Current fees.
+Only paid or zero-balance assignments can be archived or permanently removed. Open and partial obligations remain visible in Current fees. `deleted_at` is irreversible through the parent portal, but the authoritative assignment, payments, receipts, tuition terms, metrics, reports, and another guardian's view remain available.
 
 ### `tuition_payment_terms`
 

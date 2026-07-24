@@ -276,9 +276,11 @@ CREATE TABLE IF NOT EXISTS parent_fee_summary_archives (
   parent_user_id BIGINT UNSIGNED NOT NULL,
   student_fee_assignment_id BIGINT UNSIGNED NOT NULL,
   archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
 
   PRIMARY KEY (parent_user_id, student_fee_assignment_id),
   KEY idx_parent_fee_archives_parent_archived_assignment (parent_user_id, archived_at, student_fee_assignment_id),
+  KEY idx_parent_fee_archives_parent_deleted_archived_assignment (parent_user_id, deleted_at, archived_at, student_fee_assignment_id),
   KEY idx_parent_fee_archives_assignment (student_fee_assignment_id),
   CONSTRAINT fk_parent_fee_archives_parent
     FOREIGN KEY (parent_user_id) REFERENCES users(id)

@@ -4,7 +4,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Fragment, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, CheckSquare, LockKeyhole, X } from "lucide-react";
+import { Archive, ArchiveRestore, CheckSquare, LockKeyhole, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -18,6 +18,7 @@ import {
 } from "@/app/_components/table-controls";
 import {
   archiveParentFeeAssignmentsAction,
+  permanentlyDeleteParentFeeAssignmentsAction,
   restoreParentFeeAssignmentsAction,
   type ParentFeeArchiveActionState,
 } from "@/app/parent/fees/actions";
@@ -35,6 +36,11 @@ const initialActionState: ParentFeeArchiveActionState = {
   submittedAt: 0,
 };
 
+type FeeConfirmation = {
+  ids: number[];
+  operation: "archive" | "restore" | "delete";
+};
+
 export function ParentFeesTable({
   activeRows,
   archivedRows,
@@ -50,7 +56,7 @@ export function ParentFeesTable({
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [confirmationIds, setConfirmationIds] = useState<number[]>([]);
+  const [confirmation, setConfirmation] = useState<FeeConfirmation | null>(null);
   const [pending, startActionTransition] = useTransition();
   const rows = view === "archived" ? archivedFeeRows : activeFeeRows;
   const operationLabel = view === "archived" ? "Restore" : "Archive";
@@ -91,7 +97,7 @@ export function ParentFeesTable({
     setCategory("all");
     setStatus("all");
     setSelectedIds([]);
-    setConfirmationIds([]);
+    setConfirmation(null);
   };
 
   const toggleRow = (row: ParentFeeRow) => {
@@ -102,13 +108,17 @@ export function ParentFeesTable({
   };
 
   const confirmAction = () => {
-    const submittedView = view;
-    const action = submittedView === "archived"
-      ? restoreParentFeeAssignmentsAction
-      : archiveParentFeeAssignmentsAction;
+    if (!confirmation) return;
+
+    const submittedOperation = confirmation.operation;
+    const action = submittedOperation === "archive"
+      ? archiveParentFeeAssignmentsAction
+      : submittedOperation === "restore"
+        ? restoreParentFeeAssignmentsAction
+        : permanentlyDeleteParentFeeAssignmentsAction;
     const formData = new FormData();
-    confirmationIds.forEach((id) => formData.append("feeAssignmentIds", String(id)));
-    setConfirmationIds([]);
+    confirmation.ids.forEach((id) => formData.append("feeAssignmentIds", String(id)));
+    setConfirmation(null);
 
     startActionTransition(async () => {
       const result = await action(initialActionState, formData);
@@ -122,7 +132,7 @@ export function ParentFeesTable({
       if (result.status !== "success") return;
 
       const updatedSet = new Set(result.updatedIds);
-      if (submittedView === "active") {
+      if (submittedOperation === "archive") {
         const movedRows = activeFeeRows
           .filter((row) => updatedSet.has(row.id))
           .map((row) => ({ ...row, archivedAt: "Just now" }));
@@ -131,7 +141,7 @@ export function ParentFeesTable({
           ...movedRows,
           ...current.filter((row) => !updatedSet.has(row.id)),
         ]);
-      } else {
+      } else if (submittedOperation === "restore") {
         const movedRows = archivedFeeRows
           .filter((row) => updatedSet.has(row.id))
           .map((row) => ({ ...row, archivedAt: null }));
@@ -140,6 +150,10 @@ export function ParentFeesTable({
           ...movedRows,
           ...current.filter((row) => !updatedSet.has(row.id)),
         ]);
+      } else {
+        setArchivedFeeRows((current) =>
+          current.filter((row) => !updatedSet.has(row.id)),
+        );
       }
 
       setSelectedIds((current) => current.filter((id) => !updatedSet.has(id)));
@@ -150,6 +164,11 @@ export function ParentFeesTable({
   const hasRows = rows.length > 0;
   const hasFilters = query.trim().length > 0 || category !== "all" || status !== "all";
   const columnCount = view === "archived" ? 10 : 9;
+  const confirmationLabel = confirmation?.operation === "archive"
+    ? "Archive"
+    : confirmation?.operation === "restore"
+      ? "Restore"
+      : "Permanently delete";
 
   return (
     <>
@@ -198,10 +217,32 @@ export function ParentFeesTable({
           <button type="button" onClick={() => setSelectedIds([])} disabled={validSelectedIds.length === 0} className={secondaryButtonClass}>
             <X className="size-4" /> Clear selection
           </button>
-          <button type="button" onClick={() => setConfirmationIds(validSelectedIds)} disabled={validSelectedIds.length === 0 || pending} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60">
+          <button
+            type="button"
+            onClick={() => setConfirmation({
+              ids: validSelectedIds,
+              operation: view === "archived" ? "restore" : "archive",
+            })}
+            disabled={validSelectedIds.length === 0 || pending}
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60"
+          >
             {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
             {operationLabel} selected
           </button>
+          {view === "archived" ? (
+            <button
+              type="button"
+              onClick={() => setConfirmation({
+                ids: validSelectedIds,
+                operation: "delete",
+              })}
+              disabled={validSelectedIds.length === 0 || pending}
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#c62828] bg-[#c62828] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#8e1b1b] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#c62828]/25 disabled:pointer-events-none disabled:opacity-60"
+            >
+              <Trash2 className="size-4" />
+              Delete selected
+            </button>
+          ) : null}
         </div>
 
         {view === "active" ? (
@@ -223,7 +264,7 @@ export function ParentFeesTable({
           { label: "Due date", className: "w-[130px]" },
           { label: "Status", className: "w-[100px]" },
           ...(view === "archived" ? [{ label: "Archived", className: "w-[150px]" }] : []),
-          { label: "Action", className: "w-[72px] text-center" },
+          { label: "Action", className: view === "archived" ? "w-[120px] text-center" : "w-[72px] text-center" },
         ]}
       >
         {pagination.pageRows.length > 0 ? (
@@ -251,19 +292,41 @@ export function ParentFeesTable({
                   <td>{row.dueDate}</td>
                   <td><StatusPill tone={row.tone}>{row.status}</StatusPill></td>
                   {view === "archived" ? <td className="font-mono text-[11px] text-[#6b6b6b]">{row.archivedAt ?? "Pending"}</td> : null}
-                  <td className="text-center">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => selectable && setConfirmationIds([row.id])}
-                      disabled={!selectable || pending}
-                      className="size-11 text-[#6b6b6b] hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19]"
-                      aria-label={selectable ? `${operationLabel} ${row.feeName} for ${row.studentName}` : `${row.feeName} cannot be archived until settled`}
-                      title={selectable ? `${operationLabel} fee` : "Outstanding fees cannot be archived"}
-                    >
-                      {!selectable ? <LockKeyhole className="size-4" /> : view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-                    </Button>
+                  <td>
+                    <div className="flex min-h-11 items-center justify-center gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => selectable && setConfirmation({
+                          ids: [row.id],
+                          operation: view === "archived" ? "restore" : "archive",
+                        })}
+                        disabled={!selectable || pending}
+                        className="size-11 text-[#6b6b6b] hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19]"
+                        aria-label={selectable ? `${operationLabel} ${row.feeName} for ${row.studentName}` : `${row.feeName} cannot be archived until settled`}
+                        title={selectable ? `${operationLabel} fee` : "Outstanding fees cannot be archived"}
+                      >
+                        {!selectable ? <LockKeyhole className="size-4" /> : view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+                      </Button>
+                      {view === "archived" ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setConfirmation({
+                            ids: [row.id],
+                            operation: "delete",
+                          })}
+                          disabled={pending}
+                          className="size-11 border-[#c62828]/25 text-[#c62828] hover:border-[#c62828]/50 hover:bg-[#fff1f1] hover:text-[#8e1b1b]"
+                          aria-label={`Permanently delete ${row.feeName} for ${row.studentName}`}
+                          title="Permanently delete fee from this parent view"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
                 {row.terms.length > 0 ? (
@@ -311,25 +374,46 @@ export function ParentFeesTable({
         tone="parent"
       />
 
-      {confirmationIds.length > 0 ? (
+      {confirmation ? (
         <div className="fixed inset-0 z-[220] grid place-items-center bg-[#1a1a1a]/45 px-4 py-6 backdrop-blur-sm">
-          <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmationIds([])} aria-label="Close confirmation" />
+          <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmation(null)} aria-label="Close confirmation" />
           <section role="alertdialog" aria-modal="true" aria-labelledby="parent-fee-archive-title" className="relative w-full max-w-md rounded-xl border border-black/[0.08] bg-white p-5 shadow-2xl sm:p-6">
-            <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-[#fbe9e7] text-[#e64a19]">
-              {view === "archived" ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
+            <div className={cn(
+              "mb-4 flex size-10 items-center justify-center rounded-lg",
+              confirmation.operation === "delete"
+                ? "bg-[#ffebee] text-[#c62828]"
+                : "bg-[#fbe9e7] text-[#e64a19]",
+            )}>
+              {confirmation.operation === "delete"
+                ? <Trash2 className="size-5" />
+                : confirmation.operation === "restore"
+                  ? <ArchiveRestore className="size-5" />
+                  : <Archive className="size-5" />}
             </div>
             <h3 id="parent-fee-archive-title" className="text-[17px] font-semibold text-[#1a1a1a]">
-              {operationLabel} {confirmationIds.length === 1 ? "this fee" : `${confirmationIds.length} fees`}?
+              {confirmationLabel} {confirmation.ids.length === 1 ? "this fee" : `${confirmation.ids.length} fees`}?
             </h3>
             <p className="mt-2 text-[13px] leading-5 text-[#6b6b6b]">
-              {view === "archived"
-                ? "Restored fees return to Current fees. Payments, balances, tuition terms, and school records stay unchanged."
-                : "Archived fees move out of Current fees for this parent account only. Payment and school records stay unchanged."}
+              {confirmation.operation === "delete"
+                ? "This cannot be undone in the parent portal. The fees disappear from this parent's Fee summary, while school records, balances, tuition terms, payments, receipts, reports, and another guardian's view stay unchanged."
+                : confirmation.operation === "restore"
+                  ? "Restored fees return to Current fees. Payments, balances, tuition terms, and school records stay unchanged."
+                  : "Archived fees move out of Current fees for this parent account only. Payment and school records stay unchanged."}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setConfirmationIds([])} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>
-              <button type="button" onClick={confirmAction} disabled={pending} className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[#e64a19] px-4 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:opacity-60 sm:w-auto">
-                {pending ? "Updating..." : `${operationLabel} fees`}
+              <button type="button" autoFocus onClick={() => setConfirmation(null)} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>
+              <button
+                type="button"
+                onClick={confirmAction}
+                disabled={pending}
+                className={cn(
+                  "inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 text-[13px] font-medium text-white transition focus:outline-none focus-visible:ring-3 disabled:opacity-60 sm:w-auto",
+                  confirmation.operation === "delete"
+                    ? "bg-[#c62828] hover:bg-[#8e1b1b] focus-visible:ring-[#c62828]/25"
+                    : "bg-[#e64a19] hover:bg-[#bf360c] focus-visible:ring-[#e64a19]/25",
+                )}
+              >
+                {pending ? "Updating..." : `${confirmationLabel} fees`}
               </button>
             </div>
           </section>

@@ -18,6 +18,7 @@ const parentFeesTablePath = "app/parent/(portal)/fees/fees-table.tsx";
 const parentFeeArchiveActionsPath = "app/parent/fees/actions.ts";
 const parentFeeArchiveServicePath = "lib/fees/parent-archive.ts";
 const parentFeeArchiveMigrationPath = "database/migrations/2026-07-21-parent-fee-summary-archive.sql";
+const parentFeePermanentHideMigrationPath = "database/migrations/2026-07-24-parent-fee-permanent-hide.sql";
 const fullSchemaPath = "database/full-schema-v1.sql";
 const parentPortalDataPath = "app/parent/_data/parent-portal-data.ts";
 const checklistPath = "docs/CHECKLIST.md";
@@ -269,20 +270,30 @@ test("parent Fee summary archive is parent-specific and preserves financial trut
   assert.match(helper, /archivedRows: ParentFeeRow\[\]/);
   assert.match(helper, /archiveEligible: row\.status === "paid" \|\| balanceValue <= 0/);
   assert.match(helper, /const totals = rows\.reduce/);
-  assert.match(helper, /const activeRows = displayRows\.filter/);
-  assert.match(helper, /const archivedRows = displayRows\.filter/);
+  assert.match(helper, /const activeRows = visibleRows\.filter/);
+  assert.match(helper, /const visibleRows = displayRows\.filter\(\(row\) => !row\.deletedAt\)/);
+  assert.match(helper, /const archivedRows = visibleRows\.filter/);
+  assert.match(helper, /deletedAt: row\.deleted_at/);
 
   assert.match(service, /import "server-only"/);
+  assert.match(service, /ParentFeeArchiveOperation = "archive" \| "restore" \| "delete"/);
   assert.match(service, /student_guardians sg/);
   assert.match(service, /sg\.parent_user_id = :parentUserId/);
   assert.match(service, /sy\.status = 'active'/);
   assert.match(service, /sfa\.status = 'paid' OR sfa\.amount_paid >= sfa\.amount_due/);
   assert.match(service, /INSERT IGNORE INTO parent_fee_summary_archives/);
   assert.match(service, /DELETE FROM parent_fee_summary_archives/);
+  assert.match(service, /SET deleted_at = CURRENT_TIMESTAMP/);
+  assert.match(service, /pfsa\.deleted_at IS NULL/);
+  assert.ok(
+    (service.match(/FOR UPDATE/g) ?? []).length >= 2,
+    "restore and permanent removal should serialize archived-row updates",
+  );
   assert.doesNotMatch(service, /UPDATE student_fee_assignments|UPDATE payments|DELETE FROM student_fee_assignments/);
 
   assert.match(actions, /export async function archiveParentFeeAssignmentsAction/);
   assert.match(actions, /export async function restoreParentFeeAssignmentsAction/);
+  assert.match(actions, /export async function permanentlyDeleteParentFeeAssignmentsAction/);
   assert.match(actions, /await requireRole\("parent"\)/);
   assert.match(actions, /\.slice\(0, 100\)/);
   assert.match(actions, /updatedIds/);
@@ -302,6 +313,12 @@ test("parent Fee summary archive table switches locally with selection and immed
   assert.match(table, /Clear selection/);
   assert.match(table, /const operationLabel = view === "archived" \? "Restore" : "Archive"/);
   assert.match(table, /\{operationLabel\} selected/);
+  assert.match(table, /Delete selected/);
+  assert.match(table, /operation: "delete"/);
+  assert.match(table, /Permanently delete/);
+  assert.match(table, /cannot be undone in the parent portal/);
+  assert.match(table, /type="button" autoFocus/);
+  assert.match(table, /setArchivedFeeRows\(\(current\) =>\s+current\.filter/);
   assert.match(table, /row\.archiveEligible/);
   assert.match(table, /Outstanding fees cannot be archived/);
   assert.match(table, /setActiveFeeRows/);
@@ -328,6 +345,29 @@ test("parent Fee summary archive migration and fresh schema use separate metadat
   }
 
   assert.doesNotMatch(migration, /ALTER TABLE student_fee_assignments|ADD COLUMN archived_at/);
+});
+
+test("parent Fee summary permanent removal uses an idempotent parent-only tombstone", () => {
+  assert.equal(existsSync(parentFeePermanentHideMigrationPath), true);
+  const migration = readFileSync(parentFeePermanentHideMigrationPath, "utf8");
+  const schema = readFileSync(fullSchemaPath, "utf8");
+  const helper = readFileSync(feeRecordsPath, "utf8");
+  const service = readFileSync(parentFeeArchiveServicePath, "utf8");
+
+  assert.match(migration, /information_schema\.COLUMNS/);
+  assert.match(migration, /COLUMN_NAME = 'deleted_at'/);
+  assert.match(migration, /ADD COLUMN deleted_at DATETIME NULL/);
+  assert.match(migration, /information_schema\.STATISTICS/);
+  assert.match(schema, /deleted_at DATETIME NULL/);
+  assert.match(schema, /idx_parent_fee_archives_parent_deleted_archived_assignment/);
+  assert.match(helper, /pfsa\.archived_at, pfsa\.deleted_at/);
+  assert.match(service, /sg\.parent_user_id = :parentUserId/);
+  assert.match(service, /sy\.status = 'active'/);
+  assert.match(service, /sfa\.status = 'paid' OR sfa\.amount_paid >= sfa\.amount_due/);
+  assert.doesNotMatch(
+    `${migration}\n${service}`,
+    /DELETE FROM student_fee_assignments|DELETE FROM payments|DELETE FROM receipts/,
+  );
 });
 
 test("checklist marks Phase 4 fees backend complete before Phase 5 payment work", () => {
