@@ -22,6 +22,7 @@ export default async function HistoryPage() {
           key={`${data.activeRows.map((row) => row.paymentId).join("-")}|${data.archivedRows.map((row) => row.paymentId).join("-")}`}
           activeRows={data.activeRows}
           archivedRows={data.archivedRows}
+          removedRows={data.removedRows}
         />
       </ParentCard>
     </>

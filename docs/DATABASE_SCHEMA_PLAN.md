@@ -392,7 +392,7 @@ CREATE TABLE parent_fee_summary_archives (
 );
 ```
 
-The parent portal permits archiving and permanent removal only for paid or zero-balance assignments. `deleted_at` removes a row from that parent's Current/Archived lists and exports without changing KPIs, payable counts, admin reports, receipts, payment history, tuition terms, or another guardian's view.
+The parent portal permits archiving and removal only for settled assignments. `deleted_at` starts a database-timed 30-day recovery window; clearing it returns a recoverable row to Archived while preserving `archived_at`. Expired tombstones remain visible as Permanently hidden without changing financial truth.
 
 #### `tuition_payment_terms`
 
@@ -458,7 +458,7 @@ CREATE TABLE payments (
 
 #### `parent_payment_history_archives`
 
-Keeps Payment history organization private to the paying parent and separate from admin collection archiving. It supports reversible archive/restore plus an irreversible parent-facing tombstone.
+Keeps Payment history organization private to the paying parent. Archive remains reversible indefinitely; `deleted_at` starts a 30-day recovery window, after which the tombstone remains visible as Permanently hidden.
 
 ```sql
 CREATE TABLE parent_payment_history_archives (

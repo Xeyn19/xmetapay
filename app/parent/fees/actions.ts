@@ -34,9 +34,16 @@ export async function permanentlyDeleteParentFeeAssignmentsAction(
   return updateArchiveState(formData, "delete");
 }
 
+export async function recoverRemovedParentFeeAssignmentsAction(
+  _prevState: ParentFeeArchiveActionState,
+  formData: FormData,
+): Promise<ParentFeeArchiveActionState> {
+  return updateArchiveState(formData, "recover");
+}
+
 async function updateArchiveState(
   formData: FormData,
-  operation: "archive" | "restore" | "delete",
+  operation: "archive" | "restore" | "delete" | "recover",
 ) {
   const session = await requireRole("parent");
   const assignmentIds = [...new Set(
@@ -62,12 +69,16 @@ async function updateArchiveState(
         ? "Fee not archived"
         : operation === "restore"
           ? "Fee not restored"
-          : "Fee not removed";
+          : operation === "delete"
+            ? "Fee not removed"
+            : "Fee not recovered";
       const description = operation === "archive"
         ? "Only paid or zero-balance fees can be archived."
         : operation === "restore"
           ? "The selected fee is no longer available in archived fees."
-          : "Only settled fees that are still in Archived fees can be permanently removed.";
+          : operation === "delete"
+            ? "Only settled fees that are still in Archived fees can be removed."
+            : "Only fees removed within the last 30 days can be restored to Archived.";
 
       return actionState(
         "info",
@@ -80,17 +91,21 @@ async function updateArchiveState(
       ? "Fee summary archived"
       : operation === "restore"
         ? "Fee summary restored"
-        : "Fee permanently removed";
+        : operation === "delete"
+          ? "Fee removed"
+          : "Fee restored to Archived";
     const operationLabel = operation === "archive"
       ? "archived"
       : operation === "restore"
         ? "restored"
-        : "removed";
+        : operation === "delete"
+          ? "removed"
+          : "recovered";
 
     return actionState(
       "success",
       title,
-      `${updatedIds.length} fee${updatedIds.length === 1 ? "" : "s"} ${operation === "delete" ? "permanently " : ""}${operationLabel}.`,
+      `${updatedIds.length} fee${updatedIds.length === 1 ? "" : "s"} ${operationLabel}.`,
       updatedIds,
     );
   } catch {
@@ -98,7 +113,9 @@ async function updateArchiveState(
       ? "Fees not archived"
       : operation === "restore"
         ? "Fees not restored"
-        : "Fees not removed";
+        : operation === "delete"
+          ? "Fees not removed"
+          : "Fees not recovered";
 
     return actionState(
       "error",

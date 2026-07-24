@@ -344,12 +344,12 @@
             <tr>
               <td>Fees</td>
               <td><code>fee_types</code>, <code>fee_type_term_templates</code>, <code>student_fee_assignments</code>, <code>parent_fee_summary_archives</code>, <code>tuition_payment_terms</code></td>
-              <td>Tuition, other fees, grade/section-filtered selected-student bulk assignment, due dates, balances, per-student tuition terms, and parent-specific archive/permanent-hide metadata for settled Fee summary rows. Archive, restore, and <code>deleted_at</code> tombstones never change financial records, metrics, admin reporting, or another guardian's view. Fee type term templates remain schema-ready for future reuse.</td>
+              <td>Tuition, balances, terms, and parent-specific Fee summary visibility. Archive is indefinite; <code>deleted_at</code> starts a database-timed 30-day recovery window. Recovery returns the row to Archived, while expired tombstones remain visible as Permanently hidden without changing financial records.</td>
             </tr>
             <tr>
               <td>Payments</td>
               <td><code>payments</code>, <code>parent_payment_history_archives</code>, <code>payment_allocations</code>, <code>payment_term_allocations</code>, <code>receipts</code></td>
-              <td>Payment records, active school-year stamps, allocations, receipts, admin Tuition collection organization through <code>payments.archived_at</code>, and separate parent-specific Payment history archive/permanent-hide metadata. Parent <code>deleted_at</code> tombstones remove rows only from that parent's history and exports; payment status, receipts, balances, dashboard activity, reports, and audit history stay unchanged.</td>
+              <td>Payment records, allocations, receipts, and parent-specific history visibility. Parent <code>deleted_at</code> starts a database-timed 30-day recovery window; expired tombstones remain visible as Permanently hidden while financial and audit history stays unchanged.</td>
             </tr>
             <tr>
               <td>Wallet</td>
@@ -742,11 +742,15 @@ flowchart TD
   J --> K["Show receipt and payment history"]
   K --> K2["Parent switches Current or Archived payments"]
   K2 --> K3["Write or remove parent_payment_history_archives metadata"]
-  K3 -->|Permanent remove from Archived| K4["Set deleted_at tombstone"]
+  K3 -->|Remove from Archived| K4["Set deleted_at; recover for 30 days"]
+  K4 -->|Recoverable| K5["Clear deleted_at; return to Archived"]
+  K4 -->|Expired| K6["Keep visible as Permanently hidden"]
   A --> L["Parent switches Current or Archived fees"]
   L --> M{"Paid or zero balance?"}
   M -->|Yes| N["Write parent_fee_summary_archives metadata"]
-  N -->|Permanent remove from Archived| P["Set deleted_at tombstone"]
+  N -->|Remove from Archived| P["Set deleted_at; recover for 30 days"]
+  P -->|Recoverable| P2["Clear deleted_at; return to Archived"]
+  P -->|Expired| P3["Keep visible as Permanently hidden"]
   M -->|No| O["Keep fee visible in Current fees"]
           </pre>
         </div>

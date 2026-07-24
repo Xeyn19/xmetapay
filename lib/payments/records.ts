@@ -58,12 +58,18 @@ export type ParentPaymentHistoryRow = {
   channel: string;
   status: string;
   archivedAt: string | null;
+  deletedAt: string | null;
+  recoverableUntil: string | null;
+  recoveryDaysRemaining: number;
+  canRecover: boolean;
+  removalState: "recoverable" | "permanently_hidden" | null;
   archiveEligible: boolean;
 };
 
 export type ParentPaymentHistoryData = {
   activeRows: ParentPaymentHistoryRow[];
   archivedRows: ParentPaymentHistoryRow[];
+  removedRows: ParentPaymentHistoryRow[];
   warning: string | null;
 };
 
@@ -157,32 +163,40 @@ export async function getParentReceiptData(
 
 export async function getParentPaymentHistoryData(parentUserId: number): Promise<ParentPaymentHistoryData> {
   try {
-    const [activeRows, archivedRows] = await Promise.all([
+    const [activeRows, archivedRows, removedRows] = await Promise.all([
       getParentPaymentHistoryRows(parentUserId, "active"),
       getParentPaymentHistoryRows(parentUserId, "archived"),
+      getParentPaymentHistoryRows(parentUserId, "removed"),
     ]);
 
     return {
       warning: null,
       activeRows,
       archivedRows,
+      removedRows,
     };
   } catch {
     return {
       activeRows: [],
       archivedRows: [],
+      removedRows: [],
       warning: "Payment history is unavailable. Confirm MySQL/XAMPP and the full schema are ready.",
     };
   }
 }
 
-async function getParentPaymentHistoryRows(parentUserId: number, archiveScope: "active" | "archived") {
+async function getParentPaymentHistoryRows(parentUserId: number, archiveScope: "active" | "archived" | "removed") {
   const archiveClause = archiveScope === "archived"
     ? "AND ppha.payment_id IS NOT NULL AND ppha.deleted_at IS NULL"
-    : "AND ppha.payment_id IS NULL";
+    : archiveScope === "removed"
+      ? "AND ppha.deleted_at IS NOT NULL"
+      : "AND ppha.payment_id IS NULL";
   const [rows] = await pool.execute<ParentPaymentHistoryDbRow[]>(
       `SELECT p.id AS payment_id, r.id AS receipt_id, p.reference_number, p.amount, p.channel, p.status,
-         p.paid_at, p.created_at, ppha.archived_at,
+         p.paid_at, p.created_at, ppha.archived_at, ppha.deleted_at,
+         DATE_ADD(ppha.deleted_at, INTERVAL 30 DAY) AS recoverable_until,
+         CASE WHEN DATE_ADD(ppha.deleted_at, INTERVAL 30 DAY) > CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS can_recover,
+         GREATEST(CEIL(TIMESTAMPDIFF(SECOND, CURRENT_TIMESTAMP, DATE_ADD(ppha.deleted_at, INTERVAL 30 DAY)) / 86400), 0) AS recovery_days_remaining,
          st.first_name, st.middle_name, st.last_name,
          COALESCE(
            GROUP_CONCAT(DISTINCT CONCAT(term_ft.name, ' - ', tpt.term_name) ORDER BY tpt.sort_order SEPARATOR ', '),
@@ -208,6 +222,7 @@ async function getParentPaymentHistoryRows(parentUserId: number, archiveScope: "
        WHERE p.payer_user_id = :parentUserId
          ${archiveClause}
        GROUP BY r.id, p.id, p.reference_number, p.amount, p.channel, p.status, p.paid_at, p.created_at, ppha.archived_at,
+         ppha.deleted_at, recoverable_until, can_recover, recovery_days_remaining,
          st.first_name, st.middle_name, st.last_name
        ORDER BY COALESCE(p.paid_at, p.created_at) DESC, p.id DESC
        LIMIT 50`,
@@ -225,6 +240,13 @@ async function getParentPaymentHistoryRows(parentUserId: number, archiveScope: "
     channel: labelForChannel(row.channel),
     status: labelForStatus(row.status),
     archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
+    deletedAt: row.deleted_at ? formatDateTime(row.deleted_at) : null,
+    recoverableUntil: row.recoverable_until ? formatDateTime(row.recoverable_until) : null,
+    recoveryDaysRemaining: Number(row.recovery_days_remaining ?? 0),
+    canRecover: Boolean(row.can_recover),
+    removalState: row.deleted_at
+      ? Boolean(row.can_recover) ? "recoverable" as const : "permanently_hidden" as const
+      : null,
     archiveEligible: isParentPaymentHistoryArchiveEligible(row.status),
   }));
 }
@@ -399,4 +421,8 @@ type ParentPaymentHistoryDbRow = RowDataPacket & {
   last_name: string;
   description: string;
   archived_at: Date | string | null;
+  deleted_at: Date | string | null;
+  recoverable_until: Date | string | null;
+  can_recover: number;
+  recovery_days_remaining: number;
 };

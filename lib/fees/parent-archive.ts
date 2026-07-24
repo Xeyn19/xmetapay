@@ -4,7 +4,7 @@ import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 
-export type ParentFeeArchiveOperation = "archive" | "restore" | "delete";
+export type ParentFeeArchiveOperation = "archive" | "restore" | "delete" | "recover";
 
 export async function updateParentFeeArchiveState({
   parentUserId,
@@ -29,7 +29,9 @@ export async function updateParentFeeArchiveState({
       ? await archiveSettledFees(connection, parentUserId, uniqueIds)
       : operation === "restore"
         ? await restoreFees(connection, parentUserId, uniqueIds)
-        : await permanentlyHideFees(connection, parentUserId, uniqueIds);
+        : operation === "delete"
+          ? await permanentlyHideFees(connection, parentUserId, uniqueIds)
+          : await recoverRemovedFees(connection, parentUserId, uniqueIds);
     await connection.commit();
     return updatedIds;
   } catch (error) {
@@ -38,6 +40,47 @@ export async function updateParentFeeArchiveState({
   } finally {
     connection.release();
   }
+}
+
+async function recoverRemovedFees(
+  connection: PoolConnection,
+  parentUserId: number,
+  assignmentIds: number[],
+) {
+  const { placeholders, params } = idParams(assignmentIds);
+  const [rows] = await connection.execute<ArchiveIdRow[]>(
+    `SELECT pfsa.student_fee_assignment_id
+     FROM parent_fee_summary_archives pfsa
+     JOIN student_fee_assignments sfa ON sfa.id = pfsa.student_fee_assignment_id
+     JOIN students st ON st.id = sfa.student_id
+     JOIN student_guardians sg
+       ON sg.student_id = st.id
+      AND sg.parent_user_id = :parentUserId
+     JOIN school_years sy
+       ON sy.id = sfa.school_year_id
+      AND sy.status = 'active'
+     WHERE pfsa.parent_user_id = :parentUserId
+       AND pfsa.deleted_at IS NOT NULL
+       AND DATE_ADD(pfsa.deleted_at, INTERVAL 30 DAY) > CURRENT_TIMESTAMP
+       AND pfsa.student_fee_assignment_id IN (${placeholders})
+     FOR UPDATE`,
+    { parentUserId, ...params },
+  );
+  const recoveredIds = rows.map((row) => Number(row.student_fee_assignment_id));
+
+  if (recoveredIds.length === 0) return [];
+
+  const recoverable = idParams(recoveredIds);
+  await connection.execute(
+    `UPDATE parent_fee_summary_archives
+     SET deleted_at = NULL
+     WHERE parent_user_id = :parentUserId
+       AND deleted_at IS NOT NULL
+       AND DATE_ADD(deleted_at, INTERVAL 30 DAY) > CURRENT_TIMESTAMP
+       AND student_fee_assignment_id IN (${recoverable.placeholders})`,
+    { parentUserId, ...recoverable.params },
+  );
+  return recoveredIds;
 }
 
 async function archiveSettledFees(

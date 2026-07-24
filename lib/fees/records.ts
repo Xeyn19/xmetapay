@@ -33,6 +33,7 @@ export type ParentFeePageData = {
   }>;
   activeRows: ParentFeeRow[];
   archivedRows: ParentFeeRow[];
+  removedRows: ParentFeeRow[];
   hasPayableFees: boolean;
   warning: string | null;
 };
@@ -51,6 +52,10 @@ export type ParentFeeRow = {
   tone: "green" | "amber" | "red" | "muted";
   archivedAt: string | null;
   deletedAt: string | null;
+  recoverableUntil: string | null;
+  recoveryDaysRemaining: number;
+  canRecover: boolean;
+  removalState: "recoverable" | "permanently_hidden" | null;
   archiveEligible: boolean;
   terms: ParentFeeTerm[];
 };
@@ -144,6 +149,12 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         tone: feeTone(row.status, row.amount_due, row.amount_paid),
         archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
         deletedAt: row.deleted_at ? formatDateTime(row.deleted_at) : null,
+        recoverableUntil: row.recoverable_until ? formatDateTime(row.recoverable_until) : null,
+        recoveryDaysRemaining: Number(row.recovery_days_remaining ?? 0),
+        canRecover: Boolean(row.can_recover),
+        removalState: row.deleted_at
+          ? Boolean(row.can_recover) ? "recoverable" as const : "permanently_hidden" as const
+          : null,
         archiveEligible: row.status === "paid" || balanceValue <= 0,
         terms,
       };
@@ -151,6 +162,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
     const visibleRows = displayRows.filter((row) => !row.deletedAt);
     const activeRows = visibleRows.filter((row) => !row.archivedAt);
     const archivedRows = visibleRows.filter((row) => row.archivedAt);
+    const removedRows = displayRows.filter((row) => row.deletedAt);
 
     return {
       warning: null,
@@ -167,6 +179,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
       ],
       activeRows,
       archivedRows,
+      removedRows,
     };
   } catch {
     return {
@@ -180,6 +193,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
       ],
       activeRows: [],
       archivedRows: [],
+      removedRows: [],
     };
   }
 }
@@ -233,6 +247,9 @@ async function getParentFeeRows(parentUserId: number) {
        ft.name AS fee_name, ft.category,
        st.student_reference, st.first_name, st.middle_name, st.last_name,
        pfsa.archived_at, pfsa.deleted_at,
+       DATE_ADD(pfsa.deleted_at, INTERVAL 30 DAY) AS recoverable_until,
+       CASE WHEN DATE_ADD(pfsa.deleted_at, INTERVAL 30 DAY) > CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS can_recover,
+       GREATEST(CEIL(TIMESTAMPDIFF(SECOND, CURRENT_TIMESTAMP, DATE_ADD(pfsa.deleted_at, INTERVAL 30 DAY)) / 86400), 0) AS recovery_days_remaining,
        GROUP_CONCAT(
          DISTINCT CONCAT_WS(
            '~',
@@ -258,7 +275,7 @@ async function getParentFeeRows(parentUserId: number) {
        AND sfa.status <> 'cancelled'
      GROUP BY sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
         ft.name, ft.category, st.student_reference, st.first_name, st.middle_name, st.last_name,
-        pfsa.archived_at, pfsa.deleted_at
+        pfsa.archived_at, pfsa.deleted_at, recoverable_until, can_recover, recovery_days_remaining
      ORDER BY sfa.due_date IS NULL ASC, sfa.due_date ASC, st.last_name ASC, ft.name ASC`,
     { parentUserId },
   );
@@ -395,5 +412,8 @@ type ParentFeeSqlRow = RowDataPacket & {
   last_name: string;
   archived_at: Date | string | null;
   deleted_at: Date | string | null;
+  recoverable_until: Date | string | null;
+  can_recover: number;
+  recovery_days_remaining: number;
   terms_blob: string | null;
 };
