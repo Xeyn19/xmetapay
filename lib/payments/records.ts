@@ -178,7 +178,7 @@ export async function getParentPaymentHistoryData(parentUserId: number): Promise
 
 async function getParentPaymentHistoryRows(parentUserId: number, archiveScope: "active" | "archived") {
   const archiveClause = archiveScope === "archived"
-    ? "AND ppha.payment_id IS NOT NULL"
+    ? "AND ppha.payment_id IS NOT NULL AND ppha.deleted_at IS NULL"
     : "AND ppha.payment_id IS NULL";
   const [rows] = await pool.execute<ParentPaymentHistoryDbRow[]>(
       `SELECT p.id AS payment_id, r.id AS receipt_id, p.reference_number, p.amount, p.channel, p.status,

@@ -74,6 +74,11 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Permanently removes settled archived fees from one parent's Fee summary without deleting fee assignments, balances, tuition terms, payments, receipts, reports, or another guardian's view.
    - Safe to import more than once.
 
+18. If `full-schema-v1.sql` was already imported before permanent parent Payment history removal was added, import `migrations/2026-07-24-parent-payment-history-permanent-hide.sql`.
+   - Adds nullable `parent_payment_history_archives.deleted_at` tombstone metadata.
+   - Permanently removes finished archived payments from one parent's Payment history and its exports without deleting payments, receipts, allocations, balances, dashboard activity, reports, or audit records.
+   - Safe to import more than once.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.

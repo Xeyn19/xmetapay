@@ -120,6 +120,7 @@ Done when: admin and parent fee screens show real balances from MySQL.
 - [x] Generate receipt records after successful payment.
 - [x] Show parent payment history from database records.
 - [x] Add parent-specific Payment history archive/restore for finished payments without changing receipts or financial records.
+- [x] Add parent-specific permanent removal for archived Payment history rows through irreversible visibility metadata, preserving receipts, allocations, balances, dashboard activity, and audit records.
 - [x] Show admin tuition collections log from database records, excluding wallet-only payments.
 - [x] Add reversible active/archived Tuition collection log views with row and bulk controls while preserving financial totals, reports, receipts, balances, and parent history.
 

@@ -321,9 +321,11 @@ CREATE TABLE IF NOT EXISTS parent_payment_history_archives (
   parent_user_id BIGINT UNSIGNED NOT NULL,
   payment_id BIGINT UNSIGNED NOT NULL,
   archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
 
   PRIMARY KEY (parent_user_id, payment_id),
   KEY idx_parent_payment_archives_parent_archived_payment (parent_user_id, archived_at, payment_id),
+  KEY idx_parent_payment_archives_parent_deleted_archived_payment (parent_user_id, deleted_at, archived_at, payment_id),
   KEY idx_parent_payment_archives_payment (payment_id),
   CONSTRAINT fk_parent_payment_archives_parent
     FOREIGN KEY (parent_user_id) REFERENCES users(id)

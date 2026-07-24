@@ -27,7 +27,17 @@ export async function restoreParentPaymentHistoryAction(
   return updateArchiveState(formData, "restore");
 }
 
-async function updateArchiveState(formData: FormData, operation: "archive" | "restore") {
+export async function permanentlyDeleteParentPaymentHistoryAction(
+  _prevState: ParentPaymentHistoryArchiveActionState,
+  formData: FormData,
+): Promise<ParentPaymentHistoryArchiveActionState> {
+  return updateArchiveState(formData, "delete");
+}
+
+async function updateArchiveState(
+  formData: FormData,
+  operation: "archive" | "restore" | "delete",
+) {
   const session = await requireRole("parent");
   const paymentIds = [...new Set(
     formData.getAll("paymentIds")
@@ -48,26 +58,52 @@ async function updateArchiveState(formData: FormData, operation: "archive" | "re
     revalidatePath("/parent/history");
 
     if (updatedIds.length === 0) {
+      const title = operation === "archive"
+        ? "Payment not archived"
+        : operation === "restore"
+          ? "Payment not restored"
+          : "Payment not removed";
+      const description = operation === "archive"
+        ? "Pending payments cannot be archived. Select a finished payment."
+        : operation === "restore"
+          ? "The selected payment is no longer available in archived history."
+          : "Only finished payments that are still in Archived payments can be permanently removed.";
+
       return actionState(
         "info",
-        operation === "archive" ? "Payment not archived" : "Payment not restored",
-        operation === "archive"
-          ? "Pending payments cannot be archived. Select a finished payment."
-          : "The selected payment is no longer available in archived history.",
+        title,
+        description,
       );
     }
 
+    const title = operation === "archive"
+      ? "Payment history archived"
+      : operation === "restore"
+        ? "Payment history restored"
+        : "Payment permanently removed";
+    const operationLabel = operation === "archive"
+      ? "archived"
+      : operation === "restore"
+        ? "restored"
+        : "removed";
+
     return actionState(
       "success",
-      operation === "archive" ? "Payment history archived" : "Payment history restored",
-      `${updatedIds.length} payment${updatedIds.length === 1 ? "" : "s"} ${operation === "archive" ? "archived" : "restored"}.`,
+      title,
+      `${updatedIds.length} payment${updatedIds.length === 1 ? "" : "s"} ${operation === "delete" ? "permanently " : ""}${operationLabel}.`,
       updatedIds,
     );
   } catch {
+    const title = operation === "archive"
+      ? "Payments not archived"
+      : operation === "restore"
+        ? "Payments not restored"
+        : "Payments not removed";
+
     return actionState(
       "error",
-      operation === "archive" ? "Payments not archived" : "Payments not restored",
-      "Unable to update Payment history. Confirm the parent payment history archive migration is imported and try again.",
+      title,
+      "Unable to update Payment history. Confirm the parent payment visibility migrations are imported and try again.",
     );
   }
 }

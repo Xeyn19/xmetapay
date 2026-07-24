@@ -12,6 +12,7 @@ const historyTablePath = "app/parent/(portal)/history/history-table.tsx";
 const historyActionsPath = "app/parent/history/actions.ts";
 const historyArchiveServicePath = "lib/payments/parent-history-archive.ts";
 const historyArchiveMigrationPath = "database/migrations/2026-07-22-parent-payment-history-archive.sql";
+const historyPermanentHideMigrationPath = "database/migrations/2026-07-24-parent-payment-history-permanent-hide.sql";
 const fullSchemaPath = "database/full-schema-v1.sql";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
 const parentDashboardTablePath = "app/parent/(portal)/dashboard/parent-recent-payments-table.tsx";
@@ -100,6 +101,13 @@ test("parent Payment history archive metadata is parent-specific and financially
   assert.match(service, /import "server-only"/);
   assert.match(service, /INSERT IGNORE INTO parent_payment_history_archives/);
   assert.match(service, /DELETE FROM parent_payment_history_archives/);
+  assert.match(service, /ParentPaymentHistoryArchiveOperation = "archive" \| "restore" \| "delete"/);
+  assert.match(service, /SET deleted_at = CURRENT_TIMESTAMP/);
+  assert.match(service, /ppha\.deleted_at IS NULL/);
+  assert.ok(
+    (service.match(/FOR UPDATE/g) ?? []).length >= 2,
+    "restore and permanent removal should serialize archived-row updates",
+  );
   assert.match(service, /p\.payer_user_id = :parentUserId/);
   assert.match(service, /sg\.parent_user_id = :parentUserId/);
   assert.match(service, /p\.status IN \('paid', 'failed', 'voided', 'refunded'\)/);
@@ -109,6 +117,7 @@ test("parent Payment history archive metadata is parent-specific and financially
   assert.match(actions, /await requireRole\("parent"\)/);
   assert.match(actions, /export async function archiveParentPaymentHistoryAction/);
   assert.match(actions, /export async function restoreParentPaymentHistoryAction/);
+  assert.match(actions, /export async function permanentlyDeleteParentPaymentHistoryAction/);
   assert.match(actions, /\.slice\(0, 100\)/);
 });
 
@@ -122,6 +131,11 @@ test("parent Payment history archive views switch locally and preserve exports a
   assert.match(table, /Clear selection/);
   assert.match(table, /Archive selected/);
   assert.match(table, /Restore selected/);
+  assert.match(table, /Delete selected/);
+  assert.match(table, /operation: "delete"/);
+  assert.match(table, /Permanently delete/);
+  assert.match(table, /cannot be undone in the parent portal/);
+  assert.match(table, /type="button" autoFocus/);
   assert.match(table, /row\.archiveEligible/);
   assert.match(table, /Pending payments cannot be archived/);
   assert.match(table, /router\.refresh\(\)/);
@@ -129,6 +143,28 @@ test("parent Payment history archive views switch locally and preserve exports a
   assert.match(table, /parent-payment-history-archived\.pdf/);
   assert.match(table, /\/parent\/receipt\?receiptId=/);
   assert.match(table, /pagination\.pageRows\.map/);
+});
+
+test("parent Payment history permanent removal uses an idempotent parent-only tombstone", () => {
+  assert.equal(existsSync(historyPermanentHideMigrationPath), true);
+  const migration = readFileSync(historyPermanentHideMigrationPath, "utf8");
+  const schema = readFileSync(fullSchemaPath, "utf8");
+  const helper = readFileSync(paymentRecordsPath, "utf8");
+  const service = readFileSync(historyArchiveServicePath, "utf8");
+
+  assert.match(migration, /information_schema\.COLUMNS/);
+  assert.match(migration, /COLUMN_NAME = 'deleted_at'/);
+  assert.match(migration, /ADD COLUMN deleted_at DATETIME NULL/);
+  assert.match(migration, /information_schema\.STATISTICS/);
+  assert.match(schema, /idx_parent_payment_archives_parent_deleted_archived_payment/);
+  assert.match(helper, /ppha\.payment_id IS NOT NULL AND ppha\.deleted_at IS NULL/);
+  assert.match(service, /p\.payer_user_id = :parentUserId/);
+  assert.match(service, /sg\.parent_user_id = :parentUserId/);
+  assert.match(service, /p\.status IN \('paid', 'failed', 'voided', 'refunded'\)/);
+  assert.doesNotMatch(
+    `${migration}\n${service}`,
+    /DELETE FROM payments|DELETE FROM receipts|DELETE FROM payment_allocations|DELETE FROM wallet_transactions/,
+  );
 });
 
 test("parent Payment history archive migration and fresh schema are idempotent", () => {

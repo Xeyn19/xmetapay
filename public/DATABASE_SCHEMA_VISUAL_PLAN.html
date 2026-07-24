@@ -349,7 +349,7 @@
             <tr>
               <td>Payments</td>
               <td><code>payments</code>, <code>parent_payment_history_archives</code>, <code>payment_allocations</code>, <code>payment_term_allocations</code>, <code>receipts</code></td>
-              <td>Payment records, active school-year stamps, allocations, receipts, admin Tuition collection organization through <code>payments.archived_at</code>, and separate parent-specific Payment history archive metadata. Neither archive path changes payment status or financial history.</td>
+              <td>Payment records, active school-year stamps, allocations, receipts, admin Tuition collection organization through <code>payments.archived_at</code>, and separate parent-specific Payment history archive/permanent-hide metadata. Parent <code>deleted_at</code> tombstones remove rows only from that parent's history and exports; payment status, receipts, balances, dashboard activity, reports, and audit history stay unchanged.</td>
             </tr>
             <tr>
               <td>Wallet</td>
@@ -742,6 +742,7 @@ flowchart TD
   J --> K["Show receipt and payment history"]
   K --> K2["Parent switches Current or Archived payments"]
   K2 --> K3["Write or remove parent_payment_history_archives metadata"]
+  K3 -->|Permanent remove from Archived| K4["Set deleted_at tombstone"]
   A --> L["Parent switches Current or Archived fees"]
   L --> M{"Paid or zero balance?"}
   M -->|Yes| N["Write parent_fee_summary_archives metadata"]
