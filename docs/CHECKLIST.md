@@ -181,6 +181,7 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 - [x] Add protected admin PDF export downloads for the same report data.
 - [x] Show separate CSV and PDF report buttons on the admin reports page.
 - [x] Add pagination plus CSV and PDF filtered-row exports to real-data admin and parent tables.
+- [x] Apply the shared XMETA Pay logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition report and Collection log.
 
 Done when: school administrators and finance officers can download CSV and PDF reports generated from operational MySQL records, and real-data table screens can paginate on screen while exporting their filtered rows in both formats.
 

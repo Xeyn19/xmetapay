@@ -242,8 +242,11 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(feesTable, /pagination\.pageRows\.map/);
   assert.match(feesTable, /parent-fee-summary\.csv/);
   assert.match(feesTable, /parent-fee-summary\.pdf/);
-  assert.match(feesTable, /function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\], view: FeeView\)/);
+  assert.match(feesTable, /async function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\], view: FeeView\)/);
   assert.match(feesTable, /onExportPdf=\{\(\) => exportParentFeeSummaryPdf\(filteredRows, view\)\}/);
+  assert.match(feesTable, /createBrandedPdfDocument/);
+  assert.match(feesTable, /addBrandedPdfTable/);
+  assert.match(feesTable, /finalizeBrandedPdf/);
   assert.match(feesTable, /rows\.flatMap/);
   assert.match(feesTable, /`Term: \$\{term\.name\}`/);
   assert.match(feesTable, /"Tuition term"/);

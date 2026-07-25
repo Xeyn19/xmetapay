@@ -41,7 +41,15 @@ export type TuitionReportRow = {
   }>;
 };
 
-export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
+export function TuitionReportTable({
+  rows,
+  schoolName,
+  schoolYearName,
+}: {
+  rows: TuitionReportRow[];
+  schoolName: string;
+  schoolYearName: string;
+}) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [grade, setGrade] = useState("all");
@@ -54,6 +62,17 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
     [grade, query, rows, status],
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${status}|${grade}`);
+  const filteredTotals = useMemo(
+    () => filteredRows.reduce(
+      (totals, row) => ({
+        due: totals.due + row.due,
+        paid: totals.paid + row.paid,
+        balance: totals.balance + row.balance,
+      }),
+      { due: 0, paid: 0, balance: 0 },
+    ),
+    [filteredRows],
+  );
 
   return (
     <>
@@ -86,13 +105,29 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
             { label: "Student name", value: (row) => row.student },
             { label: "Grade", value: (row) => row.grade },
             { label: "Section", value: (row) => row.section },
-            { label: "Fee due", value: (row) => row.due },
-            { label: "Paid", value: (row) => row.paid },
-            { label: "Balance", value: (row) => row.balance },
+            { label: "Fee due", value: (row) => money(row.due) },
+            { label: "Paid", value: (row) => money(row.paid) },
+            { label: "Balance", value: (row) => money(row.balance) },
             { label: "Last payment", value: (row) => row.lastPayment },
             { label: "Status", value: (row) => row.status },
             { label: "Terms", value: (row) => row.termSummary },
-          ])}
+          ], {
+            context: [
+              { label: "School", value: schoolName },
+              { label: "School year", value: schoolYearName },
+            ],
+            filters: [
+              { label: "Search", value: query.trim() || "All students" },
+              { label: "Status", value: filterLabel(status) },
+              { label: "Grade", value: filterLabel(grade) },
+            ],
+            summary: [
+              { label: "Assignments", value: filteredRows.length },
+              { label: "Total billed", value: money(filteredTotals.due) },
+              { label: "Total paid", value: money(filteredTotals.paid) },
+              { label: "Outstanding", value: money(filteredTotals.balance) },
+            ],
+          })}
           exportDisabled={filteredRows.length === 0}
         />
       </div>
@@ -171,6 +206,11 @@ export function TuitionReportTable({ rows }: { rows: TuitionReportRow[] }) {
       />
     </>
   );
+}
+
+function filterLabel(value: string) {
+  if (value === "all") return "All";
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function TuitionAssignmentEditModal({ row }: { row: TuitionReportRow }) {

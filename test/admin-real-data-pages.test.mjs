@@ -159,6 +159,14 @@ test("admin real-data tables use working search filters plus CSV and PDF export 
   assert.match(controls, /import autoTable from "jspdf-autotable"/);
   assert.match(controls, /exportRowsToCsv/);
   assert.match(controls, /exportRowsToPdf/);
+  assert.match(controls, /export async function createBrandedPdfDocument/);
+  assert.match(controls, /export function addBrandedPdfTable/);
+  assert.match(controls, /export function finalizeBrandedPdf/);
+  assert.match(controls, /\/xmetapay-logo\.jpg/);
+  assert.match(controls, /XMETA Pay/);
+  assert.match(controls, /Page \$\{page\} of \$\{pageCount\}/);
+  assert.match(controls, /Generating PDF/);
+  assert.match(controls, /alternateRowStyles/);
   assert.match(controls, /filterByQuery/);
   assert.match(controls, /export const DEFAULT_TABLE_PAGE_SIZE = 10/);
   assert.match(controls, /export const TABLE_PAGE_SIZE_OPTIONS = \[5, 10, 25\] as const/);

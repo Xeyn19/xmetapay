@@ -24,6 +24,8 @@ All school staff accounts sign in through the admin/school portal, but their das
 
 Finance pages include tuition, collections, other fees, allowance, store transactions, reports. The Collections page is tuition-focused; wallet activity belongs to Allowance ledger and store spending belongs to Store transactions.
 
+Browser-generated table PDFs use the shared XMETA Pay logo, orange report styling, generated time, filtered record count, repeated table headings, and page numbering. Tuition report and Collection log PDFs additionally identify the signed-in admin's school, selected school year, active filters, and filtered financial totals. These exports do not change staff permissions or the separate protected Reports-page PDF downloads.
+
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
 | `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections, review promote/repeat rollover placements, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |

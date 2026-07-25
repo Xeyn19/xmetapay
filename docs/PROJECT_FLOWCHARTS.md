@@ -795,7 +795,7 @@ SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `S
 
 ## Real-Data Table Export Flow
 
-Implemented for admin and parent screens that already use database-backed tables. Tables paginate on screen, while CSV/PDF exports use the filtered rows after search and filters are applied.
+Implemented for admin and parent screens that already use database-backed tables. Tables paginate on screen, while CSV/PDF exports use all filtered rows after search and filters are applied. Browser PDFs use one XMETA Pay renderer with the canonical logo (and a text fallback), report metadata, repeated headings, alternating rows, page numbering, and footer branding. Tuition report and Collection log add school, selected school year, filters, record counts, and filtered totals; Parent Fee summary retains nested tuition-term rows. The protected Reports-page server PDF route is unchanged.
 
 ```mermaid
 flowchart TD
@@ -805,7 +805,9 @@ flowchart TD
   D --> E["User pages through filtered rows"]
   E --> F{"Export format?"}
   F -->|CSV| G["Download filtered rows as CSV"]
-  F -->|PDF| H["Download filtered rows as PDF"]
+  F -->|PDF| H["Build branded PDF from all filtered rows"]
+  H --> I["Add logo, context, repeated headings, and page footer"]
+  I --> J["Download PDF"]
 ```
 
 Current table export screens include admin dashboard recent activity, tuition, collections, other fees, allowance, store transactions, enrolled students, parent contacts, parent fee summary, parent payment history, parent dashboard recent payments, and parent wallet activity.
