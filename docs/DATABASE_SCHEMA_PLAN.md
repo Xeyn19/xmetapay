@@ -604,6 +604,7 @@ Dashboard calculation note:
 - Admin allowance monthly top-up stats should sum current-month `wallet_transactions` rows where `type = 'top_up'`.
 - `wallet_transactions` should drive full wallet history, parent dashboard wallet activity, selected student profile wallet activity, monthly spend, and store spending reports.
 - New wallet top-up and purchase ledger rows store `school_year_id` for selected-year admin reporting.
+- One-or-many parent top-ups use `wallet_top_up_batches` for atomic processing and idempotency. Each selected student still receives separate `payments`, `receipts`, and `wallet_transactions` records linked by `payments.wallet_top_up_batch_id`.
 - Store purchases stay out of parent payment history because they are wallet ledger events, not payment records.
 - Avoid summing `wallets.balance` after joining to `wallet_transactions`, because multiple ledger rows for the same wallet can duplicate the displayed total.
 - `wallet_ledger_archives` supports reversible Active/Archived Allowance views for the selected year only. It is excluded from wallet writes, balances, KPIs, parent history, and official reports.
@@ -859,16 +860,16 @@ flowchart TD
 
 ### Parent Wallet and Allowance Flow
 
-Wallet top-up and store/canteen purchase recording are implemented now. Store purchases use the same wallet ledger as allowance top-ups. In the admin Store transactions page, `Create merchant` and `Record purchase` open focused action modals above the real transaction log.
+Wallet top-up supports atomic one-or-many student batches. Store purchases use the same wallet ledger as allowance top-ups. In the admin Store transactions page, `Create merchant` and `Record purchase` open focused action modals above the real transaction log.
 
 ```mermaid
 flowchart TD
-  A["Parent opens wallet page"] --> B["Load student wallets"]
-  B --> C["Parent chooses top-up amount"]
-  C --> D["Create payment for wallet top-up"]
-  D --> E["Payment succeeds"]
-  E --> F["Increase wallet balance"]
-  F --> G["Create wallet top_up transaction"]
+  A["Parent opens wallet page"] --> B["Select 1-20 eligible student wallets"]
+  B --> C["Set amount per student and review total"]
+  C --> D["Lock and validate every linked wallet"]
+  D --> E["Create idempotent parent batch"]
+  E --> F["Create one payment, receipt, and wallet transaction per student"]
+  F --> G["Commit all records or roll back all"]
   G --> H["Admin or finance records canteen/store purchase"]
   H --> I["Create wallet purchase transaction"]
   I --> J["Create store transaction"]
@@ -886,7 +887,7 @@ flowchart TD
 4. Add enrollment tables: `enrollments`, `enrollment_documents`.
 5. Add fee tables: `fee_types`, `student_fee_assignments`.
 6. Add payment and receipt tables: `payments`, `payment_allocations`, `receipts`.
-7. Add wallet tables: `wallets`, `wallet_transactions`, `wallet_ledger_archives`.
+7. Add wallet tables: `wallets`, `wallet_transactions`, `wallet_top_up_batches`, `wallet_ledger_archives`.
 8. Add store tables: `store_merchants`, `store_transactions`.
 9. Use notification logs for SMTP email payment reminder delivery and queued/sent/failed history.
 10. Build CSV and PDF report exports from existing operational queries, plus filtered-row table exports from loaded dashboard data, instead of adding report storage tables.

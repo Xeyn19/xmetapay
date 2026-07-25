@@ -79,6 +79,11 @@ Use these SQL files for local XAMPP/phpMyAdmin setup.
    - Permanently removes finished archived payments from one parent's Payment history and its exports without deleting payments, receipts, allocations, balances, dashboard activity, reports, or audit records.
    - Safe to import more than once.
 
+19. If `full-schema-v1.sql` was already imported before multi-student wallet top-up was added, import `migrations/2026-07-25-wallet-top-up-batches.sql`.
+   - Adds parent-owned, idempotent wallet top-up batch records and links each student payment to its batch.
+   - Each student still receives a separate payment, wallet transaction, and receipt.
+   - Safe to import more than once.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.

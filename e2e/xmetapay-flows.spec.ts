@@ -317,6 +317,28 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test("multi-student wallet top-up and protected result stay responsive", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/parent/wallet", { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading", { level: 1, name: "Wallet & allowance top-up" })).toBeVisible();
+
+      const selectAll = page.getByRole("button", { name: "Select all eligible" });
+      if (await selectAll.count()) {
+        await expect(selectAll).toBeVisible();
+        await selectAll.click();
+        await expect(page.getByRole("button", { name: /Review .* top-up/ })).toBeEnabled();
+      } else {
+        await expect(page.getByText(/Link a student/).first()).toBeVisible();
+      }
+      await expectNoHorizontalOverflow(page);
+
+      await page.goto("/parent/wallet/top-up-result?batch=WTB-NOT-AVAILABLE", { waitUntil: "domcontentloaded" });
+      await expect(page.getByText("This wallet top-up batch is unavailable.")).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
   test("parent Fee summary stays usable at supported responsive widths", async ({ page }) => {
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });

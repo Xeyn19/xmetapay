@@ -338,6 +338,10 @@ Main purpose:
 
 This table provides an audit trail for all wallet changes.
 
+### `wallet_top_up_batches`
+
+Owns one parent-submitted allowance top-up request without combining student finances. It stores an opaque batch reference, parent-scoped submission-token hash, common payment channel, item count, total, and completion timestamp. Each resulting `payments` row links through nullable `wallet_top_up_batch_id`; every student still has a separate payment, receipt, and wallet ledger row.
+
 Dashboard calculation note:
 
 - Current allowance balance comes from `wallets.balance`.
@@ -450,7 +454,7 @@ The schema supports this practical backend flow:
 - `payment_allocations` applies payment money to student balances.
 - `payment_term_allocations` applies payment money to tuition installment terms.
 - `receipts` documents paid payments.
-- `wallets` and `wallet_transactions` track student allowance balances, dashboard wallet activity, selected student wallet activity, full wallet ledger history, and the school year for new ledger rows. `wallet_ledger_archives` only controls selected-year admin Allowance ledger visibility.
+- `wallets`, `wallet_transactions`, and `wallet_top_up_batches` track student allowance balances, atomic parent batches, dashboard wallet activity, selected student wallet activity, full wallet ledger history, and the school year for new ledger rows. `wallet_ledger_archives` only controls selected-year admin Allowance ledger visibility.
 - `store_transactions` records wallet spending at school merchants and stores the school year for new purchase rows.
 - Report CSV and PDF exports read from operational tables and do not require separate report storage tables.
 - `notification_logs` records communication history and stores the school year for new reminder rows.

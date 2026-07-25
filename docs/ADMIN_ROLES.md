@@ -86,6 +86,8 @@ Parents can archive settled Fee summary rows indefinitely. Removing an archived 
 
 Parents can organize Payment history through Current, Archived, and Removed views. Removing an archived finished payment starts the same 30-day recovery window; recovery returns it to Archived, while expired rows remain viewable and exportable as Permanently hidden. Financial and audit records remain unchanged.
 
+Parents can top up one or as many as 20 linked student wallets in one reviewed batch, including students from different schools. Each student keeps an independent active-year payment, receipt, and wallet transaction; the parent-owned batch provides atomic processing, retry safety, and a combined result page without merging financial records.
+
 Payment reminder email delivery is a finance action. School administrators and finance officers can send immediate, itemized email reminders to linked parent addresses for open or partial balances. Each email includes the student reference, matching fee balances, official assignment deadlines, and tuition installment schedules when present; custom text is an introduction and does not replace the statement. New rows use `channel = 'email'`; each delivery is recorded as `queued`, then updated to `sent` with `sent_at` or `failed`. They can archive and restore individual or selected reminder-history rows to organize the table without deleting or changing delivery results. Archived sent rows still block another same-day email for the same school year, school, linked parent, and student, while failed attempts may be retried. Registrars cannot send, archive, or restore reminders. SMS, scheduled delivery, and delivery webhooks remain future work.
 
 ## Database Source

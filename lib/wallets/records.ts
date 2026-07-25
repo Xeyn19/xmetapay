@@ -39,6 +39,30 @@ export type ParentWalletTransaction = {
   tone: "green" | "amber" | "red" | "muted";
 };
 
+export type ParentWalletTopUpBatchData = {
+  batch: ParentWalletTopUpBatch | null;
+  warning: string | null;
+};
+
+export type ParentWalletTopUpBatch = {
+  reference: string;
+  channel: string;
+  totalAmount: string;
+  itemCount: number;
+  completedAt: string;
+  items: ParentWalletTopUpBatchItem[];
+};
+
+export type ParentWalletTopUpBatchItem = {
+  paymentId: number;
+  receiptId: number;
+  paymentReference: string;
+  studentName: string;
+  studentReference: string;
+  amount: string;
+  balanceAfter: string;
+};
+
 export async function getParentWalletPageData(parentUserId: number): Promise<ParentWalletPageData> {
   try {
     const [wallets, transactions] = await Promise.all([
@@ -56,6 +80,59 @@ export async function getParentWalletPageData(parentUserId: number): Promise<Par
       warning: "Wallet records are unavailable. Confirm MySQL/XAMPP and the wallet tables are ready.",
       wallets: [],
       transactions: [],
+    };
+  }
+}
+
+export async function getParentWalletTopUpBatch(
+  parentUserId: number,
+  batchReference: string,
+): Promise<ParentWalletTopUpBatchData> {
+  try {
+    const [rows] = await pool.execute<ParentWalletTopUpBatchRow[]>(
+      `SELECT wtb.batch_reference, wtb.channel, wtb.total_amount, wtb.item_count, wtb.completed_at,
+         p.id AS payment_id, p.reference_number AS payment_reference, p.amount,
+         r.id AS receipt_id, wt.balance_after,
+         st.student_reference, st.first_name, st.middle_name, st.last_name
+       FROM wallet_top_up_batches wtb
+       JOIN payments p ON p.wallet_top_up_batch_id = wtb.id
+       JOIN receipts r ON r.payment_id = p.id
+       JOIN wallet_transactions wt ON wt.payment_id = p.id AND wt.type = 'top_up'
+       JOIN students st ON st.id = p.student_id
+       WHERE wtb.parent_user_id = :parentUserId
+         AND wtb.batch_reference = :batchReference
+       ORDER BY st.last_name, st.first_name, p.id`,
+      { parentUserId, batchReference },
+    );
+
+    if (rows.length === 0) {
+      return { batch: null, warning: "This wallet top-up batch is unavailable." };
+    }
+
+    const first = rows[0];
+    return {
+      warning: null,
+      batch: {
+        reference: first.batch_reference,
+        channel: labelForChannel(first.channel),
+        totalAmount: money(first.total_amount),
+        itemCount: first.item_count,
+        completedAt: formatDateTime(first.completed_at),
+        items: rows.map((row) => ({
+          paymentId: row.payment_id,
+          receiptId: row.receipt_id,
+          paymentReference: row.payment_reference,
+          studentName: fullName(row.first_name, row.middle_name, row.last_name),
+          studentReference: row.student_reference,
+          amount: money(row.amount),
+          balanceAfter: money(row.balance_after),
+        })),
+      },
+    };
+  } catch {
+    return {
+      batch: null,
+      warning: "This wallet top-up batch is unavailable. Confirm MySQL/XAMPP and try again.",
     };
   }
 }
@@ -245,6 +322,23 @@ type ParentWalletTransactionRow = RowDataPacket & {
   school_year_name: string | null;
   channel: string | null;
   status: string | null;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+};
+
+type ParentWalletTopUpBatchRow = RowDataPacket & {
+  batch_reference: string;
+  channel: string;
+  total_amount: number | string;
+  item_count: number;
+  completed_at: Date | string;
+  payment_id: number;
+  receipt_id: number;
+  payment_reference: string;
+  amount: number | string;
+  balance_after: number | string;
+  student_reference: string;
   first_name: string;
   middle_name: string | null;
   last_name: string;

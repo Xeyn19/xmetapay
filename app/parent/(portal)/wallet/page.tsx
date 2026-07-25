@@ -1,4 +1,5 @@
 import { History, Plus, Wallet } from "lucide-react";
+import { randomUUID } from "node:crypto";
 
 import { requireRole } from "@/lib/auth/session";
 import { getParentWalletPageData } from "@/lib/wallets/records";
@@ -39,7 +40,7 @@ export default async function WalletPage() {
 
         <ParentCard title="Top-up allowance" icon={Plus}>
           {hasLinkedWallets ? (
-            <WalletTopUpForm wallets={data.wallets} />
+            <WalletTopUpForm wallets={data.wallets} submissionToken={randomUUID()} />
           ) : (
             <div className="text-[13px] leading-5 text-[#6b6b6b]">
               Link a student first, then return here to top up allowance.

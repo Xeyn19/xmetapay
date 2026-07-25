@@ -151,6 +151,7 @@ Done when: admin/finance can split a tuition balance into terms, and parents can
 - [x] Record local allowance top-ups.
 - [x] Admin allowance and store pages read database tables and show pending/empty states when no rows exist.
 - [x] Add parent wallet top-up write flow.
+- [x] Add atomic, idempotent one-or-many student allowance top-up with per-student amounts and batch receipt summary.
 - [x] Show parent wallet history and admin allowance records from MySQL.
 - [x] Calculate admin allowance total balance from one row per wallet, not from joined transaction rows.
 - [x] Show admin allowance monthly top-up stats and segmented wallet-balance filters from real wallet data.
