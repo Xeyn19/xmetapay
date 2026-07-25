@@ -908,7 +908,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="real-data-table-csv-pdf-exports.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> admin and parent real-data tables paginate on screen and export filtered rows as CSV or PDF.</p>
+          <p><strong>Implemented:</strong> admin and parent real-data tables paginate on screen and export all filtered rows as CSV or a shared XMETA Pay browser PDF. The PDF renderer uses the canonical logo with a text fallback, report metadata, repeated headings, alternating rows, page numbers, and restrained footer branding. Tuition report and Collection log add school, selected year, filters, counts, and filtered totals; Parent Fee summary retains nested tuition-term rows. Protected Reports-page server PDFs remain unchanged.</p>
           <pre class="mermaid">
 flowchart TD
   A["User opens a real-data table"] --> B["Page loads MySQL-backed rows"]
@@ -917,7 +917,9 @@ flowchart TD
   D --> E["User pages through filtered rows"]
   E --> F{"Export format?"}
   F -->|CSV| G["Download filtered rows as CSV"]
-  F -->|PDF| H["Download filtered rows as PDF"]
+  F -->|PDF| H["Build branded PDF from all filtered rows"]
+  H --> I["Add logo, context, repeated headings, and page footer"]
+  I --> J["Download PDF"]
           </pre>
         </div>
       </section>

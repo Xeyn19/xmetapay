@@ -1,7 +1,5 @@
 "use client";
 
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { Fragment, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, ArchiveRestore, CheckSquare, LockKeyhole, Trash2, X } from "lucide-react";
@@ -10,8 +8,11 @@ import { toast } from "sonner";
 import {
   DashboardTableControls,
   DashboardTablePagination,
+  addBrandedPdfTable,
+  createBrandedPdfDocument,
   type ExportColumn,
   exportRowsToCsv,
+  finalizeBrandedPdf,
   filterByQuery,
   toFilterOptions,
   usePaginatedRows,
@@ -514,9 +515,12 @@ function emptyState(view: FeeView, hasRows: boolean, hasFilters: boolean) {
   return "No assigned fees yet.";
 }
 
-function exportParentFeeSummaryPdf(rows: ParentFeeRow[], view: FeeView) {
-  const doc = new jsPDF({ orientation: "landscape" });
-  const generatedAt = new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+async function exportParentFeeSummaryPdf(rows: ParentFeeRow[], view: FeeView) {
+  const title = view === "archived" ? "Archived fee summary" : view === "removed" ? "Removed fee history" : "Current fee summary";
+  const { doc, startY } = await createBrandedPdfDocument(title, rows.length, {
+    orientation: "landscape",
+    context: [{ label: "View", value: title }],
+  });
   const columns = ["Student", "Reference", "Fee", "Category", "Billed", "Paid", "Balance", "Due date", "Status", ...(view === "archived" ? ["Archived"] : []), ...(view === "removed" ? ["Removed", "Recovery deadline", "State"] : [])];
   const body = rows.length > 0
     ? rows.flatMap((row) => [
@@ -525,23 +529,7 @@ function exportParentFeeSummaryPdf(rows: ParentFeeRow[], view: FeeView) {
       ])
     : [["No records yet", ...Array.from({ length: columns.length - 1 }, () => "")]];
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("XMETA Pay", 14, 16);
-  doc.setFontSize(12);
-  doc.text(view === "archived" ? "Archived fee summary" : view === "removed" ? "Removed fee history" : "Current fee summary", 14, 24);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.text(`Generated: ${generatedAt}`, 14, 30);
-
-  autoTable(doc, {
-    head: [columns],
-    body,
-    margin: { left: 14, right: 14 },
-    startY: 36,
-    styles: { cellPadding: 2, fontSize: 7, overflow: "linebreak" },
-    headStyles: { fillColor: [230, 74, 25], textColor: [255, 255, 255] },
-    didParseCell: (data) => {
+  addBrandedPdfTable(doc, startY, columns, body, columns.length, (data) => {
       const row = data.row.raw;
       if (Array.isArray(row) && row[2]?.toString().startsWith("Term:")) {
         data.cell.styles.fillColor = [255, 250, 247];
@@ -551,8 +539,6 @@ function exportParentFeeSummaryPdf(rows: ParentFeeRow[], view: FeeView) {
           data.cell.styles.textColor = [154, 52, 18];
         }
       }
-    },
   });
-
-  doc.save(view === "archived" ? "parent-fee-summary-archived.pdf" : view === "removed" ? "parent-fee-summary-removed.pdf" : "parent-fee-summary.pdf");
+  finalizeBrandedPdf(doc, view === "archived" ? "parent-fee-summary-archived.pdf" : view === "removed" ? "parent-fee-summary-removed.pdf" : "parent-fee-summary.pdf");
 }

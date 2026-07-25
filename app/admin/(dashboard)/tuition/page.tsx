@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminTuitionPageRealData } from "@/lib/admin/real-data";
 import { getAdminFeeSetupData } from "@/lib/fees/records";
+import { getAdminSchoolContext } from "@/lib/school/setup";
 import { FeeAssignStudentsForm, FeeCreateTypeForm } from "@/app/admin/fees/fee-management-forms";
 import { OtherFeeActionModal } from "@/app/admin/(dashboard)/other-fees/other-fees-management-modal";
 import { PaymentReminderHistoryTable } from "./payment-reminder-history-table";
@@ -22,9 +23,10 @@ import { TuitionReportTable, type TuitionReportRow } from "./tuition-report-tabl
 export default async function TuitionPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/tuition");
-  const [data, feeSetup] = await Promise.all([
+  const [data, feeSetup, schoolContext] = await Promise.all([
     getAdminTuitionPageRealData(session.userId),
     getAdminFeeSetupData(session.userId, "tuition"),
+    getAdminSchoolContext(session.userId),
   ]);
   const tuitionReportRecords: TuitionReportRow[] = data.rows.map((row) => ({
     ...row,
@@ -88,7 +90,11 @@ export default async function TuitionPage() {
           </div>
         }
       >
-        <TuitionReportTable rows={tuitionReportRecords} />
+        <TuitionReportTable
+          rows={tuitionReportRecords}
+          schoolName={schoolContext.schoolName}
+          schoolYearName={data.schoolYearName ?? "School year pending"}
+        />
       </DashboardCard>
 
       <div className="grid gap-[18px] xl:grid-cols-2">

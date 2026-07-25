@@ -79,6 +79,12 @@ test("collections table switches archive views locally and preserves controls", 
   assert.match(table, /role="alertdialog"/);
   assert.match(table, /exportRowsToCsv/);
   assert.match(table, /exportRowsToPdf/);
+  assert.match(table, /schoolName/);
+  assert.match(table, /schoolYearName/);
+  assert.match(table, /context:/);
+  assert.match(table, /filters:/);
+  assert.match(table, /summary:/);
+  assert.match(table, /Total collected/);
   assert.match(table, /DashboardTablePagination/);
   assert.match(table, /setActiveCollectionRows/);
   assert.match(table, /setArchivedCollectionRows/);

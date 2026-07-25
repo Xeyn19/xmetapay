@@ -37,9 +37,13 @@ const initialActionState: CollectionArchiveActionState = {
 export function CollectionsTable({
   activeRows,
   archivedRows,
+  schoolName,
+  schoolYearName,
 }: {
   activeRows: CollectionRow[];
   archivedRows: CollectionRow[];
+  schoolName: string;
+  schoolYearName: string;
 }) {
   const router = useRouter();
   const [view, setView] = useState<"active" | "archived">("active");
@@ -71,6 +75,7 @@ export function CollectionsTable({
   const allPageRowsSelected = pageIds.length > 0 && pageIds.every((id) => selectedSet.has(id));
   const operationLabel = view === "archived" ? "Restore" : "Archive";
   const exportColumns = collectionExportColumns(view === "archived");
+  const filteredAmount = filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0);
 
   const changeView = (nextView: "active" | "archived") => {
     setView(nextView);
@@ -179,6 +184,22 @@ export function CollectionsTable({
             view === "archived" ? "Archived tuition collections" : "Active tuition collections",
             filteredRows,
             exportColumns,
+            {
+              context: [
+                { label: "School", value: schoolName },
+                { label: "School year", value: schoolYearName },
+                { label: "View", value: view === "archived" ? "Archived collections" : "Active collections" },
+              ],
+              filters: [
+                { label: "Search", value: query.trim() || "All collections" },
+                { label: "Status", value: filterLabel(status) },
+                { label: "Channel", value: filterLabel(channel) },
+              ],
+              summary: [
+                { label: "Payments", value: filteredRows.length },
+                { label: "Total collected", value: money(filteredAmount) },
+              ],
+            },
           )}
           exportDisabled={filteredRows.length === 0}
         />
@@ -323,4 +344,18 @@ function emptyState(view: "active" | "archived", hasRows: boolean, hasFilters: b
   if (hasRows && hasFilters) return "No tuition collections match the current filters.";
   if (view === "archived") return "No archived tuition collections yet.";
   return "No tuition payment records yet.";
+}
+
+function filterLabel(value: string) {
+  if (value === "all") return "All";
+  return value;
+}
+
+function money(value: number) {
+  return `P${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
 }
