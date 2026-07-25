@@ -803,17 +803,17 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="wallet-topup-store-phase-6b.svg">Download SVG</button>
           </div>
-        <p><strong>Implemented:</strong> wallet top-up, store purchase recording, parent dashboard wallet activity, selected student profile wallet activity, admin allowance monthly top-up stats, segmented allowance balance filters, admin allowance totals that count each wallet balance once, and student demographic/enrollment classification fields. Admin store actions now use focused <code>Create merchant</code> and <code>Record purchase</code> modals above the transaction log.</p>
+        <p><strong>Implemented:</strong> atomic one-or-many student wallet top-up with per-student amounts, an idempotent parent batch, separate student payments and receipts, a combined result page, store purchase recording, parent dashboard wallet activity, selected student profile wallet activity, and accurate admin allowance reporting.</p>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens wallet page"] --> B["Read linked students through student_guardians"]
-  B --> C["Create or reuse wallet for selected student"]
-  C --> D["Parent chooses local test channel and top-up amount"]
-  D --> E["Create paid payment row"]
-  E --> F["Increase wallet balance"]
-  F --> G["Create wallet_transactions row with type top_up"]
-  G --> H["Create receipt row"]
-  H --> I["Parent sees receipt and wallet history"]
+  A["Parent opens wallet page"] --> B["Select 1-20 linked student wallets"]
+  B --> C["Set an amount for every selected student"]
+  C --> D["Review total and local test channel"]
+  D --> E["Lock and validate every student and wallet"]
+  E --> F["Create parent wallet_top_up_batches row"]
+  F --> G["Create separate payment, wallet transaction, and receipt per student"]
+  G --> H["Commit all records or roll back all"]
+  H --> I["Parent sees batch summary and receipt links"]
   H --> I2["Parent dashboard shows recent wallet activity"]
   H --> I3["Selected student profile shows that student's wallet activity"]
   I --> J["Admin sees allowance ledger update"]

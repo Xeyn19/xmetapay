@@ -290,11 +290,31 @@ CREATE TABLE IF NOT EXISTS parent_fee_summary_archives (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS wallet_top_up_batches (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  parent_user_id BIGINT UNSIGNED NOT NULL,
+  batch_reference VARCHAR(80) NOT NULL,
+  submission_token_hash CHAR(64) NOT NULL,
+  channel ENUM('card', 'online_banking', 'gcash', 'maya') NOT NULL,
+  item_count SMALLINT UNSIGNED NOT NULL,
+  total_amount DECIMAL(12,2) NOT NULL,
+  status ENUM('completed') NOT NULL DEFAULT 'completed',
+  completed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_wallet_top_up_batches_reference (batch_reference),
+  UNIQUE KEY uq_wallet_top_up_batches_submission (parent_user_id, submission_token_hash),
+  KEY idx_wallet_top_up_batches_parent_completed (parent_user_id, completed_at),
+  CONSTRAINT fk_wallet_top_up_batches_parent
+    FOREIGN KEY (parent_user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS payments (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   school_id BIGINT UNSIGNED NOT NULL,
   school_year_id BIGINT UNSIGNED NULL,
   payer_user_id BIGINT UNSIGNED NULL,
+  wallet_top_up_batch_id BIGINT UNSIGNED NULL,
   student_id BIGINT UNSIGNED NOT NULL,
   reference_number VARCHAR(80) NOT NULL,
   channel ENUM('xmeta_wallet', 'cash', 'card', 'online_banking', 'gcash', 'maya') NOT NULL,
@@ -311,9 +331,11 @@ CREATE TABLE IF NOT EXISTS payments (
   KEY idx_payments_school_year_archive_paid_at (school_id, school_year_id, archived_at, paid_at),
   KEY idx_payments_student_paid_at (student_id, paid_at),
   KEY idx_payments_payer_paid_at (payer_user_id, paid_at),
+  KEY idx_payments_wallet_top_up_batch (wallet_top_up_batch_id),
   CONSTRAINT fk_payments_school FOREIGN KEY (school_id) REFERENCES schools(id),
   CONSTRAINT fk_payments_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE SET NULL,
   CONSTRAINT fk_payments_payer FOREIGN KEY (payer_user_id) REFERENCES users(id),
+  CONSTRAINT fk_payments_wallet_top_up_batch FOREIGN KEY (wallet_top_up_batch_id) REFERENCES wallet_top_up_batches(id) ON DELETE SET NULL,
   CONSTRAINT fk_payments_student FOREIGN KEY (student_id) REFERENCES students(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

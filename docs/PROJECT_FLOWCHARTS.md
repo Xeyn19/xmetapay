@@ -647,7 +647,7 @@ Due date rule:
 
 ## Wallet, Allowance, And Store Flow
 
-Wallet top-up is implemented for local MVP testing. Store/canteen purchase recording is implemented for local MVP testing. In the admin Store transactions page, `Create merchant` and `Record purchase` are focused action modals above the real transaction log.
+Wallet top-up is implemented for local MVP testing, including atomic one-or-many student batches with a separate amount, payment, receipt, and wallet transaction for every selected student. Parent-scoped submission tokens make retries idempotent, and successful batches open a combined receipt summary. Store/canteen purchase recording is implemented for local MVP testing. In the admin Store transactions page, `Create merchant` and `Record purchase` are focused action modals above the real transaction log.
 
 Wallets should be separate from tuition payments so allowance and store/canteen spending can be tracked clearly.
 
@@ -695,6 +695,7 @@ Data accuracy rule:
 - Admin allowance `Top-ups this month` should sum current-month wallet top-up ledger rows.
 - Allowance archive/restore changes only year-scoped `wallet_ledger_archives` metadata. Current wallet balances and operational history remain unchanged and included in KPIs and reports.
 - Wallet transaction rows are used for top-up history, store purchase history, monthly spend, parent dashboard wallet activity, selected student profile wallet activity, and store reports.
+- `wallet_top_up_batches` groups up to 20 parent-selected wallets for all-or-nothing processing while `payments.wallet_top_up_batch_id` preserves each student's independent financial record and receipt.
 - Parent payment history stays payment-only; store purchases appear in wallet history, the dashboard wallet activity snapshot, and the selected student profile wallet activity snapshot.
 - Do not calculate total wallet balance by summing joined wallet/transaction rows, because a wallet with multiple transactions would be counted more than once.
 

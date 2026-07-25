@@ -4,8 +4,11 @@ import test from "node:test";
 
 const walletRecordsPath = "lib/wallets/records.ts";
 const walletActionsPath = "app/parent/wallet/actions.ts";
+const walletTopUpServicePath = "lib/wallets/top-up.ts";
 const walletPagePath = "app/parent/(portal)/wallet/page.tsx";
 const walletFormPath = "app/parent/(portal)/wallet/wallet-top-up-form.tsx";
+const walletResultPath = "app/parent/(portal)/wallet/top-up-result/page.tsx";
+const walletBatchMigrationPath = "database/migrations/2026-07-25-wallet-top-up-batches.sql";
 const parentDashboardPath = "app/parent/(portal)/dashboard/page.tsx";
 const parentWalletActivityTablePath = "app/parent/(portal)/_components/parent-wallet-activity-table.tsx";
 const parentStudentProfileViewPath = "app/parent/(portal)/student-profile/student-profile-view.tsx";
@@ -37,27 +40,45 @@ test("wallet records helper reads linked student wallets and transactions throug
   assert.match(helper, /Wallet top-up/);
 });
 
-test("wallet top-up action creates paid payment, wallet transaction, receipt, and updates balance", () => {
+test("wallet top-up action stays thin and accepts a bounded idempotent student batch", () => {
   assert.equal(existsSync(walletActionsPath), true);
   const action = readFileSync(walletActionsPath, "utf8");
 
   assert.match(action, /"use server";/);
   assert.match(action, /export async function createWalletTopUpAction\(formData: FormData\)/);
   assert.match(action, /await requireRole\("parent"\)/);
-  assert.match(action, /student_guardians sg/);
-  assert.match(action, /sg\.parent_user_id = :parentUserId/);
-  assert.match(action, /INSERT INTO wallets/);
-  assert.match(action, /ON DUPLICATE KEY UPDATE/);
-  assert.match(action, /FOR UPDATE/);
-  assert.match(action, /wallet\.status !== "active"/);
-  assert.match(action, /maxTopUpAmount = 10000/);
-  assert.match(action, /INSERT INTO payments/);
-  assert.match(action, /'paid'/);
-  assert.match(action, /UPDATE wallets/);
-  assert.match(action, /INSERT INTO wallet_transactions/);
-  assert.match(action, /'top_up'/);
-  assert.match(action, /INSERT INTO receipts/);
-  assert.match(action, /redirect\(`\/parent\/receipt\?receiptId=\$\{receiptId\}`\)/);
+  assert.match(action, /formData\.getAll\("studentIds"\)/);
+  assert.match(action, /submissionToken/);
+  assert.match(action, /maxWalletTopUpStudents/);
+  assert.match(action, /createWalletTopUpBatch/);
+  assert.match(action, /\/parent\/wallet\/top-up-result\?batch=/);
+});
+
+test("wallet top-up service creates one atomic payment, transaction, and receipt per student", () => {
+  const service = readFileSync(walletTopUpServicePath, "utf8");
+
+  assert.match(service, /import "server-only"/);
+  assert.match(service, /maxWalletTopUpStudents = 20/);
+  assert.match(service, /maxWalletTopUpAmount = 10000/);
+  assert.match(service, /beginTransaction/);
+  assert.match(service, /student_guardians sg/);
+  assert.match(service, /sg\.parent_user_id = :parentUserId/);
+  assert.match(service, /sy\.status = 'active'/);
+  assert.match(service, /ORDER BY st\.id[\s\S]*FOR UPDATE/);
+  assert.match(service, /ORDER BY student_id[\s\S]*FOR UPDATE/);
+  assert.match(service, /INSERT INTO wallets/);
+  assert.match(service, /ON DUPLICATE KEY UPDATE/);
+  assert.match(service, /wallet\.status !== "active"/);
+  assert.match(service, /INSERT INTO wallet_top_up_batches/);
+  assert.match(service, /for \(const item of items\)/);
+  assert.match(service, /INSERT INTO payments/);
+  assert.match(service, /wallet_top_up_batch_id/);
+  assert.match(service, /UPDATE wallets SET balance/);
+  assert.match(service, /INSERT INTO wallet_transactions/);
+  assert.match(service, /INSERT INTO receipts/);
+  assert.match(service, /await connection\.commit/);
+  assert.match(service, /await connection\.rollback/);
+  assert.match(service, /ER_DUP_ENTRY/);
 });
 
 test("parent wallet page uses real wallet data and no static placeholder rows", () => {
@@ -73,12 +94,42 @@ test("parent wallet page uses real wallet data and no static placeholder rows", 
   assert.match(page, /parent-wallet-transactions\.csv/);
   assert.match(page, /parent-wallet-transactions\.pdf/);
   assert.match(form, /createWalletTopUpAction/);
-  assert.match(form, /name="studentId"/);
-  assert.match(form, /name="amount"/);
+  assert.match(form, /name="studentIds"/);
+  assert.match(form, /name=\{`amount_\$\{wallet\.studentId\}`\}/);
   assert.match(form, /name="channel"/);
+  assert.match(form, /name="submissionToken"/);
   assert.match(form, /max="10000"/);
+  assert.match(form, /Select all eligible/);
+  assert.match(form, /Clear selection/);
+  assert.match(form, /Apply amount to selected/);
+  assert.match(form, /role="alertdialog"/);
+  assert.match(form, /Confirm allowance top-up/);
+  assert.match(form, /Recording top-ups/);
   assert.doesNotMatch(page, /walletTransactions|walletQuickAmounts/);
   assert.doesNotMatch(parentPortalData, /walletTransactions|walletQuickAmounts/);
+});
+
+test("wallet top-up batch schema and parent-scoped result preserve individual receipts", () => {
+  const migration = readFileSync(walletBatchMigrationPath, "utf8");
+  const schema = readFileSync(fullSchemaPath, "utf8");
+  const records = readFileSync(walletRecordsPath, "utf8");
+  const result = readFileSync(walletResultPath, "utf8");
+
+  for (const source of [migration, schema]) {
+    assert.match(source, /CREATE TABLE IF NOT EXISTS wallet_top_up_batches/);
+    assert.match(source, /submission_token_hash CHAR\(64\)/);
+    assert.match(source, /UNIQUE KEY uq_wallet_top_up_batches_submission \(parent_user_id, submission_token_hash\)/);
+    assert.match(source, /wallet_top_up_batch_id BIGINT UNSIGNED NULL/);
+    assert.match(source, /fk_payments_wallet_top_up_batch/);
+  }
+  assert.match(migration, /INFORMATION_SCHEMA\.COLUMNS/);
+  assert.match(migration, /INFORMATION_SCHEMA\.STATISTICS/);
+  assert.match(records, /getParentWalletTopUpBatch/);
+  assert.match(records, /wtb\.parent_user_id = :parentUserId/);
+  assert.match(records, /JOIN receipts r ON r\.payment_id = p\.id/);
+  assert.match(result, /Allowance top-up complete/);
+  assert.match(result, /data\.batch\.items\.map/);
+  assert.match(result, /\/parent\/receipt\?receiptId=/);
 });
 
 test("parent dashboard and student profile expose real wallet details", () => {

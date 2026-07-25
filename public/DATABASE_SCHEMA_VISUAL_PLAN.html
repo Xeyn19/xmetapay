@@ -353,8 +353,8 @@
             </tr>
             <tr>
               <td>Wallet</td>
-              <td><code>wallets</code>, <code>wallet_transactions</code>, <code>wallet_ledger_archives</code></td>
-              <td>Student allowance balance, year-stamped top-ups/purchases, dashboard and profile activity, plus reversible selected-year admin archive metadata. Archive never changes wallet status, balances, parent history, KPIs, or reports.</td>
+              <td><code>wallets</code>, <code>wallet_transactions</code>, <code>wallet_top_up_batches</code>, <code>wallet_ledger_archives</code></td>
+              <td>Student allowance balance, atomic parent top-up batches with separate student receipts, year-stamped top-ups/purchases, dashboard and profile activity, plus reversible selected-year admin archive metadata.</td>
             </tr>
             <tr>
               <td>Store</td>
@@ -760,15 +760,15 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-wallet-allowance-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> wallet top-up, parent dashboard wallet activity, selected student profile wallet activity, admin allowance monthly top-up stats, segmented allowance balance filters, and Phase 6B store purchase recording. Admin store actions use focused <code>Create merchant</code> and <code>Record purchase</code> modals above the transaction log. Admin allowance total balance sums current wallet balances once per wallet.</p>
+          <p><strong>Implemented:</strong> atomic one-or-many student wallet top-up with per-student amounts, parent-owned idempotent batches, individual payments and receipts, parent dashboard wallet activity, selected student profile wallet activity, admin allowance monthly top-up stats, segmented allowance balance filters, and Phase 6B store purchase recording. Admin allowance total balance sums current wallet balances once per wallet.</p>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens wallet page"] --> B["Load student wallets"]
-  B --> C["Parent chooses top-up amount"]
-  C --> D["Create payment for wallet top-up"]
-  D --> E["Payment succeeds"]
-  E --> F["Increase wallet balance"]
-  F --> G["Create wallet top_up transaction"]
+  A["Parent opens wallet page"] --> B["Select 1-20 eligible student wallets"]
+  B --> C["Set each amount and review combined total"]
+  C --> D["Lock all students and wallets in stable order"]
+  D --> E["Create idempotent wallet_top_up_batches row"]
+  E --> F["Create one payment, receipt, and ledger row per student"]
+  F --> G["Commit every top-up or roll back every top-up"]
   G --> H["Admin or finance records canteen/store purchase"]
   H --> I["Create wallet purchase transaction"]
   I --> J["Create store transaction"]
