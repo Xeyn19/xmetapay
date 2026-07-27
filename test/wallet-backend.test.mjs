@@ -91,7 +91,7 @@ test("parent wallet page uses real wallet data and no static placeholder rows", 
   assert.match(page, /WalletTopUpForm wallets=\{data\.wallets\}/);
   assert.match(page, /ParentWalletActivityTable/);
   assert.match(page, /rows=\{data\.transactions\}/);
-  assert.match(page, /parent-wallet-transactions\.csv/);
+  assert.match(page, /parent-wallet-transactions\.xlsx/);
   assert.match(page, /parent-wallet-transactions\.pdf/);
   assert.match(form, /createWalletTopUpAction/);
   assert.match(form, /name="studentIds"/);
@@ -157,7 +157,8 @@ test("parent dashboard and student profile expose real wallet details", () => {
   assert.match(walletActivityTable, /usePaginatedRows/);
   assert.match(walletActivityTable, /DashboardTablePagination/);
   assert.match(walletActivityTable, /pagination\.pageRows\.map/);
-  assert.match(walletActivityTable, /parent-wallet-activity\.csv/);
+  assert.match(walletActivityTable, /parent-wallet-activity\.xlsx/);
+  assert.match(walletActivityTable, /exportRowsToExcel/);
   assert.match(walletActivityTable, /parent-wallet-activity\.pdf/);
   assert.match(walletActivityTable, /exportRowsToPdf/);
   assert.match(walletActivityTable, /showStudent/);

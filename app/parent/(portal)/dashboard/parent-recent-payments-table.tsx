@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -27,6 +28,23 @@ export function ParentRecentPaymentsTable({ rows }: { rows: ParentDashboardPayme
     [query, rows, status],
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${status}`);
+  const exportColumns: ExportColumn<ParentDashboardPayment>[] = [
+    { label: "Reference", value: (row) => row.referenceNumber },
+    { label: "Student", value: (row) => row.studentName },
+    { label: "Description", value: (row) => row.description },
+    { label: "Amount", value: (row) => row.amount },
+    { label: "Status", value: (row) => row.status },
+  ];
+  const exportOptions = {
+    filters: [
+      { label: "Search", value: query.trim() || "All payments" },
+      { label: "Status", value: status === "all" ? "All" : status },
+    ],
+    summary: [
+      { label: "Payments", value: filteredRows.length },
+      { label: "Total amount", value: formatMoney(filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0)) },
+    ],
+  };
 
   return (
     <>
@@ -43,20 +61,13 @@ export function ParentRecentPaymentsTable({ rows }: { rows: ParentDashboardPayme
             setQuery("");
             setStatus("all");
           }}
-          onExport={() => exportRowsToCsv("parent-recent-payments.csv", filteredRows, [
-            { label: "Reference", value: (row) => row.referenceNumber },
-            { label: "Student", value: (row) => row.studentName },
-            { label: "Description", value: (row) => row.description },
-            { label: "Amount", value: (row) => row.amount },
-            { label: "Status", value: (row) => row.status },
-          ])}
-          onExportPdf={() => exportRowsToPdf("parent-recent-payments.pdf", "Recent payments", filteredRows, [
-            { label: "Reference", value: (row) => row.referenceNumber },
-            { label: "Student", value: (row) => row.studentName },
-            { label: "Description", value: (row) => row.description },
-            { label: "Amount", value: (row) => row.amount },
-            { label: "Status", value: (row) => row.status },
-          ])}
+          onExport={() => exportRowsToExcel("parent-recent-payments.xlsx", "Recent payments", filteredRows, exportColumns, {
+            worksheetName: "Recent payments",
+            ...exportOptions,
+          })}
+          onExportPdf={() => exportRowsToPdf("parent-recent-payments.pdf", "Recent payments", filteredRows, exportColumns, exportOptions)}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
       </div>
@@ -100,4 +111,13 @@ export function ParentRecentPaymentsTable({ rows }: { rows: ParentDashboardPayme
       />
     </>
   );
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatMoney(value: number) {
+  return `P${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

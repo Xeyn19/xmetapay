@@ -10,7 +10,7 @@ import {
   DashboardTableControls,
   DashboardTablePagination,
   type ExportColumn,
-  exportRowsToCsv,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -100,6 +100,19 @@ export function ParentPaymentHistoryTable({
   const allSelectablePageRowsSelected = selectablePageIds.length > 0
     && selectablePageIds.every((id) => selectedSet.has(id));
   const exportColumns = historyExportColumns(view);
+  const exportTitle = view === "archived" ? "Archived payment history" : view === "removed" ? "Removed payment history" : "Payment history";
+  const exportOptions = {
+    context: [{ label: "View", value: exportTitle }],
+    filters: [
+      { label: "Search", value: query.trim() || "All payments" },
+      { label: "Status", value: status === "all" ? "All" : status },
+      { label: "Channel", value: channel === "all" ? "All" : channel },
+    ],
+    summary: [
+      { label: "Payments", value: filteredRows.length },
+      { label: "Total amount", value: formatMoney(filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0)) },
+    ],
+  };
 
   const changeView = (nextView: HistoryView) => {
     setView(nextView);
@@ -221,17 +234,25 @@ export function ParentPaymentHistoryTable({
             setStatus("all");
             setChannel("all");
           }}
-          onExport={() => exportRowsToCsv(
-            view === "archived" ? "parent-payment-history-archived.csv" : view === "removed" ? "parent-payment-history-removed.csv" : "parent-payment-history.csv",
+          onExport={() => exportRowsToExcel(
+            view === "archived" ? "parent-payment-history-archived.xlsx" : view === "removed" ? "parent-payment-history-removed.xlsx" : "parent-payment-history.xlsx",
+            exportTitle,
             filteredRows,
             exportColumns,
+            {
+              worksheetName: view === "archived" ? "Archived payments" : view === "removed" ? "Removed payments" : "Payment history",
+              ...exportOptions,
+            },
           )}
           onExportPdf={() => exportRowsToPdf(
             view === "archived" ? "parent-payment-history-archived.pdf" : view === "removed" ? "parent-payment-history-removed.pdf" : "parent-payment-history.pdf",
-            view === "archived" ? "Archived payment history" : view === "removed" ? "Removed payment history" : "Payment history",
+            exportTitle,
             filteredRows,
             exportColumns,
+            exportOptions,
           )}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
 
@@ -444,3 +465,12 @@ function viewTabClass(active: boolean) {
 }
 
 const secondaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-black/10 bg-white px-3.5 text-[13px] font-medium text-[#4b4b4b] transition hover:bg-[#f8f7f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 disabled:pointer-events-none disabled:opacity-50";
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatMoney(value: number) {
+  return `P${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}

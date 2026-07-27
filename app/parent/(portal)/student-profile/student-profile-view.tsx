@@ -140,7 +140,10 @@ export function StudentProfileView({ student }: { student: StudentProfile }) {
       >
         <ParentWalletActivityTable
           rows={student.walletActivity}
-          csvFilename={`parent-${student.id}-wallet-activity.csv`}
+          excelFilename={`parent-${student.id}-wallet-activity.xlsx`}
+          pdfFilename={`parent-${student.id}-wallet-activity.pdf`}
+          exportTitle={`${student.fullName} wallet activity`}
+          worksheetName="Student wallet activity"
           showStudent={false}
         />
       </ParentCard>

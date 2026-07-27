@@ -691,7 +691,7 @@ CREATE TABLE notification_logs (
 
 Implementation status: real payment reminder email delivery is implemented with Nodemailer and SMTP. School administrators and finance officers can send linked parents an itemized statement built from matching fee assignments and optional tuition terms. The assignment due date is the official deadline; term dates remain schedule details. New rows use `channel = 'email'`, start as `queued`, store the custom or generated introductory text in `message_body`, and then become `sent` with `sent_at` or `failed`. `archived_at` provides reversible active/archived history views without changing those delivery fields or deleting audit data. Archived sent rows and recent queued attempts still prevent duplicate same-day sends; failed attempts may be retried. Historical SMS rows remain readable. SMS delivery, scheduling, delivery webhooks, and notification-based report alerts remain future.
 
-Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. Every visible Admin export uses branded Excel/PDF, including Dashboard recent payments, students, student profiles, parent contacts, tuition, collections, other fees, allowance, store transactions, and protected Reports-page downloads. Browser ExcelJS loads only on export; protected reports generate workbooks server-side from authorized queries. Legacy protected CSV URLs remain compatible. Parent formats remain unchanged, and no report storage or accounting fields are added.
+Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. Every visible Admin and Parent table export uses branded Excel/PDF. Parent coverage includes Fee summary, Payment history, dashboard recent payments, and wallet activity on Dashboard, Wallet, and Student Profile, including Current, Archived, and Removed scopes where applicable. Browser ExcelJS loads only on export; protected Admin reports generate workbooks server-side from authorized queries. Legacy protected CSV URLs remain compatible, and no report storage or accounting fields are added.
 
 ## Indexing Strategy
 
@@ -890,7 +890,7 @@ flowchart TD
 7. Add wallet tables: `wallets`, `wallet_transactions`, `wallet_top_up_batches`, `wallet_ledger_archives`.
 8. Add store tables: `store_merchants`, `store_transactions`.
 9. Use notification logs for SMTP email payment reminder delivery and queued/sent/failed history.
-10. Build CSV and PDF report exports from existing operational queries, plus filtered-row table exports from loaded dashboard data, instead of adding report storage tables.
+10. Build branded Excel and PDF report exports from existing operational queries and authorized filtered dashboard rows instead of adding report storage tables; retain protected Admin CSV URLs only for compatibility.
 11. Add SMS, scheduled/background delivery, webhooks, bounce handling, and report alerts later.
 
 ## MySQL/XAMPP Notes

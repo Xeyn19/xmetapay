@@ -59,7 +59,7 @@ Implemented:
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table.
-- Admin and parent real-data tables paginate on screen; Admin exports all filtered rows as branded Excel/PDF while parent formats remain unchanged.
+- Admin and parent real-data tables paginate on screen and export all filtered authorized rows as branded Excel/PDF.
 - Queued in-app payment reminder history through `notification_logs`.
 
 Next:
@@ -795,7 +795,7 @@ SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `S
 
 ## Real-Data Table Export Flow
 
-Implemented for super-admin, admin, and parent database-backed tables. Tables paginate on screen while exports use all filtered rows. Every visible Admin export uses branded Excel/PDF with the logo, authenticated school/year context, filters, summaries, frozen headings, and print setup. Protected Reports-page Excel/PDF is generated server-side from authorized report queries; legacy CSV URLs remain compatible. Parent formats remain unchanged.
+Implemented for super-admin, admin, and parent database-backed tables. Tables paginate on screen while exports use all filtered authorized rows. Every visible Admin and Parent table export uses branded Excel/PDF with the logo, authorized context, filters, summaries, frozen headings, and print setup. Protected Reports-page Excel/PDF is generated server-side from authorized report queries; legacy CSV URLs remain compatible.
 
 ```mermaid
 flowchart TD
@@ -810,7 +810,7 @@ flowchart TD
   I --> J["Download PDF"]
 ```
 
-Company account screens and all school Admin table/report exports use branded Excel/PDF. Parent fee summary, payment history, dashboard recent payments, and wallet activity retain their existing export formats.
+Company account screens, all school Admin table/report exports, and the Parent Fee summary, Payment history, dashboard recent payments, and wallet activity tables use branded Excel/PDF. Parent Current, Archived, and Removed exports remain isolated and preserve their existing financial and recovery details.
 
 ## Practical Testing Flow
 
