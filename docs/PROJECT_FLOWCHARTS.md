@@ -795,7 +795,7 @@ SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `S
 
 ## Real-Data Table Export Flow
 
-Implemented for super-admin, admin, and parent screens that already use database-backed tables. Tables paginate on screen, while CSV/PDF exports use all filtered rows after search and filters are applied. Browser PDFs use one XMETA Pay renderer with the canonical logo (and a text fallback), report metadata, repeated headings, alternating rows, page numbering, and footer branding. School admin accounts adds search, status, school, and filtered account-state totals; Admin registrations adds pending status plus search, school, and filtered-count context without review controls; Tuition report and Collection log add school, selected school year, filters, record counts, and filtered totals; Parent Fee summary retains nested tuition-term rows. The protected Reports-page server PDF route is unchanged.
+Implemented for super-admin, admin, and parent screens that already use database-backed tables. Tables paginate on screen, while exports use all filtered rows after search and filters are applied. The two company account screens use branded Excel/PDF: Excel is generated on demand with the logo, metadata, summaries, filterable frozen headings, and print setup; PDF keeps the shared branded renderer. Other table screens retain CSV/PDF. School admin accounts adds search, status, school, and filtered account-state totals; Admin registrations adds pending status plus search, school, and filtered-count context without review controls. The protected Reports-page server PDF route is unchanged.
 
 ```mermaid
 flowchart TD
@@ -804,13 +804,13 @@ flowchart TD
   C --> D["Visible rows update in the browser"]
   D --> E["User pages through filtered rows"]
   E --> F{"Export format?"}
-  F -->|CSV| G["Download filtered rows as CSV"]
+  F -->|CSV or company Excel| G["Download all filtered rows"]
   F -->|PDF| H["Build branded PDF from all filtered rows"]
   H --> I["Add logo, context, repeated headings, and page footer"]
   I --> J["Download PDF"]
 ```
 
-Current table export screens include company School admin accounts and pending Admin registrations; admin dashboard recent activity, tuition, collections, other fees, allowance, store transactions, enrolled students, and parent contacts; plus parent fee summary, payment history, dashboard recent payments, and wallet activity.
+Company School admin accounts and pending Admin registrations export branded Excel/PDF. Admin dashboard recent activity, tuition, collections, other fees, allowance, store transactions, enrolled students, and parent contacts, plus parent fee summary, payment history, dashboard recent payments, and wallet activity, retain CSV/PDF.
 
 ## Practical Testing Flow
 

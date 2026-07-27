@@ -23,6 +23,7 @@ const adminAccountsPage = existsSync("app/super-admin/admin-accounts/page.tsx")
 const adminAccountsTable = existsSync("app/super-admin/_components/super-admin-admins-table.tsx")
   ? readFileSync("app/super-admin/_components/super-admin-admins-table.tsx", "utf8")
   : "";
+const tableControls = readFileSync("app/_components/table-controls.tsx", "utf8");
 const registrationsPage = existsSync("app/super-admin/registrations/page.tsx")
   ? readFileSync("app/super-admin/registrations/page.tsx", "utf8")
   : "";
@@ -101,8 +102,12 @@ test("super admin dashboard is protected and manages only school admin account s
   assert.doesNotMatch(dashboardPage, /imperson/i);
 });
 
-test("school admin accounts export all filtered rows as a branded PDF", () => {
-  assert.match(adminAccountsTable, /exportRowsToCsv\("super-admin-school-admins\.csv", filteredRows, accountExportColumns\)/);
+test("school admin accounts export all filtered rows as branded Excel and PDF", () => {
+  assert.match(adminAccountsTable, /exportRowsToExcel\(/);
+  assert.match(adminAccountsTable, /"super-admin-school-admins\.xlsx"/);
+  assert.match(adminAccountsTable, /worksheetName: "School admin accounts"/);
+  assert.match(adminAccountsTable, /exportLabel="Export Excel"/);
+  assert.doesNotMatch(adminAccountsTable, /exportRowsToCsv|super-admin-school-admins\.csv/);
   assert.match(adminAccountsTable, /exportRowsToPdf\(/);
   assert.match(adminAccountsTable, /"super-admin-school-admins\.pdf"/);
   assert.match(adminAccountsTable, /"School admin accounts"/);
@@ -160,9 +165,13 @@ test("super admin registration review page approves or rejects pending school ad
   assert.match(loginAction, /revalidatePath\("\/super-admin\/registrations"\)/);
 });
 
-test("pending admin registrations export all filtered rows as a branded PDF", () => {
+test("pending admin registrations export all filtered rows as branded Excel and PDF", () => {
   assert.match(registrationsTable, /registrationExportColumns/);
-  assert.match(registrationsTable, /exportRowsToCsv\(/);
+  assert.match(registrationsTable, /exportRowsToExcel\(/);
+  assert.match(registrationsTable, /"super-admin-pending-registrations\.xlsx"/);
+  assert.match(registrationsTable, /worksheetName: "Pending registrations"/);
+  assert.match(registrationsTable, /exportLabel="Export Excel"/);
+  assert.doesNotMatch(registrationsTable, /exportRowsToCsv|super-admin-pending-registrations\.csv/);
   assert.match(registrationsTable, /exportRowsToPdf\(/);
   assert.match(registrationsTable, /"super-admin-pending-registrations\.pdf"/);
   assert.match(registrationsTable, /"Pending school admin registrations"/);
@@ -175,6 +184,22 @@ test("pending admin registrations export all filtered rows as a branded PDF", ()
   assert.match(registrationsTable, /reviewAdminRegistrationAction/);
   assert.match(registrationsTable, /Approve/);
   assert.match(registrationsTable, /Reject/);
+});
+
+test("shared Excel exporter builds branded formula-safe workbooks on demand", () => {
+  assert.match(tableControls, /export async function exportRowsToExcel/);
+  assert.match(tableControls, /await import\("exceljs"\)/);
+  assert.match(tableControls, /\/xmetapay-logo\.jpg/);
+  assert.match(tableControls, /workbook\.creator = "XMETA Pay"/);
+  assert.match(tableControls, /fitToPage: true/);
+  assert.match(tableControls, /worksheet\.views = \[\{ state: "frozen"/);
+  assert.match(tableControls, /worksheet\.autoFilter/);
+  assert.match(tableControls, /fgColor: \{ argb: "FFE64A19" \}/);
+  assert.match(tableControls, /cell\.value = cleanSpreadsheetText\(column\.value\(row\) \?\? ""\)/);
+  assert.match(tableControls, /cell\.numFmt = "@"/);
+  assert.match(tableControls, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
+  assert.match(tableControls, /exportLabel = "Export CSV"/);
+  assert.match(tableControls, /exportingLabel = "Generating export\.\.\."/);
 });
 
 test("docs describe company super admin without committed seed credentials", () => {

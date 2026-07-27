@@ -16,8 +16,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] The public entry page routes school admins and parents to their own sign-in and registration pages while company access remains sign-in-only.
 - [x] Company super admin uses a sidebar-based monitoring workspace.
 - [x] Company super admin can monitor schools and manage school admin accounts from a dedicated accounts page.
-- [x] Company super admin can export all filtered School admin accounts as CSV or a branded XMETA Pay PDF with filter and status-count context.
-- [x] Company super admin can export all filtered pending Admin registrations as CSV or a branded XMETA Pay PDF without including approval controls.
+- [x] Company super admin can export all filtered School admin accounts as branded Excel or PDF with filter and status-count context.
+- [x] Company super admin can export all filtered pending Admin registrations as branded Excel or PDF without including approval controls.
 - [x] Company super admin dashboard includes a Recharts-backed school-admin registration trend with daily, weekly, monthly, and custom date views.
 - [x] New school/admin registrations require company super admin approval before login.
 - [x] Logout clears the session.
