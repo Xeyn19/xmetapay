@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminStoreTransactionsPageRealData } from "@/lib/admin/real-data";
 import { getAdminStoreSetupData } from "@/lib/stores/records";
+import { getAdminSchoolContext } from "@/lib/school/setup";
 
 import {
   AlertBanner,
@@ -19,9 +20,10 @@ import { StoreTransactionsTable, type StoreTransactionRow } from "./store-transa
 export default async function StoreTransactionsPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/store-transactions");
-  const [data, storeSetup] = await Promise.all([
+  const [data, storeSetup, schoolContext] = await Promise.all([
     getAdminStoreTransactionsPageRealData(session.userId),
     getAdminStoreSetupData(session.userId),
+    getAdminSchoolContext(session.userId),
   ]);
   const rows: StoreTransactionRow[] = data.rows.map(([ref, student, grade, merchant, amount, fee, time]) => ({
     ref,
@@ -82,7 +84,7 @@ export default async function StoreTransactionsPage() {
           </div>
         }
       >
-        <StoreTransactionsTable rows={rows} />
+        <StoreTransactionsTable rows={rows} schoolName={schoolContext.schoolName} schoolYearName={schoolContext.selectedSchoolYear?.name ?? "School year pending"} />
       </DashboardCard>
     </>
   );

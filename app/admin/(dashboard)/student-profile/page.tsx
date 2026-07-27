@@ -3,6 +3,7 @@ import { IdCard } from "lucide-react";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { requireRole } from "@/lib/auth/session";
 import { getAdminStudentProfileRealData } from "@/lib/admin/real-data";
+import { getAdminSchoolContext } from "@/lib/school/setup";
 
 import { AlertBanner } from "../../_components/admin-ui";
 import { AdminStudentProfileEmptyState, AdminStudentProfileSelector } from "./admin-student-profile-view";
@@ -10,13 +11,16 @@ import { AdminStudentProfileEmptyState, AdminStudentProfileSelector } from "./ad
 export default async function StudentProfilePage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/student-profile");
-  const data = await getAdminStudentProfileRealData(session.userId);
+  const [data, schoolContext] = await Promise.all([
+    getAdminStudentProfileRealData(session.userId),
+    getAdminSchoolContext(session.userId),
+  ]);
 
   return (
     <>
       {data.warning ? <AlertBanner tone="warn" icon={IdCard}>{data.warning}</AlertBanner> : null}
       {data.students.length > 0 ? (
-        <AdminStudentProfileSelector students={data.students} schoolYearName={data.schoolYearName} />
+        <AdminStudentProfileSelector students={data.students} schoolName={schoolContext.schoolName} schoolYearName={data.schoolYearName} />
       ) : (
         <AdminStudentProfileEmptyState />
       )}

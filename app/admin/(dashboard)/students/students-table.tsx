@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -16,7 +17,7 @@ import type { AdminStudentRow } from "@/lib/students/records";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
 
-export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
+export function StudentsTable({ students, schoolName, schoolYearName }: { students: AdminStudentRow[]; schoolName: string; schoolYearName: string }) {
   const [query, setQuery] = useState("");
   const [grade, setGrade] = useState("all");
   const [status, setStatus] = useState("all");
@@ -32,6 +33,27 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
     [grade, query, status, students],
   );
   const pagination = usePaginatedRows(filteredStudents, `${query}|${grade}|${status}`);
+  const exportColumns: ExportColumn<AdminStudentRow>[] = [
+    { label: "Reference", value: (student) => student.studentReference },
+    { label: "Full name", value: (student) => student.fullName },
+    { label: "Grade", value: (student) => student.grade },
+    { label: "Section", value: (student) => student.section },
+    { label: "Parent or guardian", value: (student) => student.guardians },
+    { label: "Contact", value: (student) => student.guardianContact },
+    { label: "Enrollment status", value: (student) => student.enrollmentStatus },
+    { label: "Student status", value: (student) => student.studentStatus },
+    { label: "Sex", value: (student) => student.sex },
+    { label: "Student type", value: (student) => student.studentType },
+  ];
+  const exportOptions = {
+    context: [{ label: "School", value: schoolName }, { label: "School year", value: schoolYearName }],
+    filters: [
+      { label: "Search", value: query.trim() || "All students" },
+      { label: "Grade", value: filterLabel(grade) },
+      { label: "Status", value: filterLabel(status) },
+    ],
+    summary: [{ label: "Students", value: filteredStudents.length }],
+  };
 
   return (
     <>
@@ -49,30 +71,10 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
             setGrade("all");
             setStatus("all");
           }}
-          onExport={() => exportRowsToCsv("admin-students.csv", filteredStudents, [
-            { label: "Reference", value: (student) => student.studentReference },
-            { label: "Full name", value: (student) => student.fullName },
-            { label: "Grade", value: (student) => student.grade },
-            { label: "Section", value: (student) => student.section },
-            { label: "Parent or guardian", value: (student) => student.guardians },
-            { label: "Contact", value: (student) => student.guardianContact },
-            { label: "Enrollment status", value: (student) => student.enrollmentStatus },
-            { label: "Student status", value: (student) => student.studentStatus },
-            { label: "Sex", value: (student) => student.sex },
-            { label: "Student type", value: (student) => student.studentType },
-          ])}
-          onExportPdf={() => exportRowsToPdf("admin-students.pdf", "Enrolled students", filteredStudents, [
-            { label: "Reference", value: (student) => student.studentReference },
-            { label: "Full name", value: (student) => student.fullName },
-            { label: "Grade", value: (student) => student.grade },
-            { label: "Section", value: (student) => student.section },
-            { label: "Parent or guardian", value: (student) => student.guardians },
-            { label: "Contact", value: (student) => student.guardianContact },
-            { label: "Enrollment status", value: (student) => student.enrollmentStatus },
-            { label: "Student status", value: (student) => student.studentStatus },
-            { label: "Sex", value: (student) => student.sex },
-            { label: "Student type", value: (student) => student.studentType },
-          ])}
+          onExport={() => exportRowsToExcel("admin-students.xlsx", "Enrolled students", filteredStudents, exportColumns, { worksheetName: "Enrolled students", ...exportOptions })}
+          onExportPdf={() => exportRowsToPdf("admin-students.pdf", "Enrolled students", filteredStudents, exportColumns, exportOptions)}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredStudents.length === 0}
         />
       </div>
@@ -127,4 +129,8 @@ export function StudentsTable({ students }: { students: AdminStudentRow[] }) {
       />
     </>
   );
+}
+
+function filterLabel(value: string) {
+  return value === "all" ? "All" : value;
 }

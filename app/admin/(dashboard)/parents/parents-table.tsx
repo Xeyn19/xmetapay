@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -15,7 +16,7 @@ import type { AdminParentRow } from "@/lib/students/records";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
 
-export function ParentsTable({ rows }: { rows: AdminParentRow[] }) {
+export function ParentsTable({ rows, schoolName, schoolYearName }: { rows: AdminParentRow[]; schoolName: string; schoolYearName: string }) {
   const [query, setQuery] = useState("");
   const [relationship, setRelationship] = useState("all");
   const [status, setStatus] = useState("all");
@@ -31,6 +32,28 @@ export function ParentsTable({ rows }: { rows: AdminParentRow[] }) {
     [query, relationship, rows, status],
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${relationship}|${status}`);
+  const exportColumns: ExportColumn<AdminParentRow>[] = [
+    { label: "Parent name", value: (row) => row.parentName },
+    { label: "Students", value: (row) => row.students },
+    { label: "Grade", value: (row) => row.grade },
+    { label: "Contact number", value: (row) => row.contact },
+    { label: "Email address", value: (row) => row.email },
+    { label: "Relationship", value: (row) => row.relationship },
+    { label: "Status", value: (row) => row.status },
+  ];
+  const exportOptions = {
+    context: [{ label: "School", value: schoolName }, { label: "School year", value: schoolYearName }],
+    filters: [
+      { label: "Search", value: query.trim() || "All parents" },
+      { label: "Relationship", value: filterLabel(relationship) },
+      { label: "Status", value: filterLabel(status) },
+    ],
+    summary: [
+      { label: "Contacts", value: filteredRows.length },
+      { label: "Linked", value: filteredRows.filter((row) => row.status === "Linked").length },
+      { label: "Pending", value: filteredRows.filter((row) => row.status === "Pending").length },
+    ],
+  };
 
   return (
     <>
@@ -48,24 +71,10 @@ export function ParentsTable({ rows }: { rows: AdminParentRow[] }) {
             setRelationship("all");
             setStatus("all");
           }}
-          onExport={() => exportRowsToCsv("admin-parent-contacts.csv", filteredRows, [
-            { label: "Parent name", value: (row) => row.parentName },
-            { label: "Students", value: (row) => row.students },
-            { label: "Grade", value: (row) => row.grade },
-            { label: "Contact number", value: (row) => row.contact },
-            { label: "Email address", value: (row) => row.email },
-            { label: "Relationship", value: (row) => row.relationship },
-            { label: "Status", value: (row) => row.status },
-          ])}
-          onExportPdf={() => exportRowsToPdf("admin-parent-contacts.pdf", "Parent contacts", filteredRows, [
-            { label: "Parent name", value: (row) => row.parentName },
-            { label: "Students", value: (row) => row.students },
-            { label: "Grade", value: (row) => row.grade },
-            { label: "Contact number", value: (row) => row.contact },
-            { label: "Email address", value: (row) => row.email },
-            { label: "Relationship", value: (row) => row.relationship },
-            { label: "Status", value: (row) => row.status },
-          ])}
+          onExport={() => exportRowsToExcel("admin-parent-contacts.xlsx", "Parent contacts", filteredRows, exportColumns, { worksheetName: "Parent contacts", ...exportOptions })}
+          onExportPdf={() => exportRowsToPdf("admin-parent-contacts.pdf", "Parent contacts", filteredRows, exportColumns, exportOptions)}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
       </div>
@@ -114,4 +123,8 @@ export function ParentsTable({ rows }: { rows: AdminParentRow[] }) {
       />
     </>
   );
+}
+
+function filterLabel(value: string) {
+  return value === "all" ? "All" : value;
 }

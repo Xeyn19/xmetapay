@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -24,7 +25,7 @@ export type RecentPaymentRow = {
   status: string;
 };
 
-export function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
+export function RecentPaymentsTable({ rows, schoolName, schoolYearName }: { rows: RecentPaymentRow[]; schoolName: string; schoolYearName: string }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [channel, setChannel] = useState("all");
@@ -37,6 +38,26 @@ export function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
     [channel, query, rows, status],
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${status}|${channel}`);
+  const exportColumns: ExportColumn<RecentPaymentRow>[] = [
+    { label: "Time", value: (row) => row.time },
+    { label: "Student", value: (row) => row.student },
+    { label: "Type", value: (row) => row.type },
+    { label: "Amount", value: (row) => row.amount },
+    { label: "Channel", value: (row) => row.channel },
+    { label: "Status", value: (row) => row.status },
+  ];
+  const exportOptions = {
+    context: [{ label: "School", value: schoolName }, { label: "School year", value: schoolYearName }],
+    filters: [
+      { label: "Search", value: query.trim() || "All payments" },
+      { label: "Status", value: filterLabel(status) },
+      { label: "Channel", value: filterLabel(channel) },
+    ],
+    summary: [
+      { label: "Payments", value: filteredRows.length },
+      { label: "Total amount", value: money(filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0)) },
+    ],
+  };
 
   return (
     <DashboardCard title="Recent payment activity" icon={History} bodyClassName="p-0">
@@ -54,22 +75,10 @@ export function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
             setStatus("all");
             setChannel("all");
           }}
-          onExport={() => exportRowsToCsv("admin-recent-payments.csv", filteredRows, [
-            { label: "Time", value: (row) => row.time },
-            { label: "Student", value: (row) => row.student },
-            { label: "Type", value: (row) => row.type },
-            { label: "Amount", value: (row) => row.amount },
-            { label: "Channel", value: (row) => row.channel },
-            { label: "Status", value: (row) => row.status },
-          ])}
-          onExportPdf={() => exportRowsToPdf("admin-recent-payments.pdf", "Recent payment activity", filteredRows, [
-            { label: "Time", value: (row) => row.time },
-            { label: "Student", value: (row) => row.student },
-            { label: "Type", value: (row) => row.type },
-            { label: "Amount", value: (row) => row.amount },
-            { label: "Channel", value: (row) => row.channel },
-            { label: "Status", value: (row) => row.status },
-          ])}
+          onExport={() => exportRowsToExcel("admin-recent-payments.xlsx", "Recent payment activity", filteredRows, exportColumns, { worksheetName: "Recent payments", ...exportOptions })}
+          onExportPdf={() => exportRowsToPdf("admin-recent-payments.pdf", "Recent payment activity", filteredRows, exportColumns, exportOptions)}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
       </div>
@@ -114,4 +123,17 @@ export function RecentPaymentsTable({ rows }: { rows: RecentPaymentRow[] }) {
       />
     </DashboardCard>
   );
+}
+
+function filterLabel(value: string) {
+  return value === "all" ? "All" : value;
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function money(value: number) {
+  return `P${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

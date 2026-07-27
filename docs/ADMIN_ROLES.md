@@ -24,9 +24,9 @@ All school staff accounts sign in through the admin/school portal, but their das
 
 Finance pages include tuition, collections, other fees, allowance, store transactions, reports. The Collections page is tuition-focused; wallet activity belongs to Allowance ledger and store spending belongs to Store transactions.
 
-Browser-generated table PDFs use the shared XMETA Pay logo, orange report styling, generated time, filtered record count, repeated table headings, and page numbering. The company School admin accounts PDF includes current search, status, and school filters plus filtered status totals; the Admin registrations PDF includes only pending registrations with current search and school context. Tuition report, Collection log, and Other fees Excel/PDF exports identify the signed-in admin's school, selected school year, active filters, and filtered financial totals. These exports do not change staff permissions or the separate protected Reports-page downloads.
+Browser-generated table PDFs use the shared XMETA Pay logo, orange report styling, generated time, filtered record count, repeated table headings, and page numbering. Every visible school Admin table export now pairs that branded PDF with branded Excel containing the authenticated school, selected school year, active filters, counts, and applicable totals. The protected Reports page also serves branded Excel/PDF from server-owned report queries.
 
-The two company account screens and the Admin Tuition report, Collection log, and Other fees screens replace their plain CSV controls with branded Excel workbooks. Excel files use the same filtered rows and columns as PDF, add the XMETA Pay logo and report context, and freeze and filter the data headings. Other admin and parent table CSV exports remain unchanged.
+The company account screens and every school Admin table replace visible plain CSV controls with branded Excel workbooks. Excel files use the same filtered rows and columns as PDF, add the XMETA Pay logo and report context, and freeze and filter the data headings. Parent table CSV exports remain unchanged, and protected legacy Reports-page CSV URLs remain compatible even though the UI presents Excel/PDF.
 
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |

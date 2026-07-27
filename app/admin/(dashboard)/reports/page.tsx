@@ -32,7 +32,7 @@ export default async function ReportsPage() {
           icon={BarChart3}
           action={
             <div className="flex flex-wrap gap-2">
-              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue">CSV</ReportDownloadLink>
+              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=xlsx">Excel</ReportDownloadLink>
               <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=pdf">PDF</ReportDownloadLink>
             </div>
           }
@@ -66,7 +66,7 @@ export default async function ReportsPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <ReportDownloadLink href={report.csvHref}>CSV</ReportDownloadLink>
+                    <ReportDownloadLink href={report.excelHref}>Excel</ReportDownloadLink>
                     <ReportDownloadLink href={report.pdfHref}>PDF</ReportDownloadLink>
                   </div>
                 </div>

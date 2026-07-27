@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -24,7 +25,7 @@ export type StoreTransactionRow = {
   time: string;
 };
 
-export function StoreTransactionsTable({ rows }: { rows: StoreTransactionRow[] }) {
+export function StoreTransactionsTable({ rows, schoolName, schoolYearName }: { rows: StoreTransactionRow[]; schoolName: string; schoolYearName: string }) {
   const [query, setQuery] = useState("");
   const [merchant, setMerchant] = useState("all");
   const filteredRows = useMemo(
@@ -36,6 +37,27 @@ export function StoreTransactionsTable({ rows }: { rows: StoreTransactionRow[] }
     [merchant, query, rows],
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${merchant}`);
+  const exportColumns: ExportColumn<StoreTransactionRow>[] = [
+    { label: "Ref #", value: (row) => row.ref },
+    { label: "Student", value: (row) => row.student },
+    { label: "Grade", value: (row) => row.grade },
+    { label: "Store", value: (row) => row.merchant },
+    { label: "Amount", value: (row) => row.amount },
+    { label: "Txn fee", value: (row) => row.fee },
+    { label: "Time", value: (row) => row.time },
+  ];
+  const exportOptions = {
+    context: [{ label: "School", value: schoolName }, { label: "School year", value: schoolYearName }],
+    filters: [
+      { label: "Search", value: query.trim() || "All transactions" },
+      { label: "Merchant", value: filterLabel(merchant) },
+    ],
+    summary: [
+      { label: "Transactions", value: filteredRows.length },
+      { label: "Amount", value: money(filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0)) },
+      { label: "Transaction fees", value: money(filteredRows.reduce((total, row) => total + parseMoney(row.fee), 0)) },
+    ],
+  };
 
   return (
     <>
@@ -51,24 +73,10 @@ export function StoreTransactionsTable({ rows }: { rows: StoreTransactionRow[] }
             setQuery("");
             setMerchant("all");
           }}
-          onExport={() => exportRowsToCsv("admin-store-transactions.csv", filteredRows, [
-            { label: "Ref #", value: (row) => row.ref },
-            { label: "Student", value: (row) => row.student },
-            { label: "Grade", value: (row) => row.grade },
-            { label: "Store", value: (row) => row.merchant },
-            { label: "Amount", value: (row) => row.amount },
-            { label: "Txn fee", value: (row) => row.fee },
-            { label: "Time", value: (row) => row.time },
-          ])}
-          onExportPdf={() => exportRowsToPdf("admin-store-transactions.pdf", "Store transactions", filteredRows, [
-            { label: "Ref #", value: (row) => row.ref },
-            { label: "Student", value: (row) => row.student },
-            { label: "Grade", value: (row) => row.grade },
-            { label: "Store", value: (row) => row.merchant },
-            { label: "Amount", value: (row) => row.amount },
-            { label: "Txn fee", value: (row) => row.fee },
-            { label: "Time", value: (row) => row.time },
-          ])}
+          onExport={() => exportRowsToExcel("admin-store-transactions.xlsx", "Store transactions", filteredRows, exportColumns, { worksheetName: "Store transactions", ...exportOptions })}
+          onExportPdf={() => exportRowsToPdf("admin-store-transactions.pdf", "Store transactions", filteredRows, exportColumns, exportOptions)}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
       </div>
@@ -115,4 +123,17 @@ export function StoreTransactionsTable({ rows }: { rows: StoreTransactionRow[] }
       />
     </>
   );
+}
+
+function filterLabel(value: string) {
+  return value === "all" ? "All" : value;
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function money(value: number) {
+  return `P${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

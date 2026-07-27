@@ -17,11 +17,6 @@ const adminTableComponentPaths = [
   "app/admin/(dashboard)/students/students-table.tsx",
   "app/admin/(dashboard)/parents/parents-table.tsx",
 ];
-const brandedExcelTablePaths = new Set([
-  "app/admin/(dashboard)/tuition/tuition-report-table.tsx",
-  "app/admin/(dashboard)/collections/collections-table.tsx",
-  "app/admin/(dashboard)/other-fees/other-fees-table.tsx",
-]);
 const adminPages = [
   "app/admin/(dashboard)/dashboard/page.tsx",
   "app/admin/(dashboard)/tuition/page.tsx",
@@ -91,7 +86,7 @@ test("admin student profile route lists students and selected route loads exact 
   assert.match(selector, /DashboardTableControls/);
   assert.match(selector, /filterByQuery/);
   assert.match(selector, /toFilterOptions/);
-  assert.match(selector, /exportRowsToCsv/);
+  assert.match(selector, /exportRowsToExcel/);
   assert.match(selector, /exportRowsToPdf/);
   assert.match(selector, /searchPlaceholder="Search name, reference, guardian\.\.\."/);
   assert.match(selector, /label: "Grade"/);
@@ -196,14 +191,10 @@ test("admin real-data tables use working search filters plus spreadsheet and PDF
     assert.match(component, /usePaginatedRows/, `${componentPath} should paginate filtered rows`);
     assert.match(component, /DashboardTablePagination/, `${componentPath} should render pagination controls`);
     assert.match(component, /pageRows\.map/, `${componentPath} should render the current page of rows`);
-    if (brandedExcelTablePaths.has(componentPath)) {
-      assert.match(component, /exportRowsToExcel/, `${componentPath} should export filtered rows to Excel`);
-      assert.match(component, /exportLabel="Export Excel"/, `${componentPath} should label the branded workbook control`);
-      assert.match(component, /exportingLabel="Generating Excel\.\.\."/, `${componentPath} should prevent duplicate workbook generation`);
-      assert.doesNotMatch(component, /exportRowsToCsv/, `${componentPath} should replace CSV with Excel`);
-    } else {
-      assert.match(component, /exportRowsToCsv/, `${componentPath} should retain filtered CSV export`);
-    }
+    assert.match(component, /exportRowsToExcel/, `${componentPath} should export filtered rows to Excel`);
+    assert.match(component, /exportLabel="Export Excel"/, `${componentPath} should label the branded workbook control`);
+    assert.match(component, /exportingLabel="Generating Excel\.\.\."/, `${componentPath} should prevent duplicate workbook generation`);
+    assert.doesNotMatch(component, /exportRowsToCsv/, `${componentPath} should replace CSV with Excel`);
     assert.match(component, /exportRowsToPdf/, `${componentPath} should export filtered rows to PDF`);
     assert.match(component, /onExportPdf/, `${componentPath} should wire PDF export controls`);
     assert.match(component, /filterByQuery/, `${componentPath} should filter rows before pagination`);

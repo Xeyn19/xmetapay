@@ -364,7 +364,7 @@
             <tr>
               <td>Reports</td>
               <td>Operational query views</td>
-              <td>Implemented CSV and PDF exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. The two company account screens and Admin Tuition report, Collection log, and Other fees use branded Excel/PDF from authorized display rows; ExcelJS loads on demand and exports filterable workbooks with school, year, filter, and summary context. Other real-data tables retain CSV/PDF. These presentation exports use the XMETA Pay logo without adding schema fields or changing protected Reports-page server exports.</td>
+              <td>Every visible Admin export uses branded Excel/PDF from authorized display rows or protected report queries. Browser ExcelJS loads on demand; Reports-page Excel/PDF is generated server-side with the canonical logo, school/year context, summaries, and pagination. Legacy protected CSV URLs and parent formats remain compatible. No schema or accounting fields are added.</td>
             </tr>
             <tr>
               <td>Notifications</td>

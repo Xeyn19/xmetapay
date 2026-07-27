@@ -58,8 +58,8 @@ Implemented:
 - Admin allowance ledger supports reversible Active/Archived wallet-summary views scoped to the selected school year. Archive does not disable wallets or alter parent history, balances, transactions, KPIs, or reports.
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
-- Admin CSV and PDF report exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity.
-- Admin and parent real-data tables paginate on screen and export filtered rows as CSV/PDF or branded Excel/PDF on designated screens.
+- Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table.
+- Admin and parent real-data tables paginate on screen; Admin exports all filtered rows as branded Excel/PDF while parent formats remain unchanged.
 - Queued in-app payment reminder history through `notification_logs`.
 
 Next:
@@ -706,14 +706,14 @@ Role rule:
 
 ## Report CSV And PDF Export Flow
 
-Implemented for admin/school reporting. CSV and PDF exports are generated from current operational MySQL records instead of storing separate report rows.
+Implemented for admin/school reporting. The UI presents branded Excel and PDF generated from current operational MySQL records instead of storing separate report rows; protected CSV URLs remain compatible.
 
 ```mermaid
 flowchart TD
   A["Admin opens /admin/reports"] --> B["Require admin session"]
   B --> C{"Staff role can access reports?"}
   C -->|No| D["Redirect to admin dashboard"]
-  C -->|Yes| E["Show report KPIs and CSV/PDF download links"]
+  C -->|Yes| E["Show report KPIs and branded Excel/PDF links"]
   E --> F["Admin clicks report export"]
   F --> G["GET /admin/reports/export?type=...&format=..."]
   G --> H{"Format?"}
@@ -795,7 +795,7 @@ SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `S
 
 ## Real-Data Table Export Flow
 
-Implemented for super-admin, admin, and parent screens that already use database-backed tables. Tables paginate on screen, while exports use all filtered rows after search and filters are applied. The two company account screens and Admin Tuition report, Collection log, and Other fees use branded Excel/PDF: Excel is generated on demand with the logo, metadata, summaries, filterable frozen headings, and print setup; PDF keeps the shared branded renderer. Other table screens retain CSV/PDF. The three Admin workbooks add authenticated school, selected-year, filter, count, and applicable financial-total context. Protected Reports-page server exports are unchanged.
+Implemented for super-admin, admin, and parent database-backed tables. Tables paginate on screen while exports use all filtered rows. Every visible Admin export uses branded Excel/PDF with the logo, authenticated school/year context, filters, summaries, frozen headings, and print setup. Protected Reports-page Excel/PDF is generated server-side from authorized report queries; legacy CSV URLs remain compatible. Parent formats remain unchanged.
 
 ```mermaid
 flowchart TD
@@ -810,7 +810,7 @@ flowchart TD
   I --> J["Download PDF"]
 ```
 
-Company School admin accounts and pending Admin registrations plus Admin Tuition report, Collection log, and Other fees export branded Excel/PDF. Admin dashboard recent activity, allowance, store transactions, enrolled students, and parent contacts, plus parent fee summary, payment history, dashboard recent payments, and wallet activity, retain CSV/PDF.
+Company account screens and all school Admin table/report exports use branded Excel/PDF. Parent fee summary, payment history, dashboard recent payments, and wallet activity retain their existing export formats.
 
 ## Practical Testing Flow
 

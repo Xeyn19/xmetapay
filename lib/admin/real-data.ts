@@ -184,7 +184,7 @@ export type ReportsPageRealData = {
   warning: string | null;
   kpis: AdminRealKpi[];
   monthlyRevenue: BarRow[];
-  reports: Array<{ name: string; desc: string; csvHref: string; pdfHref: string; icon: LucideIcon }>;
+  reports: Array<{ name: string; desc: string; excelHref: string; pdfHref: string; icon: LucideIcon }>;
 };
 
 export type AdminStudentProfileRealData = {
@@ -1479,28 +1479,28 @@ function reportDownloads() {
     {
       name: "Monthly revenue",
       desc: "Paid payment totals grouped by month",
-      csvHref: "/admin/reports/export?type=monthly-revenue",
+      excelHref: "/admin/reports/export?type=monthly-revenue&format=xlsx",
       pdfHref: "/admin/reports/export?type=monthly-revenue&format=pdf",
       icon: BarChart3,
     },
     {
       name: "Tuition collections report",
       desc: "Tuition payment references, terms, channels, statuses, and dates",
-      csvHref: "/admin/reports/export?type=collections",
+      excelHref: "/admin/reports/export?type=collections&format=xlsx",
       pdfHref: "/admin/reports/export?type=collections&format=pdf",
       icon: FileSpreadsheet,
     },
     {
       name: "Outstanding balances",
       desc: "Assigned fees, paid amounts, balances, and due dates",
-      csvHref: "/admin/reports/export?type=outstanding-balances",
+      excelHref: "/admin/reports/export?type=outstanding-balances&format=xlsx",
       pdfHref: "/admin/reports/export?type=outstanding-balances&format=pdf",
       icon: Receipt,
     },
     {
       name: "Wallet and store report",
       desc: "Allowance top-ups, store purchases, and balances after",
-      csvHref: "/admin/reports/export?type=wallet-store",
+      excelHref: "/admin/reports/export?type=wallet-store&format=xlsx",
       pdfHref: "/admin/reports/export?type=wallet-store&format=pdf",
       icon: Store,
     },

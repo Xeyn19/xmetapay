@@ -80,9 +80,9 @@ test("admin store transaction page exposes merchant and purchase forms plus work
   assert.match(page, /StoreTransactionsTable rows=\{rows\}/);
   assert.ok(page.indexOf("<KpiGrid>") < page.indexOf('title="Spend by grade"'));
   assert.ok(page.indexOf('title="Spend by grade"') < page.indexOf('title="Store transaction log"'));
-  assert.ok(page.indexOf("RecordStorePurchaseForm data={storeSetup}") < page.indexOf("<StoreTransactionsTable rows={rows} />"));
+  assert.ok(page.indexOf("RecordStorePurchaseForm data={storeSetup}") < page.indexOf("<StoreTransactionsTable"));
   assert.doesNotMatch(page, /<StoreManagementForms data=\{storeSetup\} \/>/);
-  assert.match(page, /className="mb-\[18px\]"[\s\S]*RecordStorePurchaseForm data=\{storeSetup\}[\s\S]*<StoreTransactionsTable rows=\{rows\} \/>/);
+  assert.match(page, /className="mb-\[18px\]"[\s\S]*RecordStorePurchaseForm data=\{storeSetup\}[\s\S]*<StoreTransactionsTable[\s\S]*rows=\{rows\}/);
   assert.match(modal, /"use client";/);
   assert.match(modal, /triggerIcon: "plus" \| "store"/);
   assert.match(modal, /role="dialog"/);
@@ -106,7 +106,10 @@ test("admin store transaction page exposes merchant and purchase forms plus work
   assert.match(table, /usePaginatedRows/);
   assert.match(table, /DashboardTablePagination/);
   assert.match(table, /pagination\.pageRows\.map/);
-  assert.match(table, /admin-store-transactions\.csv/);
+  assert.match(table, /admin-store-transactions\.xlsx/);
+  assert.match(table, /exportRowsToExcel/);
+  assert.match(table, /exportLabel="Export Excel"/);
+  assert.doesNotMatch(table, /exportRowsToCsv|admin-store-transactions\.csv/);
   assert.match(table, /admin-store-transactions\.pdf/);
   assert.match(table, /exportRowsToPdf/);
   assert.match(table, /filterByQuery/);

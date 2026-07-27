@@ -2,6 +2,7 @@ import { requireAdminPageAccess } from "@/lib/admin/access";
 import {
   getAdminReportExport,
   getAdminReportExportData,
+  getAdminReportExcel,
   getAdminReportPdf,
   isReportExportFormat,
   isReportExportType,
@@ -34,6 +35,18 @@ export async function GET(request: Request) {
       headers: {
         "Content-Disposition": `attachment; filename="${report.filenameBase}.pdf"`,
         "Content-Type": "application/pdf",
+      },
+    });
+  }
+
+  if (format === "xlsx") {
+    const report = await getAdminReportExportData(session.userId, type);
+    const workbook = await getAdminReportExcel(report);
+
+    return new Response(new Uint8Array(workbook), {
+      headers: {
+        "Content-Disposition": `attachment; filename="${report.filenameBase}.xlsx"`,
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       },
     });
   }
