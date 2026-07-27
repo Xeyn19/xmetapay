@@ -115,7 +115,7 @@ flowchart TD
 
 Implemented.
 
-The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage and export filtered school admin accounts from `/super-admin/admin-accounts`, and review pending school admin registrations from `/super-admin/registrations`.
+The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage and export filtered school admin accounts from `/super-admin/admin-accounts`, and review or export filtered pending school admin registrations from `/super-admin/registrations`.
 
 ```mermaid
 flowchart TD
@@ -795,7 +795,7 @@ SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `S
 
 ## Real-Data Table Export Flow
 
-Implemented for super-admin, admin, and parent screens that already use database-backed tables. Tables paginate on screen, while CSV/PDF exports use all filtered rows after search and filters are applied. Browser PDFs use one XMETA Pay renderer with the canonical logo (and a text fallback), report metadata, repeated headings, alternating rows, page numbering, and footer branding. School admin accounts adds search, status, school, and filtered account-state totals; Tuition report and Collection log add school, selected school year, filters, record counts, and filtered totals; Parent Fee summary retains nested tuition-term rows. The protected Reports-page server PDF route is unchanged.
+Implemented for super-admin, admin, and parent screens that already use database-backed tables. Tables paginate on screen, while CSV/PDF exports use all filtered rows after search and filters are applied. Browser PDFs use one XMETA Pay renderer with the canonical logo (and a text fallback), report metadata, repeated headings, alternating rows, page numbering, and footer branding. School admin accounts adds search, status, school, and filtered account-state totals; Admin registrations adds pending status plus search, school, and filtered-count context without review controls; Tuition report and Collection log add school, selected school year, filters, record counts, and filtered totals; Parent Fee summary retains nested tuition-term rows. The protected Reports-page server PDF route is unchanged.
 
 ```mermaid
 flowchart TD
@@ -810,7 +810,7 @@ flowchart TD
   I --> J["Download PDF"]
 ```
 
-Current table export screens include company School admin accounts; admin dashboard recent activity, tuition, collections, other fees, allowance, store transactions, enrolled students, and parent contacts; plus parent fee summary, payment history, dashboard recent payments, and wallet activity.
+Current table export screens include company School admin accounts and pending Admin registrations; admin dashboard recent activity, tuition, collections, other fees, allowance, store transactions, enrolled students, and parent contacts; plus parent fee summary, payment history, dashboard recent payments, and wallet activity.
 
 ## Practical Testing Flow
 

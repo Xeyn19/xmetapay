@@ -422,6 +422,31 @@ test.describe("XMETA Pay super admin branding", () => {
 
     expect(download.suggestedFilename()).toBe("super-admin-school-admins.pdf");
   });
+
+  test("pending admin registrations PDF export stays responsive and downloads", async ({ page }) => {
+    test.setTimeout(60_000);
+    await ensureE2EUser("admin", {
+      name: "E2E Pending Admin",
+      email: "e2e-pending-admin@xmetapay.test",
+      status: "pending",
+    });
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/super-admin/registrations", { waitUntil: "domcontentloaded" });
+
+      await expect(page.getByRole("heading", { level: 1, name: "Admin registrations" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export PDF" })).toBeEnabled();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    await page.waitForLoadState("networkidle");
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export PDF" }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toBe("super-admin-pending-registrations.pdf");
+  });
 });
 
 type E2ERole = "admin" | "parent" | "super_admin";
@@ -456,28 +481,37 @@ async function addDatabaseSessionCookie(context: BrowserContext, role: E2ERole) 
   ]);
 }
 
-async function ensureE2EUser(role: E2ERole) {
+async function ensureE2EUser(
+  role: E2ERole,
+  options: {
+    name?: string;
+    email?: string;
+    status?: "active" | "pending";
+  } = {},
+) {
   const connection = await mysql.createConnection(databaseConfig());
   const profiles = {
     admin: { name: "E2E Admin", email: "e2e-admin@xmetapay.test" },
     parent: { name: "E2E Parent", email: "e2e-parent@xmetapay.test" },
     super_admin: { name: "E2E Super Admin", email: "e2e-super-admin@xmetapay.test" },
   } as const;
-  const profileName = profiles[role].name;
-  const email = profiles[role].email;
+  const profileName = options.name ?? profiles[role].name;
+  const email = options.email ?? profiles[role].email;
+  const status = options.status ?? "active";
 
   try {
     await connection.execute(
       `INSERT INTO users (role, name, email, phone, password_hash, status)
-       VALUES (:role, :name, :email, NULL, :passwordHash, 'active')
+       VALUES (:role, :name, :email, NULL, :passwordHash, :status)
        ON DUPLICATE KEY UPDATE
          name = VALUES(name),
-         status = 'active'`,
+         status = VALUES(status)`,
       {
         role,
         name: profileName,
         email,
         passwordHash: "scrypt$e2e$0",
+        status,
       },
     );
 
