@@ -7,7 +7,8 @@ import { CreditCard, Edit, History, IdCard, Plus, Users, Wallet } from "lucide-r
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -27,7 +28,7 @@ import {
 
 type StudentProfile = NonNullable<AdminStudentProfileRealData["student"]>;
 
-export function AdminStudentProfileSelector({ students, schoolYearName }: { students: AdminStudentProfileSummary[]; schoolYearName: string | null }) {
+export function AdminStudentProfileSelector({ students, schoolName, schoolYearName }: { students: AdminStudentProfileSummary[]; schoolName: string; schoolYearName: string | null }) {
   const [query, setQuery] = useState("");
   const [grade, setGrade] = useState("all");
   const [section, setSection] = useState("all");
@@ -66,6 +67,32 @@ export function AdminStudentProfileSelector({ students, schoolYearName }: { stud
     filteredStudents,
     `${query}|${grade}|${section}|${enrollmentStatus}|${guardianStatus}`,
   );
+  const exportColumns: ExportColumn<AdminStudentProfileSummary>[] = [
+    { label: "Reference", value: (student) => student.studentReference },
+    { label: "Full name", value: (student) => student.fullName },
+    { label: "Grade", value: (student) => student.gradeName },
+    { label: "Section", value: (student) => student.sectionName },
+    { label: "Parent or guardian", value: (student) => student.guardians },
+    { label: "Guardian link", value: (student) => student.guardianStatus },
+    { label: "Enrollment status", value: (student) => student.enrollmentStatus },
+    { label: "Student status", value: (student) => student.studentStatus },
+    { label: "Sex", value: (student) => student.sex },
+    { label: "Student type", value: (student) => student.studentType },
+  ];
+  const exportOptions = {
+    context: [
+      { label: "School", value: schoolName },
+      { label: "School year", value: schoolYearName ?? "School year pending" },
+    ],
+    filters: [
+      { label: "Search", value: query.trim() || "All students" },
+      { label: "Grade", value: filterLabel(grade) },
+      { label: "Section", value: filterLabel(section) },
+      { label: "Enrollment", value: filterLabel(enrollmentStatus) },
+      { label: "Guardian link", value: filterLabel(guardianStatus) },
+    ],
+    summary: [{ label: "Students", value: filteredStudents.length }],
+  };
 
   return (
     <DashboardCard title={`Choose a student profile${schoolYearName ? ` - ${schoolYearName}` : ""}`} icon={IdCard} bodyClassName="p-0">
@@ -108,30 +135,10 @@ export function AdminStudentProfileSelector({ students, schoolYearName }: { stud
             setEnrollmentStatus("all");
             setGuardianStatus("all");
           }}
-          onExport={() => exportRowsToCsv("admin-student-profiles.csv", filteredStudents, [
-            { label: "Reference", value: (student) => student.studentReference },
-            { label: "Full name", value: (student) => student.fullName },
-            { label: "Grade", value: (student) => student.gradeName },
-            { label: "Section", value: (student) => student.sectionName },
-            { label: "Parent or guardian", value: (student) => student.guardians },
-            { label: "Guardian link", value: (student) => student.guardianStatus },
-            { label: "Enrollment status", value: (student) => student.enrollmentStatus },
-            { label: "Student status", value: (student) => student.studentStatus },
-            { label: "Sex", value: (student) => student.sex },
-            { label: "Student type", value: (student) => student.studentType },
-          ])}
-          onExportPdf={() => exportRowsToPdf("admin-student-profiles.pdf", "Student profile selector", filteredStudents, [
-            { label: "Reference", value: (student) => student.studentReference },
-            { label: "Full name", value: (student) => student.fullName },
-            { label: "Grade", value: (student) => student.gradeName },
-            { label: "Section", value: (student) => student.sectionName },
-            { label: "Parent or guardian", value: (student) => student.guardians },
-            { label: "Guardian link", value: (student) => student.guardianStatus },
-            { label: "Enrollment status", value: (student) => student.enrollmentStatus },
-            { label: "Student status", value: (student) => student.studentStatus },
-            { label: "Sex", value: (student) => student.sex },
-            { label: "Student type", value: (student) => student.studentType },
-          ])}
+          onExport={() => exportRowsToExcel("admin-student-profiles.xlsx", "Student profile selector", filteredStudents, exportColumns, { worksheetName: "Student profiles", ...exportOptions })}
+          onExportPdf={() => exportRowsToPdf("admin-student-profiles.pdf", "Student profile selector", filteredStudents, exportColumns, exportOptions)}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredStudents.length === 0}
         />
       </div>
@@ -188,6 +195,10 @@ export function AdminStudentProfileSelector({ students, schoolYearName }: { stud
       />
     </DashboardCard>
   );
+}
+
+function filterLabel(value: string) {
+  return value === "all" ? "All" : value;
 }
 
 export function AdminStudentProfileEmptyState() {

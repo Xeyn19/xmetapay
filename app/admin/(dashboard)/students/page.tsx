@@ -3,6 +3,7 @@ import { AlertTriangle, UserPlus, Users } from "lucide-react";
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminStudentPageData } from "@/lib/students/records";
+import { getAdminSchoolContext } from "@/lib/school/setup";
 
 import { AlertBanner, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
 import { StudentIntake } from "./student-intake";
@@ -11,7 +12,11 @@ import { StudentsTable } from "./students-table";
 export default async function StudentsPage({ searchParams }: { searchParams: Promise<{ intake?: string | string[] }> }) {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/students");
-  const [data, query] = await Promise.all([getAdminStudentPageData(session.userId), searchParams]);
+  const [data, query, schoolContext] = await Promise.all([
+    getAdminStudentPageData(session.userId),
+    searchParams,
+    getAdminSchoolContext(session.userId),
+  ]);
 
   return (
     <>
@@ -54,7 +59,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
         icon={Users}
         bodyClassName="p-0"
       >
-        <StudentsTable students={data.students} />
+        <StudentsTable students={data.students} schoolName={schoolContext.schoolName} schoolYearName={data.activeSchoolYearName ?? "School year pending"} />
       </DashboardCard>
     </>
   );

@@ -194,7 +194,11 @@ test("admin allowance page uses working controls for real wallet rows", () => {
   assert.match(table, /usePaginatedRows/);
   assert.match(table, /DashboardTablePagination/);
   assert.match(table, /pagination\.pageRows\.map/);
-  assert.match(table, /admin-allowance-wallets\.csv/);
+  assert.match(table, /admin-allowance-wallets\.xlsx/);
+  assert.match(table, /admin-allowance-wallets-archived\.xlsx/);
+  assert.match(table, /exportRowsToExcel/);
+  assert.match(table, /exportLabel="Export Excel"/);
+  assert.doesNotMatch(table, /exportRowsToCsv|admin-allowance-wallets(?:-archived)?\.csv/);
   assert.match(table, /admin-allowance-wallets\.pdf/);
   assert.match(table, /exportRowsToPdf/);
   assert.match(table, /filterByQuery/);

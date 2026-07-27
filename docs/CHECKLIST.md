@@ -33,7 +33,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Parent local wallet top-up and wallet transaction history are implemented.
 - [x] Store spending backend is implemented through admin/finance local test purchase recording.
 - [x] Admin spreadsheet and PDF report exports are implemented from operational MySQL records.
-- [x] Real-data admin and parent tables paginate on screen and export filtered rows as CSV/PDF or branded Excel/PDF on designated screens.
+- [x] Real-data tables paginate on screen; every visible Admin export uses branded Excel/PDF while parent screens retain their current CSV/PDF contracts.
 - [x] Queued SMS/email payment reminder history is recorded in `notification_logs` once per day for the same school, linked parent, student, and selected channel.
 - [ ] Real notification sending, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
 
@@ -175,18 +175,18 @@ Done when: wallet balances, top-up history, and admin allowance totals come from
 
 Done when: a parent can top up a wallet, admin/finance can record a local test store purchase, the parent dashboard and selected student profile show recent wallet/store activity, and both portals show the same wallet/store ledger data.
 
-### Phase 6C: Report CSV and PDF exports
+### Phase 6C: Branded report exports
 
 - [x] Add report queries for monthly revenue, tuition collections, outstanding balances, and wallet/store summaries.
 - [x] Add protected admin CSV export route for report downloads.
 - [x] Replace disabled report export buttons with working CSV download links.
 - [x] Add protected admin PDF export downloads for the same report data.
-- [x] Show separate CSV and PDF report buttons on the admin reports page.
+- [x] Show separate branded Excel and PDF report buttons on the Admin reports page while preserving legacy protected CSV URLs.
 - [x] Add pagination plus CSV and PDF filtered-row exports to real-data admin and parent tables.
 - [x] Apply the shared XMETA Pay logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition report and Collection log.
-- [x] Replace CSV with branded Excel on Admin Tuition report, Collection log, and Other fees while preserving filtered-row PDF exports and CSV elsewhere.
+- [x] Replace every visible Admin CSV control with branded Excel and apply the canonical logo, context, summaries, repeated headings, and page footers to protected report PDFs.
 
-Done when: school administrators and finance officers can download CSV and PDF reports generated from operational MySQL records, and real-data table screens can paginate on screen while exporting their filtered rows in both formats.
+Done when: school administrators and finance officers can download branded Excel/PDF generated from authorized operational records, legacy protected CSV links remain compatible, and paginated tables export all filtered rows.
 
 ### Phase 6D: Payment reminder emails
 

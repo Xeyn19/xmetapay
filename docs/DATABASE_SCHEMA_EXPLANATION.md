@@ -399,7 +399,7 @@ Current implemented CSV and PDF report exports:
 
 Scheduled reports and notification-driven report delivery are future features. Immediate payment reminder email delivery is implemented separately through `notification_logs` and SMTP.
 
-Real-data dashboard tables also support browser-side pagination plus browser-generated exports. Browser PDFs share an XMETA Pay presentation layer with the canonical logo, report metadata, repeated headings, alternating rows, and page footers. The company account screens and Admin Tuition report, Collection log, and Other fees additionally produce branded Excel workbooks from their authorized filtered display rows; the workbooks use frozen/filterable headings and formula-safe text cells. Other table screens retain CSV/PDF export. The three Admin workbooks include school, selected-year, filter, count, and applicable financial-total context; Parent Fee summary keeps its nested tuition-term rows inside the branded PDF layout. These exports use rows already loaded for the authorized screen after search/filter controls are applied, so they do not require extra database tables or change authoritative records. Protected Reports-page server exports remain separate.
+Real-data dashboard tables also support browser-side pagination plus browser-generated exports. Every visible Admin table export uses branded Excel/PDF with the canonical logo, authenticated school and selected-year context, filters, counts, applicable totals, formula-safe cells, repeated headings, and page footers. Parent table formats remain unchanged. The protected Reports page uses the same presentation language for server-generated Excel/PDF while retaining legacy CSV endpoint compatibility. These exports use already-authorized display rows or protected report queries, so they require no report storage tables and never change authoritative records.
 
 ## Notification Table
 
@@ -436,7 +436,7 @@ The schema supports this practical backend flow:
 11. Payments are allocated through `payment_allocations` or `payment_term_allocations`.
 12. Receipts are created in `receipts`.
 13. Student wallets and store activity are tracked through wallet and store tables. Wallet balances come from `wallets.balance`; transaction rows explain how the balance changed and power the parent dashboard, selected student profile, and full wallet ledger views.
-14. Admin downloads CSV and PDF reports from existing operational tables, while admin and parent table screens paginate loaded rows and export filtered rows as CSV or PDF.
+14. Admin downloads branded Excel/PDF reports from existing operational tables while legacy protected CSV URLs remain compatible; paginated screens export all filtered authorized rows.
 15. Payment reminder emails are sent through SMTP and audited in `notification_logs`; SMS and scheduled/background notification delivery remain future work.
 
 ## Relationship Summary

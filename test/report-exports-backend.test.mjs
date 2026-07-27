@@ -14,7 +14,7 @@ const schemaExplanationPath = "docs/DATABASE_SCHEMA_EXPLANATION.md";
 const visualFlowchartsPath = "public/PROJECT_FLOWCHARTS_VISUAL.html";
 const visualSchemaPath = "public/DATABASE_SCHEMA_VISUAL_PLAN.html";
 
-test("admin report export route is protected and returns CSV and PDF downloads", () => {
+test("admin report export route is protected and returns compatible CSV plus branded Excel and PDF downloads", () => {
   assert.equal(existsSync(reportRoutePath), true);
   const route = readFileSync(reportRoutePath, "utf8");
 
@@ -28,12 +28,14 @@ test("admin report export route is protected and returns CSV and PDF downloads",
   assert.match(route, /getAdminReportExport\(session\.userId, type\)/);
   assert.match(route, /getAdminReportExportData\(session\.userId, type\)/);
   assert.match(route, /getAdminReportPdf\(report\)/);
+  assert.match(route, /getAdminReportExcel\(report\)/);
   assert.match(route, /Content-Disposition/);
   assert.match(route, /text\/csv/);
   assert.match(route, /application\/pdf/);
+  assert.match(route, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
 });
 
-test("admin report export helper has four school-scoped real SQL reports and PDF rendering", () => {
+test("admin report export helper has four school-scoped branded spreadsheet and PDF reports", () => {
   assert.equal(existsSync(reportExportsPath), true);
   const helper = readFileSync(reportExportsPath, "utf8");
 
@@ -45,9 +47,16 @@ test("admin report export helper has four school-scoped real SQL reports and PDF
   assert.match(helper, /"collections"/);
   assert.match(helper, /"outstanding-balances"/);
   assert.match(helper, /"wallet-store"/);
-  assert.match(helper, /type ReportExportFormat = "csv" \| "pdf"/);
+  assert.match(helper, /type ReportExportFormat = "csv" \| "xlsx" \| "pdf"/);
   assert.match(helper, /getAdminReportExportData/);
   assert.match(helper, /getAdminReportPdf/);
+  assert.match(helper, /getAdminReportExcel/);
+  assert.match(helper, /await import\("exceljs"\)/);
+  assert.match(helper, /xmetapay-logo\.jpg/);
+  assert.match(helper, /worksheet\.views = \[\{ state: "frozen"/);
+  assert.match(helper, /worksheet\.autoFilter/);
+  assert.match(helper, /cell\.numFmt = "@"/);
+  assert.match(helper, /Page \$\{page\} of \$\{pageCount\}/);
   assert.match(helper, /renderPdfReport/);
   assert.match(helper, /FROM payments p/);
   assert.match(helper, /p\.school_id = :schoolId/);
@@ -72,22 +81,23 @@ test("jspdf is installed for PDF exports", () => {
   assert.equal(packageJson.devDependencies["@types/pdfkit"], undefined);
 });
 
-test("admin reports page links to implemented CSV and PDF exports", () => {
+test("admin reports page links to branded Excel and PDF while the route retains CSV compatibility", () => {
   const page = readFileSync(reportsPagePath, "utf8");
   const realData = readFileSync(adminRealDataPath, "utf8");
 
   assert.match(page, /ReportDownloadLink/);
-  assert.match(page, /\/admin\/reports\/export\?type=monthly-revenue/);
+  assert.match(page, /\/admin\/reports\/export\?type=monthly-revenue&format=xlsx/);
   assert.match(page, /\/admin\/reports\/export\?type=monthly-revenue&format=pdf/);
-  assert.match(page, /href=\{report\.csvHref\}/);
+  assert.match(page, /href=\{report\.excelHref\}/);
   assert.match(page, /href=\{report\.pdfHref\}/);
   assert.doesNotMatch(page, /Export pending/);
   assert.match(realData, /function reportDownloads/);
-  assert.match(realData, /csvHref: "\/admin\/reports\/export\?type=collections"/);
+  assert.match(realData, /excelHref: "\/admin\/reports\/export\?type=collections&format=xlsx"/);
   assert.match(realData, /pdfHref: "\/admin\/reports\/export\?type=collections&format=pdf"/);
-  assert.match(realData, /csvHref: "\/admin\/reports\/export\?type=outstanding-balances"/);
+  assert.match(realData, /excelHref: "\/admin\/reports\/export\?type=outstanding-balances&format=xlsx"/);
   assert.match(realData, /pdfHref: "\/admin\/reports\/export\?type=outstanding-balances&format=pdf"/);
-  assert.match(realData, /csvHref: "\/admin\/reports\/export\?type=wallet-store"/);
+  assert.match(realData, /excelHref: "\/admin\/reports\/export\?type=wallet-store&format=xlsx"/);
+  assert.doesNotMatch(page, />CSV</);
   assert.match(realData, /pdfHref: "\/admin\/reports\/export\?type=wallet-store&format=pdf"/);
   assert.doesNotMatch(realData, /Export backend pending/);
 });

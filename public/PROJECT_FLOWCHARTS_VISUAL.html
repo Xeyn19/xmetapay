@@ -843,13 +843,13 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="admin-report-csv-pdf-exports.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> protected admin CSV and PDF exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity. Tuition collections use fee or term allocations; wallet top-ups remain in the allowance ledger. The Tuition collection log has reversible active/archived views through <code>payments.archived_at</code>; archiving does not remove records from official reports, receipts, balances, or parent history.</p>
+          <p><strong>Implemented:</strong> protected branded Excel and PDF exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity, with legacy CSV URLs retained for compatibility. Tuition collections use fee or term allocations; wallet top-ups remain in the allowance ledger.</p>
           <pre class="mermaid">
 flowchart TD
   A["Admin opens reports page"] --> B["Require admin session"]
   B --> C{"Can access reports?"}
   C -->|No| D["Redirect to admin dashboard"]
-  C -->|Yes| E["Show CSV and PDF download links"]
+  C -->|Yes| E["Show branded Excel and PDF links"]
   E --> F["GET /admin/reports/export?type=...&format=..."]
   F --> G{"Format?"}
   G -->|CSV or omitted| H["Return escaped CSV"]
@@ -909,7 +909,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="real-data-table-csv-pdf-exports.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> super-admin, admin, and parent real-data tables paginate on screen and export all filtered rows. The two company account screens and Admin Tuition report, Collection log, and Other fees use branded Excel/PDF: Excel is generated on demand with the XMETA logo, report context, filterable frozen headings, and print setup, while PDF keeps the shared branded renderer. Other table screens retain CSV/PDF. Account-action controls are never exported, and protected Reports-page server exports remain unchanged.</p>
+          <p><strong>Implemented:</strong> super-admin, admin, and parent real-data tables paginate on screen and export all filtered rows. Every visible Admin export uses branded Excel/PDF with the XMETA logo, authorized school/year context, summaries, filterable frozen headings, and print setup. Protected Reports-page exports use the same branding server-side, while parent formats remain unchanged.</p>
           <pre class="mermaid">
 flowchart TD
   A["User opens a real-data table"] --> B["Page loads MySQL-backed rows"]
@@ -917,7 +917,7 @@ flowchart TD
   C --> D["Visible rows update"]
   D --> E["User pages through filtered rows"]
   E --> F{"Export format?"}
-  F -->|CSV or designated Excel| G["Download all filtered rows"]
+  F -->|Admin Excel or retained format| G["Download all filtered rows"]
   F -->|PDF| H["Build branded PDF from all filtered rows"]
   H --> I["Add logo, context, repeated headings, and page footer"]
   I --> J["Download PDF"]

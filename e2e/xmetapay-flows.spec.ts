@@ -381,9 +381,17 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
     await addDatabaseSessionCookie(context, "admin");
   });
 
-  test("finance table exports stay responsive and download readable workbooks", async ({ page }) => {
-    test.setTimeout(120_000);
+  test("all admin table exports stay responsive and download readable workbooks", async ({ page }) => {
+    test.setTimeout(180_000);
     const reports = [
+      {
+        path: "/admin/dashboard",
+        heading: "Dashboard",
+        filename: "admin-recent-payments.xlsx",
+        worksheetName: "Recent payments",
+        title: "Recent payment activity",
+        headers: ["Time", "Student", "Type", "Amount", "Channel", "Status"],
+      },
       {
         path: "/admin/tuition",
         heading: "Tuition report",
@@ -408,12 +416,53 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
         title: "Other fees",
         headers: ["Fee type", "Description", "Default amount", "Assigned total", "Collected", "Outstanding", "Paid count", "Status"],
       },
+      {
+        path: "/admin/students",
+        heading: "Enrolled students",
+        filename: "admin-students.xlsx",
+        worksheetName: "Enrolled students",
+        title: "Enrolled students",
+        headers: ["Reference", "Full name", "Grade", "Section", "Parent or guardian", "Contact", "Enrollment status", "Student status", "Sex", "Student type"],
+      },
+      {
+        path: "/admin/student-profile",
+        heading: "Student profile",
+        filename: "admin-student-profiles.xlsx",
+        worksheetName: "Student profiles",
+        title: "Student profile selector",
+        headers: ["Reference", "Full name", "Grade", "Section", "Parent or guardian", "Guardian link", "Enrollment status", "Student status", "Sex", "Student type"],
+      },
+      {
+        path: "/admin/parents",
+        heading: "Parent contacts",
+        filename: "admin-parent-contacts.xlsx",
+        worksheetName: "Parent contacts",
+        title: "Parent contacts",
+        headers: ["Parent name", "Students", "Grade", "Contact number", "Email address", "Relationship", "Status"],
+      },
+      {
+        path: "/admin/allowance",
+        heading: "Allowance ledger",
+        filename: "admin-allowance-wallets.xlsx",
+        worksheetName: "Active allowance",
+        title: "Active allowance wallets",
+        headers: ["Student", "Grade", "Current balance", "Last top-up", "Month spend", "Total top-ups", "Status"],
+      },
+      {
+        path: "/admin/store-transactions",
+        heading: "Store transactions",
+        filename: "admin-store-transactions.xlsx",
+        worksheetName: "Store transactions",
+        title: "Store transactions",
+        headers: ["Ref #", "Student", "Grade", "Store", "Amount", "Txn fee", "Time"],
+      },
     ];
 
     for (const report of reports) {
       for (const width of [320, 375, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(report.path, { waitUntil: "domcontentloaded" });
+        test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
         await expect(page.getByRole("heading", { level: 1, name: report.heading })).toBeVisible();
         await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
@@ -429,6 +478,31 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
         await expectExcelWorkbook(download, report);
       }
     }
+  });
+
+  test("protected Reports page serves branded Excel and PDF downloads", async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.goto("/admin/reports", { waitUntil: "domcontentloaded" });
+    test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+    await expect(page.getByRole("heading", { level: 1, name: "Financial reports" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Excel" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "PDF" }).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    const excelDownloadPromise = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Excel" }).first().click();
+    const excelDownload = await excelDownloadPromise;
+    expect(excelDownload.suggestedFilename()).toBe("xmetapay-monthly-revenue.xlsx");
+    await expectExcelWorkbook(excelDownload, {
+      worksheetName: "Monthly revenue",
+      title: "Monthly revenue",
+      headers: ["Month", "Paid payment count", "Paid amount"],
+    });
+
+    const pdfDownloadPromise = page.waitForEvent("download");
+    await page.getByRole("link", { name: "PDF" }).first().click();
+    const pdfDownload = await pdfDownloadPromise;
+    expect(pdfDownload.suggestedFilename()).toBe("xmetapay-monthly-revenue.pdf");
   });
 });
 

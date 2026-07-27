@@ -3,6 +3,7 @@ import { AlertCircle, BarChart3, Calculator, History, Siren } from "lucide-react
 import { requireRole } from "@/lib/auth/session";
 import { getAdminStaffRole } from "@/lib/admin/access";
 import { getAdminDashboardRealData } from "@/lib/admin/real-data";
+import { getAdminSchoolContext } from "@/lib/school/setup";
 
 import {
   AlertBanner,
@@ -18,9 +19,10 @@ import { TuitionCollectedByGradeChart } from "./tuition-collected-chart";
 
 export default async function AdminDashboardPage() {
   const session = await requireRole("admin");
-  const [data, staffRole] = await Promise.all([
+  const [data, staffRole, schoolContext] = await Promise.all([
     getAdminDashboardRealData(session.userId),
     getAdminStaffRole(session.userId),
+    getAdminSchoolContext(session.userId),
   ]);
   const payments = data.recentPayments.map(([time, student, type, amount, channel, status]) => ({ time, student, type, amount, channel, status }));
 
@@ -29,6 +31,8 @@ export default async function AdminDashboardPage() {
       <SchoolAdministratorDashboard
         data={data}
         payments={payments}
+        schoolName={schoolContext.schoolName}
+        schoolYearName={schoolContext.selectedSchoolYear?.name ?? "School year pending"}
       />
     );
   }
@@ -58,7 +62,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="mb-[18px]">
-        <RecentPaymentsTable rows={payments} />
+        <RecentPaymentsTable rows={payments} schoolName={schoolContext.schoolName} schoolYearName={schoolContext.selectedSchoolYear?.name ?? "School year pending"} />
       </div>
 
       <div className="grid gap-[18px] xl:grid-cols-[1fr_1fr]">
@@ -76,9 +80,13 @@ export default async function AdminDashboardPage() {
 function SchoolAdministratorDashboard({
   data,
   payments,
+  schoolName,
+  schoolYearName,
 }: {
   data: Awaited<ReturnType<typeof getAdminDashboardRealData>>;
   payments: RecentPaymentRow[];
+  schoolName: string;
+  schoolYearName: string;
 }) {
   return (
     <>
@@ -105,7 +113,7 @@ function SchoolAdministratorDashboard({
       </div>
 
       <div className="mb-[18px] grid gap-[18px] xl:grid-cols-[minmax(0,1.05fr)_minmax(340px,0.95fr)]">
-        <RecentPaymentsTable rows={payments} />
+        <RecentPaymentsTable rows={payments} schoolName={schoolName} schoolYearName={schoolYearName} />
 
         <DashboardCard title="Activity feed" icon={History}>
           {data.activityFeed.length > 0 ? (

@@ -9,7 +9,7 @@ import {
   DashboardTableControls,
   DashboardTablePagination,
   type ExportColumn,
-  exportRowsToCsv,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   usePaginatedRows,
@@ -46,9 +46,13 @@ const statusTabs: Array<{ label: string; value: WalletStatusFilter }> = [
 export function AllowanceTable({
   activeRows,
   archivedRows,
+  schoolName,
+  schoolYearName,
 }: {
   activeRows: AllowanceRow[];
   archivedRows: AllowanceRow[];
+  schoolName: string;
+  schoolYearName: string;
 }) {
   const router = useRouter();
   const [view, setView] = useState<ArchiveView>("active");
@@ -78,6 +82,24 @@ export function AllowanceTable({
   const selectedSet = new Set(validSelectedIds);
   const allPageRowsSelected = pageIds.length > 0 && pageIds.every((id) => selectedSet.has(id));
   const exportColumns = allowanceExportColumns(view === "archived");
+  const exportTitle = view === "archived" ? "Archived allowance wallets" : "Active allowance wallets";
+  const exportOptions = {
+    context: [
+      { label: "School", value: schoolName },
+      { label: "School year", value: schoolYearName },
+      { label: "View", value: view === "archived" ? "Archived wallets" : "Active wallets" },
+    ],
+    filters: [
+      { label: "Search", value: query.trim() || "All wallets" },
+      { label: "Status", value: status === "all" ? "All" : status },
+    ],
+    summary: [
+      { label: "Wallets", value: filteredRows.length },
+      { label: "Current balance", value: money(filteredRows.reduce((total, row) => total + parseMoney(row.balance), 0)) },
+      { label: "Month spend", value: money(filteredRows.reduce((total, row) => total + parseMoney(row.monthSpend), 0)) },
+      { label: "Total top-ups", value: money(filteredRows.reduce((total, row) => total + parseMoney(row.totalTopUps), 0)) },
+    ],
+  };
 
   const changeView = (nextView: ArchiveView) => {
     setView(nextView);
@@ -177,17 +199,25 @@ export function AllowanceTable({
             setQuery("");
             setStatus("all");
           }}
-          onExport={() => exportRowsToCsv(
-            view === "archived" ? "admin-allowance-wallets-archived.csv" : "admin-allowance-wallets.csv",
+          onExport={() => exportRowsToExcel(
+            view === "archived" ? "admin-allowance-wallets-archived.xlsx" : "admin-allowance-wallets.xlsx",
+            exportTitle,
             filteredRows,
             exportColumns,
+            {
+              worksheetName: view === "archived" ? "Archived allowance" : "Active allowance",
+              ...exportOptions,
+            },
           )}
           onExportPdf={() => exportRowsToPdf(
             view === "archived" ? "admin-allowance-wallets-archived.pdf" : "admin-allowance-wallets.pdf",
-            view === "archived" ? "Archived allowance wallets" : "Active allowance wallets",
+            exportTitle,
             filteredRows,
             exportColumns,
+            exportOptions,
           )}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
 
@@ -299,6 +329,15 @@ function viewTabClass(active: boolean) {
     "inline-flex min-h-9 items-center justify-center rounded-md px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
     active ? "bg-white text-[#0f1117] shadow-sm" : "text-[#5a6070] hover:text-[#0f1117]",
   );
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function money(value: number) {
+  return `P${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function allowanceExportColumns(includeArchived: boolean): ExportColumn<AllowanceRow>[] {

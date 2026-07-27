@@ -3,6 +3,7 @@ import { Wallet } from "lucide-react";
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminAllowancePageRealData } from "@/lib/admin/real-data";
+import { getAdminSchoolContext } from "@/lib/school/setup";
 
 import {
   AlertBanner,
@@ -15,7 +16,10 @@ import { AllowanceTable } from "./allowance-table";
 export default async function AllowancePage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/allowance");
-  const data = await getAdminAllowancePageRealData(session.userId);
+  const [data, schoolContext] = await Promise.all([
+    getAdminAllowancePageRealData(session.userId),
+    getAdminSchoolContext(session.userId),
+  ]);
 
   return (
     <>
@@ -34,6 +38,8 @@ export default async function AllowancePage() {
           key={`${data.activeRows.map((row) => row.walletId).join("-")}|${data.archivedRows.map((row) => row.walletId).join("-")}`}
           activeRows={data.activeRows}
           archivedRows={data.archivedRows}
+          schoolName={schoolContext.schoolName}
+          schoolYearName={schoolContext.selectedSchoolYear?.name ?? "School year pending"}
         />
       </DashboardCard>
     </>
