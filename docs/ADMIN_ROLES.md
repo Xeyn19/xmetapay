@@ -10,7 +10,7 @@ Active company, school-admin, and parent accounts can request an email OTP from 
 
 | Auth role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
-| `super_admin` | XMETA Pay company monitoring | Sign in at `/login`, review pending school admin registrations, approve or reject admin access, view schools and school admin accounts, export the filtered school-admin directory as CSV or branded PDF, enable or disable school admin access | Manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
+| `super_admin` | XMETA Pay company monitoring | Sign in at `/login`, review and export filtered pending school admin registrations, approve or reject admin access, view schools and school admin accounts, export the filtered school-admin directory as CSV or branded PDF, enable or disable school admin access | Manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
 
 The first company account is seeded through a local-only SQL file after importing the `super_admin` role migration. That seed file lives under `database/local/`, is ignored by Git, and should be deleted after phpMyAdmin import.
 
@@ -24,7 +24,7 @@ All school staff accounts sign in through the admin/school portal, but their das
 
 Finance pages include tuition, collections, other fees, allowance, store transactions, reports. The Collections page is tuition-focused; wallet activity belongs to Allowance ledger and store spending belongs to Store transactions.
 
-Browser-generated table PDFs use the shared XMETA Pay logo, orange report styling, generated time, filtered record count, repeated table headings, and page numbering. The company School admin accounts PDF includes current search, status, and school filters plus filtered status totals. Tuition report and Collection log PDFs additionally identify the signed-in admin's school, selected school year, active filters, and filtered financial totals. These exports do not change staff permissions or the separate protected Reports-page PDF downloads.
+Browser-generated table PDFs use the shared XMETA Pay logo, orange report styling, generated time, filtered record count, repeated table headings, and page numbering. The company School admin accounts PDF includes current search, status, and school filters plus filtered status totals; the Admin registrations PDF includes only pending registrations with current search and school context. Tuition report and Collection log PDFs additionally identify the signed-in admin's school, selected school year, active filters, and filtered financial totals. These exports do not change staff permissions or the separate protected Reports-page PDF downloads.
 
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |

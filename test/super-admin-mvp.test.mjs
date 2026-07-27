@@ -160,6 +160,23 @@ test("super admin registration review page approves or rejects pending school ad
   assert.match(loginAction, /revalidatePath\("\/super-admin\/registrations"\)/);
 });
 
+test("pending admin registrations export all filtered rows as a branded PDF", () => {
+  assert.match(registrationsTable, /registrationExportColumns/);
+  assert.match(registrationsTable, /exportRowsToCsv\(/);
+  assert.match(registrationsTable, /exportRowsToPdf\(/);
+  assert.match(registrationsTable, /"super-admin-pending-registrations\.pdf"/);
+  assert.match(registrationsTable, /"Pending school admin registrations"/);
+  assert.match(registrationsTable, /filteredRows,\s+registrationExportColumns/);
+  assert.match(registrationsTable, /Name.*Email.*Phone.*School.*Staff role.*Created/s);
+  assert.match(registrationsTable, /Status", value: "Pending"/);
+  assert.match(registrationsTable, /Search.*School/s);
+  assert.match(registrationsTable, /Pending registrations.*filteredRows\.length/s);
+  assert.doesNotMatch(registrationsTable, /pagination\.pageRows,\s+registrationExportColumns/);
+  assert.match(registrationsTable, /reviewAdminRegistrationAction/);
+  assert.match(registrationsTable, /Approve/);
+  assert.match(registrationsTable, /Reject/);
+});
+
 test("docs describe company super admin without committed seed credentials", () => {
   const adminRoles = readFileSync("docs/ADMIN_ROLES.md", "utf8");
   const projectFlow = readFileSync("docs/PROJECT_FLOWCHARTS.md", "utf8");

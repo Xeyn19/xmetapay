@@ -6,13 +6,24 @@ import { Check, X } from "lucide-react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
+  type ExportColumn,
   exportRowsToCsv,
+  exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
   usePaginatedRows,
 } from "@/app/_components/table-controls";
 import { reviewAdminRegistrationAction } from "@/app/super-admin/actions";
 import type { SuperAdminAccountRow } from "@/lib/super-admin/records";
+
+const registrationExportColumns: ExportColumn<SuperAdminAccountRow>[] = [
+  { label: "Name", value: (row) => row.name },
+  { label: "Email", value: (row) => row.email },
+  { label: "Phone", value: (row) => row.phone },
+  { label: "School", value: (row) => row.schoolName },
+  { label: "Staff role", value: (row) => row.staffRole },
+  { label: "Created", value: (row) => row.createdAt },
+];
 
 export function SuperAdminRegistrationsTable({ rows }: { rows: SuperAdminAccountRow[] }) {
   const [query, setQuery] = useState("");
@@ -41,14 +52,30 @@ export function SuperAdminRegistrationsTable({ rows }: { rows: SuperAdminAccount
             setQuery("");
             setSchool("all");
           }}
-          onExport={() => exportRowsToCsv("super-admin-pending-registrations.csv", filteredRows, [
-            { label: "Name", value: (row) => row.name },
-            { label: "Email", value: (row) => row.email },
-            { label: "Phone", value: (row) => row.phone },
-            { label: "School", value: (row) => row.schoolName },
-            { label: "Staff role", value: (row) => row.staffRole },
-            { label: "Created", value: (row) => row.createdAt },
-          ])}
+          onExport={() => exportRowsToCsv(
+            "super-admin-pending-registrations.csv",
+            filteredRows,
+            registrationExportColumns,
+          )}
+          onExportPdf={() => exportRowsToPdf(
+            "super-admin-pending-registrations.pdf",
+            "Pending school admin registrations",
+            filteredRows,
+            registrationExportColumns,
+            {
+              context: [
+                { label: "Scope", value: "Company school administrators" },
+                { label: "Status", value: "Pending" },
+              ],
+              filters: [
+                { label: "Search", value: query.trim() || "All pending registrations" },
+                { label: "School", value: school === "all" ? "All schools" : school },
+              ],
+              summary: [
+                { label: "Pending registrations", value: filteredRows.length },
+              ],
+            },
+          )}
           exportDisabled={filteredRows.length === 0}
         />
       </div>
