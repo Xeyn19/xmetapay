@@ -7,7 +7,7 @@ import {
   DashboardTableControls,
   DashboardTablePagination,
   type ExportColumn,
-  exportRowsToCsv,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -82,7 +82,31 @@ export function SuperAdminAdminsTable({ rows }: { rows: SuperAdminAccountRow[] }
             setStatus("all");
             setSchool("all");
           }}
-          onExport={() => exportRowsToCsv("super-admin-school-admins.csv", filteredRows, accountExportColumns)}
+          onExport={() => exportRowsToExcel(
+            "super-admin-school-admins.xlsx",
+            "School admin accounts",
+            filteredRows,
+            accountExportColumns,
+            {
+              worksheetName: "School admin accounts",
+              context: [
+                { label: "Scope", value: "Company school administrators" },
+              ],
+              filters: [
+                { label: "Search", value: query.trim() || "All accounts" },
+                { label: "Status", value: filterLabel(status) },
+                { label: "School", value: school === "all" ? "All schools" : school },
+              ],
+              summary: [
+                { label: "Accounts", value: filteredRows.length },
+                { label: "Active", value: filteredStatusTotals.active },
+                { label: "Pending", value: filteredStatusTotals.pending },
+                { label: "Disabled", value: filteredStatusTotals.disabled },
+              ],
+            },
+          )}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           onExportPdf={() => exportRowsToPdf(
             "super-admin-school-admins.pdf",
             "School admin accounts",

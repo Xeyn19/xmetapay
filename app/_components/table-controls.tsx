@@ -30,6 +30,13 @@ export type BrandedPdfOptions = {
   summary?: BrandedPdfField[];
 };
 
+export type BrandedExcelOptions = {
+  worksheetName?: string;
+  context?: BrandedPdfField[];
+  filters?: BrandedPdfField[];
+  summary?: BrandedPdfField[];
+};
+
 export type BrandedPdfDocument = {
   doc: jsPDF;
   startY: number;
@@ -48,6 +55,8 @@ export function DashboardTableControls({
   onExportPdf,
   exportDisabled,
   tone = "admin",
+  exportLabel = "Export CSV",
+  exportingLabel = "Generating export...",
 }: {
   query: string;
   onQueryChange: (value: string) => void;
@@ -59,11 +68,14 @@ export function DashboardTableControls({
     onChange: (value: string) => void;
   }>;
   onClear: () => void;
-  onExport: () => void;
+  onExport: () => void | Promise<void>;
   onExportPdf?: () => void | Promise<void>;
   exportDisabled: boolean;
   tone?: "admin" | "parent";
+  exportLabel?: string;
+  exportingLabel?: string;
 }) {
+  const [exportingPrimary, setExportingPrimary] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const isParent = tone === "parent";
   const controlClass = isParent
@@ -113,8 +125,16 @@ export function DashboardTableControls({
       </button>
       <button
         type="button"
-        onClick={onExport}
-        disabled={exportDisabled}
+        onClick={async () => {
+          if (exportingPrimary) return;
+          setExportingPrimary(true);
+          try {
+            await onExport();
+          } finally {
+            setExportingPrimary(false);
+          }
+        }}
+        disabled={exportDisabled || exportingPrimary}
         className={cn(
           "inline-flex min-h-11 items-center justify-center gap-1.5 border px-3.5 transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60",
           buttonClass,
@@ -123,8 +143,8 @@ export function DashboardTableControls({
             : "border-[#0f1117] bg-[#0f1117] text-white hover:bg-[#2d3348]",
         )}
       >
-        <Download className="size-4" />
-        Export CSV
+        {exportingPrimary ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}
+        <span aria-live="polite">{exportingPrimary ? exportingLabel : exportLabel}</span>
       </button>
       {onExportPdf ? (
         <button
@@ -320,6 +340,126 @@ export function exportRowsToCsv<T>(filename: string, rows: T[], columns: ExportC
   URL.revokeObjectURL(url);
 }
 
+export async function exportRowsToExcel<T>(
+  filename: string,
+  title: string,
+  rows: T[],
+  columns: ExportColumn<T>[],
+  options: BrandedExcelOptions = {},
+) {
+  const ExcelJS = await import("exceljs");
+  const Workbook = ExcelJS.Workbook ?? ExcelJS.default.Workbook;
+  const workbook = new Workbook();
+  const worksheet = workbook.addWorksheet(cleanWorksheetName(options.worksheetName ?? title), {
+    pageSetup: {
+      orientation: columns.length > 6 ? "landscape" : "portrait",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      paperSize: 9,
+      margins: { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 },
+    },
+    properties: { defaultRowHeight: 18 },
+  });
+  const columnCount = Math.max(columns.length, 1);
+  const lastColumn = worksheet.getColumn(columnCount).letter;
+  const logo = await loadBrandLogo();
+
+  workbook.creator = "XMETA Pay";
+  workbook.company = "XMETA Pay";
+  workbook.title = cleanSpreadsheetText(title);
+  workbook.created = new Date();
+
+  worksheet.mergeCells(`B1:${lastColumn}1`);
+  worksheet.mergeCells(`B2:${lastColumn}2`);
+  worksheet.getRow(1).height = 24;
+  worksheet.getRow(2).height = 22;
+  worksheet.getCell("B1").value = "XMETA Pay";
+  worksheet.getCell("B1").font = { name: "Arial", size: 16, bold: true, color: { argb: "FF0F1117" } };
+  worksheet.getCell("B2").value = cleanSpreadsheetText(title);
+  worksheet.getCell("B2").font = { name: "Arial", size: 12, bold: true, color: { argb: "FFE64A19" } };
+
+  if (logo) {
+    const logoId = workbook.addImage({ base64: logo, extension: "jpeg" });
+    worksheet.addImage(logoId, { tl: { col: 0.1, row: 0.1 }, ext: { width: 42, height: 42 } });
+  } else {
+    worksheet.getCell("A1").value = "X";
+    worksheet.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
+    worksheet.getCell("A1").font = { name: "Arial", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
+    worksheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE64A19" } };
+  }
+
+  let cursor = 4;
+  const generatedAt = new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+  cursor = addExcelMetadataRow(worksheet, cursor, columnCount, [
+    { label: "Generated", value: generatedAt },
+    { label: "Records", value: rows.length },
+  ]);
+
+  if (options.context?.length) {
+    cursor = addExcelMetadataRow(worksheet, cursor, columnCount, options.context);
+  }
+  if (options.filters?.length) {
+    cursor = addExcelMetadataRow(worksheet, cursor, columnCount, options.filters);
+  }
+  if (options.summary?.length) {
+    cursor += 1;
+    cursor = addExcelSummary(worksheet, cursor, columnCount, options.summary);
+  }
+
+  const headerRowNumber = cursor + 1;
+  const headerRow = worksheet.getRow(headerRowNumber);
+  columns.forEach((column, index) => {
+    const cell = headerRow.getCell(index + 1);
+    cell.value = cleanSpreadsheetText(column.label);
+    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE64A19" } };
+    cell.alignment = { vertical: "middle", wrapText: true };
+    cell.border = excelBorder("FFF1C3B5");
+  });
+  headerRow.height = 24;
+
+  if (rows.length > 0) {
+    rows.forEach((row, rowIndex) => {
+      const dataRow = worksheet.getRow(headerRowNumber + rowIndex + 1);
+      columns.forEach((column, columnIndex) => {
+        const cell = dataRow.getCell(columnIndex + 1);
+        cell.value = cleanSpreadsheetText(column.value(row) ?? "");
+        cell.numFmt = "@";
+        cell.font = { name: "Arial", size: 9, color: { argb: "FF2D3348" } };
+        cell.alignment = { vertical: "top", wrapText: true };
+        cell.border = excelBorder("FFE5E7EB");
+        if (rowIndex % 2 === 1) {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8F8F7" } };
+        }
+      });
+    });
+  } else {
+    const emptyRow = worksheet.getRow(headerRowNumber + 1);
+    emptyRow.getCell(1).value = "No records yet";
+    emptyRow.getCell(1).font = { name: "Arial", size: 9, italic: true, color: { argb: "FF5A6070" } };
+    if (columnCount > 1) worksheet.mergeCells(headerRowNumber + 1, 1, headerRowNumber + 1, columnCount);
+  }
+
+  columns.forEach((column, index) => {
+    const values = rows.map((row) => cleanSpreadsheetText(column.value(row) ?? ""));
+    const contentWidth = Math.max(cleanSpreadsheetText(column.label).length, ...values.map((value) => value.length));
+    worksheet.getColumn(index + 1).width = Math.min(Math.max(contentWidth + 2, 12), 36);
+  });
+  worksheet.views = [{ state: "frozen", ySplit: headerRowNumber, activeCell: `A${headerRowNumber + 1}` }];
+  worksheet.autoFilter = {
+    from: { row: headerRowNumber, column: 1 },
+    to: { row: headerRowNumber, column: columnCount },
+  };
+  worksheet.headerFooter.oddFooter = "&LXMETA Pay&RPage &P of &N";
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([new Uint8Array(buffer)], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  downloadBlob(cleanExcelFilename(filename), blob);
+}
+
 export async function exportRowsToPdf<T>(
   filename: string,
   title: string,
@@ -492,6 +632,86 @@ function blobToDataUrl(blob: Blob) {
 
 function cleanPdfText(value: string | number) {
   return String(value).replaceAll(/[\u0000-\u001f\u007f]/g, " ").trim();
+}
+
+function addExcelMetadataRow(
+  worksheet: import("exceljs").Worksheet,
+  rowNumber: number,
+  columnCount: number,
+  fields: BrandedPdfField[],
+) {
+  const text = fields
+    .filter((field) => cleanSpreadsheetText(field.value))
+    .map((field) => `${cleanSpreadsheetText(field.label)}: ${cleanSpreadsheetText(field.value)}`)
+    .join("   |   ");
+  worksheet.mergeCells(rowNumber, 1, rowNumber, columnCount);
+  const cell = worksheet.getCell(rowNumber, 1);
+  cell.value = text;
+  cell.font = { name: "Arial", size: 9, color: { argb: "FF5A6070" } };
+  cell.alignment = { vertical: "middle", wrapText: true };
+  worksheet.getRow(rowNumber).height = 21;
+  return rowNumber + 1;
+}
+
+function addExcelSummary(
+  worksheet: import("exceljs").Worksheet,
+  rowNumber: number,
+  columnCount: number,
+  fields: BrandedPdfField[],
+) {
+  const span = Math.max(Math.floor(columnCount / fields.length), 1);
+  fields.forEach((field, index) => {
+    const startColumn = Math.min(index * span + 1, columnCount);
+    const endColumn = index === fields.length - 1 ? columnCount : Math.min(startColumn + span - 1, columnCount);
+    if (endColumn > startColumn) {
+      worksheet.mergeCells(rowNumber, startColumn, rowNumber, endColumn);
+      worksheet.mergeCells(rowNumber + 1, startColumn, rowNumber + 1, endColumn);
+    }
+    const labelCell = worksheet.getCell(rowNumber, startColumn);
+    const valueCell = worksheet.getCell(rowNumber + 1, startColumn);
+    labelCell.value = cleanSpreadsheetText(field.label);
+    valueCell.value = cleanSpreadsheetText(field.value);
+    labelCell.font = { name: "Arial", size: 8, color: { argb: "FF5A6070" } };
+    valueCell.font = { name: "Arial", size: 11, bold: true, color: { argb: "FF0F1117" } };
+    for (let column = startColumn; column <= endColumn; column += 1) {
+      for (const row of [rowNumber, rowNumber + 1]) {
+        const cell = worksheet.getCell(row, column);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF7F4" } };
+        cell.border = excelBorder("FFF8CDBE");
+        cell.alignment = { vertical: "middle", wrapText: true };
+      }
+    }
+  });
+  return rowNumber + 3;
+}
+
+function excelBorder(color: string): Partial<import("exceljs").Borders> {
+  const side = { style: "thin" as const, color: { argb: color } };
+  return { top: side, left: side, bottom: side, right: side };
+}
+
+function cleanSpreadsheetText(value: string | number) {
+  return String(value).replaceAll(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").trim();
+}
+
+function cleanWorksheetName(value: string) {
+  const cleaned = cleanSpreadsheetText(value).replaceAll(/[\\/*?:[\]]/g, " ").slice(0, 31).trim();
+  return cleaned || "XMETA Pay";
+}
+
+function cleanExcelFilename(value: string) {
+  const cleaned = value.replaceAll(/[<>:"/\\|?*\u0000-\u001f]/g, "-").replaceAll(/^\.+|\.+$/g, "");
+  const filename = cleaned || "xmetapay-export.xlsx";
+  return filename.toLowerCase().endsWith(".xlsx") ? filename : `${filename}.xlsx`;
+}
+
+function downloadBlob(filename: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function csvCell(value: string | number | null | undefined) {

@@ -7,7 +7,7 @@ import {
   DashboardTableControls,
   DashboardTablePagination,
   type ExportColumn,
-  exportRowsToCsv,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -52,11 +52,28 @@ export function SuperAdminRegistrationsTable({ rows }: { rows: SuperAdminAccount
             setQuery("");
             setSchool("all");
           }}
-          onExport={() => exportRowsToCsv(
-            "super-admin-pending-registrations.csv",
+          onExport={() => exportRowsToExcel(
+            "super-admin-pending-registrations.xlsx",
+            "Pending school admin registrations",
             filteredRows,
             registrationExportColumns,
+            {
+              worksheetName: "Pending registrations",
+              context: [
+                { label: "Scope", value: "Company school administrators" },
+                { label: "Status", value: "Pending" },
+              ],
+              filters: [
+                { label: "Search", value: query.trim() || "All pending registrations" },
+                { label: "School", value: school === "all" ? "All schools" : school },
+              ],
+              summary: [
+                { label: "Pending registrations", value: filteredRows.length },
+              ],
+            },
           )}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           onExportPdf={() => exportRowsToPdf(
             "super-admin-pending-registrations.pdf",
             "Pending school admin registrations",

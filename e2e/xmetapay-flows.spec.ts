@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { expect, test, type BrowserContext, type Download, type Page } from "@playwright/test";
 import { createHmac, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import mysql from "mysql2/promise";
@@ -402,7 +402,7 @@ test.describe("XMETA Pay super admin branding", () => {
     await expectBrandLogo(page);
   });
 
-  test("school admin accounts PDF export stays responsive and downloads", async ({ page }) => {
+  test("school admin account exports stay responsive and download", async ({ page }) => {
     test.setTimeout(60_000);
     await ensureE2EUser("admin");
 
@@ -411,11 +411,22 @@ test.describe("XMETA Pay super admin branding", () => {
       await page.goto("/super-admin/admin-accounts", { waitUntil: "domcontentloaded" });
 
       await expect(page.getByRole("heading", { level: 1, name: "School admin accounts" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
 
     await page.waitForLoadState("networkidle");
+    const excelDownloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export Excel" }).click();
+    const excelDownload = await excelDownloadPromise;
+    expect(excelDownload.suggestedFilename()).toBe("super-admin-school-admins.xlsx");
+    await expectExcelWorkbook(excelDownload, {
+      worksheetName: "School admin accounts",
+      title: "School admin accounts",
+      headers: ["Name", "Email", "Phone", "School", "Staff role", "Status", "Last login", "Created"],
+    });
+
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export PDF" }).click();
     const download = await downloadPromise;
@@ -423,10 +434,10 @@ test.describe("XMETA Pay super admin branding", () => {
     expect(download.suggestedFilename()).toBe("super-admin-school-admins.pdf");
   });
 
-  test("pending admin registrations PDF export stays responsive and downloads", async ({ page }) => {
+  test("pending admin registration exports stay responsive and download", async ({ page }) => {
     test.setTimeout(60_000);
     await ensureE2EUser("admin", {
-      name: "E2E Pending Admin",
+      name: "=E2E Pending Admin",
       email: "e2e-pending-admin@xmetapay.test",
       status: "pending",
     });
@@ -436,11 +447,23 @@ test.describe("XMETA Pay super admin branding", () => {
       await page.goto("/super-admin/registrations", { waitUntil: "domcontentloaded" });
 
       await expect(page.getByRole("heading", { level: 1, name: "Admin registrations" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export Excel" })).toBeEnabled();
       await expect(page.getByRole("button", { name: "Export PDF" })).toBeEnabled();
       await expectNoHorizontalOverflow(page);
     }
 
     await page.waitForLoadState("networkidle");
+    const excelDownloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export Excel" }).click();
+    const excelDownload = await excelDownloadPromise;
+    expect(excelDownload.suggestedFilename()).toBe("super-admin-pending-registrations.xlsx");
+    await expectExcelWorkbook(excelDownload, {
+      worksheetName: "Pending registrations",
+      title: "Pending school admin registrations",
+      headers: ["Name", "Email", "Phone", "School", "Staff role", "Created"],
+      expectedTextCell: "=E2E Pending Admin",
+    });
+
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export PDF" }).click();
     const download = await downloadPromise;
@@ -571,6 +594,45 @@ async function expectBrandLogo(page: Page) {
   await expect(logo).toBeVisible();
   await expect(logo).toHaveAttribute("src", /xmetapay-logo\.jpg/);
   await expect.poll(() => logo.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+}
+
+async function expectExcelWorkbook(
+  download: Download,
+  expected: {
+    worksheetName: string;
+    title: string;
+    headers: string[];
+    expectedTextCell?: string;
+  },
+) {
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  const ExcelJS = await import("exceljs");
+  const Workbook = ExcelJS.Workbook ?? ExcelJS.default.Workbook;
+  const workbook = new Workbook();
+  await workbook.xlsx.readFile(downloadPath!);
+  const worksheet = workbook.getWorksheet(expected.worksheetName);
+
+  expect(worksheet).toBeTruthy();
+  expect(worksheet!.getCell("B1").value).toBe("XMETA Pay");
+  expect(worksheet!.getCell("B2").value).toBe(expected.title);
+  expect(worksheet!.views[0]?.state).toBe("frozen");
+  expect(worksheet!.autoFilter).toBeTruthy();
+
+  let headerRowNumber = 0;
+  worksheet!.eachRow((row, rowNumber) => {
+    if (row.getCell(1).value === "Name") headerRowNumber = rowNumber;
+  });
+  expect(headerRowNumber).toBeGreaterThan(0);
+  expect(
+    expected.headers.map((_, index) => worksheet!.getRow(headerRowNumber).getCell(index + 1).value),
+  ).toEqual(expected.headers);
+
+  if (expected.expectedTextCell) {
+    const values: unknown[] = [];
+    worksheet!.eachRow((row) => row.eachCell((cell) => values.push(cell.value)));
+    expect(values).toContain(expected.expectedTextCell);
+  }
 }
 
 function testSessionSecret() {
