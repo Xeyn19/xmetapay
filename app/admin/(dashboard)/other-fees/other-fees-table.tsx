@@ -6,7 +6,8 @@ import { ClipboardList } from "lucide-react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -28,7 +29,15 @@ export type OtherFeeRow = {
   outstanding: string;
 };
 
-export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
+export function OtherFeesTable({
+  items,
+  schoolName,
+  schoolYearName,
+}: {
+  items: OtherFeeRow[];
+  schoolName: string;
+  schoolYearName: string;
+}) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const filteredItems = useMemo(
@@ -40,6 +49,40 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
     [items, query, status],
   );
   const pagination = usePaginatedRows(filteredItems, `${query}|${status}`);
+  const exportColumns: ExportColumn<OtherFeeRow>[] = [
+    { label: "Fee type", value: (item) => item.name },
+    { label: "Description", value: (item) => item.meta },
+    { label: "Default amount", value: (item) => item.amount },
+    { label: "Assigned total", value: (item) => item.totalBilled },
+    { label: "Collected", value: (item) => item.collected },
+    { label: "Outstanding", value: (item) => item.outstanding },
+    { label: "Paid count", value: (item) => item.paidLabel },
+    { label: "Status", value: (item) => item.status },
+  ];
+  const filteredTotals = filteredItems.reduce(
+    (totals, item) => ({
+      assigned: totals.assigned + parseMoney(item.totalBilled),
+      collected: totals.collected + parseMoney(item.collected),
+      outstanding: totals.outstanding + parseMoney(item.outstanding),
+    }),
+    { assigned: 0, collected: 0, outstanding: 0 },
+  );
+  const exportOptions = {
+    context: [
+      { label: "School", value: schoolName },
+      { label: "School year", value: schoolYearName },
+    ],
+    filters: [
+      { label: "Search", value: query.trim() || "All fee types" },
+      { label: "Status", value: filterLabel(status) },
+    ],
+    summary: [
+      { label: "Fee types", value: filteredItems.length },
+      { label: "Assigned total", value: money(filteredTotals.assigned) },
+      { label: "Collected", value: money(filteredTotals.collected) },
+      { label: "Outstanding", value: money(filteredTotals.outstanding) },
+    ],
+  };
 
   return (
     <>
@@ -55,26 +98,22 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
             setQuery("");
             setStatus("all");
           }}
-          onExport={() => exportRowsToCsv("admin-other-fees.csv", filteredItems, [
-            { label: "Fee type", value: (item) => item.name },
-            { label: "Description", value: (item) => item.meta },
-            { label: "Default amount", value: (item) => item.amount },
-            { label: "Assigned total", value: (item) => item.totalBilled },
-            { label: "Collected", value: (item) => item.collected },
-            { label: "Outstanding", value: (item) => item.outstanding },
-            { label: "Paid count", value: (item) => item.paidLabel },
-            { label: "Status", value: (item) => item.status },
-          ])}
-          onExportPdf={() => exportRowsToPdf("admin-other-fees.pdf", "Other fees", filteredItems, [
-            { label: "Fee type", value: (item) => item.name },
-            { label: "Description", value: (item) => item.meta },
-            { label: "Default amount", value: (item) => item.amount },
-            { label: "Assigned total", value: (item) => item.totalBilled },
-            { label: "Collected", value: (item) => item.collected },
-            { label: "Outstanding", value: (item) => item.outstanding },
-            { label: "Paid count", value: (item) => item.paidLabel },
-            { label: "Status", value: (item) => item.status },
-          ])}
+          onExport={() => exportRowsToExcel(
+            "admin-other-fees.xlsx",
+            "Other fees",
+            filteredItems,
+            exportColumns,
+            { worksheetName: "Other fees", ...exportOptions },
+          )}
+          onExportPdf={() => exportRowsToPdf(
+            "admin-other-fees.pdf",
+            "Other fees",
+            filteredItems,
+            exportColumns,
+            exportOptions,
+          )}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredItems.length === 0}
         />
       </div>
@@ -135,4 +174,18 @@ export function OtherFeesTable({ items }: { items: OtherFeeRow[] }) {
       />
     </>
   );
+}
+
+function filterLabel(value: string) {
+  if (value === "all") return "All";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function money(value: number) {
+  return `P${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

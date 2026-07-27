@@ -9,7 +9,7 @@ import {
   DashboardTableControls,
   DashboardTablePagination,
   type ExportColumn,
-  exportRowsToCsv,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -76,6 +76,23 @@ export function CollectionsTable({
   const operationLabel = view === "archived" ? "Restore" : "Archive";
   const exportColumns = collectionExportColumns(view === "archived");
   const filteredAmount = filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0);
+  const exportTitle = view === "archived" ? "Archived tuition collections" : "Active tuition collections";
+  const exportOptions = {
+    context: [
+      { label: "School", value: schoolName },
+      { label: "School year", value: schoolYearName },
+      { label: "View", value: view === "archived" ? "Archived collections" : "Active collections" },
+    ],
+    filters: [
+      { label: "Search", value: query.trim() || "All collections" },
+      { label: "Status", value: filterLabel(status) },
+      { label: "Channel", value: filterLabel(channel) },
+    ],
+    summary: [
+      { label: "Payments", value: filteredRows.length },
+      { label: "Total collected", value: money(filteredAmount) },
+    ],
+  };
 
   const changeView = (nextView: "active" | "archived") => {
     setView(nextView);
@@ -174,33 +191,25 @@ export function CollectionsTable({
             setStatus("all");
             setChannel("all");
           }}
-          onExport={() => exportRowsToCsv(
-            view === "archived" ? "admin-collections-archived.csv" : "admin-collections-active.csv",
-            filteredRows,
-            exportColumns,
-          )}
-          onExportPdf={() => exportRowsToPdf(
-            view === "archived" ? "admin-collections-archived.pdf" : "admin-collections-active.pdf",
-            view === "archived" ? "Archived tuition collections" : "Active tuition collections",
+          onExport={() => exportRowsToExcel(
+            view === "archived" ? "admin-collections-archived.xlsx" : "admin-collections-active.xlsx",
+            exportTitle,
             filteredRows,
             exportColumns,
             {
-              context: [
-                { label: "School", value: schoolName },
-                { label: "School year", value: schoolYearName },
-                { label: "View", value: view === "archived" ? "Archived collections" : "Active collections" },
-              ],
-              filters: [
-                { label: "Search", value: query.trim() || "All collections" },
-                { label: "Status", value: filterLabel(status) },
-                { label: "Channel", value: filterLabel(channel) },
-              ],
-              summary: [
-                { label: "Payments", value: filteredRows.length },
-                { label: "Total collected", value: money(filteredAmount) },
-              ],
+              worksheetName: view === "archived" ? "Archived collections" : "Active collections",
+              ...exportOptions,
             },
           )}
+          onExportPdf={() => exportRowsToPdf(
+            view === "archived" ? "admin-collections-archived.pdf" : "admin-collections-active.pdf",
+            exportTitle,
+            filteredRows,
+            exportColumns,
+            exportOptions,
+          )}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
 

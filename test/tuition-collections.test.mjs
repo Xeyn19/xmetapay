@@ -77,7 +77,12 @@ test("collections table switches archive views locally and preserves controls", 
   assert.match(table, /const operationLabel = view === "archived" \? "Restore" : "Archive"/);
   assert.match(table, /\{operationLabel\} selected/);
   assert.match(table, /role="alertdialog"/);
-  assert.match(table, /exportRowsToCsv/);
+  assert.match(table, /exportRowsToExcel/);
+  assert.match(table, /admin-collections-active\.xlsx/);
+  assert.match(table, /admin-collections-archived\.xlsx/);
+  assert.match(table, /worksheetName: view === "archived" \? "Archived collections" : "Active collections"/);
+  assert.match(table, /exportLabel="Export Excel"/);
+  assert.doesNotMatch(table, /exportRowsToCsv|admin-collections-(?:active|archived)\.csv/);
   assert.match(table, /exportRowsToPdf/);
   assert.match(table, /schoolName/);
   assert.match(table, /schoolYearName/);

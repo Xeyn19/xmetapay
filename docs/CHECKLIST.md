@@ -32,8 +32,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Parent local test payments, fee allocations, receipts, and payment history are implemented.
 - [x] Parent local wallet top-up and wallet transaction history are implemented.
 - [x] Store spending backend is implemented through admin/finance local test purchase recording.
-- [x] Admin CSV and PDF report exports are implemented from operational MySQL records.
-- [x] Real-data admin and parent tables can paginate on screen and export filtered rows as CSV and PDF.
+- [x] Admin spreadsheet and PDF report exports are implemented from operational MySQL records.
+- [x] Real-data admin and parent tables paginate on screen and export filtered rows as CSV/PDF or branded Excel/PDF on designated screens.
 - [x] Queued SMS/email payment reminder history is recorded in `notification_logs` once per day for the same school, linked parent, student, and selected channel.
 - [ ] Real notification sending, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
 
@@ -184,6 +184,7 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 - [x] Show separate CSV and PDF report buttons on the admin reports page.
 - [x] Add pagination plus CSV and PDF filtered-row exports to real-data admin and parent tables.
 - [x] Apply the shared XMETA Pay logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition report and Collection log.
+- [x] Replace CSV with branded Excel on Admin Tuition report, Collection log, and Other fees while preserving filtered-row PDF exports and CSV elsewhere.
 
 Done when: school administrators and finance officers can download CSV and PDF reports generated from operational MySQL records, and real-data table screens can paginate on screen while exporting their filtered rows in both formats.
 
