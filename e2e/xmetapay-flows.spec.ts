@@ -401,6 +401,27 @@ test.describe("XMETA Pay super admin branding", () => {
     ).toBeVisible();
     await expectBrandLogo(page);
   });
+
+  test("school admin accounts PDF export stays responsive and downloads", async ({ page }) => {
+    test.setTimeout(60_000);
+    await ensureE2EUser("admin");
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/super-admin/admin-accounts", { waitUntil: "domcontentloaded" });
+
+      await expect(page.getByRole("heading", { level: 1, name: "School admin accounts" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    await page.waitForLoadState("networkidle");
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export PDF" }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toBe("super-admin-school-admins.pdf");
+  });
 });
 
 type E2ERole = "admin" | "parent" | "super_admin";
