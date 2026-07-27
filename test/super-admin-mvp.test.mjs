@@ -101,6 +101,20 @@ test("super admin dashboard is protected and manages only school admin account s
   assert.doesNotMatch(dashboardPage, /imperson/i);
 });
 
+test("school admin accounts export all filtered rows as a branded PDF", () => {
+  assert.match(adminAccountsTable, /exportRowsToCsv\("super-admin-school-admins\.csv", filteredRows, accountExportColumns\)/);
+  assert.match(adminAccountsTable, /exportRowsToPdf\(/);
+  assert.match(adminAccountsTable, /"super-admin-school-admins\.pdf"/);
+  assert.match(adminAccountsTable, /"School admin accounts"/);
+  assert.match(adminAccountsTable, /filteredRows,\s+accountExportColumns/);
+  assert.match(adminAccountsTable, /Name.*Email.*Phone.*School.*Staff role.*Status.*Last login.*Created/s);
+  assert.match(adminAccountsTable, /Search.*Status.*School/s);
+  assert.match(adminAccountsTable, /Accounts.*Active.*Pending.*Disabled/s);
+  assert.doesNotMatch(adminAccountsTable, /pagination\.pageRows,\s+accountExportColumns/);
+  assert.match(adminAccountsTable, /updateSchoolAdminStatusAction/);
+  assert.match(adminAccountsTable, /\/super-admin\/registrations/);
+});
+
 test("super admin dashboard shows a Recharts-backed school admin registration trend", () => {
   const packageJson = readFileSync("package.json", "utf8");
 

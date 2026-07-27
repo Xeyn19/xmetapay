@@ -6,13 +6,26 @@ import { useMemo, useState } from "react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
+  type ExportColumn,
   exportRowsToCsv,
+  exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
   usePaginatedRows,
 } from "@/app/_components/table-controls";
 import { updateSchoolAdminStatusAction } from "@/app/super-admin/actions";
 import type { SuperAdminAccountRow } from "@/lib/super-admin/records";
+
+const accountExportColumns: ExportColumn<SuperAdminAccountRow>[] = [
+  { label: "Name", value: (row) => row.name },
+  { label: "Email", value: (row) => row.email },
+  { label: "Phone", value: (row) => row.phone },
+  { label: "School", value: (row) => row.schoolName },
+  { label: "Staff role", value: (row) => row.staffRole },
+  { label: "Status", value: (row) => row.status },
+  { label: "Last login", value: (row) => row.lastLogin },
+  { label: "Created", value: (row) => row.createdAt },
+];
 
 function statusClass(status: SuperAdminAccountRow["status"]) {
   if (status === "active") {
@@ -42,6 +55,16 @@ export function SuperAdminAdminsTable({ rows }: { rows: SuperAdminAccountRow[] }
     [query, rows, school, status],
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${status}|${school}`);
+  const filteredStatusTotals = useMemo(
+    () => filteredRows.reduce(
+      (totals, row) => ({
+        ...totals,
+        [row.status]: totals[row.status] + 1,
+      }),
+      { active: 0, pending: 0, disabled: 0 },
+    ),
+    [filteredRows],
+  );
 
   return (
     <>
@@ -59,16 +82,29 @@ export function SuperAdminAdminsTable({ rows }: { rows: SuperAdminAccountRow[] }
             setStatus("all");
             setSchool("all");
           }}
-          onExport={() => exportRowsToCsv("super-admin-school-admins.csv", filteredRows, [
-            { label: "Name", value: (row) => row.name },
-            { label: "Email", value: (row) => row.email },
-            { label: "Phone", value: (row) => row.phone },
-            { label: "School", value: (row) => row.schoolName },
-            { label: "Staff role", value: (row) => row.staffRole },
-            { label: "Status", value: (row) => row.status },
-            { label: "Last login", value: (row) => row.lastLogin },
-            { label: "Created", value: (row) => row.createdAt },
-          ])}
+          onExport={() => exportRowsToCsv("super-admin-school-admins.csv", filteredRows, accountExportColumns)}
+          onExportPdf={() => exportRowsToPdf(
+            "super-admin-school-admins.pdf",
+            "School admin accounts",
+            filteredRows,
+            accountExportColumns,
+            {
+              context: [
+                { label: "Scope", value: "Company school administrators" },
+              ],
+              filters: [
+                { label: "Search", value: query.trim() || "All accounts" },
+                { label: "Status", value: filterLabel(status) },
+                { label: "School", value: school === "all" ? "All schools" : school },
+              ],
+              summary: [
+                { label: "Accounts", value: filteredRows.length },
+                { label: "Active", value: filteredStatusTotals.active },
+                { label: "Pending", value: filteredStatusTotals.pending },
+                { label: "Disabled", value: filteredStatusTotals.disabled },
+              ],
+            },
+          )}
           exportDisabled={filteredRows.length === 0}
         />
       </div>
@@ -145,4 +181,9 @@ export function SuperAdminAdminsTable({ rows }: { rows: SuperAdminAccountRow[] }
       />
     </>
   );
+}
+
+function filterLabel(value: string) {
+  if (value === "all") return "All statuses";
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
