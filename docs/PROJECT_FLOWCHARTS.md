@@ -59,7 +59,7 @@ Implemented:
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - Admin CSV and PDF report exports for monthly revenue, tuition collections, outstanding balances, and wallet/store activity.
-- Admin and parent real-data tables paginate on screen and can export filtered rows as CSV or PDF.
+- Admin and parent real-data tables paginate on screen and export filtered rows as CSV/PDF or branded Excel/PDF on designated screens.
 - Queued in-app payment reminder history through `notification_logs`.
 
 Next:
@@ -795,7 +795,7 @@ SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `S
 
 ## Real-Data Table Export Flow
 
-Implemented for super-admin, admin, and parent screens that already use database-backed tables. Tables paginate on screen, while exports use all filtered rows after search and filters are applied. The two company account screens use branded Excel/PDF: Excel is generated on demand with the logo, metadata, summaries, filterable frozen headings, and print setup; PDF keeps the shared branded renderer. Other table screens retain CSV/PDF. School admin accounts adds search, status, school, and filtered account-state totals; Admin registrations adds pending status plus search, school, and filtered-count context without review controls. The protected Reports-page server PDF route is unchanged.
+Implemented for super-admin, admin, and parent screens that already use database-backed tables. Tables paginate on screen, while exports use all filtered rows after search and filters are applied. The two company account screens and Admin Tuition report, Collection log, and Other fees use branded Excel/PDF: Excel is generated on demand with the logo, metadata, summaries, filterable frozen headings, and print setup; PDF keeps the shared branded renderer. Other table screens retain CSV/PDF. The three Admin workbooks add authenticated school, selected-year, filter, count, and applicable financial-total context. Protected Reports-page server exports are unchanged.
 
 ```mermaid
 flowchart TD
@@ -810,7 +810,7 @@ flowchart TD
   I --> J["Download PDF"]
 ```
 
-Company School admin accounts and pending Admin registrations export branded Excel/PDF. Admin dashboard recent activity, tuition, collections, other fees, allowance, store transactions, enrolled students, and parent contacts, plus parent fee summary, payment history, dashboard recent payments, and wallet activity, retain CSV/PDF.
+Company School admin accounts and pending Admin registrations plus Admin Tuition report, Collection log, and Other fees export branded Excel/PDF. Admin dashboard recent activity, allowance, store transactions, enrolled students, and parent contacts, plus parent fee summary, payment history, dashboard recent payments, and wallet activity, retain CSV/PDF.
 
 ## Practical Testing Flow
 

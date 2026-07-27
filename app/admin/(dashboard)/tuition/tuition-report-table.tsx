@@ -8,7 +8,8 @@ import { TuitionTermScheduleFields } from "@/app/admin/fees/tuition-term-schedul
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -73,6 +74,34 @@ export function TuitionReportTable({
     ),
     [filteredRows],
   );
+  const exportColumns: ExportColumn<TuitionReportRow>[] = [
+    { label: "Student name", value: (row) => row.student },
+    { label: "Grade", value: (row) => row.grade },
+    { label: "Section", value: (row) => row.section },
+    { label: "Fee due", value: (row) => money(row.due) },
+    { label: "Paid", value: (row) => money(row.paid) },
+    { label: "Balance", value: (row) => money(row.balance) },
+    { label: "Last payment", value: (row) => row.lastPayment },
+    { label: "Status", value: (row) => row.status },
+    { label: "Terms", value: (row) => row.termSummary },
+  ];
+  const exportOptions = {
+    context: [
+      { label: "School", value: schoolName },
+      { label: "School year", value: schoolYearName },
+    ],
+    filters: [
+      { label: "Search", value: query.trim() || "All students" },
+      { label: "Status", value: filterLabel(status) },
+      { label: "Grade", value: filterLabel(grade) },
+    ],
+    summary: [
+      { label: "Assignments", value: filteredRows.length },
+      { label: "Total billed", value: money(filteredTotals.due) },
+      { label: "Total paid", value: money(filteredTotals.paid) },
+      { label: "Outstanding", value: money(filteredTotals.balance) },
+    ],
+  };
 
   return (
     <>
@@ -90,44 +119,22 @@ export function TuitionReportTable({
             setStatus("all");
             setGrade("all");
           }}
-          onExport={() => exportRowsToCsv("admin-tuition-report.csv", filteredRows, [
-            { label: "Student name", value: (row) => row.student },
-            { label: "Grade", value: (row) => row.grade },
-            { label: "Section", value: (row) => row.section },
-            { label: "Fee due", value: (row) => row.due },
-            { label: "Paid", value: (row) => row.paid },
-            { label: "Balance", value: (row) => row.balance },
-            { label: "Last payment", value: (row) => row.lastPayment },
-            { label: "Status", value: (row) => row.status },
-            { label: "Terms", value: (row) => row.termSummary },
-          ])}
-          onExportPdf={() => exportRowsToPdf("admin-tuition-report.pdf", "Tuition report", filteredRows, [
-            { label: "Student name", value: (row) => row.student },
-            { label: "Grade", value: (row) => row.grade },
-            { label: "Section", value: (row) => row.section },
-            { label: "Fee due", value: (row) => money(row.due) },
-            { label: "Paid", value: (row) => money(row.paid) },
-            { label: "Balance", value: (row) => money(row.balance) },
-            { label: "Last payment", value: (row) => row.lastPayment },
-            { label: "Status", value: (row) => row.status },
-            { label: "Terms", value: (row) => row.termSummary },
-          ], {
-            context: [
-              { label: "School", value: schoolName },
-              { label: "School year", value: schoolYearName },
-            ],
-            filters: [
-              { label: "Search", value: query.trim() || "All students" },
-              { label: "Status", value: filterLabel(status) },
-              { label: "Grade", value: filterLabel(grade) },
-            ],
-            summary: [
-              { label: "Assignments", value: filteredRows.length },
-              { label: "Total billed", value: money(filteredTotals.due) },
-              { label: "Total paid", value: money(filteredTotals.paid) },
-              { label: "Outstanding", value: money(filteredTotals.balance) },
-            ],
-          })}
+          onExport={() => exportRowsToExcel(
+            "admin-tuition-report.xlsx",
+            "Tuition report",
+            filteredRows,
+            exportColumns,
+            { worksheetName: "Tuition report", ...exportOptions },
+          )}
+          onExportPdf={() => exportRowsToPdf(
+            "admin-tuition-report.pdf",
+            "Tuition report",
+            filteredRows,
+            exportColumns,
+            exportOptions,
+          )}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
       </div>

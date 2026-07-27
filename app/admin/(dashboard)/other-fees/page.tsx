@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminOtherFeesPageRealData } from "@/lib/admin/real-data";
 import { getAdminFeeSetupData } from "@/lib/fees/records";
+import { getAdminSchoolContext } from "@/lib/school/setup";
 import { FeeAssignStudentsForm, FeeCreateTypeForm } from "@/app/admin/fees/fee-management-forms";
 
 import { AlertBanner, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
@@ -13,9 +14,10 @@ import { OtherFeesTable } from "./other-fees-table";
 export default async function OtherFeesPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/other-fees");
-  const [data, feeSetup] = await Promise.all([
+  const [data, feeSetup, schoolContext] = await Promise.all([
     getAdminOtherFeesPageRealData(session.userId),
     getAdminFeeSetupData(session.userId, "other"),
+    getAdminSchoolContext(session.userId),
   ]);
 
   return (
@@ -57,7 +59,11 @@ export default async function OtherFeesPage() {
         }
         bodyClassName="p-0"
       >
-        <OtherFeesTable items={data.items} />
+        <OtherFeesTable
+          items={data.items}
+          schoolName={schoolContext.schoolName}
+          schoolYearName={data.schoolYearName ?? "School year pending"}
+        />
       </DashboardCard>
     </>
   );

@@ -376,6 +376,62 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
   });
 });
 
+test.describe("XMETA Pay admin branded Excel exports", () => {
+  test.beforeEach(async ({ context }) => {
+    await addDatabaseSessionCookie(context, "admin");
+  });
+
+  test("finance table exports stay responsive and download readable workbooks", async ({ page }) => {
+    test.setTimeout(120_000);
+    const reports = [
+      {
+        path: "/admin/tuition",
+        heading: "Tuition report",
+        filename: "admin-tuition-report.xlsx",
+        worksheetName: "Tuition report",
+        title: "Tuition report",
+        headers: ["Student name", "Grade", "Section", "Fee due", "Paid", "Balance", "Last payment", "Status", "Terms"],
+      },
+      {
+        path: "/admin/collections",
+        heading: "Collections log",
+        filename: "admin-collections-active.xlsx",
+        worksheetName: "Active collections",
+        title: "Active tuition collections",
+        headers: ["Reference", "Student", "Grade", "Tuition record", "Amount", "Date and time", "Channel", "Status"],
+      },
+      {
+        path: "/admin/other-fees",
+        heading: "Other school fees",
+        filename: "admin-other-fees.xlsx",
+        worksheetName: "Other fees",
+        title: "Other fees",
+        headers: ["Fee type", "Description", "Default amount", "Assigned total", "Collected", "Outstanding", "Paid count", "Status"],
+      },
+    ];
+
+    for (const report of reports) {
+      for (const width of [320, 375, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(report.path, { waitUntil: "domcontentloaded" });
+        await expect(page.getByRole("heading", { level: 1, name: report.heading })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+      }
+
+      const exportButton = page.getByRole("button", { name: "Export Excel" });
+      if (await exportButton.isEnabled()) {
+        const downloadPromise = page.waitForEvent("download");
+        await exportButton.click();
+        const download = await downloadPromise;
+        expect(download.suggestedFilename()).toBe(report.filename);
+        await expectExcelWorkbook(download, report);
+      }
+    }
+  });
+});
+
 test.describe("XMETA Pay dashboard protection", () => {
   test("admin dashboard redirects to admin login without a session", async ({ page }) => {
     await page.goto("/admin/dashboard");
