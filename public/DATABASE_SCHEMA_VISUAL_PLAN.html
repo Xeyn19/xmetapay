@@ -364,7 +364,7 @@
             <tr>
               <td>Reports</td>
               <td>Operational query views</td>
-              <td>Every visible Admin export uses branded Excel/PDF from authorized display rows or protected report queries. Browser ExcelJS loads on demand; Reports-page Excel/PDF is generated server-side with the canonical logo, school/year context, summaries, and pagination. Legacy protected CSV URLs and parent formats remain compatible. No schema or accounting fields are added.</td>
+              <td>Every visible Admin and Parent table export uses branded Excel/PDF from authorized display rows or protected report queries. Browser ExcelJS loads on demand; Reports-page Excel/PDF is generated server-side with the canonical logo, authorized context, summaries, and pagination. Legacy protected Admin CSV URLs remain compatible. No schema or accounting fields are added.</td>
             </tr>
             <tr>
               <td>Notifications</td>
@@ -792,7 +792,7 @@ flowchart TD
           <li>Add payment and receipt tables.</li>
           <li>Add wallet and wallet transaction tables.</li>
           <li>Add store merchant and store transaction tables. These already exist in the schema and support the implemented Phase 6B write flow.</li>
-          <li>Build CSV/PDF reports from operational query views and CSV/PDF filtered-row table exports from loaded dashboard rows instead of separate report storage tables.</li>
+          <li>Build branded Excel/PDF reports from operational query views and authorized filtered dashboard rows instead of separate report storage tables; retain protected Admin CSV URLs for compatibility.</li>
           <li>Use notification logs for implemented SMTP email payment reminders: queue each row, mark delivery sent with <code>sent_at</code> or failed, and prevent duplicate same-day sends. SMS and scheduled delivery remain future.</li>
         </ol>
         <div class="note">

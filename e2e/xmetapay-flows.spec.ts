@@ -347,6 +347,8 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: "Fee summary" }),
       ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
       const removedTab = page.getByRole("tab", { name: /Removed/ });
       await removedTab.focus();
       await page.keyboard.press("Enter");
@@ -364,6 +366,8 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: "Payment history" }),
       ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
       await page.getByRole("tab", { name: /Archived/ }).click();
       await expect(page.getByRole("button", { name: "Remove selected" })).toBeVisible();
       const removedTab = page.getByRole("tab", { name: /Removed/ });

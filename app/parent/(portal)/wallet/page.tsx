@@ -51,9 +51,10 @@ export default async function WalletPage() {
         <ParentCard title="Wallet transaction history" icon={History} className="xl:col-span-2" bodyClassName="p-0">
           <ParentWalletActivityTable
             rows={data.transactions}
-            csvFilename="parent-wallet-transactions.csv"
+            excelFilename="parent-wallet-transactions.xlsx"
             pdfFilename="parent-wallet-transactions.pdf"
             exportTitle="Wallet transaction history"
+            worksheetName="Wallet transactions"
           />
         </ParentCard>
       </div>

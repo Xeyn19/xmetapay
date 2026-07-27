@@ -82,7 +82,8 @@ test("parent payment pages use real database helpers instead of static payment a
   assert.match(historyTable, /usePaginatedRows/);
   assert.match(historyTable, /DashboardTablePagination/);
   assert.match(historyTable, /pagination\.pageRows\.map/);
-  assert.match(historyTable, /parent-payment-history\.csv/);
+  assert.match(historyTable, /parent-payment-history\.xlsx/);
+  assert.match(historyTable, /exportRowsToExcel/);
   assert.match(historyTable, /parent-payment-history\.pdf/);
   assert.match(historyTable, /exportRowsToPdf/);
   assert.doesNotMatch(parentPortalData, /export const payableFees/);
@@ -143,9 +144,9 @@ test("parent Payment history archive views switch locally and preserve exports a
   assert.match(table, /row\.archiveEligible/);
   assert.match(table, /Pending payments cannot be archived/);
   assert.match(table, /router\.refresh\(\)/);
-  assert.match(table, /parent-payment-history-archived\.csv/);
+  assert.match(table, /parent-payment-history-archived\.xlsx/);
   assert.match(table, /parent-payment-history-archived\.pdf/);
-  assert.match(table, /parent-payment-history-removed\.csv/);
+  assert.match(table, /parent-payment-history-removed\.xlsx/);
   assert.match(table, /parent-payment-history-removed\.pdf/);
   assert.match(table, /Restore selected to Archived/);
   assert.match(table, /Permanently hidden/);
@@ -216,7 +217,8 @@ test("parent dashboard reflects real payment summary and recent payment rows", (
   assert.match(dashboardTable, /usePaginatedRows/);
   assert.match(dashboardTable, /DashboardTablePagination/);
   assert.match(dashboardTable, /pagination\.pageRows\.map/);
-  assert.match(dashboardTable, /parent-recent-payments\.csv/);
+  assert.match(dashboardTable, /parent-recent-payments\.xlsx/);
+  assert.match(dashboardTable, /exportRowsToExcel/);
   assert.match(dashboardTable, /parent-recent-payments\.pdf/);
   assert.match(dashboardTable, /exportRowsToPdf/);
   assert.match(dashboardTable, /No payment records yet/);

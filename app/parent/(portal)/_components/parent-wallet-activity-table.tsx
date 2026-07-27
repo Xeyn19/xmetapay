@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import {
   DashboardTableControls,
   DashboardTablePagination,
-  exportRowsToCsv,
+  type ExportColumn,
+  exportRowsToExcel,
   exportRowsToPdf,
   filterByQuery,
   toFilterOptions,
@@ -17,15 +18,17 @@ import { ParentTable, StatusPill } from "../../_components/parent-ui";
 
 export function ParentWalletActivityTable({
   rows,
-  csvFilename = "parent-wallet-activity.csv",
+  excelFilename = "parent-wallet-activity.xlsx",
   pdfFilename = "parent-wallet-activity.pdf",
   exportTitle = "Wallet activity",
+  worksheetName = "Wallet activity",
   showStudent = true,
 }: {
   rows: ParentWalletActivity[];
-  csvFilename?: string;
+  excelFilename?: string;
   pdfFilename?: string;
   exportTitle?: string;
+  worksheetName?: string;
   showStudent?: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -61,6 +64,26 @@ export function ParentWalletActivityTable({
       { label: "Balance", className: "w-[14%]" },
       { label: "Status", className: "w-[14%]" },
     ];
+  const exportColumns: ExportColumn<ParentWalletActivity>[] = [
+    ...(showStudent ? [{ label: "Student", value: (row: ParentWalletActivity) => row.studentName }] : []),
+    { label: "Date", value: (row) => row.date },
+    { label: "Description", value: (row) => row.description },
+    { label: "Channel", value: (row) => row.channel },
+    { label: "Amount", value: (row) => row.amount },
+    { label: "Balance after", value: (row) => row.balanceAfter },
+    { label: "Status", value: (row) => row.status },
+  ];
+  const exportOptions = {
+    filters: [
+      { label: "Search", value: query.trim() || "All activity" },
+      { label: "Status", value: status === "all" ? "All" : status },
+      { label: "Channel", value: channel === "all" ? "All" : channel },
+    ],
+    summary: [
+      { label: "Transactions", value: filteredRows.length },
+      { label: "Net activity", value: formatMoney(filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0)) },
+    ],
+  };
 
   return (
     <>
@@ -79,24 +102,13 @@ export function ParentWalletActivityTable({
             setStatus("all");
             setChannel("all");
           }}
-          onExport={() => exportRowsToCsv(csvFilename, filteredRows, [
-            ...(showStudent ? [{ label: "Student", value: (row: ParentWalletActivity) => row.studentName }] : []),
-            { label: "Date", value: (row) => row.date },
-            { label: "Description", value: (row) => row.description },
-            { label: "Channel", value: (row) => row.channel },
-            { label: "Amount", value: (row) => row.amount },
-            { label: "Balance after", value: (row) => row.balanceAfter },
-            { label: "Status", value: (row) => row.status },
-          ])}
-          onExportPdf={() => exportRowsToPdf(pdfFilename, exportTitle, filteredRows, [
-            ...(showStudent ? [{ label: "Student", value: (row: ParentWalletActivity) => row.studentName }] : []),
-            { label: "Date", value: (row) => row.date },
-            { label: "Description", value: (row) => row.description },
-            { label: "Channel", value: (row) => row.channel },
-            { label: "Amount", value: (row) => row.amount },
-            { label: "Balance after", value: (row) => row.balanceAfter },
-            { label: "Status", value: (row) => row.status },
-          ])}
+          onExport={() => exportRowsToExcel(excelFilename, exportTitle, filteredRows, exportColumns, {
+            worksheetName,
+            ...exportOptions,
+          })}
+          onExportPdf={() => exportRowsToPdf(pdfFilename, exportTitle, filteredRows, exportColumns, exportOptions)}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
       </div>
@@ -136,4 +148,13 @@ export function ParentWalletActivityTable({
       />
     </>
   );
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.+-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatMoney(value: number) {
+  return `P${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

@@ -128,7 +128,8 @@ test("parent wallet history labels store purchases as spending", () => {
   assert.match(walletRecords, /row\.type === "purchase"/);
   assert.match(parentDashboard, /Recent wallet activity/);
   assert.match(walletActivityTable, /Channel/);
-  assert.match(walletActivityTable, /parent-wallet-activity\.csv/);
+  assert.match(walletActivityTable, /parent-wallet-activity\.xlsx/);
+  assert.match(walletActivityTable, /exportRowsToExcel/);
   assert.match(walletActivityTable, /parent-wallet-activity\.pdf/);
   assert.match(walletActivityTable, /exportRowsToPdf/);
   assert.doesNotMatch(paymentRecords, /store_transactions/);

@@ -399,7 +399,7 @@ Current implemented CSV and PDF report exports:
 
 Scheduled reports and notification-driven report delivery are future features. Immediate payment reminder email delivery is implemented separately through `notification_logs` and SMTP.
 
-Real-data dashboard tables also support browser-side pagination plus browser-generated exports. Every visible Admin table export uses branded Excel/PDF with the canonical logo, authenticated school and selected-year context, filters, counts, applicable totals, formula-safe cells, repeated headings, and page footers. Parent table formats remain unchanged. The protected Reports page uses the same presentation language for server-generated Excel/PDF while retaining legacy CSV endpoint compatibility. These exports use already-authorized display rows or protected report queries, so they require no report storage tables and never change authoritative records.
+Real-data dashboard tables also support browser-side pagination plus browser-generated exports. Every visible Admin and Parent table export uses branded Excel/PDF with the canonical logo, authorized context, filters, counts, applicable totals, formula-safe cells, repeated headings, and page footers. Parent Fee summary, Payment history, recent payments, and wallet activity use all filtered parent-scoped display rows; Removed exports retain removal and recovery metadata. The protected Reports page uses the same presentation language for server-generated Excel/PDF while retaining legacy CSV endpoint compatibility. These exports require no report storage tables and never change authoritative records.
 
 ## Notification Table
 
@@ -456,7 +456,7 @@ The schema supports this practical backend flow:
 - `receipts` documents paid payments.
 - `wallets`, `wallet_transactions`, and `wallet_top_up_batches` track student allowance balances, atomic parent batches, dashboard wallet activity, selected student wallet activity, full wallet ledger history, and the school year for new ledger rows. `wallet_ledger_archives` only controls selected-year admin Allowance ledger visibility.
 - `store_transactions` records wallet spending at school merchants and stores the school year for new purchase rows.
-- Report CSV and PDF exports read from operational tables and do not require separate report storage tables.
+- Branded Excel and PDF exports read from authorized operational rows and do not require separate report storage tables; protected Admin report CSV URLs remain available for compatibility.
 - `notification_logs` records communication history and stores the school year for new reminder rows.
 
 ## Safety Notes

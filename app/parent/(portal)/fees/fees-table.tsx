@@ -10,8 +10,9 @@ import {
   DashboardTablePagination,
   addBrandedPdfTable,
   createBrandedPdfDocument,
+  type BrandedPdfOptions,
   type ExportColumn,
-  exportRowsToCsv,
+  exportRowsToExcel,
   finalizeBrandedPdf,
   filterByQuery,
   toFilterOptions,
@@ -100,6 +101,21 @@ export function ParentFeesTable({
   const allSelectablePageRowsSelected = selectablePageIds.length > 0
     && selectablePageIds.every((id) => selectedSet.has(id));
   const exportColumns = feeExportColumns(view);
+  const exportTitle = view === "archived" ? "Archived fee summary" : view === "removed" ? "Removed fee history" : "Current fee summary";
+  const exportOptions = {
+    context: [{ label: "View", value: exportTitle }],
+    filters: [
+      { label: "Search", value: query.trim() || "All fees" },
+      { label: "Category", value: category === "all" ? "All" : category },
+      { label: "Status", value: status === "all" ? "All" : status },
+    ],
+    summary: [
+      { label: "Fees", value: filteredRows.length },
+      { label: "Billed", value: formatMoney(filteredRows.reduce((total, row) => total + parseMoney(row.amountDue), 0)) },
+      { label: "Paid", value: formatMoney(filteredRows.reduce((total, row) => total + parseMoney(row.amountPaid), 0)) },
+      { label: "Balance", value: formatMoney(filteredRows.reduce((total, row) => total + parseMoney(row.balance), 0)) },
+    ],
+  };
 
   const changeView = (nextView: FeeView) => {
     setView(nextView);
@@ -236,12 +252,19 @@ export function ParentFeesTable({
             setCategory("all");
             setStatus("all");
           }}
-          onExport={() => exportRowsToCsv(
-            view === "archived" ? "parent-fee-summary-archived.csv" : view === "removed" ? "parent-fee-summary-removed.csv" : "parent-fee-summary.csv",
+          onExport={() => exportRowsToExcel(
+            view === "archived" ? "parent-fee-summary-archived.xlsx" : view === "removed" ? "parent-fee-summary-removed.xlsx" : "parent-fee-summary.xlsx",
+            exportTitle,
             filteredRows,
             exportColumns,
+            {
+              worksheetName: view === "archived" ? "Archived fees" : view === "removed" ? "Removed fees" : "Fee summary",
+              ...exportOptions,
+            },
           )}
-          onExportPdf={() => exportParentFeeSummaryPdf(filteredRows, view)}
+          onExportPdf={() => exportParentFeeSummaryPdf(filteredRows, view, exportOptions)}
+          exportLabel="Export Excel"
+          exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
 
@@ -515,11 +538,11 @@ function emptyState(view: FeeView, hasRows: boolean, hasFilters: boolean) {
   return "No assigned fees yet.";
 }
 
-async function exportParentFeeSummaryPdf(rows: ParentFeeRow[], view: FeeView) {
+async function exportParentFeeSummaryPdf(rows: ParentFeeRow[], view: FeeView, options: BrandedPdfOptions) {
   const title = view === "archived" ? "Archived fee summary" : view === "removed" ? "Removed fee history" : "Current fee summary";
   const { doc, startY } = await createBrandedPdfDocument(title, rows.length, {
     orientation: "landscape",
-    context: [{ label: "View", value: title }],
+    ...options,
   });
   const columns = ["Student", "Reference", "Fee", "Category", "Billed", "Paid", "Balance", "Due date", "Status", ...(view === "archived" ? ["Archived"] : []), ...(view === "removed" ? ["Removed", "Recovery deadline", "State"] : [])];
   const body = rows.length > 0
@@ -541,4 +564,13 @@ async function exportParentFeeSummaryPdf(rows: ParentFeeRow[], view: FeeView) {
       }
   });
   finalizeBrandedPdf(doc, view === "archived" ? "parent-fee-summary-archived.pdf" : view === "removed" ? "parent-fee-summary-removed.pdf" : "parent-fee-summary.pdf");
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatMoney(value: number) {
+  return `P${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

@@ -254,10 +254,11 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(feesTable, /usePaginatedRows/);
   assert.match(feesTable, /DashboardTablePagination/);
   assert.match(feesTable, /pagination\.pageRows\.map/);
-  assert.match(feesTable, /parent-fee-summary\.csv/);
+  assert.match(feesTable, /parent-fee-summary\.xlsx/);
+  assert.match(feesTable, /exportRowsToExcel/);
   assert.match(feesTable, /parent-fee-summary\.pdf/);
-  assert.match(feesTable, /async function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\], view: FeeView\)/);
-  assert.match(feesTable, /onExportPdf=\{\(\) => exportParentFeeSummaryPdf\(filteredRows, view\)\}/);
+  assert.match(feesTable, /async function exportParentFeeSummaryPdf\(rows: ParentFeeRow\[\], view: FeeView, options: BrandedPdfOptions\)/);
+  assert.match(feesTable, /onExportPdf=\{\(\) => exportParentFeeSummaryPdf\(filteredRows, view, exportOptions\)\}/);
   assert.match(feesTable, /createBrandedPdfDocument/);
   assert.match(feesTable, /addBrandedPdfTable/);
   assert.match(feesTable, /finalizeBrandedPdf/);
@@ -349,7 +350,7 @@ test("parent Fee summary archive table switches locally with selection and immed
   assert.match(table, /setRemovedFeeRows/);
   assert.match(table, /Restore selected to Archived/);
   assert.match(table, /Permanently hidden/);
-  assert.match(table, /parent-fee-summary-removed\.csv/);
+  assert.match(table, /parent-fee-summary-removed\.xlsx/);
   assert.match(table, /parent-fee-summary-removed\.pdf/);
   assert.match(table, /result\.updatedIds/);
   assert.match(table, /role="alertdialog"/);
