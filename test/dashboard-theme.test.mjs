@@ -15,14 +15,28 @@ test("every dashboard shell uses the shared theme boundary and toggle", () => {
   }
 });
 
-test("dashboard theming keeps charcoal sidebars and semantic operational surfaces", () => {
+test("dashboard theming provides adaptive sidebars and semantic operational surfaces", () => {
   assert.match(globalCss, /\.dashboard-theme/);
   assert.match(globalCss, /\.dashboard-theme \.dashboard-sidebar/);
-  assert.match(globalCss, /background: #0f1117/);
+  assert.match(globalCss, /--sidebar: #ffffff/);
+  assert.match(globalCss, /\.dark \{[\s\S]*--sidebar: #0b0d13/);
+  assert.match(globalCss, /background: var\(--sidebar\)/);
+  assert.match(globalCss, /color: var\(--sidebar-foreground\)/);
+  assert.match(globalCss, /\.dark \.dashboard-theme \.dashboard-sidebar/);
   assert.match(globalCss, /\.dark \.dashboard-theme/);
   assert.match(globalCss, /--status-success-bg/);
   assert.match(globalCss, /--status-warning-bg/);
   assert.match(globalCss, /--status-danger-bg/);
   assert.match(globalCss, /recharts-cartesian-grid/);
   assert.match(globalCss, /recharts-default-tooltip/);
+});
+
+test("dashboard shells use semantic sidebar navigation states", () => {
+  for (const shell of [adminShell, parentShell, superAdminShell]) {
+    assert.match(shell, /bg-sidebar/);
+    assert.match(shell, /text-sidebar-foreground/);
+    assert.match(shell, /border-sidebar-border/);
+    assert.match(shell, /bg-sidebar-primary/);
+    assert.match(shell, /focus-visible:ring-sidebar-ring/);
+  }
 });
