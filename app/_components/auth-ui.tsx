@@ -28,10 +28,10 @@ export function BrandMark() {
     >
       <BrandLogo />
       <span className="min-w-0">
-        <span className="block truncate text-base font-bold tracking-tight text-[#11131a]">
+        <span className="block truncate text-base font-bold tracking-tight text-white">
           XMETA Pay
         </span>
-        <span className="block truncate text-xs font-medium text-zinc-500">
+        <span className="block truncate text-xs font-medium text-zinc-400">
           School payments, simplified
         </span>
       </span>
@@ -47,8 +47,8 @@ export function PublicPageShell({
   headerAction?: React.ReactNode;
 }) {
   return (
-    <main className="min-h-[100svh] overflow-x-hidden bg-[#f7f8fa] px-4 py-4 text-[#11131a] sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-5xl flex-col sm:min-h-[calc(100svh-48px)]">
+    <main className="public-auth-shell relative min-h-[100svh] overflow-hidden px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-5xl flex-col sm:min-h-[calc(100svh-48px)]">
         <header className="flex min-h-12 items-center justify-between gap-3">
           <BrandMark />
           {headerAction}
@@ -69,7 +69,7 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-[0_16px_45px_rgba(17,19,26,0.08)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[#e64a19] sm:p-7",
+        "relative w-full overflow-hidden rounded-xl border border-white/[0.13] bg-[#202122]/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.42)] backdrop-blur-xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-[#ff7043] before:to-transparent sm:p-7",
         wide ? "max-w-4xl lg:p-8" : "max-w-md",
       )}
     >
@@ -95,7 +95,7 @@ export function PortalAuthLayout({
       headerAction={
         <Link
           href="/"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-button-outline bg-white px-3 py-2 text-sm font-semibold text-[#bf360c] shadow-sm transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 sm:px-4"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.06] px-3 py-2 text-sm font-semibold text-zinc-200 shadow-sm transition hover:border-[#ff7043]/50 hover:bg-[#e64a19]/10 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 sm:px-4"
         >
           All portals
         </Link>
@@ -104,11 +104,11 @@ export function PortalAuthLayout({
         <section className={isLogin ? "flex flex-1 items-center justify-center py-8 sm:py-10" : "flex flex-1 items-start justify-center py-8 sm:py-10 lg:py-12"}>
           <AuthCard wide={!isLogin}>
             {children}
-            <div className={isLogin ? "mt-5 border-t border-zinc-100 pt-4 text-center text-sm text-zinc-600" : "mt-7 border-t border-zinc-100 pt-5 text-center text-sm text-zinc-600"}>
+            <div className={isLogin ? "mt-5 border-t border-white/10 pt-4 text-center text-sm text-zinc-400" : "mt-7 border-t border-white/10 pt-5 text-center text-sm text-zinc-400"}>
               {mode === "login" ? "New to this portal?" : "Already have access?"}{" "}
               <Link
                 href={`/${portal}/${otherMode}`}
-                className="rounded-md font-bold text-[#bf360c] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
+                className="rounded-md font-bold text-[#ff8a65] hover:text-[#ffb09a] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
               >
                 {mode === "login" ? "Create an account" : "Sign in instead"}
               </Link>
@@ -166,10 +166,10 @@ export function AuthForm({
         <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e64a19]">
           {portal === "admin" ? "Admin access" : "Family access"}
         </p>
-        <h1 className={isLogin ? "mt-2 text-2xl font-bold leading-tight tracking-tight text-[#11131a]" : "mt-2 text-2xl font-bold leading-tight tracking-tight text-[#11131a] sm:text-3xl"}>
+        <h1 className={isLogin ? "mt-2 text-2xl font-bold leading-tight tracking-tight text-white" : "mt-2 text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl"}>
           {title}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
           {subtitle}
         </p>
       </div>
@@ -207,7 +207,7 @@ export function AuthForm({
         <div className="text-right">
           <Link
             href={`/${portal}/forgot-password`}
-            className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-bold text-[#bf360c] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
+            className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-bold text-[#ff8a65] hover:text-[#ffb09a] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
           >
             Forgot password?
           </Link>
@@ -215,7 +215,7 @@ export function AuthForm({
       ) : null}
 
       {state.message ? (
-        <p className="rounded-lg border border-[#f4b6a5] bg-[#fff4f0] px-3 py-2 text-sm font-semibold text-[#9f2f12]" aria-live="polite">
+        <p className="rounded-lg border border-red-400/25 bg-red-950/35 px-3 py-2 text-sm font-semibold text-red-200" aria-live="polite">
           {state.message}
         </p>
       ) : null}
@@ -256,16 +256,16 @@ function AuthField({
 
   return (
     <label className={cn("block", field.spanFull && "sm:col-span-2")}>
-      <span className={compact ? "mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-500" : `mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-500 sm:text-xs sm:tracking-[0.12em] ${alignLabel ? "min-h-8 sm:min-h-0" : ""}`}>
+      <span className={compact ? "mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-400" : `mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-400 sm:text-xs sm:tracking-[0.12em] ${alignLabel ? "min-h-8 sm:min-h-0" : ""}`}>
         {field.label}
-        {!required ? <span className="ml-1 font-semibold normal-case tracking-normal text-zinc-400">(optional)</span> : null}
+        {!required ? <span className="ml-1 font-semibold normal-case tracking-normal text-zinc-500">(optional)</span> : null}
       </span>
       {field.options ? (
         <select
           name={field.name}
           required={required}
           aria-invalid={Boolean(error)}
-          className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
+          className="min-h-12 w-full rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-sm text-white outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
           value={value}
           onChange={(event) => onValueChange(field.name, event.target.value)}
         >
@@ -285,7 +285,7 @@ function AuthField({
           value={value}
           onChange={(event) => onValueChange(field.name, event.target.value)}
           aria-invalid={Boolean(error)}
-          className="px-3 py-2 text-sm text-[#11131a] placeholder:text-zinc-400"
+          className="px-3 py-2 text-sm text-white placeholder:text-zinc-500"
         />
       ) : (
         <input
@@ -296,11 +296,11 @@ function AuthField({
           value={value}
           onChange={(event) => onValueChange(field.name, event.target.value)}
           aria-invalid={Boolean(error)}
-          className="min-h-12 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
+          className="min-h-12 w-full rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
         />
       )}
       {showPasswordHelp ? (
-        <span className="mt-1.5 block text-xs font-medium text-zinc-500">
+        <span className="mt-1.5 block text-xs font-medium text-zinc-400">
           Use at least 8 characters.
         </span>
       ) : null}
@@ -328,21 +328,21 @@ function StudentReferencesField({ error }: { error?: string }) {
   return (
     <div className="sm:col-span-2">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <span className="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-500 sm:text-xs sm:tracking-[0.12em]">
+        <span className="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-400 sm:text-xs sm:tracking-[0.12em]">
           Student IDs or references
         </span>
         <span className="rounded-md bg-[#fbe9e7] px-2 py-1 text-[11px] font-bold text-[#bf360c]">
           {countLabel}
         </span>
       </div>
-      <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-[0_1px_0_rgba(17,19,26,0.03)] sm:p-4">
-        <p className="max-w-2xl text-xs leading-5 text-zinc-500 sm:text-[13px] sm:leading-6">
+      <div className="rounded-lg border border-white/10 bg-black/15 p-3 sm:p-4">
+        <p className="max-w-2xl text-xs leading-5 text-zinc-400 sm:text-[13px] sm:leading-6">
           Enter the student references from the school. Add all children you want connected to this parent account.
         </p>
         <div className="mt-3 grid gap-2.5">
           {references.map((reference, index) => (
             <div key={index} className="grid gap-2 min-[560px]:grid-cols-[2rem_minmax(0,1fr)_auto] min-[560px]:items-center">
-              <span className="hidden size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs font-bold text-zinc-500 min-[560px]:inline-flex">
+              <span className="hidden size-8 items-center justify-center rounded-lg bg-white/[0.07] text-xs font-bold text-zinc-400 min-[560px]:inline-flex">
                 {index + 1}
               </span>
               <input
@@ -354,13 +354,13 @@ function StudentReferencesField({ error }: { error?: string }) {
                 required={index === 0}
                 aria-label={`Student reference ${index + 1}`}
                 aria-invalid={Boolean(error)}
-                className="min-h-12 min-w-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-[#11131a] outline-none transition placeholder:text-zinc-400 focus:border-[#e64a19] focus:ring-4 focus:ring-[#e64a19]/10"
+                className="min-h-12 min-w-0 rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
               />
               {references.length > 1 ? (
                 <button
                   type="button"
                   onClick={() => removeReference(index)}
-                  className="min-h-11 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-600 transition hover:bg-zinc-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 min-[560px]:min-h-12"
+                  className="min-h-11 rounded-lg border border-white/15 bg-white/[0.05] px-3 text-sm font-bold text-zinc-300 transition hover:bg-white/10 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 min-[560px]:min-h-12"
                 >
                   Remove
                 </button>
@@ -372,11 +372,11 @@ function StudentReferencesField({ error }: { error?: string }) {
           <button
             type="button"
             onClick={addReference}
-            className="min-h-11 rounded-lg border border-button-outline bg-white px-3 text-sm font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
+            className="min-h-11 rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[#ff9a7a] transition hover:bg-[#e64a19]/20 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
           >
             Add another student
           </button>
-          <span className="text-xs leading-5 text-zinc-500">
+          <span className="text-xs leading-5 text-zinc-400">
             Duplicate references are ignored safely.
           </span>
         </div>
@@ -402,14 +402,14 @@ export function PortalCard({
   const isAdmin = variant === "admin";
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-5 text-left text-[#11131a] shadow-[0_12px_35px_rgba(17,19,26,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[#e64a19]/30 hover:shadow-[0_16px_40px_rgba(17,19,26,0.09)] sm:p-6">
-      <div className="flex size-11 items-center justify-center rounded-lg bg-[#fff1ec] text-[#d84315] ring-1 ring-[#e64a19]/10">
+    <article className="flex h-full flex-col rounded-xl border border-white/[0.13] bg-[#202122]/88 p-5 text-left text-white shadow-[0_20px_55px_rgba(0,0,0,0.32)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#ff7043]/40 hover:bg-[#242526]/92 hover:shadow-[0_24px_60px_rgba(0,0,0,0.4)] sm:p-6">
+      <div className="flex size-11 items-center justify-center rounded-lg bg-[#e64a19]/15 text-[#ff8a65] ring-1 ring-[#ff7043]/20">
         {isAdmin ? <SettingsIcon /> : <PeopleIcon />}
       </div>
       <h2 className="mt-4 text-xl font-bold leading-tight tracking-tight">
         {title}
       </h2>
-      <p className="mt-2 flex-1 text-sm leading-6 text-zinc-600">
+      <p className="mt-2 flex-1 text-sm leading-6 text-zinc-400">
         {description}
       </p>
       <div className="mt-5 flex flex-col gap-3 min-[420px]:flex-row">
@@ -421,7 +421,7 @@ export function PortalCard({
         </Link>
         <Link
           href={registerHref}
-          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-button-outline bg-white px-4 py-2 text-sm font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10"
+          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/15 bg-white/[0.055] px-4 py-2 text-sm font-bold text-zinc-200 transition hover:border-[#ff7043]/40 hover:bg-[#e64a19]/10 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
         >
           Register
         </Link>

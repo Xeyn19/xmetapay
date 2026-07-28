@@ -17,6 +17,7 @@ test.describe("XMETA Pay portal entry", () => {
     await expect(page.getByText("Parent / Guardian")).toBeVisible();
     await expect(page.getByRole("link", { name: "Company login" })).toHaveAttribute("href", "/login");
     await expect(page.getByText("Brentwood Academy of Las Pinas")).toHaveCount(0);
+    await expectDarkPublicShell(page);
     await expectBrandLogo(page);
   });
 
@@ -33,6 +34,7 @@ test.describe("XMETA Pay portal entry", () => {
     test(`${route} shows the shared brand logo`, async ({ page }) => {
       await page.goto(route);
 
+      await expectDarkPublicShell(page);
       await expectBrandLogo(page);
     });
   }
@@ -124,6 +126,7 @@ test.describe("XMETA Pay portal entry", () => {
 
       expect(metrics.scrollWidth).toBe(metrics.clientWidth);
       await expect(page.getByRole("link", { name: "Company login" })).toBeVisible();
+      await expectDarkPublicShell(page);
       await expectBrandLogo(page);
     }
   });
@@ -146,6 +149,7 @@ test.describe("XMETA Pay portal entry", () => {
           page.getByRole("button", { name: "Send reset code" }),
         ).toBeVisible();
         await expectNoHorizontalOverflow(page);
+        await expectDarkPublicShell(page);
         await expectBrandLogo(page);
       }
     }
@@ -720,6 +724,13 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page)
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
   expect(overflow).toBeLessThanOrEqual(1);
+}
+
+async function expectDarkPublicShell(page: Page) {
+  const shell = page.locator("main.public-auth-shell");
+
+  await expect(shell).toBeVisible();
+  await expect(shell).toHaveCSS("overflow-x", "hidden");
 }
 
 async function expectBrandLogo(page: Page) {

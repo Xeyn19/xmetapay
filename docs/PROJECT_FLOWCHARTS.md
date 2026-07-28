@@ -23,7 +23,7 @@ Related documents:
 
 Implemented:
 
-- Public XMETA Pay entry at `/` with admin and parent portal choices plus a separate company sign-in link.
+- Dark responsive XMETA Pay public shell at `/` with admin and parent portal choices plus a separate company sign-in link; the same presentation covers role authentication and recovery.
 - Company super admin login at `/login`.
 - Admin/school registration and login.
 - Parent registration and login.
