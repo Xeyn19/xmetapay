@@ -43,6 +43,14 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #2d3348;
   --sidebar-ring: #e64a19;
+  --status-success-bg: #e8f5e9;
+  --status-success-foreground: #2e7d32;
+  --status-warning-bg: #fff7ed;
+  --status-warning-foreground: #8a4b00;
+  --status-danger-bg: #ffebee;
+  --status-danger-foreground: #c62828;
+  --status-info-bg: #e8f1ff;
+  --status-info-foreground: #24518f;
 }
 
 .dark {
@@ -84,6 +92,14 @@
   --sidebar-accent-foreground: #f7f8fa;
   --sidebar-border: #384052;
   --sidebar-ring: #ff6a3d;
+  --status-success-bg: #17351f;
+  --status-success-foreground: #8bd49a;
+  --status-warning-bg: #3b2a16;
+  --status-warning-foreground: #ffc46b;
+  --status-danger-bg: #3d1c23;
+  --status-danger-foreground: #ff9ca8;
+  --status-info-bg: #1b2b45;
+  --status-info-foreground: #9fc3ff;
 }
 
 @theme inline {
@@ -168,7 +184,7 @@ body {
     linear-gradient(145deg, #121314 0%, #171819 48%, #101317 100%);
 }
 
-[data-public-theme="light"] .public-auth-shell {
+.light .public-auth-shell {
   --public-text: #17191d;
   --public-muted: #5f6673;
   --public-subtle: #7a818c;
@@ -192,7 +208,19 @@ body {
     linear-gradient(145deg, #eef1f5 0%, #ffffff 48%, #e8eef6 100%);
 }
 
-.public-theme-toggle,
+.theme-toggle {
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+.theme-toggle:hover {
+  border-color: rgb(255 112 67 / 0.55);
+  background: var(--accent);
+}
+
+.public-auth-shell .theme-toggle,
 .public-secondary-action {
   border: 1px solid var(--public-border);
   color: var(--public-text);
@@ -200,14 +228,14 @@ body {
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
 
-.public-theme-toggle:hover,
+.public-auth-shell .theme-toggle:hover,
 .public-secondary-action:hover {
   border-color: rgb(255 112 67 / 0.55);
   color: var(--public-text);
   background: rgb(230 74 25 / 0.1);
 }
 
-.public-theme-toggle:disabled {
+.theme-toggle:disabled {
   opacity: 0.72;
 }
 
@@ -247,7 +275,7 @@ body {
   color: var(--public-link-hover);
 }
 
-[data-public-theme="light"] .public-auth-shell::after {
+.light .public-auth-shell::after {
   opacity: 0.17;
   filter: none;
 }
@@ -288,7 +316,191 @@ body {
     opacity: 0.1;
   }
 
-  [data-public-theme="light"] .public-auth-shell::after {
+  .light .public-auth-shell::after {
     opacity: 0.14;
   }
+}
+
+/* Shared operational dashboard theme boundary. Sidebars intentionally keep
+   their charcoal brand treatment in both modes. */
+.dashboard-theme {
+  min-height: 100svh;
+  color: var(--foreground);
+  background: var(--background);
+  color-scheme: light;
+}
+
+.dark .dashboard-theme {
+  color-scheme: dark;
+}
+
+.dashboard-theme .dashboard-sidebar {
+  color-scheme: dark;
+  color: #ffffff;
+  background: #0f1117;
+}
+
+.dashboard-theme .dashboard-sidebar [class*="border-black"] {
+  border-color: rgb(255 255 255 / 0.08);
+}
+
+.dashboard-theme .dashboard-sidebar :is(
+  [class~="text-[#1a1a1a]"],
+  [class~="text-[#6b6b6b]"]
+) {
+  color: rgb(255 255 255 / 0.62);
+}
+
+.dashboard-theme .dashboard-sidebar :is(
+  [class~="text-[#9e9e9e]"]
+) {
+  color: rgb(255 255 255 / 0.34);
+}
+
+.dashboard-theme .dashboard-sidebar :is(
+  [class~="bg-[#fbe9e7]"],
+  [class~="bg-[#f2f1ef]"]
+) {
+  background-color: rgb(230 74 25 / 0.14);
+}
+
+.dashboard-theme :is(input, select, textarea) {
+  color: var(--foreground);
+}
+
+.dark .dashboard-theme :is(input, select, textarea) {
+  border-color: var(--input);
+  background: var(--card);
+}
+
+.dark .dashboard-theme :is(
+  [class~="bg-white"],
+  [class~="bg-[#ffffff]"],
+  [class~="bg-[#fff]"]
+) {
+  background-color: var(--card);
+}
+
+.dark .dashboard-theme :is(
+  [class~="bg-[#f7f8fa]"],
+  [class~="bg-[#f8f8f7]"],
+  [class~="bg-[#f8f8f8]"],
+  [class~="bg-[#f2f1ef]"],
+  [class~="bg-[#f1f2f5]"],
+  [class~="bg-[#eff1f5]"]
+) {
+  background-color: var(--muted);
+}
+
+.dark .dashboard-theme :is(
+  [class~="text-[#0f1117]"],
+  [class~="text-[#1a1a1a]"],
+  [class~="text-[#11131a]"],
+  [class~="text-[#303443]"]
+) {
+  color: var(--foreground);
+}
+
+.dark .dashboard-theme :is(
+  [class~="text-[#5a6070]"],
+  [class~="text-[#6b6b6b]"],
+  [class~="text-[#7a8296]"],
+  [class~="text-[#9ba3b8]"],
+  [class~="text-[#9e9e9e]"]
+) {
+  color: var(--muted-foreground);
+}
+
+.dark .dashboard-theme [class*="border-black"] {
+  border-color: var(--border);
+}
+
+.dark .dashboard-theme [class*="divide-black"] > :not(:last-child) {
+  border-color: var(--border);
+}
+
+.dark .dashboard-theme table :is(th, td) {
+  border-color: var(--border);
+}
+
+.dark .dashboard-theme table th {
+  color: var(--muted-foreground);
+  background-color: var(--muted);
+}
+
+.dark .dashboard-theme table tbody tr:hover td {
+  background-color: color-mix(in srgb, var(--muted) 72%, transparent);
+}
+
+.dark .dashboard-theme :is(
+  [class~="bg-[#e8f5e9]"],
+  [class~="bg-[#edf7ee]"],
+  [class~="bg-[#f0f9f1]"]
+) {
+  color: var(--status-success-foreground);
+  background-color: var(--status-success-bg);
+}
+
+.dark .dashboard-theme :is(
+  [class~="text-[#2e7d32]"],
+  [class~="text-[#388e3c]"]
+) {
+  color: var(--status-success-foreground);
+}
+
+.dark .dashboard-theme :is(
+  [class~="bg-[#fff7ed]"],
+  [class~="bg-[#fff8f5]"],
+  [class~="bg-[#fff4f0]"],
+  [class~="bg-[#fff8e1]"]
+) {
+  color: var(--status-warning-foreground);
+  background-color: var(--status-warning-bg);
+}
+
+.dark .dashboard-theme :is(
+  [class~="text-[#8a4b00]"],
+  [class~="text-[#8a321a]"],
+  [class~="text-[#f57c00]"]
+) {
+  color: var(--status-warning-foreground);
+}
+
+.dark .dashboard-theme :is(
+  [class~="bg-[#ffebee]"],
+  [class~="bg-[#fff1f2]"],
+  [class~="bg-[#fff5f5]"]
+) {
+  color: var(--status-danger-foreground);
+  background-color: var(--status-danger-bg);
+}
+
+.dark .dashboard-theme :is(
+  [class~="text-[#b3261e]"],
+  [class~="text-[#c62828]"]
+) {
+  color: var(--status-danger-foreground);
+}
+
+.dark .dashboard-theme :is(
+  [class~="bg-[#e8f1ff]"],
+  [class~="bg-[#edf4ff]"],
+  [class~="bg-[#eef5ff]"]
+) {
+  color: var(--status-info-foreground);
+  background-color: var(--status-info-bg);
+}
+
+.dark .dashboard-theme .recharts-cartesian-grid line {
+  stroke: var(--border);
+}
+
+.dark .dashboard-theme .recharts-text {
+  fill: var(--muted-foreground);
+}
+
+.dark .dashboard-theme .recharts-default-tooltip {
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+  background: var(--popover) !important;
 }

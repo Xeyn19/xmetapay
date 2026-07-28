@@ -1,27 +1,15 @@
 "use client"
 
 import { useTheme } from "next-themes"
-import { usePathname } from "next/navigation"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
-  const pathname = usePathname()
-  const usesPublicTheme =
-    pathname === "/" ||
-    pathname === "/login" ||
-    pathname === "/forgot-password" ||
-    pathname === "/admin/login" ||
-    pathname === "/admin/register" ||
-    pathname === "/admin/forgot-password" ||
-    pathname === "/parent/login" ||
-    pathname === "/parent/register" ||
-    pathname === "/parent/forgot-password"
 
   return (
     <Sonner
-      theme={(usesPublicTheme ? theme : "system") as ToasterProps["theme"]}
+      theme={theme as ToasterProps["theme"]}
       className="toaster group"
       icons={{
         success: (

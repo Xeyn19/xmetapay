@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { logoutAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/app/_components/brand-logo";
+import { ThemeToggle } from "@/app/_components/theme-toggle";
 import type { ParentPortalContext } from "@/lib/students/records";
 import { cn } from "@/lib/utils";
 import { parentNavSections, parentPageMeta, settingsIcon } from "../_data/parent-portal-data";
@@ -35,7 +36,7 @@ export function ParentShell({
   }));
 
   return (
-    <div className="min-h-[100svh] overflow-x-hidden bg-[#f8f8f7] text-[#1a1a1a]">
+    <div className="dashboard-theme min-h-[100svh] overflow-x-hidden">
       {!open ? (
         <button
           type="button"
@@ -53,7 +54,7 @@ export function ParentShell({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain border-r border-black/[0.08] bg-white transition-transform duration-200",
+          "dashboard-sidebar fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain border-r border-white/[0.08] bg-[#0f1117] transition-transform duration-200",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         id="parent-sidebar"
@@ -145,6 +146,7 @@ export function ParentShell({
             <p className="mt-0.5 text-xs leading-5 text-[#6b6b6b]">{meta.subtitle}</p>
           </div>
           <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:w-auto">
+            <ThemeToggle className="justify-self-end min-[420px]:col-span-2 sm:col-span-1 sm:row-start-1" />
             {hasPayableFees ? (
               <Link href="/parent/pay-tuition" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30">
                 <Wallet className="size-4" />

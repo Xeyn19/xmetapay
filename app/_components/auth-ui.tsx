@@ -7,7 +7,7 @@ import { loginAction, registerAction, type AuthFormState } from "@/app/auth/acti
 import { AuthToastListener } from "./auth-toast-listener";
 import { BrandLogo } from "./brand-logo";
 import { PasswordInput } from "./password-input";
-import { PublicThemeToggle } from "./public-theme-toggle";
+import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
 type Portal = "admin" | "parent";
@@ -54,7 +54,7 @@ export function PublicPageShell({
           <BrandMark />
           <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
             {headerAction}
-            <PublicThemeToggle />
+            <ThemeToggle />
           </div>
         </header>
         {children}

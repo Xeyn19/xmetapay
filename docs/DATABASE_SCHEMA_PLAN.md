@@ -10,7 +10,7 @@ XMETA Pay uses one MySQL database for three connected access areas:
 
 Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
 
-The public entry page exposes admin and parent portal choices through the shared responsive XMETA Pay shell used by role login, registration, and recovery pages. The shell defaults to Dark and remembers an optional Light preference in the browser; it does not store theme state in MySQL. Company super-admin access remains a separate sign-in-only route at `/login`; the presentation change adds no schema fields and the schema does not support public company-account registration.
+The public entry page exposes admin and parent portal choices through the shared responsive XMETA Pay shell used by role login, registration, recovery, and all dashboard portals. The app defaults to Dark and remembers an optional Light preference in the browser; theme state is never stored in MySQL. Dashboard sidebars remain charcoal in both modes. Company super-admin access remains a separate sign-in-only route at `/login`; the presentation change adds no schema fields and the schema does not support public company-account registration.
 
 The current database already starts with shared authentication tables. The practical MVP should keep that foundation and add school, student, enrollment, billing, payment, wallet, and reporting tables around it.
 
