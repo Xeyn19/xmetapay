@@ -254,14 +254,14 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
     }
   });
 
-  test("admin dashboard shares the persisted app theme with a fixed charcoal sidebar", async ({
+  test("admin dashboard shares the persisted app theme with an adaptive sidebar", async ({
     page,
   }) => {
     await page.goto("/admin/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(page.locator(".dashboard-sidebar")).toHaveCSS(
       "background-color",
-      "rgb(15, 17, 23)"
+      "rgb(11, 13, 19)"
     );
 
     await page.getByRole("button", { name: "Switch to light mode" }).click();
@@ -270,7 +270,7 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
     await expect(page.locator("html")).toHaveClass(/light/);
     await expect(page.locator(".dashboard-sidebar")).toHaveCSS(
       "background-color",
-      "rgb(15, 17, 23)"
+      "rgb(255, 255, 255)"
     );
   });
 
@@ -334,7 +334,7 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
     }
   });
 
-  test("parent dashboard can switch themes without changing its charcoal sidebar", async ({
+  test("parent dashboard switches its sidebar with the shared theme", async ({
     page,
   }) => {
     await page.goto("/parent/dashboard", { waitUntil: "domcontentloaded" });
@@ -343,7 +343,7 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
     await expect(page.locator("html")).toHaveClass(/light/);
     await expect(page.locator(".dashboard-sidebar")).toHaveCSS(
       "background-color",
-      "rgb(15, 17, 23)"
+      "rgb(255, 255, 255)"
     );
   });
 
@@ -601,7 +601,7 @@ test.describe("XMETA Pay super admin branding", () => {
     await expect(page.locator("html")).toHaveClass(/light/);
     await expect(page.locator(".dashboard-sidebar")).toHaveCSS(
       "background-color",
-      "rgb(15, 17, 23)"
+      "rgb(255, 255, 255)"
     );
   });
 

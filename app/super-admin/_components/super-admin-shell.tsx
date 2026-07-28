@@ -92,7 +92,7 @@ export function SuperAdminShell({
 
       <aside
         className={cn(
-          "dashboard-sidebar fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain bg-[#0f1117] text-white transition-transform duration-200",
+          "dashboard-sidebar fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-200",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
         id="super-admin-sidebar"
@@ -100,29 +100,29 @@ export function SuperAdminShell({
         aria-modal="true"
         aria-label="Company navigation"
       >
-        <div className="shrink-0 border-b border-white/[0.07] px-4 pb-3 pt-4">
+        <div className="shrink-0 border-b border-sidebar-border px-4 pb-3 pt-4">
           <div className="mb-1.5 flex items-center gap-2.5">
             <BrandLogo size="compact" />
             <span className="min-w-0 truncate text-sm font-bold tracking-[-0.02em]">XMETA Pay</span>
           </div>
-          <div className="space-y-0.5 text-[10.5px] leading-4 text-white/40">
+          <div className="space-y-0.5 text-[10.5px] leading-4 text-sidebar-foreground/55">
             <div className="truncate">Company monitoring</div>
             <div className="truncate">Super admin workspace</div>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2.5 border-b border-white/[0.07] bg-white/[0.04] px-4 py-2.5">
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-sidebar-border bg-sidebar-accent px-4 py-2.5">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#e64a19] text-[11px] font-bold">
             {initials}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-bold text-white/90">{sessionName}</div>
-            <div className="truncate text-[10px] text-white/40">Company super admin</div>
+            <div className="truncate text-xs font-bold text-sidebar-foreground">{sessionName}</div>
+            <div className="truncate text-[10px] text-sidebar-foreground/55">Company super admin</div>
           </div>
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-md text-white/55 transition hover:bg-white/10 focus:outline-none focus-visible:ring-3 focus-visible:ring-white/20 lg:hidden"
+            className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/65 transition hover:bg-sidebar-primary hover:text-sidebar-primary-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30 lg:hidden"
             aria-label="Close company menu"
             aria-controls="super-admin-sidebar"
           >
@@ -131,7 +131,7 @@ export function SuperAdminShell({
         </div>
 
         <nav className="flex-1 px-2.5 py-2">
-          <div className="px-2 pb-1 pt-2.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-white/25">
+          <div className="px-2 pb-1 pt-2.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/45">
             Company
           </div>
           <div className="grid gap-0.5">
@@ -145,8 +145,8 @@ export function SuperAdminShell({
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-semibold text-white/55 transition hover:bg-white/[0.07] hover:text-white/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-white/20",
-                    active && "bg-[#e64a19] text-white hover:bg-[#e64a19] hover:text-white",
+                    "flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-semibold text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30",
+                    active && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground",
                   )}
                 >
                   <Icon className="size-4 shrink-0" />
@@ -162,15 +162,15 @@ export function SuperAdminShell({
           </div>
         </nav>
 
-        <div className="mt-auto grid shrink-0 gap-2 border-t border-white/[0.07] px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2 text-[11.5px] text-white/35">
+        <div className="mt-auto grid shrink-0 gap-2 border-t border-sidebar-border px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2 text-[11.5px] text-sidebar-foreground/50">
             <ShieldCheck className="size-[15px] shrink-0" />
             <span className="truncate">Company access</span>
           </div>
           <form action={superAdminLogoutAction}>
             <button
               type="submit"
-              className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] font-semibold text-white/55 transition hover:bg-white/[0.07] hover:text-white/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-white/20"
+              className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] font-semibold text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30"
             >
               <LogOut className="size-4 shrink-0" />
               <span className="truncate">Log out</span>

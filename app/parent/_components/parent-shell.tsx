@@ -54,7 +54,7 @@ export function ParentShell({
 
       <aside
         className={cn(
-          "dashboard-sidebar fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain border-r border-white/[0.08] bg-[#0f1117] transition-transform duration-200",
+          "dashboard-sidebar fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-200",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         id="parent-sidebar"
@@ -62,28 +62,28 @@ export function ParentShell({
         aria-modal="true"
         aria-label="Parent navigation"
       >
-        <div className="shrink-0 border-b border-black/[0.08] px-[18px] pb-3.5 pt-4">
+        <div className="shrink-0 border-b border-sidebar-border px-[18px] pb-3.5 pt-4">
           <div className="mb-1.5 flex items-center gap-2.5">
             <BrandLogo size="compact" />
             <span className="min-w-0 truncate text-[15px] font-semibold">XMETA Pay</span>
           </div>
-          <div className="space-y-0.5 text-[11px] leading-4 text-[#6b6b6b]">
+          <div className="space-y-0.5 text-[11px] leading-4 text-sidebar-foreground/55">
             <div className="truncate">Parent portal</div>
             <div className="truncate">Student-linked access</div>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2.5 border-b border-black/[0.08] bg-[#fbe9e7] px-[18px] py-2.5">
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-sidebar-border bg-sidebar-accent px-[18px] py-2.5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e64a19] text-[13px] font-semibold text-white">
             {context.parentInitials}
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-semibold">{context.parentName}</div>
-            <div className="truncate text-[11px] text-[#6b6b6b]">
+            <div className="truncate text-[11px] text-sidebar-foreground/55">
               {context.relationshipLabel} - {context.contactLine}
             </div>
           </div>
-          <button type="button" className="flex size-11 items-center justify-center rounded-md text-[#6b6b6b] transition hover:bg-white/60 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu" aria-controls="parent-sidebar">
+          <button type="button" className="flex size-11 items-center justify-center rounded-md text-sidebar-foreground/65 transition hover:bg-sidebar-primary hover:text-sidebar-primary-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu" aria-controls="parent-sidebar">
             <X className="size-4" />
           </button>
         </div>
@@ -91,7 +91,7 @@ export function ParentShell({
         <nav className="flex-1 px-2.5 py-2">
           {navSections.map((section) => (
             <div key={section.label}>
-              <div className="px-2 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9e9e9e]">
+              <div className="px-2 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45">
                 {section.label}
               </div>
               <div className="grid gap-1">
@@ -107,8 +107,8 @@ export function ParentShell({
                       href={item.href}
                       onClick={() => setOpen(false)}
                       className={cn(
-                        "flex min-h-10 items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20",
-                        active && "bg-[#fbe9e7] text-[#e64a19] hover:bg-[#fbe9e7] hover:text-[#e64a19]"
+                        "flex min-h-10 items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30",
+                        active && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
                       )}
                     >
                       <Icon className="size-[17px] shrink-0" />
@@ -122,15 +122,15 @@ export function ParentShell({
           ))}
         </nav>
 
-        <div className="mt-auto grid shrink-0 gap-2 border-t border-black/[0.08] px-[18px] py-3">
-          <div className="flex min-w-0 items-center gap-2 text-xs text-[#6b6b6b]">
+        <div className="mt-auto grid shrink-0 gap-2 border-t border-sidebar-border px-[18px] py-3">
+          <div className="flex min-w-0 items-center gap-2 text-xs text-sidebar-foreground/55">
             <Settings className="size-[15px] shrink-0" />
             <span className="truncate">Account settings</span>
           </div>
           <form action={logout}>
             <button
               type="submit"
-              className="flex min-h-10 w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] hover:text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+              className="flex min-h-10 w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30"
             >
               <LogOut className="size-[17px] shrink-0" />
               <span className="truncate">Log out</span>
