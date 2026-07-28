@@ -23,7 +23,7 @@ Related documents:
 
 Implemented:
 
-- Responsive XMETA Pay public shell at `/` with admin and parent portal choices, a separate company sign-in link, and a browser-remembered Light/Dark toggle that defaults to Dark; the same presentation covers role authentication and recovery while dashboard interiors remain unchanged.
+- Responsive XMETA Pay public shell at `/` with admin and parent portal choices, a separate company sign-in link, and one browser-remembered Light/Dark toggle that defaults to Dark across public, authentication, Admin, Parent, and Super Admin screens. Dashboard sidebars remain charcoal while operational surfaces and charts follow the selected theme.
 - Company super admin login at `/login`.
 - Admin/school registration and login.
 - Parent registration and login.

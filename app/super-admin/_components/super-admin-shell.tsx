@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Clock3, LayoutDashboard, LogOut, Menu, ShieldCheck, Users, X } from "lucide-react";
 
 import { BrandLogo } from "@/app/_components/brand-logo";
+import { ThemeToggle } from "@/app/_components/theme-toggle";
 import { FlashToast } from "@/app/_components/flash-toast";
 import { superAdminLogoutAction } from "@/app/super-admin/actions";
 import type { AuthFlashToast } from "@/lib/auth/session";
@@ -64,7 +65,7 @@ export function SuperAdminShell({
   ];
 
   return (
-    <div className="min-h-[100svh] overflow-x-hidden bg-[#f7f8fa] text-[#0f1117]">
+    <div className="dashboard-theme min-h-[100svh] overflow-x-hidden">
       <FlashToast toast={toast} />
 
       {!sidebarOpen ? (
@@ -91,7 +92,7 @@ export function SuperAdminShell({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain bg-[#0f1117] text-white transition-transform duration-200",
+          "dashboard-sidebar fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain bg-[#0f1117] text-white transition-transform duration-200",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
         id="super-admin-sidebar"
@@ -184,8 +185,11 @@ export function SuperAdminShell({
             <h1 className="text-base font-bold leading-6 text-[#0f1117]">{meta.title}</h1>
             <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{meta.subtitle}</p>
           </div>
-          <div className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] px-3 py-2 text-[12px] font-semibold text-[#5a6070]">
-            Signed in as <span className="text-[#0f1117]">{sessionName}</span>
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg border border-black/[0.07] bg-[#f7f8fa] px-3 py-2 text-[12px] font-semibold text-[#5a6070]">
+              Signed in as <span className="text-[#0f1117]">{sessionName}</span>
+            </div>
+            <ThemeToggle />
           </div>
         </header>
 

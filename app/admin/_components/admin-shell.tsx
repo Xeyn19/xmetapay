@@ -17,6 +17,7 @@ import {
 
 import { logoutAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/app/_components/brand-logo";
+import { ThemeToggle } from "@/app/_components/theme-toggle";
 import { selectAdminSchoolYearAction } from "@/app/admin/school-year/actions";
 import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
@@ -64,7 +65,7 @@ export function AdminShell({
   const duplicateYearNames = duplicateSchoolYearNames(schoolContext.schoolYears);
 
   return (
-    <div className="min-h-[100svh] overflow-x-hidden bg-[#f7f8fa] text-[#0f1117]">
+    <div className="dashboard-theme min-h-[100svh] overflow-x-hidden">
       {!sidebarOpen ? (
         <button
           type="button"
@@ -89,7 +90,7 @@ export function AdminShell({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain bg-[#0f1117] text-white transition-transform duration-200",
+          "dashboard-sidebar fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain bg-[#0f1117] text-white transition-transform duration-200",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         id="admin-sidebar"
@@ -240,6 +241,7 @@ export function AdminShell({
                 </div>
               ) : null}
               <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end xl:flex-nowrap">
+                <ThemeToggle />
                 {canSendReminders ? (
                   <Link
                     href="/admin/tuition#payment-reminders"

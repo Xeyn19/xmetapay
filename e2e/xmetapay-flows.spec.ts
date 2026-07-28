@@ -25,24 +25,24 @@ test.describe("XMETA Pay portal entry", () => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/");
 
-    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "dark");
+    await expect(page.locator("html")).toHaveClass(/dark/);
     const lightToggle = page.getByRole("button", { name: "Switch to light mode" });
     await expect(lightToggle).toBeVisible();
     await expect(lightToggle).toHaveAttribute("aria-pressed", "false");
     await lightToggle.click();
 
-    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "light");
+    await expect(page.locator("html")).toHaveClass(/light/);
     await expect(page.getByRole("button", { name: "Switch to dark mode" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     await page.goto("/admin/login");
-    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "light");
+    await expect(page.locator("html")).toHaveClass(/light/);
     await page.reload();
-    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "light");
+    await expect(page.locator("html")).toHaveClass(/light/);
 
     await page.getByRole("button", { name: "Switch to dark mode" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "dark");
+    await expect(page.locator("html")).toHaveClass(/dark/);
   });
 
   for (const route of [
@@ -254,6 +254,26 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
     }
   });
 
+  test("admin dashboard shares the persisted app theme with a fixed charcoal sidebar", async ({
+    page,
+  }) => {
+    await page.goto("/admin/dashboard", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect(page.locator(".dashboard-sidebar")).toHaveCSS(
+      "background-color",
+      "rgb(15, 17, 23)"
+    );
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await expect(page.locator(".dashboard-sidebar")).toHaveCSS(
+      "background-color",
+      "rgb(15, 17, 23)"
+    );
+  });
+
   test("admin logout clears the session and returns to admin login", async ({
     page,
   }) => {
@@ -312,6 +332,19 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       ).toBeVisible();
       await expectBrandLogo(page);
     }
+  });
+
+  test("parent dashboard can switch themes without changing its charcoal sidebar", async ({
+    page,
+  }) => {
+    await page.goto("/parent/dashboard", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await expect(page.locator(".dashboard-sidebar")).toHaveCSS(
+      "background-color",
+      "rgb(15, 17, 23)"
+    );
   });
 
   test("parent logout clears the session and returns to parent login", async ({
@@ -563,6 +596,13 @@ test.describe("XMETA Pay super admin branding", () => {
       page.getByRole("heading", { level: 1, name: "Super admin dashboard" })
     ).toBeVisible();
     await expectBrandLogo(page);
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await expect(page.locator(".dashboard-sidebar")).toHaveCSS(
+      "background-color",
+      "rgb(15, 17, 23)"
+    );
   });
 
   test("school admin account exports stay responsive and download", async ({ page }) => {
