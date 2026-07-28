@@ -144,11 +144,112 @@ body {
 }
 
 .public-auth-shell {
+  --public-text: #ffffff;
+  --public-muted: #a1a1aa;
+  --public-subtle: #71717a;
+  --public-surface: rgb(32 33 34 / 0.9);
+  --public-surface-hover: rgb(36 37 38 / 0.92);
+  --public-field: rgb(255 255 255 / 0.055);
+  --public-panel: rgb(0 0 0 / 0.15);
+  --public-border: rgb(255 255 255 / 0.15);
+  --public-divider: rgb(255 255 255 / 0.1);
+  --public-link: #ff8a65;
+  --public-link-hover: #ffb09a;
+  --public-error-bg: rgb(69 10 10 / 0.35);
+  --public-error-border: rgb(248 113 113 / 0.25);
+  --public-error-text: #fecaca;
+  --public-shadow: 0 24px 70px rgb(0 0 0 / 0.42);
   isolation: isolate;
+  color-scheme: dark;
+  color: var(--public-text);
   background:
     radial-gradient(circle at 19% 8%, rgb(230 74 25 / 0.18), transparent 25rem),
     radial-gradient(circle at 82% 92%, rgb(47 104 183 / 0.2), transparent 28rem),
     linear-gradient(145deg, #121314 0%, #171819 48%, #101317 100%);
+}
+
+[data-public-theme="light"] .public-auth-shell {
+  --public-text: #17191d;
+  --public-muted: #5f6673;
+  --public-subtle: #7a818c;
+  --public-surface: rgb(255 255 255 / 0.9);
+  --public-surface-hover: rgb(255 255 255 / 0.98);
+  --public-field: rgb(247 248 250 / 0.92);
+  --public-panel: rgb(247 248 250 / 0.82);
+  --public-border: rgb(17 19 26 / 0.14);
+  --public-divider: rgb(17 19 26 / 0.1);
+  --public-link: #bf360c;
+  --public-link-hover: #8f2608;
+  --public-error-bg: #fff1f2;
+  --public-error-border: rgb(190 24 93 / 0.2);
+  --public-error-text: #9f1239;
+  --public-shadow: 0 24px 70px rgb(41 45 55 / 0.15);
+  color-scheme: light;
+  background:
+    radial-gradient(circle at 16% 4%, rgb(230 74 25 / 0.24), transparent 26rem),
+    radial-gradient(circle at 88% 94%, rgb(47 104 183 / 0.23), transparent 30rem),
+    linear-gradient(115deg, rgb(230 74 25 / 0.045), transparent 38%),
+    linear-gradient(145deg, #eef1f5 0%, #ffffff 48%, #e8eef6 100%);
+}
+
+.public-theme-toggle,
+.public-secondary-action {
+  border: 1px solid var(--public-border);
+  color: var(--public-text);
+  background: var(--public-field);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+.public-theme-toggle:hover,
+.public-secondary-action:hover {
+  border-color: rgb(255 112 67 / 0.55);
+  color: var(--public-text);
+  background: rgb(230 74 25 / 0.1);
+}
+
+.public-theme-toggle:disabled {
+  opacity: 0.72;
+}
+
+.public-surface {
+  border-color: var(--public-border);
+  color: var(--public-text);
+  background: var(--public-surface);
+  box-shadow: var(--public-shadow);
+}
+
+.public-field {
+  border-color: var(--public-border);
+  color: var(--public-text);
+  background: var(--public-field);
+}
+
+.public-field::placeholder {
+  color: var(--public-subtle);
+}
+
+.public-panel {
+  border-color: var(--public-divider);
+  background: var(--public-panel);
+}
+
+.public-error {
+  border-color: var(--public-error-border);
+  color: var(--public-error-text);
+  background: var(--public-error-bg);
+}
+
+.public-link {
+  color: var(--public-link);
+}
+
+.public-link:hover {
+  color: var(--public-link-hover);
+}
+
+[data-public-theme="light"] .public-auth-shell::after {
+  opacity: 0.17;
+  filter: none;
 }
 
 .public-auth-shell::before {
@@ -185,5 +286,9 @@ body {
     left: -7rem;
     width: 23rem;
     opacity: 0.1;
+  }
+
+  [data-public-theme="light"] .public-auth-shell::after {
+    opacity: 0.14;
   }
 }

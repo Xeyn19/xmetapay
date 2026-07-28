@@ -63,13 +63,13 @@ export function PasswordResetFlow({
         <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e64a19]">
           {copy.eyebrow}
         </p>
-        <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-white">
+        <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-[var(--public-text)]">
           {copy.title}
         </h1>
-        <p className="mt-2 text-sm leading-6 text-zinc-400">
+        <p className="mt-2 text-sm leading-6 text-[var(--public-muted)]">
           {copy.description}
         </p>
-        <p className="mt-2 text-xs font-semibold text-zinc-400">
+        <p className="mt-2 text-xs font-semibold text-[var(--public-muted)]">
           {portalLabel}
         </p>
       </div>
@@ -88,11 +88,11 @@ export function PasswordResetFlow({
         <NewPasswordForm role={role} onResult={setFlowState} />
       ) : null}
 
-      <div className="mt-5 border-t border-white/10 pt-4 text-center text-sm text-zinc-400">
+      <div className="mt-5 border-t border-[var(--public-divider)] pt-4 text-center text-sm text-[var(--public-muted)]">
         Remembered your password?{" "}
         <Link
           href={loginHref}
-          className="rounded-md font-bold text-[#ff8a65] hover:text-[#ffb09a] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+          className="public-link rounded-md font-bold focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
         >
           Return to sign in
         </Link>
@@ -121,7 +121,7 @@ function RequestCodeForm({
   return (
     <form action={action} className="space-y-4">
       <label className="block">
-        <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-400">
+        <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-[var(--public-muted)]">
           Account email
         </span>
         <input
@@ -131,10 +131,10 @@ function RequestCodeForm({
           autoComplete="email"
           placeholder="you@example.com"
           aria-invalid={Boolean(state.errors?.email)}
-          className="min-h-12 w-full rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
+          className="public-field min-h-12 w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
         />
         {state.errors?.email ? (
-          <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">
+          <span className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">
             {state.errors.email}
           </span>
         ) : null}
@@ -198,13 +198,13 @@ function VerifyCodeForm({
   return (
     <div className="space-y-4">
       {state.emailHint ? (
-        <p className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-center text-xs font-semibold text-zinc-300">
+        <p className="public-panel rounded-lg border px-3 py-2 text-center text-xs font-semibold text-[var(--public-text)]">
           Code sent to {state.emailHint}
         </p>
       ) : null}
       <form action={verifyAction} className="space-y-4">
         <label className="block">
-          <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-400">
+          <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-[var(--public-muted)]">
             Six-digit code
           </span>
           <input
@@ -217,10 +217,10 @@ function VerifyCodeForm({
             maxLength={6}
             placeholder="000000"
             aria-invalid={Boolean(activeError)}
-            className="min-h-12 w-full rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-center font-mono text-xl font-bold tracking-[0.35em] text-white outline-none transition placeholder:text-zinc-600 focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
+            className="public-field min-h-12 w-full rounded-lg border px-3 py-2 text-center font-mono text-xl font-bold tracking-[0.35em] outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
           />
           {activeError ? (
-            <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">
+            <span className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">
               {activeError}
             </span>
           ) : null}
@@ -239,7 +239,7 @@ function VerifyCodeForm({
         <button
           type="submit"
           disabled={restartPending}
-          className="min-h-11 w-full rounded-lg px-3 text-sm font-bold text-zinc-300 transition hover:bg-white/[0.07] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 disabled:opacity-60"
+          className="min-h-11 w-full rounded-lg px-3 text-sm font-bold text-[var(--public-muted)] transition hover:bg-[#e64a19]/10 hover:text-[var(--public-text)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 disabled:opacity-60"
         >
           Use a different email
         </button>
@@ -276,7 +276,7 @@ function ResendControl({
       <button
         type="submit"
         disabled={pending || remaining > 0}
-        className="min-h-11 w-full rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[#ff9a7a] transition hover:bg-[#e64a19]/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-zinc-600"
+        className="min-h-11 w-full rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[var(--public-link)] transition hover:bg-[#e64a19]/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 disabled:cursor-not-allowed disabled:border-[var(--public-divider)] disabled:bg-[var(--public-field)] disabled:text-[var(--public-subtle)]"
       >
         {pending
           ? "Sending..."
@@ -341,7 +341,7 @@ function PasswordField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-400">
+      <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-[var(--public-muted)]">
         {label}
       </span>
       <PasswordInput
@@ -351,15 +351,15 @@ function PasswordField({
         autoComplete={name === "password" ? "new-password" : "new-password"}
         placeholder={placeholder}
         aria-invalid={Boolean(error)}
-        className="px-3 py-2 text-sm text-white placeholder:text-zinc-500"
+        className="px-3 py-2 text-sm text-[var(--public-text)] placeholder:text-[var(--public-subtle)]"
       />
       {showHelp ? (
-        <span className="mt-1.5 block text-xs font-medium text-zinc-400">
+        <span className="mt-1.5 block text-xs font-medium text-[var(--public-muted)]">
           Use at least 8 characters.
         </span>
       ) : null}
       {error ? (
-        <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">
+        <span className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">
           {error}
         </span>
       ) : null}
@@ -390,7 +390,7 @@ function StatusMessage({ message }: { message: string }) {
 
   return (
     <p
-      className="rounded-lg border border-red-400/25 bg-red-950/35 px-3 py-2 text-sm font-semibold leading-6 text-red-200"
+      className="public-error rounded-lg border px-3 py-2 text-sm font-semibold leading-6"
       aria-live="polite"
     >
       {message}

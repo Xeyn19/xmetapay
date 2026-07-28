@@ -26,6 +26,8 @@ Finance pages include tuition, collections, other fees, allowance, store transac
 
 Browser-generated table PDFs use the shared XMETA Pay logo, orange report styling, generated time, filtered record count, repeated table headings, and page numbering. Every visible school Admin table export now pairs that branded PDF with branded Excel containing the authenticated school, selected school year, active filters, counts, and applicable totals. The protected Reports page also serves branded Excel/PDF from server-owned report queries.
 
+The landing, role authentication, and password-recovery screens offer a remembered Light/Dark presentation toggle. Dark is the first-visit default, the preference is browser-local, and dashboard interiors and role permissions are unaffected.
+
 The company account screens, every school Admin table, and every export-enabled Parent table replace visible plain CSV controls with branded Excel workbooks. Excel files use the same filtered rows and columns as PDF, add the XMETA Pay logo and report context, and freeze and filter the data headings. Parent Fee summary, Payment history, dashboard recent payments, and wallet activity export all filtered authorized rows as branded Excel/PDF. Protected legacy Reports-page CSV URLs remain compatible even though the UI presents Excel/PDF.
 
 | Staff role | Main purpose | Can do | Cannot do |

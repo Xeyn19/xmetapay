@@ -21,6 +21,30 @@ test.describe("XMETA Pay portal entry", () => {
     await expectBrandLogo(page);
   });
 
+  test("public theme defaults to dark and remembers light across public routes", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.goto("/");
+
+    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "dark");
+    const lightToggle = page.getByRole("button", { name: "Switch to light mode" });
+    await expect(lightToggle).toBeVisible();
+    await expect(lightToggle).toHaveAttribute("aria-pressed", "false");
+    await lightToggle.click();
+
+    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "light");
+    await expect(page.getByRole("button", { name: "Switch to dark mode" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await page.goto("/admin/login");
+    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "light");
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "light");
+
+    await page.getByRole("button", { name: "Switch to dark mode" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-public-theme", "dark");
+  });
+
   for (const route of [
     "/login",
     "/admin/login",
@@ -126,6 +150,7 @@ test.describe("XMETA Pay portal entry", () => {
 
       expect(metrics.scrollWidth).toBe(metrics.clientWidth);
       await expect(page.getByRole("link", { name: "Company login" })).toBeVisible();
+      await expect(page.getByRole("button", { name: /Switch to (light|dark) mode/ })).toBeVisible();
       await expectDarkPublicShell(page);
       await expectBrandLogo(page);
     }
