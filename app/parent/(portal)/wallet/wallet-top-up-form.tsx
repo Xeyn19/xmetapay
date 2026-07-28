@@ -90,7 +90,7 @@ export function WalletTopUpForm({
             <button
               type="button"
               onClick={() => setSelectedIds(eligibleWallets.slice(0, maxSelectedWallets).map((wallet) => wallet.studentId))}
-              className="min-h-11 rounded-lg border border-black/15 bg-white px-3 text-xs font-semibold text-[#1a1a1a] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+              className="min-h-11 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
             >
               Select all eligible
             </button>
@@ -113,7 +113,7 @@ export function WalletTopUpForm({
               <div
                 key={wallet.studentId}
                 className={`rounded-xl border p-3 transition ${
-                  selected ? "border-[#e64a19] bg-[#fff7f4]" : "border-black/[0.09] bg-white"
+                  selected ? "border-[#e64a19] bg-accent" : "border-border bg-card hover:bg-muted"
                 } ${unavailable ? "opacity-65" : ""}`}
               >
                 <label className="flex min-h-11 cursor-pointer items-start gap-3">
@@ -170,7 +170,7 @@ export function WalletTopUpForm({
               type="button"
               onClick={() => applyAmount(value)}
               disabled={selectedIds.length === 0}
-              className="min-h-11 rounded-lg border border-black/15 bg-white text-sm font-semibold text-[#6b6b6b] hover:bg-[#f2f1ef] disabled:opacity-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+              className="min-h-11 rounded-lg border border-border bg-card text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
             >
               P{value}
             </button>
@@ -197,7 +197,7 @@ export function WalletTopUpForm({
         </div>
       </section>
 
-      <div className="rounded-xl border border-black/[0.08] bg-[#f8f8f7] p-4 text-[13px]">
+      <div className="rounded-xl border border-border bg-muted p-4 text-[13px]">
         <div className="flex justify-between gap-3">
           <span className="text-[#6b6b6b]">Selected wallets</span>
           <span className="font-semibold">{selectedWallets.length}</span>
@@ -224,7 +224,7 @@ export function WalletTopUpForm({
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="wallet-top-up-review-title"
-            className="relative my-auto w-full max-w-lg rounded-xl border border-black/[0.07] bg-white p-5 shadow-2xl sm:p-6"
+            className="relative my-auto w-full max-w-lg rounded-xl border border-border bg-card p-5 shadow-2xl sm:p-6"
           >
             <button
               type="button"
@@ -242,13 +242,13 @@ export function WalletTopUpForm({
             </p>
             <div className="mt-4 max-h-64 space-y-2 overflow-y-auto">
               {selectedWallets.map((wallet) => (
-                <div key={wallet.studentId} className="flex justify-between gap-3 rounded-lg bg-[#f8f8f7] p-3 text-[13px]">
+                <div key={wallet.studentId} className="flex justify-between gap-3 rounded-lg bg-muted p-3 text-[13px]">
                   <span className="min-w-0 truncate font-semibold">{wallet.studentName}</span>
                   <span className="shrink-0 font-bold">{formatMoney(Number(amounts[wallet.studentId]))}</span>
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex justify-between border-t border-black/[0.08] pt-4 text-sm">
+            <div className="mt-4 flex justify-between border-t border-border pt-4 text-sm">
               <span className="text-[#6b6b6b]">Total</span>
               <span className="font-bold">{formatMoney(total)}</span>
             </div>

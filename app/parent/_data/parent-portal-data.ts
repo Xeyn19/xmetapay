@@ -17,6 +17,10 @@ export type ParentNavItem = {
   href: string;
   icon: LucideIcon;
   badge?: string;
+  activePaths?: Array<{
+    path: string;
+    match?: "exact" | "prefix" | "descendant";
+  }>;
 };
 
 export type ParentNavSection = {
@@ -75,13 +79,29 @@ export const parentPageMeta: Record<string, ParentPageMeta> = {
 export const parentNavSections: ParentNavSection[] = [
   {
     label: "Overview",
-    items: [{ label: "Dashboard", href: "/parent/dashboard", icon: Home }],
+    items: [{
+      label: "Dashboard",
+      href: "/parent/dashboard",
+      icon: Home,
+      activePaths: [
+        { path: "/parent" },
+        { path: "/parent/dashboard" },
+      ],
+    }],
   },
   {
     label: "Enrollment",
     items: [
       { label: "My students", href: "/parent/students", icon: Users },
-      { label: "Student profile", href: "/parent/student-profile", icon: IdCard },
+      {
+        label: "Student profile",
+        href: "/parent/student-profile",
+        icon: IdCard,
+        activePaths: [
+          { path: "/parent/student-profile" },
+          { path: "/parent/students", match: "descendant" },
+        ],
+      },
     ],
   },
   {
@@ -89,13 +109,38 @@ export const parentNavSections: ParentNavSection[] = [
     items: [
       { label: "Fee summary", href: "/parent/fees", icon: Receipt },
       { label: "Pay tuition", href: "/parent/pay-tuition", icon: CreditCard },
-      { label: "Payment history", href: "/parent/history", icon: History },
+      {
+        label: "Payment history",
+        href: "/parent/history",
+        icon: History,
+        activePaths: [
+          { path: "/parent/history" },
+          { path: "/parent/receipt" },
+        ],
+      },
     ],
   },
   {
     label: "Allowance",
-    items: [{ label: "Wallet & top-up", href: "/parent/wallet", icon: Wallet }],
+    items: [{
+      label: "Wallet & top-up",
+      href: "/parent/wallet",
+      icon: Wallet,
+      activePaths: [{ path: "/parent/wallet", match: "prefix" }],
+    }],
   },
 ];
 
 export const settingsIcon = Settings;
+
+export function isParentNavItemActive(pathname: string, item: ParentNavItem) {
+  const activePaths = item.activePaths ?? [{ path: item.href, match: "exact" as const }];
+
+  return activePaths.some(({ path, match = "exact" }) => (
+    match === "prefix"
+      ? pathname === path || pathname.startsWith(`${path}/`)
+      : match === "descendant"
+        ? pathname.startsWith(`${path}/`)
+        : pathname === path
+  ));
+}

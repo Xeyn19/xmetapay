@@ -268,7 +268,7 @@ export function ParentPaymentHistoryTable({
             {view === "removed" ? "Restore selected to Archived" : view === "archived" ? "Restore selected" : "Archive selected"}
           </button>
           {view === "archived" ? (
-            <button type="button" onClick={() => setConfirmation({ ids: validSelectedIds, operation: "delete" })} disabled={validSelectedIds.length === 0 || pending} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-red-600 bg-white px-3.5 text-[13px] font-medium text-red-700 transition hover:bg-red-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-red-600/25 disabled:pointer-events-none disabled:opacity-60">
+            <button type="button" onClick={() => setConfirmation({ ids: validSelectedIds, operation: "delete" })} disabled={validSelectedIds.length === 0 || pending} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-destructive/50 bg-card px-3.5 text-[13px] font-medium text-destructive transition hover:bg-destructive hover:text-destructive-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-destructive/25 disabled:pointer-events-none disabled:opacity-60">
               <Trash2 className="size-4" />
               Remove selected
             </button>
@@ -347,7 +347,7 @@ export function ParentPaymentHistoryTable({
                     size="icon"
                     onClick={() => selectable && setConfirmation({ ids: [row.paymentId], operation: view === "removed" ? "recover" : view === "archived" ? "restore" : "archive" })}
                     disabled={!selectable || pending}
-                    className="size-11 text-[#6b6b6b] hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19]"
+                    className="size-11 text-muted-foreground hover:border-[#e64a19]/40 hover:bg-accent hover:text-accent-foreground"
                     aria-label={selectable ? `${view === "removed" ? "Restore to Archived" : operationLabel} payment ${row.referenceNumber}` : view === "removed" ? `Payment ${row.referenceNumber} recovery period has ended` : `Payment ${row.referenceNumber} cannot be archived while pending`}
                     title={selectable ? `${view === "removed" ? "Restore to Archived" : operationLabel} payment` : view === "removed" ? "Recovery period ended" : "Pending payments cannot be archived"}
                   >
@@ -360,7 +360,7 @@ export function ParentPaymentHistoryTable({
                       size="icon"
                       onClick={() => setConfirmation({ ids: [row.paymentId], operation: "delete" })}
                       disabled={pending}
-                      className="ml-2 size-11 border-red-200 text-red-700 hover:border-red-400 hover:bg-red-50 hover:text-red-800"
+                      className="ml-2 size-11 border-destructive/30 text-destructive hover:border-destructive/50 hover:bg-destructive hover:text-destructive-foreground"
                       aria-label={`Remove payment ${row.referenceNumber} from view`}
                       title="Remove payment from view"
                     >
@@ -393,7 +393,7 @@ export function ParentPaymentHistoryTable({
       {confirmation ? (
         <div className="fixed inset-0 z-[220] grid place-items-center bg-[#1a1a1a]/45 px-4 py-6 backdrop-blur-sm">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmation(null)} aria-label="Close confirmation" />
-          <section role="alertdialog" aria-modal="true" aria-labelledby="parent-payment-archive-title" className="relative w-full max-w-md rounded-xl border border-black/[0.08] bg-white p-5 shadow-2xl sm:p-6">
+          <section role="alertdialog" aria-modal="true" aria-labelledby="parent-payment-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl sm:p-6">
             <div className={cn("mb-4 flex size-10 items-center justify-center rounded-lg", confirmation.operation === "delete" ? "bg-red-50 text-red-700" : "bg-[#fbe9e7] text-[#e64a19]")}>
               {confirmation.operation === "delete" ? <Trash2 className="size-5" /> : confirmation.operation === "restore" ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
             </div>
@@ -460,11 +460,11 @@ function emptyState(view: HistoryView, hasRows: boolean, hasFilters: boolean) {
 function viewTabClass(active: boolean) {
   return cn(
     "inline-flex min-h-9 items-center justify-center rounded-md px-3 text-[12px] font-medium transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20",
-    active ? "bg-white text-[#1a1a1a] shadow-sm" : "text-[#6b6b6b] hover:text-[#1a1a1a]",
+    active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 }
 
-const secondaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-black/10 bg-white px-3.5 text-[13px] font-medium text-[#4b4b4b] transition hover:bg-[#f8f7f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 disabled:pointer-events-none disabled:opacity-50";
+const secondaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20 disabled:pointer-events-none disabled:opacity-50";
 
 function parseMoney(value: string) {
   const parsed = Number(value.replaceAll(/[^0-9.-]/g, ""));

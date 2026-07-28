@@ -46,7 +46,7 @@ export default async function ParentDashboardPage() {
           {hasLinkedStudents ? (
             <>
               {data.linkedStudents.map((student) => (
-                <Link key={student.id} href={student.profileHref} className="flex items-center justify-between gap-3 border-b border-black/[0.08] px-4 py-4 transition hover:bg-[#f8f8f7] focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 sm:gap-4 sm:px-5">
+                <Link key={student.id} href={student.profileHref} className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 sm:gap-4 sm:px-5">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex size-10 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">
                       {student.initials}
@@ -61,7 +61,7 @@ export default async function ParentDashboardPage() {
                   </StatusPill>
                 </Link>
               ))}
-              <form action={linkParentStudentAction} className="grid gap-3 border-t border-black/[0.08] p-4 sm:p-5">
+              <form action={linkParentStudentAction} className="grid gap-3 border-t border-border p-4 sm:p-5">
                 <div>
                   <ParentField label="Add another student" required>
                     <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
@@ -75,7 +75,7 @@ export default async function ParentDashboardPage() {
                     <Plus className="size-4" />
                     Add another student
                   </ParentButton>
-                  <Link href="/parent/students" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
+                  <Link href="/parent/students" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
                     Manage students
                   </Link>
                 </div>
@@ -101,7 +101,7 @@ export default async function ParentDashboardPage() {
         <ParentCard title="Fees and balances" icon={CalendarClock}>
           <div className="grid gap-3 text-[13px] leading-5 text-[#6b6b6b]">
             <p>Current outstanding balance: <span className="font-semibold text-[#c62828]">{data.outstandingBalance}</span></p>
-            <Link href="/parent/fees" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
+            <Link href="/parent/fees" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
               View fee summary
             </Link>
           </div>
@@ -118,7 +118,7 @@ export default async function ParentDashboardPage() {
         bodyClassName="p-0"
         className="mt-5"
         action={(
-          <Link href="/parent/wallet" className="inline-flex min-h-10 items-center justify-center rounded-[10px] border border-black/15 bg-white px-3 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
+          <Link href="/parent/wallet" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
             View full history
           </Link>
         )}

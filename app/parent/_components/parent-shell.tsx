@@ -10,7 +10,12 @@ import { BrandLogo } from "@/app/_components/brand-logo";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
 import type { ParentPortalContext } from "@/lib/students/records";
 import { cn } from "@/lib/utils";
-import { parentNavSections, parentPageMeta, settingsIcon } from "../_data/parent-portal-data";
+import {
+  isParentNavItemActive,
+  parentNavSections,
+  parentPageMeta,
+  settingsIcon,
+} from "../_data/parent-portal-data";
 
 export function ParentShell({
   children,
@@ -97,18 +102,16 @@ export function ParentShell({
               <div className="grid gap-1">
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  const active = pathname === item.href
-                    || (item.href !== "/parent/students" && pathname.startsWith(`${item.href}/`))
-                    || (item.href === "/parent/student-profile" && pathname.startsWith("/parent/students/"))
-                    || (pathname === "/parent" && item.href === "/parent/dashboard");
+                  const active = isParentNavItemActive(pathname, item);
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setOpen(false)}
+                      aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex min-h-10 items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[13px] font-medium text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30",
-                        active && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                        "flex min-h-11 items-center gap-2.5 rounded-[10px] border-l-2 border-transparent px-2.5 py-2 text-[13px] font-medium text-sidebar-foreground/65 transition-[color,background-color,border-color,transform] duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:scale-[0.98] active:border-sidebar-ring active:bg-sidebar-primary active:text-sidebar-primary-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30",
+                        active && "border-sidebar-ring bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
                       )}
                     >
                       <Icon className="size-[17px] shrink-0" />
@@ -140,7 +143,7 @@ export function ParentShell({
       </aside>
 
       <div className="min-h-[100svh] min-w-0 max-w-full lg:pl-60">
-        <header className="sticky top-0 z-50 flex min-w-0 max-w-full flex-col gap-3 border-b border-black/[0.08] bg-white px-4 py-3 pl-16 sm:flex-row sm:items-center sm:justify-between lg:px-7 lg:pl-7">
+        <header className="sticky top-0 z-50 flex min-w-0 max-w-full flex-col gap-3 border-b border-border bg-background px-4 py-3 pl-16 sm:flex-row sm:items-center sm:justify-between lg:px-7 lg:pl-7">
           <div className="min-w-0 max-w-full">
             <h1 className="text-[17px] font-semibold leading-6 text-[#1a1a1a]">{meta.title}</h1>
             <p className="mt-0.5 text-xs leading-5 text-[#6b6b6b]">{meta.subtitle}</p>
@@ -156,7 +159,7 @@ export function ParentShell({
               <button
                 type="button"
                 disabled
-                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-black/10 bg-[#f2f1ef] px-3.5 text-[13px] font-medium text-[#6b6b6b] disabled:pointer-events-none disabled:opacity-70"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-border bg-muted px-3.5 text-[13px] font-medium text-muted-foreground disabled:pointer-events-none disabled:opacity-70"
               >
                 <Wallet className="size-4" />
                 No fees due

@@ -17,6 +17,8 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Landing, role login/register, company login, and password recovery share the responsive dark XMETA Pay public shell without changing authentication contracts.
 - [x] Public and authentication screens provide a remembered Light/Dark toggle with Dark as the first-visit default while dashboard interiors remain unchanged.
 - [x] Admin, Parent, and Super Admin dashboards share the same remembered Light/Dark preference, semantic operational surfaces, theme-aware charts and statuses, and adaptive light/charcoal sidebars.
+- [x] Parent sidebar navigation provides consistent hover, pressed, keyboard-focus, and current-page states across top-level and nested Parent routes.
+- [x] Parent dashboard rows, selection cards, tabs, dialogs, and table actions retain readable text during hover, selected, pressed, and focus states in Light and Dark modes.
 - [x] Company super admin uses a sidebar-based monitoring workspace.
 - [x] Company super admin can monitor schools and manage school admin accounts from a dedicated accounts page.
 - [x] Company super admin can export all filtered School admin accounts as branded Excel or PDF with filter and status-count context.

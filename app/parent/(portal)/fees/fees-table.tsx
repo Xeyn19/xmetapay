@@ -380,7 +380,7 @@ export function ParentFeesTable({
                           operation: view === "removed" ? "recover" : view === "archived" ? "restore" : "archive",
                         })}
                         disabled={!selectable || pending}
-                        className="size-11 text-[#6b6b6b] hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19]"
+                        className="size-11 text-muted-foreground hover:border-[#e64a19]/40 hover:bg-accent hover:text-accent-foreground"
                         aria-label={selectable ? `${view === "removed" ? "Restore to Archived" : operationLabel} ${row.feeName} for ${row.studentName}` : view === "removed" ? `${row.feeName} recovery period has ended` : `${row.feeName} cannot be archived until settled`}
                         title={selectable ? `${view === "removed" ? "Restore to Archived" : operationLabel} fee` : view === "removed" ? "Recovery period ended" : "Outstanding fees cannot be archived"}
                       >
@@ -396,7 +396,7 @@ export function ParentFeesTable({
                             operation: "delete",
                           })}
                           disabled={pending}
-                          className="size-11 border-[#c62828]/25 text-[#c62828] hover:border-[#c62828]/50 hover:bg-[#fff1f1] hover:text-[#8e1b1b]"
+                          className="size-11 border-destructive/30 text-destructive hover:border-destructive/50 hover:bg-destructive hover:text-destructive-foreground"
                           aria-label={`Remove ${row.feeName} for ${row.studentName} from view`}
                           title="Remove fee from view"
                         >
@@ -407,12 +407,12 @@ export function ParentFeesTable({
                   </td>
                 </tr>
                 {row.terms.length > 0 ? (
-                  <tr className="bg-[#fffaf7]">
+                  <tr className="bg-accent/55">
                     <td colSpan={columnCount} className="!overflow-visible !whitespace-normal px-4 py-3">
                       <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#9a3412]">Tuition payment terms</div>
                       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                         {row.terms.map((term) => (
-                          <div key={term.id} className="rounded-lg border border-[#fed7aa] bg-white px-3 py-2 text-[12px]">
+                          <div key={term.id} className="rounded-lg border border-border bg-card px-3 py-2 text-[12px]">
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold text-[#1a1a1a]">{term.name}</span>
                               <StatusPill tone={term.tone}>{term.status}</StatusPill>
@@ -454,7 +454,7 @@ export function ParentFeesTable({
       {confirmation ? (
         <div className="fixed inset-0 z-[220] grid place-items-center bg-[#1a1a1a]/45 px-4 py-6 backdrop-blur-sm">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmation(null)} aria-label="Close confirmation" />
-          <section role="alertdialog" aria-modal="true" aria-labelledby="parent-fee-archive-title" className="relative w-full max-w-md rounded-xl border border-black/[0.08] bg-white p-5 shadow-2xl sm:p-6">
+          <section role="alertdialog" aria-modal="true" aria-labelledby="parent-fee-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl sm:p-6">
             <div className={cn(
               "mb-4 flex size-10 items-center justify-center rounded-lg",
               confirmation.operation === "delete"
@@ -502,12 +502,12 @@ export function ParentFeesTable({
   );
 }
 
-const secondaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50";
+const secondaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50";
 
 function viewTabClass(active: boolean) {
   return cn(
     "inline-flex min-h-9 items-center justify-center rounded-lg px-3 text-[12.5px] font-medium transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
-    active ? "bg-white text-[#1a1a1a] shadow-sm" : "text-[#6b6b6b] hover:text-[#1a1a1a]",
+    active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 }
 

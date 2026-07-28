@@ -318,11 +318,13 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
     test.setTimeout(90_000);
 
     const routes = [
-      { path: "/parent/dashboard", heading: "Dashboard" },
-      { path: "/parent/fees", heading: "Fee summary" },
-      { path: "/parent/pay-tuition", heading: "Pay tuition & fees" },
-      { path: "/parent/history", heading: "Payment history" },
-      { path: "/parent/wallet", heading: "Wallet & allowance top-up" },
+      { path: "/parent/dashboard", heading: "Dashboard", navLabel: "Dashboard" },
+      { path: "/parent/students", heading: "My students", navLabel: "My students" },
+      { path: "/parent/student-profile", heading: "Student profile", navLabel: "Student profile" },
+      { path: "/parent/fees", heading: "Fee summary", navLabel: "Fee summary" },
+      { path: "/parent/pay-tuition", heading: "Pay tuition & fees", navLabel: "Pay tuition" },
+      { path: "/parent/history", heading: "Payment history", navLabel: "Payment history" },
+      { path: "/parent/wallet", heading: "Wallet & allowance top-up", navLabel: "Wallet & top-up" },
     ];
 
     for (const route of routes) {
@@ -330,8 +332,23 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: route.heading })
       ).toBeVisible();
+      await expect(
+        page.getByLabel("Parent navigation").getByRole("link", { name: route.navLabel })
+      ).toHaveAttribute("aria-current", "page");
       await expectBrandLogo(page);
     }
+
+    await page.goto("/parent/receipt", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByLabel("Parent navigation").getByRole("link", { name: "Payment history" })
+    ).toHaveAttribute("aria-current", "page");
+
+    await page.goto("/parent/wallet/top-up-result?batch=WTB-NOT-AVAILABLE", {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(
+      page.getByLabel("Parent navigation").getByRole("link", { name: "Wallet & top-up" })
+    ).toHaveAttribute("aria-current", "page");
   });
 
   test("parent dashboard switches its sidebar with the shared theme", async ({
@@ -345,6 +362,35 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
       "background-color",
       "rgb(255, 255, 255)"
     );
+  });
+
+  test("parent hover and selected controls keep readable dark-theme contrast", async ({
+    page,
+  }) => {
+    await page.goto("/parent/dashboard", { waitUntil: "domcontentloaded" });
+    const feeSummaryLink = page.getByRole("link", { name: "View fee summary" });
+    await feeSummaryLink.hover();
+    await expect(feeSummaryLink).toHaveCSS("background-color", "rgb(34, 40, 58)");
+    await expect(feeSummaryLink).toHaveCSS(
+      "color",
+      "rgb(247, 248, 250)"
+    );
+
+    await page.goto("/parent/wallet", { waitUntil: "domcontentloaded" });
+    const mayaMethod = page.getByRole("button", { name: /Maya/ });
+    if (await mayaMethod.count()) {
+      await mayaMethod.click();
+      await expect(mayaMethod).toHaveCSS("background-color", "rgb(58, 35, 29)");
+      await expect(mayaMethod.getByText("Maya", { exact: true })).toHaveCSS(
+        "color",
+        "rgb(247, 248, 250)"
+      );
+    }
+
+    await page.goto("/parent/fees", { waitUntil: "domcontentloaded" });
+    const archivedTab = page.getByRole("tab", { name: /Archived/ });
+    await archivedTab.click();
+    await expect(archivedTab).toHaveCSS("color", "rgb(247, 248, 250)");
   });
 
   test("parent logout clears the session and returns to parent login", async ({

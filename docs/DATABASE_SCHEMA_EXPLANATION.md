@@ -4,7 +4,7 @@ This document explains the purpose of the XMETA Pay database schema in `database
 
 Related role guide: `ADMIN_ROLES.md` explains what company `super_admin`, `school_administrator`, `registrar`, and `finance_officer` accounts can do.
 
-The public entry and authentication screens reuse this foundation: admins and parents can register through their role-specific routes, while company super admins use sign-in-only `/login`. Landing, authentication, recovery, and all three dashboard portals share a responsive XMETA Pay Light/Dark preference with a Dark first-visit default. The browser-local preference themes both operational surfaces and dashboard navigation, using a light sidebar in Light mode and XMETA charcoal in Dark mode; it requires no authentication or schema change.
+The public entry and authentication screens reuse this foundation: admins and parents can register through their role-specific routes, while company super admins use sign-in-only `/login`. Landing, authentication, recovery, and all three dashboard portals share a responsive XMETA Pay Light/Dark preference with a Dark first-visit default. The browser-local preference themes both operational surfaces and dashboard navigation, using a light sidebar in Light mode and XMETA charcoal in Dark mode. Parent top-level and nested routes share the same current-page treatment, while rows, selection cards, tabs, dialogs, and actions use semantic contrast-safe hover, selected, pressed, and focus surfaces; none of this requires an authentication or schema change.
 
 ## Import Order
 
