@@ -24,7 +24,7 @@ export default async function Home() {
       headerAction={
         <Link
           href="/login"
-          className="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-button-outline bg-white px-3 text-xs font-bold text-[#bf360c] shadow-sm transition hover:bg-[#fbe9e7] hover:text-[#e64a19] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/10 sm:px-4 sm:text-sm"
+          className="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-white/15 bg-white/[0.06] px-3 text-xs font-bold text-zinc-200 shadow-sm transition hover:border-[#ff7043]/50 hover:bg-[#e64a19]/10 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 sm:px-4 sm:text-sm"
         >
           Company login
         </Link>
@@ -35,10 +35,10 @@ export default async function Home() {
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-[#e64a19]">
               Welcome to XMETA Pay
             </p>
-            <h1 className="mx-auto mt-3 max-w-2xl text-balance text-[2rem] font-bold leading-[1.08] tracking-tight text-[#11131a] sm:text-[2.75rem] lg:text-5xl">
+            <h1 className="mx-auto mt-3 max-w-2xl text-balance text-[2rem] font-bold leading-[1.08] tracking-tight text-white sm:text-[2.75rem] lg:text-5xl">
               School payments, made simple.
             </h1>
-            <p className="mx-auto mt-3 max-w-xl text-pretty text-sm leading-6 text-zinc-600 sm:text-base">
+            <p className="mx-auto mt-3 max-w-xl text-pretty text-sm leading-6 text-zinc-400 sm:text-base">
               Choose your portal to continue.
             </p>
 

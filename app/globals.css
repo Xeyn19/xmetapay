@@ -142,3 +142,48 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+.public-auth-shell {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 19% 8%, rgb(230 74 25 / 0.18), transparent 25rem),
+    radial-gradient(circle at 82% 92%, rgb(47 104 183 / 0.2), transparent 28rem),
+    linear-gradient(145deg, #121314 0%, #171819 48%, #101317 100%);
+}
+
+.public-auth-shell::before {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 3px;
+  content: "";
+  background: linear-gradient(90deg, transparent, #e64a19 28%, #ff855f 63%, transparent);
+  box-shadow: 0 0 28px rgb(230 74 25 / 0.28);
+}
+
+.public-auth-shell::after {
+  position: absolute;
+  z-index: -1;
+  bottom: -10rem;
+  left: -9rem;
+  width: min(34rem, 78vw);
+  aspect-ratio: 1;
+  content: "";
+  opacity: 0.16;
+  transform: rotate(-9deg);
+  background:
+    linear-gradient(42deg, transparent 44%, #e64a19 45% 53%, transparent 54%),
+    linear-gradient(-42deg, transparent 44%, #e64a19 45% 53%, transparent 54%),
+    radial-gradient(circle, rgb(230 74 25 / 0.45), transparent 66%);
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+@media (max-width: 639px) {
+  .public-auth-shell::after {
+    bottom: -6rem;
+    left: -7rem;
+    width: 23rem;
+    opacity: 0.1;
+  }
+}

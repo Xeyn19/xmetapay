@@ -14,6 +14,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Parent login works.
 - [x] Company super admin login exists at `/login`.
 - [x] The public entry page routes school admins and parents to their own sign-in and registration pages while company access remains sign-in-only.
+- [x] Landing, role login/register, company login, and password recovery share the responsive dark XMETA Pay public shell without changing authentication contracts.
 - [x] Company super admin uses a sidebar-based monitoring workspace.
 - [x] Company super admin can monitor schools and manage school admin accounts from a dedicated accounts page.
 - [x] Company super admin can export all filtered School admin accounts as branded Excel or PDF with filter and status-count context.
