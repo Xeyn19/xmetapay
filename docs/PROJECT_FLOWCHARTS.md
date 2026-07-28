@@ -23,7 +23,7 @@ Related documents:
 
 Implemented:
 
-- Responsive XMETA Pay public shell at `/` with admin and parent portal choices, a separate company sign-in link, and one browser-remembered Light/Dark toggle that defaults to Dark across public, authentication, Admin, Parent, and Super Admin screens. Dashboard sidebars switch between light and XMETA charcoal semantic navigation surfaces while preserving orange active states.
+- Responsive XMETA Pay public shell at `/` with admin and parent portal choices, a separate company sign-in link, and one browser-remembered Light/Dark toggle that defaults to Dark across public, authentication, Admin, Parent, and Super Admin screens. Dashboard sidebars switch between light and XMETA charcoal semantic navigation surfaces while preserving orange active states; Parent receipt, student-detail, and wallet-result routes keep the correct navigation item current, and Parent rows, selection cards, tabs, dialogs, and actions retain readable hover, selected, press, and focus feedback in both themes.
 - Company super admin login at `/login`.
 - Admin/school registration and login.
 - Parent registration and login.

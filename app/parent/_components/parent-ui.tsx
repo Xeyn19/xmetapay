@@ -30,9 +30,9 @@ export function ParentButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { tone?: "outline" | "primary" | "ghost" }) {
   const tones = {
-    outline: "border-black/15 bg-white text-[#6b6b6b] hover:bg-[#f2f1ef]",
+    outline: "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
     primary: "border-[#e64a19] bg-[#e64a19] text-white hover:bg-[#bf360c]",
-    ghost: "border-transparent bg-transparent text-[#6b6b6b] hover:bg-[#f2f1ef]",
+    ghost: "border-transparent bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
   };
   return (
     <button
@@ -55,7 +55,7 @@ export function MetricGrid({ children }: { children: ReactNode }) {
 
 export function MetricCard({ metric }: { metric: ParentMetric }) {
   return (
-    <section className="rounded-xl border border-black/[0.08] bg-white px-4 py-4 sm:px-5 sm:py-[18px]">
+    <section className="rounded-xl border border-border bg-card px-4 py-4 sm:px-5 sm:py-[18px]">
       {metric.accent ? <span className="float-right -mt-1 h-7 w-[3px] rounded-full bg-[#e64a19]" /> : null}
       <div className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[#6b6b6b]">
         {metric.label}
@@ -95,9 +95,9 @@ export function ParentCard({
   bodyClassName?: string;
 }) {
   return (
-    <section className={cn("overflow-hidden rounded-xl border border-black/[0.08] bg-white", className)}>
-      <header className="flex flex-col gap-3 border-b border-black/[0.08] px-4 py-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:px-5">
-        <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-semibold leading-5 text-[#1a1a1a]">
+    <section className={cn("overflow-hidden rounded-xl border border-border bg-card", className)}>
+      <header className="flex flex-col gap-3 border-b border-border px-4 py-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:px-5">
+        <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-semibold leading-5 text-foreground">
           {Icon ? <Icon className="size-[17px] shrink-0 text-[#e64a19]" /> : null}
           {title}
         </h2>
@@ -130,7 +130,7 @@ export function FeeRow({
   children?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-black/[0.08] px-4 py-4 last:border-b-0 hover:bg-[#f8f8f7] min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:px-5">
+    <div className="flex flex-col gap-3 border-b border-border px-4 py-4 last:border-b-0 hover:bg-muted min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:px-5">
       <div className="flex min-w-0 items-center gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-[#e64a19]">
           <Icon className="size-4.5" />
@@ -165,8 +165,8 @@ export function ParentTable({
             {headers.map((header) => (
               <th
                 key={header.label}
-                className={cn(
-                "border-b border-black/[0.08] bg-[#f8f8f7] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6b6b6b]",
+              className={cn(
+                "border-b border-border bg-muted px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground",
                   header.className
                 )}
               >
@@ -175,7 +175,7 @@ export function ParentTable({
             ))}
           </tr>
         </thead>
-        <tbody className="[&_td]:border-b [&_td]:border-black/[0.08] [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_td]:whitespace-nowrap [&_td]:overflow-hidden [&_td]:text-ellipsis [&_tr:hover_td]:bg-[#f8f8f7]">
+        <tbody className="[&_td]:border-b [&_td]:border-border [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_td]:whitespace-nowrap [&_td]:overflow-hidden [&_td]:text-ellipsis [&_tr:hover_td]:bg-muted">
           {children}
         </tbody>
       </table>
@@ -185,7 +185,7 @@ export function ParentTable({
 
 export function DetailRows({ rows }: { rows: Array<{ label: string; value: string; tone?: ParentTone }> }) {
   return (
-    <div className="divide-y divide-black/[0.08]">
+    <div className="divide-y divide-border">
       {rows.map((row) => (
         <div key={row.label} className="flex items-start justify-between gap-3 py-2.5 text-[13px] leading-5">
           <span className="text-[#6b6b6b]">{row.label}</span>
@@ -218,14 +218,14 @@ export function ParentField({
 }
 
 export const parentControlClass =
-  "min-h-11 rounded-[10px] border border-black/15 bg-white px-3 text-[13px] text-[#1a1a1a] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/10";
+  "min-h-11 rounded-[10px] border border-input bg-card px-3 text-[13px] text-foreground outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/10";
 
 export function VisualCheckbox({ checked }: { checked: boolean }) {
   return (
     <span
       className={cn(
         "flex size-5 shrink-0 items-center justify-center rounded-md border",
-        checked ? "border-[#e64a19] bg-[#e64a19] text-white" : "border-black/20 bg-white"
+        checked ? "border-[#e64a19] bg-[#e64a19] text-white" : "border-input bg-card"
       )}
     >
       {checked ? <Check className="size-3.5" /> : null}
@@ -252,15 +252,17 @@ export function MethodCard({
       onClick={onClick}
       className={cn(
         "flex min-h-11 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20",
-        selected ? "border-[#e64a19] bg-[#fbe9e7]" : "border-black/[0.08] bg-white hover:bg-[#f8f8f7]"
+        selected
+          ? "border-[#e64a19] bg-accent text-accent-foreground"
+          : "border-border bg-card text-foreground hover:bg-muted hover:text-foreground"
       )}
     >
-      <span className="flex size-9 items-center justify-center rounded-lg bg-white text-[#e64a19]">
+      <span className="flex size-9 items-center justify-center rounded-lg bg-card text-[#e64a19]">
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-semibold text-[#1a1a1a]">{title}</span>
-        <span className="mt-0.5 block text-xs text-[#6b6b6b]">{desc}</span>
+        <span className="block text-[13px] font-semibold text-foreground">{title}</span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">{desc}</span>
       </span>
       <span className="flex size-5 items-center justify-center rounded-full border border-[#e64a19]">
         {selected ? <span className="size-2.5 rounded-full bg-[#e64a19]" /> : null}
@@ -271,7 +273,7 @@ export function MethodCard({
 
 export function SearchBox({ placeholder }: { placeholder: string }) {
   return (
-    <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-[10px] border border-black/15 bg-[#f8f8f7] px-3 py-2 text-[13px] sm:min-w-[210px]">
+    <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-[10px] border border-border bg-muted px-3 py-2 text-[13px] sm:min-w-[210px]">
       <Search className="size-4 text-[#9e9e9e]" />
       <input className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[#9e9e9e]" placeholder={placeholder} readOnly />
     </label>

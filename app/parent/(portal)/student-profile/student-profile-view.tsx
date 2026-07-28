@@ -50,7 +50,7 @@ export function StudentProfileSelector({ students }: { students: ParentLinkedStu
           <Link
             key={student.id}
             href={student.profileHref}
-            className="flex flex-col gap-3 px-4 py-4 transition hover:bg-[#f8f8f7] focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-5"
+            className="flex flex-col gap-3 px-4 py-4 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-5"
           >
             <div className="flex min-w-0 items-center gap-3">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">

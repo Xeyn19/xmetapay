@@ -112,6 +112,11 @@ test("auth sessions are database-backed and never expose raw tokens", () => {
   assert.match(authDb, /process\.env\.NEXT_PHASE === "phase-production-build"/);
   assert.match(authDb, /isProduction && !isProductionBuild/);
   assert.match(authDb, /throw new Error\(`\$\{name\} must be set in production\.`\)/);
+  assert.match(authDb, /globalForDatabase\.xmetaPayDatabasePool \?\? createDatabasePool\(\)/);
+  assert.match(authDb, /if \(!isProduction\) \{[\s\S]*globalForDatabase\.xmetaPayDatabasePool = pool/);
+  assert.match(authDb, /connectionLimit: 10/);
+  assert.match(authDb, /maxIdle: 10/);
+  assert.match(authDb, /idleTimeout: 60_000/);
   assert.doesNotMatch(authDb, /MYSQL_SSL|mysqlSslConfig/);
 
   assert.match(session, /randomBytes\(32\)\.toString\("base64url"\)/);

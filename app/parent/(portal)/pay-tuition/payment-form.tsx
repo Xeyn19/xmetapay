@@ -63,7 +63,7 @@ export function ParentPaymentForm({ rows }: { rows: ParentPayableFee[] }) {
             return (
               <label
                 key={selectedKey}
-                className="flex w-full cursor-pointer items-center justify-between gap-4 border-b border-black/[0.08] px-5 py-4 text-left last:border-b-0 hover:bg-[#f8f8f7] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
+                className="flex w-full cursor-pointer items-center justify-between gap-4 border-b border-border px-5 py-4 text-left last:border-b-0 hover:bg-muted has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <input
@@ -121,7 +121,7 @@ export function ParentPaymentForm({ rows }: { rows: ParentPayableFee[] }) {
             <span className="text-[#6b6b6b]">Student</span>
             <span className="max-w-[190px] truncate text-right font-semibold">{selectedRows[0]?.studentName ?? "None selected"}</span>
           </div>
-          <div className="border-t border-black/[0.08] pt-3">
+            <div className="border-t border-border pt-3">
             <div className="flex justify-between text-base font-bold">
               <span>Total</span>
               <span>{money(subtotal)}</span>
@@ -130,7 +130,7 @@ export function ParentPaymentForm({ rows }: { rows: ParentPayableFee[] }) {
           <ParentButton type="submit" tone="primary" className="mt-4 w-full" disabled={subtotal <= 0}>
             Pay {money(subtotal)}
           </ParentButton>
-          <a href="/parent/fees" className="flex h-11 w-full items-center justify-center rounded-[10px] border border-black/15 bg-white px-3.5 text-[13px] font-medium text-[#6b6b6b] transition hover:bg-[#f2f1ef]">
+          <a href="/parent/fees" className="flex h-11 w-full items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground">
             Back to fee summary
           </a>
         </div>
