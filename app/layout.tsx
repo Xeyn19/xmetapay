@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { PublicThemeProvider } from "@/app/_components/public-theme-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,11 +27,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#f7f8fa]">
-        {children}
-        <Toaster closeButton richColors position="top-center" />
+        <PublicThemeProvider>
+          {children}
+          <Toaster closeButton richColors position="top-center" />
+        </PublicThemeProvider>
       </body>
     </html>
   );

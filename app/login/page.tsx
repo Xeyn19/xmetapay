@@ -39,7 +39,7 @@ export default async function CompanyLoginPage({
       headerAction={
         <Link
           href="/"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.06] px-3 py-2 text-sm font-semibold text-zinc-200 shadow-sm transition hover:border-[#ff7043]/50 hover:bg-[#e64a19]/10 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 sm:px-4"
+          className="public-secondary-action inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 sm:px-4"
         >
           All portals
         </Link>
@@ -52,19 +52,19 @@ export default async function CompanyLoginPage({
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e64a19]">
                 Company access
               </p>
-              <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-white">
+              <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-[var(--public-text)]">
                 Company sign in
               </h1>
-              <p className="mt-2 text-sm leading-6 text-zinc-400">
+              <p className="mt-2 text-sm leading-6 text-[var(--public-muted)]">
                 Monitor schools and manage admin access.
               </p>
             </div>
             <SuperAdminLoginForm />
-            <div className="mt-5 border-t border-white/10 pt-4 text-center text-sm text-zinc-400">
+            <div className="mt-5 border-t border-[var(--public-divider)] pt-4 text-center text-sm text-[var(--public-muted)]">
               School or parent user?{" "}
               <Link
                 href="/"
-                className="rounded-md font-bold text-[#ff8a65] hover:text-[#ffb09a] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+                className="public-link rounded-md font-bold focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
               >
                 View public portals
               </Link>

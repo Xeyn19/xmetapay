@@ -19,7 +19,7 @@ export function PasswordInput({ className, ...props }: PasswordInputProps) {
   const Icon = visible ? EyeOff : Eye
 
   return (
-    <InputGroup className="h-auto min-h-12 border-white/15 bg-white/[0.055] text-white focus-within:border-[#ff7043] focus-within:ring-4 focus-within:ring-[#ff7043]/10">
+    <InputGroup className="public-field h-auto min-h-12 focus-within:border-[#ff7043] focus-within:ring-4 focus-within:ring-[#ff7043]/10">
       <InputGroupInput
         {...props}
         type={visible ? "text" : "password"}
@@ -29,7 +29,7 @@ export function PasswordInput({ className, ...props }: PasswordInputProps) {
         <InputGroupButton
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
-          className="size-11 text-zinc-400 hover:bg-white/10 hover:text-white"
+          className="size-11 text-[var(--public-muted)] hover:bg-[#e64a19]/10 hover:text-[var(--public-text)]"
           size="icon-sm"
           type="button"
           onClick={() => setVisible((current) => !current)}

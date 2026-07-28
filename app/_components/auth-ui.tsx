@@ -7,6 +7,7 @@ import { loginAction, registerAction, type AuthFormState } from "@/app/auth/acti
 import { AuthToastListener } from "./auth-toast-listener";
 import { BrandLogo } from "./brand-logo";
 import { PasswordInput } from "./password-input";
+import { PublicThemeToggle } from "./public-theme-toggle";
 import { cn } from "@/lib/utils";
 
 type Portal = "admin" | "parent";
@@ -28,10 +29,10 @@ export function BrandMark() {
     >
       <BrandLogo />
       <span className="min-w-0">
-        <span className="block truncate text-base font-bold tracking-tight text-white">
+        <span className="block truncate text-base font-bold tracking-tight text-[var(--public-text)]">
           XMETA Pay
         </span>
-        <span className="block truncate text-xs font-medium text-zinc-400">
+        <span className="block truncate text-xs font-medium text-[var(--public-muted)]">
           School payments, simplified
         </span>
       </span>
@@ -47,11 +48,14 @@ export function PublicPageShell({
   headerAction?: React.ReactNode;
 }) {
   return (
-    <main className="public-auth-shell relative min-h-[100svh] overflow-hidden px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8">
+    <main className="public-auth-shell relative min-h-[100svh] overflow-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
       <div className="relative z-10 mx-auto flex min-h-[calc(100svh-32px)] w-full max-w-5xl flex-col sm:min-h-[calc(100svh-48px)]">
-        <header className="flex min-h-12 items-center justify-between gap-3">
+        <header className="flex min-h-12 flex-wrap items-center justify-between gap-3">
           <BrandMark />
-          {headerAction}
+          <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+            {headerAction}
+            <PublicThemeToggle />
+          </div>
         </header>
         {children}
       </div>
@@ -69,7 +73,7 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-xl border border-white/[0.13] bg-[#202122]/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.42)] backdrop-blur-xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-[#ff7043] before:to-transparent sm:p-7",
+        "public-surface relative w-full overflow-hidden rounded-xl border p-5 backdrop-blur-xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-[#ff7043] before:to-transparent sm:p-7",
         wide ? "max-w-4xl lg:p-8" : "max-w-md",
       )}
     >
@@ -95,7 +99,7 @@ export function PortalAuthLayout({
       headerAction={
         <Link
           href="/"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.06] px-3 py-2 text-sm font-semibold text-zinc-200 shadow-sm transition hover:border-[#ff7043]/50 hover:bg-[#e64a19]/10 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 sm:px-4"
+          className="public-secondary-action inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 sm:px-4"
         >
           All portals
         </Link>
@@ -104,11 +108,11 @@ export function PortalAuthLayout({
         <section className={isLogin ? "flex flex-1 items-center justify-center py-8 sm:py-10" : "flex flex-1 items-start justify-center py-8 sm:py-10 lg:py-12"}>
           <AuthCard wide={!isLogin}>
             {children}
-            <div className={isLogin ? "mt-5 border-t border-white/10 pt-4 text-center text-sm text-zinc-400" : "mt-7 border-t border-white/10 pt-5 text-center text-sm text-zinc-400"}>
+            <div className={isLogin ? "mt-5 border-t border-[var(--public-divider)] pt-4 text-center text-sm text-[var(--public-muted)]" : "mt-7 border-t border-[var(--public-divider)] pt-5 text-center text-sm text-[var(--public-muted)]"}>
               {mode === "login" ? "New to this portal?" : "Already have access?"}{" "}
               <Link
                 href={`/${portal}/${otherMode}`}
-                className="rounded-md font-bold text-[#ff8a65] hover:text-[#ffb09a] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+                className="public-link rounded-md font-bold focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
               >
                 {mode === "login" ? "Create an account" : "Sign in instead"}
               </Link>
@@ -166,10 +170,10 @@ export function AuthForm({
         <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e64a19]">
           {portal === "admin" ? "Admin access" : "Family access"}
         </p>
-        <h1 className={isLogin ? "mt-2 text-2xl font-bold leading-tight tracking-tight text-white" : "mt-2 text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl"}>
+        <h1 className={isLogin ? "mt-2 text-2xl font-bold leading-tight tracking-tight text-[var(--public-text)]" : "mt-2 text-2xl font-bold leading-tight tracking-tight text-[var(--public-text)] sm:text-3xl"}>
           {title}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--public-muted)]">
           {subtitle}
         </p>
       </div>
@@ -207,7 +211,7 @@ export function AuthForm({
         <div className="text-right">
           <Link
             href={`/${portal}/forgot-password`}
-            className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-bold text-[#ff8a65] hover:text-[#ffb09a] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+            className="public-link inline-flex min-h-11 items-center rounded-md px-1 text-sm font-bold focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
           >
             Forgot password?
           </Link>
@@ -215,7 +219,7 @@ export function AuthForm({
       ) : null}
 
       {state.message ? (
-        <p className="rounded-lg border border-red-400/25 bg-red-950/35 px-3 py-2 text-sm font-semibold text-red-200" aria-live="polite">
+        <p className="public-error rounded-lg border px-3 py-2 text-sm font-semibold" aria-live="polite">
           {state.message}
         </p>
       ) : null}
@@ -256,16 +260,16 @@ function AuthField({
 
   return (
     <label className={cn("block", field.spanFull && "sm:col-span-2")}>
-      <span className={compact ? "mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-400" : `mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-400 sm:text-xs sm:tracking-[0.12em] ${alignLabel ? "min-h-8 sm:min-h-0" : ""}`}>
+      <span className={compact ? "mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-[var(--public-muted)]" : `mb-2 block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[var(--public-muted)] sm:text-xs sm:tracking-[0.12em] ${alignLabel ? "min-h-8 sm:min-h-0" : ""}`}>
         {field.label}
-        {!required ? <span className="ml-1 font-semibold normal-case tracking-normal text-zinc-500">(optional)</span> : null}
+        {!required ? <span className="ml-1 font-semibold normal-case tracking-normal text-[var(--public-subtle)]">(optional)</span> : null}
       </span>
       {field.options ? (
         <select
           name={field.name}
           required={required}
           aria-invalid={Boolean(error)}
-          className="min-h-12 w-full rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-sm text-white outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
+          className="public-field min-h-12 w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
           value={value}
           onChange={(event) => onValueChange(field.name, event.target.value)}
         >
@@ -285,7 +289,7 @@ function AuthField({
           value={value}
           onChange={(event) => onValueChange(field.name, event.target.value)}
           aria-invalid={Boolean(error)}
-          className="px-3 py-2 text-sm text-white placeholder:text-zinc-500"
+          className="px-3 py-2 text-sm text-[var(--public-text)] placeholder:text-[var(--public-subtle)]"
         />
       ) : (
         <input
@@ -296,15 +300,15 @@ function AuthField({
           value={value}
           onChange={(event) => onValueChange(field.name, event.target.value)}
           aria-invalid={Boolean(error)}
-          className="min-h-12 w-full rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
+          className="public-field min-h-12 w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
         />
       )}
       {showPasswordHelp ? (
-        <span className="mt-1.5 block text-xs font-medium text-zinc-400">
+        <span className="mt-1.5 block text-xs font-medium text-[var(--public-muted)]">
           Use at least 8 characters.
         </span>
       ) : null}
-      {error ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{error}</span> : null}
+      {error ? <span className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">{error}</span> : null}
     </label>
   );
 }
@@ -328,21 +332,21 @@ function StudentReferencesField({ error }: { error?: string }) {
   return (
     <div className="sm:col-span-2">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <span className="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-zinc-400 sm:text-xs sm:tracking-[0.12em]">
+        <span className="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[var(--public-muted)] sm:text-xs sm:tracking-[0.12em]">
           Student IDs or references
         </span>
         <span className="rounded-md bg-[#fbe9e7] px-2 py-1 text-[11px] font-bold text-[#bf360c]">
           {countLabel}
         </span>
       </div>
-      <div className="rounded-lg border border-white/10 bg-black/15 p-3 sm:p-4">
-        <p className="max-w-2xl text-xs leading-5 text-zinc-400 sm:text-[13px] sm:leading-6">
+      <div className="public-panel rounded-lg border p-3 sm:p-4">
+        <p className="max-w-2xl text-xs leading-5 text-[var(--public-muted)] sm:text-[13px] sm:leading-6">
           Enter the student references from the school. Add all children you want connected to this parent account.
         </p>
         <div className="mt-3 grid gap-2.5">
           {references.map((reference, index) => (
             <div key={index} className="grid gap-2 min-[560px]:grid-cols-[2rem_minmax(0,1fr)_auto] min-[560px]:items-center">
-              <span className="hidden size-8 items-center justify-center rounded-lg bg-white/[0.07] text-xs font-bold text-zinc-400 min-[560px]:inline-flex">
+              <span className="hidden size-8 items-center justify-center rounded-lg bg-[var(--public-field)] text-xs font-bold text-[var(--public-muted)] min-[560px]:inline-flex">
                 {index + 1}
               </span>
               <input
@@ -354,13 +358,13 @@ function StudentReferencesField({ error }: { error?: string }) {
                 required={index === 0}
                 aria-label={`Student reference ${index + 1}`}
                 aria-invalid={Boolean(error)}
-                className="min-h-12 min-w-0 rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
+                className="public-field min-h-12 min-w-0 rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
               />
               {references.length > 1 ? (
                 <button
                   type="button"
                   onClick={() => removeReference(index)}
-                  className="min-h-11 rounded-lg border border-white/15 bg-white/[0.05] px-3 text-sm font-bold text-zinc-300 transition hover:bg-white/10 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 min-[560px]:min-h-12"
+                  className="public-secondary-action min-h-11 rounded-lg px-3 text-sm font-bold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 min-[560px]:min-h-12"
                 >
                   Remove
                 </button>
@@ -372,16 +376,16 @@ function StudentReferencesField({ error }: { error?: string }) {
           <button
             type="button"
             onClick={addReference}
-            className="min-h-11 rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[#ff9a7a] transition hover:bg-[#e64a19]/20 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+            className="min-h-11 rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[var(--public-link)] transition hover:bg-[#e64a19]/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
           >
             Add another student
           </button>
-          <span className="text-xs leading-5 text-zinc-400">
+          <span className="text-xs leading-5 text-[var(--public-muted)]">
             Duplicate references are ignored safely.
           </span>
         </div>
       </div>
-      {error ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{error}</span> : null}
+      {error ? <span className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">{error}</span> : null}
     </div>
   );
 }
@@ -402,14 +406,14 @@ export function PortalCard({
   const isAdmin = variant === "admin";
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-white/[0.13] bg-[#202122]/88 p-5 text-left text-white shadow-[0_20px_55px_rgba(0,0,0,0.32)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#ff7043]/40 hover:bg-[#242526]/92 hover:shadow-[0_24px_60px_rgba(0,0,0,0.4)] sm:p-6">
+    <article className="public-surface flex h-full flex-col rounded-xl border p-5 text-left backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:border-[#ff7043]/40 hover:bg-[var(--public-surface-hover)] sm:p-6">
       <div className="flex size-11 items-center justify-center rounded-lg bg-[#e64a19]/15 text-[#ff8a65] ring-1 ring-[#ff7043]/20">
         {isAdmin ? <SettingsIcon /> : <PeopleIcon />}
       </div>
       <h2 className="mt-4 text-xl font-bold leading-tight tracking-tight">
         {title}
       </h2>
-      <p className="mt-2 flex-1 text-sm leading-6 text-zinc-400">
+      <p className="mt-2 flex-1 text-sm leading-6 text-[var(--public-muted)]">
         {description}
       </p>
       <div className="mt-5 flex flex-col gap-3 min-[420px]:flex-row">
@@ -421,7 +425,7 @@ export function PortalCard({
         </Link>
         <Link
           href={registerHref}
-          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/15 bg-white/[0.055] px-4 py-2 text-sm font-bold text-zinc-200 transition hover:border-[#ff7043]/40 hover:bg-[#e64a19]/10 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+          className="public-secondary-action inline-flex min-h-11 flex-1 items-center justify-center rounded-lg px-4 py-2 text-sm font-bold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
         >
           Register
         </Link>

@@ -28,7 +28,7 @@ export function SuperAdminLoginForm() {
   return (
     <form action={action} className="space-y-4">
       <label className="block">
-        <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-400">
+        <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-[var(--public-muted)]">
           Company email
         </span>
         <input
@@ -39,13 +39,13 @@ export function SuperAdminLoginForm() {
           onChange={(event) => setValues((current) => ({ ...current, email: event.target.value }))}
           placeholder="xmeta@gmail.com"
           aria-invalid={Boolean(state.errors?.email)}
-          className="min-h-12 w-full rounded-lg border border-white/15 bg-white/[0.055] px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
+          className="public-field min-h-12 w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
         />
-        {state.errors?.email ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{state.errors.email}</span> : null}
+        {state.errors?.email ? <span className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">{state.errors.email}</span> : null}
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-zinc-400">
+        <span className="mb-1.5 block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-[var(--public-muted)]">
           Password
         </span>
         <PasswordInput
@@ -55,22 +55,22 @@ export function SuperAdminLoginForm() {
           onChange={(event) => setValues((current) => ({ ...current, password: event.target.value }))}
           placeholder="Enter company password"
           aria-invalid={Boolean(state.errors?.password)}
-          className="px-3 py-2 text-sm text-white placeholder:text-zinc-500"
+          className="px-3 py-2 text-sm text-[var(--public-text)] placeholder:text-[var(--public-subtle)]"
         />
-        {state.errors?.password ? <span className="mt-1.5 block text-xs font-semibold text-[#9f2f12]">{state.errors.password}</span> : null}
+        {state.errors?.password ? <span className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">{state.errors.password}</span> : null}
       </label>
 
       <div className="text-right">
         <Link
           href="/forgot-password"
-          className="inline-flex min-h-11 items-center rounded-md px-1 text-sm font-bold text-[#ff8a65] hover:text-[#ffb09a] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+          className="public-link inline-flex min-h-11 items-center rounded-md px-1 text-sm font-bold focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
         >
           Forgot password?
         </Link>
       </div>
 
       {state.message ? (
-        <p className="rounded-lg border border-red-400/25 bg-red-950/35 px-3 py-2 text-sm font-semibold text-red-200" aria-live="polite">
+        <p className="public-error rounded-lg border px-3 py-2 text-sm font-semibold" aria-live="polite">
           {state.message}
         </p>
       ) : null}
