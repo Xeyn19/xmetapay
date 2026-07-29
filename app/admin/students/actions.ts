@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getAdminStaffRole } from "@/lib/admin/access";
@@ -13,6 +14,51 @@ import {
   type ExistingEnrollmentBatchResult,
   type StudentBatchResult,
 } from "@/lib/students/enrollment";
+import {
+  StudentProfileValidationError,
+  updateAdminStudentProfile,
+  type StudentProfileField,
+} from "@/lib/students/profile";
+
+export type StudentProfileUpdateActionState = {
+  status: "idle" | "success" | "error";
+  title: string;
+  description: string;
+  fieldErrors: Partial<Record<StudentProfileField, string>>;
+  submittedAt: number;
+};
+
+export async function updateStudentProfileAction(
+  _previousState: StudentProfileUpdateActionState,
+  formData: FormData,
+): Promise<StudentProfileUpdateActionState> {
+  void _previousState;
+  const session = await requireStudentManager("Your staff role cannot edit student profiles.");
+
+  try {
+    const result = await updateAdminStudentProfile(session.userId, formData);
+    revalidatePath(`/admin/students/${result.studentId}`);
+    revalidatePath("/admin/student-profile");
+    revalidatePath("/admin/students");
+
+    return studentProfileActionState(
+      "success",
+      "Student details updated",
+      result.placementUpdated
+        ? `${result.fullName}'s student details and active-year placement were updated.`
+        : `${result.fullName}'s student details were updated.`,
+    );
+  } catch (error) {
+    return studentProfileActionState(
+      "error",
+      "Student details not updated",
+      error instanceof StudentProfileValidationError
+        ? error.message
+        : "Student details could not be updated. Check MySQL/XAMPP and try again.",
+      error instanceof StudentProfileValidationError ? error.fieldErrors : {},
+    );
+  }
+}
 
 export async function createStudentAction(formData: FormData) {
   const session = await requireStudentManager("Your staff role cannot add or enroll students.");
@@ -135,4 +181,13 @@ function messageForError(error: unknown) {
   return error instanceof Error
     ? error.message
     : "Check that MySQL/XAMPP is running and the school setup is complete.";
+}
+
+function studentProfileActionState(
+  status: StudentProfileUpdateActionState["status"],
+  title: string,
+  description: string,
+  fieldErrors: StudentProfileUpdateActionState["fieldErrors"] = {},
+): StudentProfileUpdateActionState {
+  return { status, title, description, fieldErrors, submittedAt: Date.now() };
 }

@@ -343,6 +343,43 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
     }
   });
 
+  test("admin edits a student profile responsively in both themes", async ({ context, page }) => {
+    test.setTimeout(90_000);
+    const fixture = await ensureE2EAdminStudentProfileEdit();
+    await addDatabaseSessionCookieForUser(context, fixture.adminUserId, "admin");
+    await page.goto(`/admin/students/${fixture.studentId}`, { waitUntil: "domcontentloaded" });
+
+    const editButton = page.getByRole("button", { name: "Edit details" });
+    await expect(editButton).toBeVisible();
+    await editButton.click();
+
+    let dialog = page.getByRole("dialog", { name: "Edit student details" });
+    await expect(dialog.getByLabel("Student reference")).toHaveValue("E2E-PROFILE-001");
+    await expect(dialog.getByLabel("Student status")).toContainText("Active");
+    await expect(dialog.getByLabel("Enrollment status")).toContainText("Enrolled");
+    await expect(dialog.getByLabel("Grade level")).toBeEnabled();
+    await expect(dialog.getByLabel("Section")).toBeEnabled();
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(dialog).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    await dialog.getByLabel("First name").fill("E2E Edited");
+    await dialog.getByRole("button", { name: "Save changes" }).click();
+    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Student details updated" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: /E2E Edited Profile Student/ })).toBeVisible();
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await editButton.click();
+    dialog = page.getByRole("dialog", { name: "Edit student details" });
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await expect(dialog.getByText("Student information")).toBeVisible();
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(editButton).toBeFocused();
+  });
+
   test("admin logout clears the session and returns to admin login", async ({
     page,
   }) => {
@@ -1017,6 +1054,53 @@ async function ensureE2ESchoolProfile() {
     );
 
     return schoolId;
+  } finally {
+    await connection.end();
+  }
+}
+
+async function ensureE2EAdminStudentProfileEdit() {
+  await ensureE2ESchoolProfile();
+  const connection = await mysql.createConnection(databaseConfig());
+
+  try {
+    const [adminRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM users WHERE role = 'admin' AND email = 'e2e-school-profile-admin@xmetapay.test' LIMIT 1",
+    );
+    const [studentRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      `SELECT st.id
+       FROM students st
+       JOIN schools sc ON sc.id = st.school_id
+       WHERE sc.code = 'E2E-SCHOOL' AND st.student_reference = 'E2E-PROFILE-001'
+       LIMIT 1`,
+    );
+    const [sectionRows] = await connection.execute<Array<{ id: number; school_year_id: number } & RowDataPacket>>(
+      `SELECT s.id, s.school_year_id
+       FROM sections s
+       JOIN schools sc ON sc.id = s.school_id
+       JOIN school_years sy ON sy.id = s.school_year_id AND sy.status = 'active'
+       WHERE sc.code = 'E2E-SCHOOL' AND s.name = 'Section E2E'
+       LIMIT 1`,
+    );
+    const adminUserId = adminRows[0].id;
+    const studentId = studentRows[0].id;
+    const section = sectionRows[0];
+
+    await connection.execute(
+      `UPDATE students
+       SET first_name = 'E2E', middle_name = NULL, last_name = 'Profile Student',
+           birthdate = '2014-05-20', sex = 'male', status = 'active'
+       WHERE id = :studentId`,
+      { studentId },
+    );
+    await connection.execute(
+      `UPDATE enrollments
+       SET section_id = :sectionId, student_type = 'returned', status = 'enrolled'
+       WHERE student_id = :studentId AND school_year_id = :schoolYearId`,
+      { studentId, sectionId: section.id, schoolYearId: section.school_year_id },
+    );
+
+    return { adminUserId, studentId };
   } finally {
     await connection.end();
   }

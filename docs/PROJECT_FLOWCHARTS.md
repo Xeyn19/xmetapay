@@ -37,7 +37,7 @@ Implemented:
 - Company super admin monitoring for school admin accounts.
 - Unified Add students chooser for single-new, batch-new, and existing-student active-year enrollment.
 - New student records require sex; each school-year enrollment records `new`, `transferee`, or `returned` student type. Age is derived from birthdate for profiles and exports.
-- Admin student profile selector and exact profile route `/admin/students/[studentId]`.
+- Admin student profile selector and exact profile route `/admin/students/[studentId]`, including school-scoped identity correction and existing active-year placement correction.
 - Parent-to-student linking through `student_reference`.
 - Parent dashboard reads linked students through `student_guardians`.
 - Parent-side mock enrollment wizard has been removed; the parent portal links existing school-created students only.
@@ -347,6 +347,10 @@ flowchart TD
   J --> K["Student appears in enrolled students table"]
   K --> L["Admin can open exact profile at /admin/students/studentId"]
   K --> M["Parent can now link using student_reference"]
+  L --> N["Admin or registrar corrects student master details"]
+  N --> O{"Selected year is active and enrollment exists?"}
+  O -->|Yes| P["Atomically update student plus grade, section, and student type"]
+  O -->|No| Q["Keep placement read-only; use existing enrollment workflow if missing"]
 ```
 
 Database touchpoints:
@@ -356,6 +360,8 @@ Database touchpoints:
 - `school_years`
 - `grade_levels`
 - `sections`
+
+Student and enrollment statuses, guardian accounts, and historical placement are not modified by the profile correction workflow.
 
 ### 4. Admin Parent Directory
 

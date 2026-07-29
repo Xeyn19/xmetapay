@@ -97,6 +97,7 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Enroll one or many existing pending students without re-entering identity details; only active-year grade/section enrollment rows are created.
 - [x] Capture required sex on new student records and school-year student type on new, existing-student, bulk, and rollover enrollment flows; derive age from birthdate and show legacy missing values as Pending.
 - [x] Restrict student creation/enrollment to `school_administrator` and `registrar`.
+- [x] Let school administrators and registrars correct school-scoped student details plus existing active-year grade, section, and student type from the exact Student Profile; keep historical placement and lifecycle statuses read-only.
 - [x] Link parent accounts to students using `student_reference`.
 - [x] Allow parent registration to submit one or more student references.
 - [x] Show linked students on the parent dashboard from the database.
