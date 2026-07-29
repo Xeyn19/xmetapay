@@ -74,7 +74,6 @@ export type TuitionPageRealData = {
   kpis: AdminRealKpi[];
   rows: TuitionRow[];
   outstandingByGrade: BarRow[];
-  otherFeeSummary: Array<[string, string, string, string]>;
   reminderRows: PaymentReminderHistoryRow[];
   archivedReminderRows: PaymentReminderHistoryRow[];
 };
@@ -369,11 +368,10 @@ export async function getAdminTuitionPageRealData(
   }
 
   try {
-    const [rows, feeSummary, outstandingByGrade, otherFeeSummary, reminderRows, archivedReminderRows] = await Promise.all([
+    const [rows, feeSummary, outstandingByGrade, reminderRows, archivedReminderRows] = await Promise.all([
       getTuitionRows(setup.schoolId, setup.schoolYearId),
       getFeeSummary(setup.schoolId, setup.schoolYearId, "tuition"),
       getOutstandingByGrade(setup.schoolId, setup.schoolYearId),
-      getOtherFeeSummary(setup.schoolId, setup.schoolYearId),
       getRecentReminderRows(setup.schoolId, setup.schoolYearId, "active"),
       getRecentReminderRows(setup.schoolId, setup.schoolYearId, "archived"),
     ]);
@@ -390,7 +388,6 @@ export async function getAdminTuitionPageRealData(
       ],
       rows,
       outstandingByGrade,
-      otherFeeSummary,
       reminderRows,
       archivedReminderRows,
     };
@@ -1157,25 +1154,6 @@ function validLastPayment(value: Date | string | null) {
   return parsed.getFullYear() > 1000;
 }
 
-async function getOtherFeeSummary(schoolId: number, schoolYearId: number) {
-  const [rows] = await pool.execute<OtherFeeSummaryRow[]>(
-    `SELECT ft.name, COALESCE(SUM(sfa.amount_due), 0) AS billed, COALESCE(SUM(sfa.amount_paid), 0) AS collected
-     FROM fee_types ft
-     LEFT JOIN student_fee_assignments sfa ON sfa.fee_type_id = ft.id AND sfa.school_year_id = :schoolYearId
-     WHERE ft.school_id = :schoolId AND ft.school_year_id = :schoolYearId AND ft.category = 'other'
-     GROUP BY ft.id, ft.name
-     ORDER BY ft.name ASC`,
-    { schoolId, schoolYearId },
-  );
-
-  return rows.map((row) => [
-    row.name,
-    money(row.billed),
-    money(row.collected),
-    percent(row.collected, row.billed),
-  ] as [string, string, string, string]);
-}
-
 async function getCollectionRows(
   schoolId: number,
   schoolYearId: number,
@@ -1471,7 +1449,6 @@ function emptyTuition(warning: string | null): TuitionPageRealData {
     ],
     rows: [],
     outstandingByGrade: [],
-    otherFeeSummary: [],
     reminderRows: [],
     archivedReminderRows: [],
   };
@@ -1803,12 +1780,6 @@ type TuitionSqlRow = RowDataPacket & {
   paid_term_count: number | string;
   open_term_count: number | string;
   terms_blob: string | null;
-};
-
-type OtherFeeSummaryRow = RowDataPacket & {
-  name: string;
-  billed: number | string;
-  collected: number | string;
 };
 
 type OtherFeeItemRow = RowDataPacket & {

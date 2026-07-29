@@ -51,18 +51,22 @@ export default async function ReportsPage() {
         </DashboardCard>
 
         <DashboardCard title="Downloadable reports" icon={FileText} bodyClassName="p-0">
-          <div className="divide-y divide-black/[0.07]">
+          <div className="divide-y divide-border">
             {data.reports.map((report) => {
               const Icon = report.icon;
               return (
-                <div key={report.name} className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 transition hover:bg-[#f7f8fa]">
+                <div
+                  key={report.name}
+                  data-report-row={report.name}
+                  className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 text-foreground transition hover:bg-muted"
+                >
                   <div className="flex items-center gap-2.5">
-                    <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-[#fbe9e7] text-[#e64a19]">
+                    <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-button-soft text-primary">
                       <Icon className="size-4" />
                     </span>
                     <div>
-                      <div className="text-[13px] font-bold text-[#0f1117]">{report.name}</div>
-                      <div className="mt-0.5 text-[11px] text-[#5a6070]">{report.desc}</div>
+                      <div className="text-[13px] font-bold text-foreground">{report.name}</div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">{report.desc}</div>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">

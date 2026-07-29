@@ -28,6 +28,8 @@ Browser-generated table PDFs use the shared XMETA Pay logo, orange report stylin
 
 Landing, authentication, password recovery, and every company, school Admin, and Parent dashboard share one remembered Light/Dark presentation toggle. Dark is the first-visit default, the preference is browser-local, and role permissions are unaffected. Dashboard sidebars use white semantic navigation surfaces in Light mode and XMETA charcoal surfaces in Dark mode; orange active and focus states remain consistent. Parent navigation additionally keeps one explicit current-page state across dashboard, student, fee, receipt, history, and nested wallet routes, with uniform hover and pressed feedback. Parent rows, payment-method cards, tabs, dialogs, and secondary controls use semantic hover and selected surfaces so their labels retain contrast in both themes.
 
+Admin Financial reports download rows use the shared semantic dashboard surfaces so report names and descriptions remain readable during hover in both themes. The Tuition report stays focused on tuition assignments and reminders; non-tuition summaries remain on the dedicated Other fees page.
+
 The company account screens, every school Admin table, and every export-enabled Parent table replace visible plain CSV controls with branded Excel workbooks. Excel files use the same filtered rows and columns as PDF, add the XMETA Pay logo and report context, and freeze and filter the data headings. Parent Fee summary, Payment history, dashboard recent payments, and wallet activity export all filtered authorized rows as branded Excel/PDF. Protected legacy Reports-page CSV URLs remain compatible even though the UI presents Excel/PDF.
 
 | Staff role | Main purpose | Can do | Cannot do |
