@@ -122,7 +122,7 @@ Main purpose:
 
 ### `students`
 
-Stores the official student record. The admin Add students chooser separates one new student, multiple new students, and existing-student enrollment. If existing students are Pending for a school year, the admin can select one or many and create only the missing `enrollments` rows; identity and guardian-link data are not entered again. This unified workflow does not change the schema.
+Stores the official student record. The admin Add students chooser separates one new student, multiple new students, and existing-student enrollment. The Enrolled students page exposes one contextual trigger, while the Admin header provides the same shortcut only from other authorized pages. If existing students are Pending for a school year, the admin can select one or many and create only the missing `enrollments` rows; identity and guardian-link data are not entered again. This unified workflow and its navigation treatment do not change the schema.
 
 Main purpose:
 

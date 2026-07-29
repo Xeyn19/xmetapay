@@ -35,7 +35,7 @@ Implemented:
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Company super admin approval for new school admin registrations.
 - Company super admin monitoring for school admin accounts.
-- Unified Add students chooser for single-new, batch-new, and existing-student active-year enrollment.
+- Unified Add students chooser for single-new, batch-new, and existing-student active-year enrollment, with one contextual trigger on Enrolled students and a header shortcut from other authorized Admin pages.
 - New student records require sex; each school-year enrollment records `new`, `transferee`, or `returned` student type. Age is derived from birthdate for profiles and exports.
 - Admin student profile selector and exact profile route `/admin/students/[studentId]`, including school-scoped identity correction and existing active-year placement correction.
 - Parent-to-student linking through `student_reference`.
@@ -331,7 +331,7 @@ Database touchpoints:
 
 Implemented.
 
-The school/admin side creates the official student record first. One `Add students` chooser opens focused workflows for one new student, multiple new students, or existing students. New-student batches can apply shared grade, section, and student-type defaults before individual overrides; duplicate references and incomplete rows are identified before submission, while server validation remains authoritative. Existing students with no active-year enrollment are selected without re-entering names, birthdates, references, or parent links. Valid rows remain independent and duplicate enrollments are skipped safely.
+The school/admin side creates the official student record first. One `Add students` chooser opens focused workflows for one new student, multiple new students, or existing students. The Enrolled students page shows one contextual trigger, while other authorized Admin pages retain a header shortcut to that same chooser. New-student batches can apply shared grade, section, and student-type defaults before individual overrides; duplicate references and incomplete rows are identified before submission, while server validation remains authoritative. Existing students with no active-year enrollment are selected without re-entering names, birthdates, references, or parent links. Valid rows remain independent and duplicate enrollments are skipped safely.
 
 ```mermaid
 flowchart TD
