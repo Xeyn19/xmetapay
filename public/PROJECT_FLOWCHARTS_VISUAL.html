@@ -297,7 +297,8 @@
             payment history, wallet top-ups, store purchases, a Recharts-backed real-data overview
             for the school administrator dashboard, contrast-safe report download rows in both themes,
             tuition-only Tuition report content with non-tuition summaries kept on Other fees,
-            CSV/PDF report exports, paginated table screens
+            CSV/PDF report exports with outlined XMETA red/orange PDF controls across School Admin,
+            Super Admin, and protected Reports pages, paginated table screens
             with filtered-row CSV/PDF exports, queued in-app reminder history, and accurate wallet totals.
             Registrar and finance officer dashboards keep their role-scoped layout. Parent-side mock enrollment has been removed.
           </div>
@@ -922,7 +923,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="real-data-table-csv-pdf-exports.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> super-admin, admin, and parent real-data tables paginate on screen and export all filtered authorized rows. Every visible Admin and Parent table export uses branded Excel/PDF with the XMETA logo, authorized context, summaries, filterable frozen headings, and print setup. Parent Fee summary, Payment history, recent payments, and wallet activity retain their PDF details while replacing visible CSV controls with Excel.</p>
+          <p><strong>Implemented:</strong> super-admin, admin, and parent real-data tables paginate on screen and export all filtered authorized rows. Every visible Admin and Parent table export uses branded Excel/PDF with the XMETA logo, authorized context, summaries, filterable frozen headings, and print setup. School Admin, Super Admin, and protected Reports-page PDF controls use one outlined XMETA red/orange treatment in Light and Dark modes while Excel remains visually distinct. Parent Fee summary, Payment history, recent payments, and wallet activity retain their PDF details while replacing visible CSV controls with Excel.</p>
           <pre class="mermaid">
 flowchart TD
   A["User opens a real-data table"] --> B["Page loads MySQL-backed rows"]

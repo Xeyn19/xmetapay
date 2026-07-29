@@ -90,6 +90,11 @@ test("admin reports page links to branded Excel and PDF while the route retains 
   assert.match(page, /\/admin\/reports\/export\?type=monthly-revenue&format=pdf/);
   assert.match(page, /href=\{report\.excelHref\}/);
   assert.match(page, /href=\{report\.pdfHref\}/);
+  assert.match(page, /format="excel">Excel/);
+  assert.match(page, /format="pdf">PDF/);
+  assert.match(page, /format === "pdf"/);
+  assert.match(page, /border-primary bg-card text-primary hover:bg-button-soft hover:text-primary/);
+  assert.match(page, /border-\[#0f1117\] bg-\[#0f1117\] text-white hover:bg-\[#2d3348\]/);
   assert.doesNotMatch(page, /Export pending/);
   assert.match(realData, /function reportDownloads/);
   assert.match(realData, /excelHref: "\/admin\/reports\/export\?type=collections&format=xlsx"/);

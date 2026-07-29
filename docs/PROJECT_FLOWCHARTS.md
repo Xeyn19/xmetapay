@@ -58,7 +58,7 @@ Implemented:
 - Admin allowance ledger supports reversible Active/Archived wallet-summary views scoped to the selected school year. Archive does not disable wallets or alter parent history, balances, transactions, KPIs, or reports.
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
-- Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table, with contrast-safe report download rows in both dashboard themes.
+- Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table, with contrast-safe report rows and outlined XMETA red/orange PDF controls across School Admin and Super Admin in both dashboard themes.
 - Tuition report presents tuition assignments, reminders, and outstanding-by-grade data without duplicating the non-tuition summary owned by Other fees.
 - Admin and parent real-data tables paginate on screen and export all filtered authorized rows as branded Excel/PDF.
 - Queued in-app payment reminder history through `notification_logs`.
@@ -806,7 +806,7 @@ SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `S
 
 ## Real-Data Table Export Flow
 
-Implemented for super-admin, admin, and parent database-backed tables. Tables paginate on screen while exports use all filtered authorized rows. Every visible Admin and Parent table export uses branded Excel/PDF with the logo, authorized context, filters, summaries, frozen headings, and print setup. Protected Reports-page Excel/PDF is generated server-side from authorized report queries; legacy CSV URLs remain compatible.
+Implemented for super-admin, admin, and parent database-backed tables. Tables paginate on screen while exports use all filtered authorized rows. Every visible Admin and Parent table export uses branded Excel/PDF with the logo, authorized context, filters, summaries, frozen headings, and print setup. School Admin, Super Admin, and protected Reports-page PDF controls use the outlined XMETA red/orange style; Excel remains visually distinct. Protected Reports-page Excel/PDF is generated server-side from authorized report queries; legacy CSV URLs remain compatible.
 
 ```mermaid
 flowchart TD

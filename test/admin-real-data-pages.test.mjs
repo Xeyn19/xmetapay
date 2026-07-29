@@ -181,6 +181,9 @@ test("admin real-data tables use working search filters plus spreadsheet and PDF
   assert.match(controls, /setPageSize = \(nextPageSize: number\)/);
   assert.match(controls, /Export CSV/);
   assert.match(controls, /Export PDF/);
+  assert.match(controls, /border-primary bg-card[\s\S]*text-primary[\s\S]*hover:bg-button-soft/);
+  assert.match(controls, /border-\[#0f1117\] bg-\[#0f1117\] text-white hover:bg-\[#2d3348\]/);
+  assert.doesNotMatch(controls, /border-\[#0f1117\] text-\[#0f1117\] hover:bg-\[#f2f1ef\]/);
 
   for (const componentPath of adminTableComponentPaths) {
     assert.equal(existsSync(componentPath), true, `${componentPath} should exist`);

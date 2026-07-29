@@ -755,6 +755,37 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
     expect(pdfDownload.suggestedFilename()).toBe("xmetapay-monthly-revenue.pdf");
   });
 
+  test("Admin PDF controls use the XMETA outline treatment in both themes", async ({ page }) => {
+    await page.goto("/admin/students", { waitUntil: "domcontentloaded" });
+    test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+
+    const tablePdf = page.getByRole("button", { name: "Export PDF" });
+    const tableExcel = page.getByRole("button", { name: "Export Excel" });
+    await expect(tablePdf).toHaveCSS("border-color", "rgb(255, 106, 61)");
+    await expect(tablePdf).toHaveCSS("color", "rgb(255, 106, 61)");
+    await expect(tablePdf).toHaveCSS("background-color", "rgb(25, 29, 42)");
+    await tablePdf.hover();
+    await expect(tablePdf).toHaveCSS("background-color", "rgb(58, 35, 29)");
+    await expect(tableExcel).toHaveCSS("background-color", "rgb(15, 17, 23)");
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(tablePdf).toHaveCSS("border-color", "rgb(230, 74, 25)");
+    await expect(tablePdf).toHaveCSS("color", "rgb(230, 74, 25)");
+    await expect(tablePdf).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await tablePdf.hover();
+    await expect(tablePdf).toHaveCSS("background-color", "rgb(251, 233, 231)");
+    await expect(tableExcel).toHaveCSS("background-color", "rgb(15, 17, 23)");
+
+    await page.goto("/admin/reports", { waitUntil: "domcontentloaded" });
+    const reportPdf = page.getByRole("link", { name: "PDF" }).first();
+    const reportExcel = page.getByRole("link", { name: "Excel" }).first();
+    await expect(reportPdf).toHaveCSS("border-color", "rgb(230, 74, 25)");
+    await expect(reportPdf).toHaveCSS("color", "rgb(230, 74, 25)");
+    await reportPdf.hover();
+    await expect(reportPdf).toHaveCSS("background-color", "rgb(251, 233, 231)");
+    await expect(reportExcel).toHaveCSS("background-color", "rgb(15, 17, 23)");
+  });
+
   test("Admin finance pages keep report hover text readable and tuition content focused", async ({ page }) => {
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
@@ -831,6 +862,21 @@ test.describe("XMETA Pay super admin branding", () => {
       await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
+
+    const pdfButton = page.getByRole("button", { name: "Export PDF" });
+    const excelButton = page.getByRole("button", { name: "Export Excel" });
+    await expect(pdfButton).toHaveCSS("border-color", "rgb(255, 106, 61)");
+    await expect(pdfButton).toHaveCSS("color", "rgb(255, 106, 61)");
+    await pdfButton.hover();
+    await expect(pdfButton).toHaveCSS("background-color", "rgb(58, 35, 29)");
+    await expect(excelButton).toHaveCSS("background-color", "rgb(15, 17, 23)");
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(pdfButton).toHaveCSS("border-color", "rgb(230, 74, 25)");
+    await expect(pdfButton).toHaveCSS("color", "rgb(230, 74, 25)");
+    await pdfButton.hover();
+    await expect(pdfButton).toHaveCSS("background-color", "rgb(251, 233, 231)");
+    await expect(excelButton).toHaveCSS("background-color", "rgb(15, 17, 23)");
 
     await page.waitForLoadState("networkidle");
     const excelDownloadPromise = page.waitForEvent("download");

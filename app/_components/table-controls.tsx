@@ -160,11 +160,8 @@ export function DashboardTableControls({
           }}
           disabled={exportDisabled || exportingPdf}
           className={cn(
-            "inline-flex min-h-11 items-center justify-center gap-1.5 border bg-white px-3.5 transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60",
+            "inline-flex min-h-11 items-center justify-center gap-1.5 border border-primary bg-card px-3.5 text-primary transition hover:bg-button-soft hover:text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-60",
             buttonClass,
-            isParent
-              ? "border-[#e64a19] text-[#e64a19] hover:bg-[#fff3ee]"
-              : "border-[#0f1117] text-[#0f1117] hover:bg-[#f2f1ef]",
           )}
         >
           {exportingPdf ? <LoaderCircle className="size-4 animate-spin" /> : <FileText className="size-4" />}
