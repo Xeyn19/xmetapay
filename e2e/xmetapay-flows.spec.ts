@@ -754,6 +754,35 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
     const pdfDownload = await pdfDownloadPromise;
     expect(pdfDownload.suggestedFilename()).toBe("xmetapay-monthly-revenue.pdf");
   });
+
+  test("Admin finance pages keep report hover text readable and tuition content focused", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/admin/reports", { waitUntil: "domcontentloaded" });
+      test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+      await expect(page.locator('[data-report-row="Monthly revenue"]')).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    const reportRow = page.locator('[data-report-row="Monthly revenue"]');
+    const reportTitle = reportRow.getByText("Monthly revenue", { exact: true });
+    const reportDescription = reportRow.getByText("Paid payment totals grouped by month", { exact: true });
+    await reportRow.hover();
+    await expect(reportRow).toHaveCSS("background-color", "rgb(34, 40, 58)");
+    await expect(reportTitle).toHaveCSS("color", "rgb(247, 248, 250)");
+    await expect(reportDescription).toHaveCSS("color", "rgb(185, 192, 204)");
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await reportRow.hover();
+    await expect(reportRow).toHaveCSS("background-color", "rgb(241, 243, 245)");
+    await expect(reportTitle).toHaveCSS("color", "rgb(17, 19, 26)");
+    await expect(reportDescription).toHaveCSS("color", "rgb(95, 102, 115)");
+
+    await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Other fee items" })).toHaveCount(0);
+    await expect(page.getByText("No other fee records yet.")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Outstanding by grade" })).toBeVisible();
+  });
 });
 
 test.describe("XMETA Pay dashboard protection", () => {

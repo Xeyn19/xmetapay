@@ -17,6 +17,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Landing, role login/register, company login, and password recovery share the responsive dark XMETA Pay public shell without changing authentication contracts.
 - [x] Public and authentication screens provide a remembered Light/Dark toggle with Dark as the first-visit default while dashboard interiors remain unchanged.
 - [x] Admin, Parent, and Super Admin dashboards share the same remembered Light/Dark preference, semantic operational surfaces, theme-aware charts and statuses, and adaptive light/charcoal sidebars.
+- [x] Keep Admin report-download rows readable during hover in both themes by using semantic foreground, muted, border, and hover surfaces.
 - [x] Parent sidebar navigation provides consistent hover, pressed, keyboard-focus, and current-page states across top-level and nested Parent routes.
 - [x] Parent dashboard rows, selection cards, tabs, dialogs, and table actions retain readable text during hover, selected, pressed, and focus states in Light and Dark modes.
 - [x] Company super admin uses a sidebar-based monitoring workspace.
@@ -192,6 +193,7 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 - [x] Add protected admin PDF export downloads for the same report data.
 - [x] Show separate branded Excel and PDF report buttons on the Admin reports page while preserving legacy protected CSV URLs.
 - [x] Add pagination plus CSV and PDF filtered-row exports to real-data admin and parent tables.
+- [x] Keep the Tuition report focused on tuition data and manage non-tuition summaries through the dedicated Other fees page.
 - [x] Apply the shared XMETA Pay logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition report and Collection log.
 - [x] Replace every visible Admin CSV control with branded Excel and apply the canonical logo, context, summaries, repeated headings, and page footers to protected report PDFs.
 - [x] Replace every visible Parent CSV control with branded Excel while retaining branded PDFs, filtered summaries, Removed recovery metadata, and nested Fee summary tuition terms.

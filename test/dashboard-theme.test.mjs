@@ -6,6 +6,9 @@ const globalCss = readFileSync("app/globals.css", "utf8");
 const adminShell = readFileSync("app/admin/_components/admin-shell.tsx", "utf8");
 const parentShell = readFileSync("app/parent/_components/parent-shell.tsx", "utf8");
 const superAdminShell = readFileSync("app/super-admin/_components/super-admin-shell.tsx", "utf8");
+const adminReportsPage = readFileSync("app/admin/(dashboard)/reports/page.tsx", "utf8");
+const adminTuitionPage = readFileSync("app/admin/(dashboard)/tuition/page.tsx", "utf8");
+const adminRealData = readFileSync("lib/admin/real-data.ts", "utf8");
 
 test("every dashboard shell uses the shared theme boundary and toggle", () => {
   for (const shell of [adminShell, parentShell, superAdminShell]) {
@@ -39,4 +42,15 @@ test("dashboard shells use semantic sidebar navigation states", () => {
     assert.match(shell, /bg-sidebar-primary/);
     assert.match(shell, /focus-visible:ring-sidebar-ring/);
   }
+});
+
+test("admin finance pages keep report hover contrast and separate tuition from other fees", () => {
+  assert.match(adminReportsPage, /divide-y divide-border/);
+  assert.match(adminReportsPage, /hover:bg-muted/);
+  assert.match(adminReportsPage, /text-foreground/);
+  assert.match(adminReportsPage, /text-muted-foreground/);
+  assert.doesNotMatch(adminReportsPage, /hover:bg-\[#f7f8fa\]/);
+
+  assert.doesNotMatch(adminTuitionPage, /Other fee items|No other fee records yet/);
+  assert.doesNotMatch(adminRealData, /otherFeeSummary|getOtherFeeSummary|OtherFeeSummaryRow/);
 });

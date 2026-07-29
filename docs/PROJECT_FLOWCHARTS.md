@@ -58,7 +58,8 @@ Implemented:
 - Admin allowance ledger supports reversible Active/Archived wallet-summary views scoped to the selected school year. Archive does not disable wallets or alter parent history, balances, transactions, KPIs, or reports.
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
-- Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table.
+- Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table, with contrast-safe report download rows in both dashboard themes.
+- Tuition report presents tuition assignments, reminders, and outstanding-by-grade data without duplicating the non-tuition summary owned by Other fees.
 - Admin and parent real-data tables paginate on screen and export all filtered authorized rows as branded Excel/PDF.
 - Queued in-app payment reminder history through `notification_logs`.
 

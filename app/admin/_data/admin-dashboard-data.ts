@@ -220,13 +220,6 @@ export const outstandingByGrade = [
   { label: "Grade 6", value: "P10,500", percent: 24 },
 ];
 
-export const otherFeeSummary = [
-  ["Books", "P82,000", "P74,200", "90.5%"],
-  ["Uniform", "P48,000", "P41,000", "85.4%"],
-  ["PTA contribution", "P24,400", "P18,700", "76.6%"],
-  ["ID replacement", "P3,200", "P2,800", "87.5%"],
-];
-
 export const collectionsKpis: Kpi[] = [
   { label: "Payments today", value: "32", note: "P64,250 collected", tone: "orange", icon: CreditCard },
   { label: "Online channels", value: "94%", note: "GCash, Maya, card", tone: "green", icon: Send },

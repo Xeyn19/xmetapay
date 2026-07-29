@@ -344,7 +344,7 @@
             <tr>
               <td>Fees</td>
               <td><code>fee_types</code>, <code>fee_type_term_templates</code>, <code>student_fee_assignments</code>, <code>parent_fee_summary_archives</code>, <code>tuition_payment_terms</code></td>
-              <td>Tuition, balances, terms, and parent-specific Fee summary visibility. Per-student term dates use the existing inclusive range from <code>school_years.starts_on</code> through <code>student_fee_assignments.due_date</code>; no schedule-window columns are added. Archive is indefinite; <code>deleted_at</code> starts a database-timed 30-day recovery window. Recovery returns the row to Archived, while expired tombstones remain visible as Permanently hidden without changing financial records.</td>
+              <td>Tuition, balances, terms, and parent-specific Fee summary visibility. The Admin Tuition report stays tuition-specific, while non-tuition summaries remain on Other fees; this UI separation adds no schema fields. Per-student term dates use the existing inclusive range from <code>school_years.starts_on</code> through <code>student_fee_assignments.due_date</code>; no schedule-window columns are added. Archive is indefinite; <code>deleted_at</code> starts a database-timed 30-day recovery window. Recovery returns the row to Archived, while expired tombstones remain visible as Permanently hidden without changing financial records.</td>
             </tr>
             <tr>
               <td>Payments</td>
@@ -364,7 +364,7 @@
             <tr>
               <td>Reports</td>
               <td>Operational query views</td>
-              <td>Every visible Admin and Parent table export uses branded Excel/PDF from authorized display rows or protected report queries. Browser ExcelJS loads on demand; Reports-page Excel/PDF is generated server-side with the canonical logo, authorized context, summaries, and pagination. Legacy protected Admin CSV URLs remain compatible. No schema or accounting fields are added.</td>
+              <td>Every visible Admin and Parent table export uses branded Excel/PDF from authorized display rows or protected report queries. Browser ExcelJS loads on demand; Reports-page Excel/PDF is generated server-side with the canonical logo, authorized context, summaries, and pagination. Admin report rows use semantic theme surfaces so labels remain readable on hover. Legacy protected Admin CSV URLs remain compatible. No schema or accounting fields are added.</td>
             </tr>
             <tr>
               <td>Notifications</td>
