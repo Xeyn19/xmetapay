@@ -145,11 +145,15 @@ Main purpose:
 
 This table is what lets the parent portal show only the children linked to the signed-in parent. Parent registration can create multiple links by looping through submitted `student_reference` values, and the parent dashboard or My students page can add more linked students later by inserting additional `student_guardians` rows. The unique student-parent pair prevents duplicate links.
 
+The company super-admin school profile also reuses this relationship for aggregate monitoring. It counts distinct parents linked to active-year enrolled students separately from all distinct parents linked to any student in the school. It does not return parent or student directory fields, and it requires no additional table.
+
 ## Enrollment Tables
 
 ### `enrollments`
 
 Stores a student's enrollment record for a specific school year.
+
+The read-only `/super-admin/schools/[schoolId]` profile uses the active school year and distinct student IDs to show current enrolled students, enrollment-status counts, and grade-level distribution. Total student records remain a separate school-scoped count from `students`, so current operational population is not confused with historical master records.
 
 Main purpose:
 

@@ -115,7 +115,7 @@ flowchart TD
 
 Implemented.
 
-The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage and export filtered school admin accounts from `/super-admin/admin-accounts`, and review or export filtered pending school admin registrations from `/super-admin/registrations`.
+The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage and export filtered school admin accounts from `/super-admin/admin-accounts`, open read-only aggregate school profiles at `/super-admin/schools/[schoolId]`, and review or export filtered pending school admin registrations from `/super-admin/registrations`. School profiles show distinct current/total student and parent counts plus active-year enrollment and grade breakdowns without exposing parent/student directories or financial data.
 
 ```mermaid
 flowchart TD
@@ -133,11 +133,14 @@ flowchart TD
   K --> M["Admin login stays blocked"]
   F --> N["Use sidebar to open /super-admin/admin-accounts"]
   N --> O["Enable or disable school admin access"]
+  N --> P["Open /super-admin/schools/[schoolId]"]
+  P --> Q["View aggregate current and total school population"]
 ```
 
 MVP limits:
 
 - No impersonation.
+- No parent/student directories or financial details in school profiles.
 - No editing school setup, students, fees, payments, wallets, or reports.
 - No committed seed credentials; the temporary SQL seed file is local-only and should be deleted after import.
 

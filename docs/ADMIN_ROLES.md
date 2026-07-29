@@ -10,11 +10,11 @@ Active company, school-admin, and parent accounts can request an email OTP from 
 
 | Auth role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
-| `super_admin` | XMETA Pay company monitoring | Sign in at `/login`, review and export filtered pending school admin registrations, approve or reject admin access, view schools and school admin accounts, export both account lists as branded Excel or PDF, enable or disable school admin access | Manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
+| `super_admin` | XMETA Pay company monitoring | Sign in at `/login`, review and export filtered pending school admin registrations, approve or reject admin access, view schools and school admin accounts, open aggregate school population profiles, export both account lists as branded Excel or PDF, enable or disable school admin access | View parent/student directories, manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
 
 The first company account is seeded through a local-only SQL file after importing the `super_admin` role migration. That seed file lives under `database/local/`, is ignored by Git, and should be deleted after phpMyAdmin import.
 
-The company super admin area uses a sidebar-based XMETA Pay workspace. `/super-admin/dashboard` is for company monitoring and a filterable school-admin registration trend with daily, weekly, monthly, and custom date views, `/super-admin/admin-accounts` is for school admin enable/disable management, and `/super-admin/registrations` is for pending school admin approval.
+The company super admin area uses a sidebar-based XMETA Pay workspace. `/super-admin/dashboard` is for company monitoring and a filterable school-admin registration trend with daily, weekly, monthly, and custom date views, `/super-admin/admin-accounts` is for school admin enable/disable management, `/super-admin/schools/[schoolId]` is a read-only aggregate school profile for current and total student/parent counts plus enrollment and grade breakdowns, and `/super-admin/registrations` is for pending school admin approval. School profiles never expose parent or student names, contacts, payments, or financial records.
 
 New school/admin registrations start as `pending`. They cannot sign in or start school setup until a company super admin approves them from `/super-admin/registrations`. Rejecting a registration keeps the account record but changes `users.status` to `disabled`.
 

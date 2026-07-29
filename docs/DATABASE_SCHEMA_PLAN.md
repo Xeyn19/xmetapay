@@ -4,7 +4,7 @@
 
 XMETA Pay uses one MySQL database for three connected access areas:
 
-- Company super admin: XMETA Pay monitoring for schools and school admin account access.
+- Company super admin: XMETA Pay monitoring for schools, school admin account access, and read-only aggregate school population profiles.
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
 - Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
@@ -12,7 +12,7 @@ Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plu
 
 The public entry page exposes admin and parent portal choices through the shared responsive XMETA Pay shell used by role login, registration, recovery, and all dashboard portals. The app defaults to Dark and remembers an optional Light preference in the browser; theme state is never stored in MySQL. Dashboard sidebars use semantic light surfaces in Light mode and XMETA charcoal in Dark mode, and Parent top-level and nested routes use one declarative current-page interaction model plus contrast-safe semantic hover and selection surfaces. Company super-admin access remains a separate sign-in-only route at `/login`; the presentation change adds no schema fields and the schema does not support public company-account registration.
 
-The current database already starts with shared authentication tables. The practical MVP should keep that foundation and add school, student, enrollment, billing, payment, wallet, and reporting tables around it.
+The current database already starts with shared authentication tables. The practical MVP should keep that foundation and add school, student, enrollment, billing, payment, wallet, and reporting tables around it. The super-admin school profile requires no new schema: it derives distinct current and total population counts through `schools`, `admin_profiles`, `school_years`, `students`, `student_guardians`, `users`, `enrollments`, and `grade_levels`.
 
 Recommended database defaults for XAMPP MySQL:
 
