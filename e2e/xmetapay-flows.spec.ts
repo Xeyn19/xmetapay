@@ -156,6 +156,28 @@ test.describe("XMETA Pay portal entry", () => {
     }
   });
 
+  test("parent registration relationship options remain readable in both themes", async ({ page }) => {
+    await page.goto("/parent/register", { waitUntil: "domcontentloaded" });
+    const relationship = page.getByLabel("Relationship");
+    const motherOption = relationship.getByRole("option", { name: "Mother", exact: true });
+
+    await expect(relationship).toBeVisible();
+    await expect(motherOption).toHaveCSS("color", "rgb(23, 25, 29)");
+    await expect(motherOption).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await relationship.selectOption({ label: "Mother" });
+    await expect(relationship).toHaveValue("Mother");
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await expect(motherOption).toHaveCSS("color", "rgb(23, 25, 29)");
+    await expect(motherOption).toHaveCSS("background-color", "rgb(255, 255, 255)");
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
   test("password recovery request pages stay usable at supported responsive widths", async ({ page }) => {
     for (const route of [
       "/admin/forgot-password",
