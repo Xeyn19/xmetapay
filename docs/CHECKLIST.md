@@ -142,6 +142,7 @@ Done when: a parent can record a local test payment and both portals show the re
 - [x] Keep `fee_type_term_templates` in the schema as a reserved future template layer.
 - [ ] Re-enable reusable fee type term templates after per-student terms are stable.
 - [x] Add admin tuition `Manage terms` action for each student tuition assignment.
+- [x] Bound each student term date from the school-year start through the assignment's official tuition due date, showing the inclusive range in Manage terms and enforcing it again in the locked server transaction.
 - [x] Show tuition term schedules in the parent fee summary.
 - [x] Include tuition term schedules in the parent Fee summary PDF export.
 - [x] Let parents pay open or partial tuition terms, including early payment before the due date.

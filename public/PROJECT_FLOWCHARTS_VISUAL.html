@@ -752,9 +752,10 @@ flowchart TD
   D --> E["Create student_fee_assignments and skip duplicates"]
   E --> F{"Tuition needs installments?"}
   F -->|Yes| G["Admin opens row-level Manage terms"]
-  G --> H["Create terms on or before fee due date"]
+  G --> H["Show school-year start and official tuition due date"]
+  H --> M["Create terms inside the inclusive date window"]
   F -->|No| I["Keep normal fee assignment balance"]
-  H --> J["Parent opens fee summary"]
+  M --> J["Parent opens fee summary"]
   I --> J
   J --> K["Show balances and tuition term schedule by student"]
   K --> L["Admin tuition report reads the same balances and term summary"]

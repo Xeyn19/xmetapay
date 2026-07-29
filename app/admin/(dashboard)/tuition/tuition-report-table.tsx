@@ -28,6 +28,8 @@ export type TuitionReportRow = {
   paid: number;
   balance: number;
   dueDate: string | null;
+  termStartDate: string;
+  termEndDate: string | null;
   lastPayment: string;
   status: "paid" | "partial" | "unpaid";
   statusValue: "open" | "partial" | "paid" | "cancelled";
@@ -443,7 +445,8 @@ function TuitionTermsModal({ row }: { row: TuitionReportRow }) {
                   totalAmount={remainingBalance}
                   initialTerms={terms}
                   defaultTermCount={row.terms.length > 0 ? 0 : 3}
-                  latestDueDate={row.dueDate}
+                  earliestDueDate={row.termStartDate}
+                  latestDueDate={row.termEndDate}
                   title="Student payment terms"
                   emptyText="No terms yet."
                   addLabel="Add term"
@@ -454,7 +457,12 @@ function TuitionTermsModal({ row }: { row: TuitionReportRow }) {
                 <AdminButton type="button" tone="outline" className="w-full sm:w-auto" onClick={() => setOpen(false)}>
                   Cancel
                 </AdminButton>
-                <AdminButton type="submit" tone="primary" className="w-full sm:w-auto">
+                <AdminButton
+                  type="submit"
+                  tone="primary"
+                  className="w-full sm:w-auto"
+                  disabled={!validDateWindow(row.termStartDate, row.termEndDate)}
+                >
                   Save terms
                 </AdminButton>
               </div>
@@ -503,6 +511,10 @@ function splitAmount(total: number, parts: number) {
     remainder -= 1;
     return value / 100;
   });
+}
+
+function validDateWindow(startDate: string, endDate: string | null) {
+  return Boolean(endDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate) && /^\d{4}-\d{2}-\d{2}$/.test(endDate) && startDate <= endDate);
 }
 
 function money(value: number) {

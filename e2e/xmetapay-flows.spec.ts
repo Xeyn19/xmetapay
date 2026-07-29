@@ -296,6 +296,53 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
     );
   });
 
+  test("tuition term dates use the student schedule window in both themes", async ({
+    context,
+    page,
+  }) => {
+    test.setTimeout(90_000);
+    const adminUserId = await ensureE2ETuitionTermWindow();
+    await addDatabaseSessionCookieForUser(context, adminUserId, "admin");
+    await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
+
+    const openTerms = page.getByRole("button", { name: "Manage tuition terms for E2E Window Student" });
+    await expect(openTerms).toBeVisible();
+    await openTerms.click();
+
+    let dialog = page.getByRole("dialog", { name: "Manage tuition terms" });
+    await expect(dialog.getByText("Term schedule window")).toBeVisible();
+    await expect(dialog.getByText("June 1, 2026")).toBeVisible();
+    await expect(dialog.getByText("January 15, 2027")).toBeVisible();
+
+    let termDates = dialog.getByLabel("Term due date");
+    await expect(termDates).toHaveCount(3);
+    const firstTermDate = termDates.first();
+    await expect(firstTermDate).toHaveAttribute("min", "2026-06-01");
+    await expect(firstTermDate).toHaveAttribute("max", "2027-01-15");
+
+    await firstTermDate.fill("2026-05-31");
+    expect(await firstTermDate.evaluate((input: HTMLInputElement) => input.validity.rangeUnderflow)).toBe(true);
+    await firstTermDate.fill("2027-01-16");
+    expect(await firstTermDate.evaluate((input: HTMLInputElement) => input.validity.rangeOverflow)).toBe(true);
+    await firstTermDate.fill("2026-06-01");
+    expect(await firstTermDate.evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(true);
+
+    await dialog.getByRole("button", { name: "Close modal" }).click();
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await openTerms.click();
+    dialog = page.getByRole("dialog", { name: "Manage tuition terms" });
+    termDates = dialog.getByLabel("Term due date");
+    await expect(termDates.first()).toHaveAttribute("min", "2026-06-01");
+    await expect(termDates.first()).toHaveAttribute("max", "2027-01-15");
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(dialog).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
   test("admin logout clears the session and returns to admin login", async ({
     page,
   }) => {
@@ -781,6 +828,14 @@ type E2ERole = "admin" | "parent" | "super_admin";
 
 async function addDatabaseSessionCookie(context: BrowserContext, role: E2ERole) {
   const userId = await ensureE2EUser(role);
+  await addDatabaseSessionCookieForUser(context, userId, role);
+}
+
+async function addDatabaseSessionCookieForUser(
+  context: BrowserContext,
+  userId: number,
+  role: E2ERole,
+) {
   const token = randomBytes(32).toString("base64url");
   const tokenHash = createHmac("sha256", testSessionSecret()).update(token).digest("hex");
   const expires = Math.floor(Date.now() / 1000) + 60 * 60;
@@ -962,6 +1017,128 @@ async function ensureE2ESchoolProfile() {
     );
 
     return schoolId;
+  } finally {
+    await connection.end();
+  }
+}
+
+async function ensureE2ETuitionTermWindow() {
+  const adminUserId = await ensureE2EUser("admin", {
+    name: "E2E Tuition Window Admin",
+    email: "e2e-tuition-window-admin@xmetapay.test",
+  });
+  const connection = await mysql.createConnection(databaseConfig());
+
+  try {
+    await connection.beginTransaction();
+    await connection.execute(
+      `INSERT INTO schools (name, code, status)
+       VALUES ('E2E Tuition Test School', 'E2E-TUITION', 'active')
+       ON DUPLICATE KEY UPDATE name = VALUES(name), status = 'active'`,
+    );
+    const [schoolRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM schools WHERE code = 'E2E-TUITION' LIMIT 1",
+    );
+    const schoolId = schoolRows[0].id;
+
+    await connection.execute(
+      `UPDATE admin_profiles
+       SET school_id = :schoolId, school_name = 'E2E Tuition Test School', staff_role = 'school_administrator'
+       WHERE user_id = :adminUserId`,
+      { schoolId, adminUserId },
+    );
+    await connection.execute(
+      `INSERT INTO school_years (school_id, name, starts_on, ends_on, status)
+       VALUES (:schoolId, 'E2E Tuition 2026-2027', '2026-06-01', '2027-03-31', 'active')
+       ON DUPLICATE KEY UPDATE
+         starts_on = VALUES(starts_on),
+         ends_on = VALUES(ends_on),
+         status = 'active'`,
+      { schoolId },
+    );
+    const [yearRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM school_years WHERE school_id = :schoolId AND name = 'E2E Tuition 2026-2027' LIMIT 1",
+      { schoolId },
+    );
+    const schoolYearId = yearRows[0].id;
+
+    await connection.execute(
+      `INSERT INTO grade_levels (school_id, name, sort_order)
+       VALUES (:schoolId, 'Grade Window', 1)
+       ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`,
+      { schoolId },
+    );
+    const [gradeRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM grade_levels WHERE school_id = :schoolId AND name = 'Grade Window' LIMIT 1",
+      { schoolId },
+    );
+    const gradeLevelId = gradeRows[0].id;
+
+    await connection.execute(
+      `INSERT INTO sections (school_id, school_year_id, grade_level_id, name)
+       VALUES (:schoolId, :schoolYearId, :gradeLevelId, 'Section Window')
+       ON DUPLICATE KEY UPDATE grade_level_id = VALUES(grade_level_id)`,
+      { schoolId, schoolYearId, gradeLevelId },
+    );
+
+    await connection.execute(
+      `INSERT INTO students (school_id, student_reference, first_name, last_name, status)
+       VALUES (:schoolId, 'E2E-WINDOW-001', 'E2E Window', 'Student', 'active')
+       ON DUPLICATE KEY UPDATE first_name = VALUES(first_name), last_name = VALUES(last_name), status = 'active'`,
+      { schoolId },
+    );
+    const [studentRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM students WHERE school_id = :schoolId AND student_reference = 'E2E-WINDOW-001' LIMIT 1",
+      { schoolId },
+    );
+    const studentId = studentRows[0].id;
+
+    await connection.execute(
+      `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, status, enrolled_at)
+       VALUES (:studentId, :schoolYearId, :gradeLevelId, 'enrolled', CURRENT_TIMESTAMP)
+       ON DUPLICATE KEY UPDATE grade_level_id = VALUES(grade_level_id), status = 'enrolled'`,
+      { studentId, schoolYearId, gradeLevelId },
+    );
+    await connection.execute(
+      `INSERT INTO fee_types (school_id, school_year_id, name, category, default_amount, status)
+       VALUES (:schoolId, :schoolYearId, 'E2E Window Tuition', 'tuition', 30000.00, 'active')
+       ON DUPLICATE KEY UPDATE default_amount = VALUES(default_amount), status = 'active'`,
+      { schoolId, schoolYearId },
+    );
+    const [feeRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM fee_types WHERE school_year_id = :schoolYearId AND name = 'E2E Window Tuition' LIMIT 1",
+      { schoolYearId },
+    );
+    const feeTypeId = feeRows[0].id;
+
+    await connection.execute(
+      `INSERT INTO student_fee_assignments (
+         student_id, fee_type_id, school_year_id, amount_due, amount_paid, due_date, status
+       )
+       VALUES (:studentId, :feeTypeId, :schoolYearId, 30000.00, 0.00, '2027-01-15', 'open')
+       ON DUPLICATE KEY UPDATE
+         amount_due = 30000.00,
+         amount_paid = 0.00,
+         due_date = '2027-01-15',
+         status = 'open'`,
+      { studentId, feeTypeId, schoolYearId },
+    );
+    const [assignmentRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      `SELECT id
+       FROM student_fee_assignments
+       WHERE student_id = :studentId AND fee_type_id = :feeTypeId AND school_year_id = :schoolYearId
+       LIMIT 1`,
+      { studentId, feeTypeId, schoolYearId },
+    );
+    await connection.execute(
+      "DELETE FROM tuition_payment_terms WHERE student_fee_assignment_id = :assignmentId",
+      { assignmentId: assignmentRows[0].id },
+    );
+    await connection.commit();
+    return adminUserId;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
   } finally {
     await connection.end();
   }

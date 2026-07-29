@@ -396,7 +396,7 @@ The parent portal permits archiving and removal only for settled assignments. `d
 
 #### `tuition_payment_terms`
 
-Stores per-student tuition installment schedules. These apply only to tuition assignments; other fees remain normal fee assignments. The application keeps tuition term validation, payable checks, payment application, and assignment recalculation in one shared server-only helper for maintainability.
+Stores per-student tuition installment schedules. These apply only to tuition assignments; other fees remain normal fee assignments. The application derives each student's inclusive term window from `school_years.starts_on` through `student_fee_assignments.due_date`, displays those dates in Manage terms, and reloads them inside the locked save transaction. The application keeps tuition term validation, payable checks, payment application, and assignment recalculation in one shared server-only helper for maintainability. No additional schedule-boundary columns or migration are required.
 
 ```sql
 CREATE TABLE tuition_payment_terms (
