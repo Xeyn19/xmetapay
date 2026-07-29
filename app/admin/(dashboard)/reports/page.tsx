@@ -3,6 +3,7 @@ import { BarChart3, Download, FileText } from "lucide-react";
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminReportsPageRealData } from "@/lib/admin/real-data";
+import { cn } from "@/lib/utils";
 
 import {
   AlertBanner,
@@ -32,8 +33,8 @@ export default async function ReportsPage() {
           icon={BarChart3}
           action={
             <div className="flex flex-wrap gap-2">
-              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=xlsx">Excel</ReportDownloadLink>
-              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=pdf">PDF</ReportDownloadLink>
+              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=xlsx" format="excel">Excel</ReportDownloadLink>
+              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=pdf" format="pdf">PDF</ReportDownloadLink>
             </div>
           }
         >
@@ -70,8 +71,8 @@ export default async function ReportsPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <ReportDownloadLink href={report.excelHref}>Excel</ReportDownloadLink>
-                    <ReportDownloadLink href={report.pdfHref}>PDF</ReportDownloadLink>
+                    <ReportDownloadLink href={report.excelHref} format="excel">Excel</ReportDownloadLink>
+                    <ReportDownloadLink href={report.pdfHref} format="pdf">PDF</ReportDownloadLink>
                   </div>
                 </div>
               );
@@ -83,11 +84,24 @@ export default async function ReportsPage() {
   );
 }
 
-function ReportDownloadLink({ href, children }: { href: string; children: string }) {
+function ReportDownloadLink({
+  href,
+  format,
+  children,
+}: {
+  href: string;
+  format: "excel" | "pdf";
+  children: string;
+}) {
   return (
     <a
       href={href}
-      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#0f1117] bg-[#0f1117] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#2d3348] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+      className={cn(
+        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-3.5 text-[12.5px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",
+        format === "pdf"
+          ? "border-primary bg-card text-primary hover:bg-button-soft hover:text-primary"
+          : "border-[#0f1117] bg-[#0f1117] text-white hover:bg-[#2d3348]",
+      )}
     >
       <Download className="size-4" />
       {children}
