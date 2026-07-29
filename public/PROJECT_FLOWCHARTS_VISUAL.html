@@ -375,6 +375,7 @@ flowchart TD
           account. It signs in at <code>/login</code>, then uses the sidebar-based
           company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from <code>/super-admin/dashboard</code>,
           manage and export filtered school admin accounts from <code>/super-admin/admin-accounts</code>,
+          open read-only aggregate school population profiles at <code>/super-admin/schools/[schoolId]</code>,
           export pending registrations from <code>/super-admin/registrations</code>,
           and review pending school admin registrations from
           <code>/super-admin/registrations</code>.
@@ -399,8 +400,10 @@ flowchart TD
   K --> M["Admin login stays blocked"]
   F --> N["Use sidebar to open /super-admin/admin-accounts"]
   N --> O["Enable or disable school admin access"]
+  N --> P["Open /super-admin/schools/[schoolId]"]
+  P --> Q["View distinct current and total population counts"]
           </pre>
-          <p>No impersonation or school data editing is included in the MVP. The temporary seed SQL lives under ignored local database files and should be deleted after import.</p>
+          <p>School profiles show aggregate student, parent, enrollment, and grade counts only. No parent/student directories, financial details, impersonation, or school data editing are included in the MVP. The temporary seed SQL lives under ignored local database files and should be deleted after import.</p>
         </div>
       </section>
 

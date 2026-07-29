@@ -57,6 +57,7 @@ export type SuperAdminSchoolRow = {
 
 export type SuperAdminAccountRow = {
   id: number;
+  schoolId: number | null;
   name: string;
   email: string;
   phone: string;
@@ -65,6 +66,41 @@ export type SuperAdminAccountRow = {
   status: "active" | "pending" | "disabled";
   lastLogin: string;
   createdAt: string;
+};
+
+export type SuperAdminSchoolProfile = {
+  school: {
+    id: number;
+    name: string;
+    code: string;
+    status: string;
+    activeYear: {
+      id: number;
+      name: string;
+      startsOn: string;
+      endsOn: string;
+    } | null;
+  };
+  counts: {
+    adminAccounts: number;
+    activeAdmins: number;
+    pendingAdmins: number;
+    disabledAdmins: number;
+    currentStudents: number;
+    currentParents: number;
+    totalStudents: number;
+    totalParents: number;
+  };
+  enrollmentStatuses: Array<{
+    status: string;
+    label: string;
+    count: number;
+  }>;
+  gradeLevels: Array<{
+    id: number;
+    name: string;
+    count: number;
+  }>;
 };
 
 export async function getSuperAdminDashboardData(
@@ -111,6 +147,7 @@ export async function getSuperAdminDashboardData(
            u.status,
            u.last_login_at,
            u.created_at,
+           ap.school_id,
            ap.school_name,
            ap.staff_role,
            COALESCE(s.name, ap.school_name) AS resolved_school_name
@@ -175,6 +212,7 @@ export async function getSuperAdminDashboardData(
          u.status,
          u.last_login_at,
          u.created_at,
+         NULL AS school_id,
          ap.school_name,
          ap.staff_role,
          ap.school_name AS resolved_school_name
@@ -200,6 +238,163 @@ export async function getSuperAdminDashboardData(
       registrationTrendMeta: trendConfig.meta,
     };
   }
+}
+
+export async function getSuperAdminSchoolProfile(
+  schoolId: number,
+): Promise<SuperAdminSchoolProfile | null> {
+  if (!Number.isInteger(schoolId) || schoolId <= 0) {
+    return null;
+  }
+
+  const [[schoolRows], [countRows], [enrollmentStatusRows], [gradeRows]] = await Promise.all([
+    pool.execute<SchoolProfileRow[]>(
+      `SELECT
+         s.id,
+         s.name,
+         s.code,
+         s.status,
+         sy.id AS active_year_id,
+         sy.name AS active_year_name,
+         sy.starts_on AS active_year_starts_on,
+         sy.ends_on AS active_year_ends_on
+       FROM schools s
+       LEFT JOIN school_years sy
+         ON sy.school_id = s.id
+        AND sy.status = 'active'
+       WHERE s.id = :schoolId
+       LIMIT 1`,
+      { schoolId },
+    ),
+    pool.execute<SchoolProfileCountsRow[]>(
+      `SELECT
+         (
+           SELECT COUNT(DISTINCT u.id)
+           FROM admin_profiles ap
+           JOIN users u ON u.id = ap.user_id AND u.role = 'admin'
+           WHERE ap.school_id = :schoolId
+         ) AS admin_accounts,
+         (
+           SELECT COUNT(DISTINCT u.id)
+           FROM admin_profiles ap
+           JOIN users u ON u.id = ap.user_id AND u.role = 'admin' AND u.status = 'active'
+           WHERE ap.school_id = :schoolId
+         ) AS active_admins,
+         (
+           SELECT COUNT(DISTINCT u.id)
+           FROM admin_profiles ap
+           JOIN users u ON u.id = ap.user_id AND u.role = 'admin' AND u.status = 'pending'
+           WHERE ap.school_id = :schoolId
+         ) AS pending_admins,
+         (
+           SELECT COUNT(DISTINCT u.id)
+           FROM admin_profiles ap
+           JOIN users u ON u.id = ap.user_id AND u.role = 'admin' AND u.status = 'disabled'
+           WHERE ap.school_id = :schoolId
+         ) AS disabled_admins,
+         (
+           SELECT COUNT(DISTINCT e.student_id)
+           FROM school_years sy
+           JOIN enrollments e ON e.school_year_id = sy.id AND e.status = 'enrolled'
+           JOIN students st ON st.id = e.student_id AND st.school_id = sy.school_id
+           WHERE sy.school_id = :schoolId AND sy.status = 'active'
+         ) AS current_students,
+         (
+           SELECT COUNT(DISTINCT parent_users.id)
+           FROM school_years sy
+           JOIN enrollments e ON e.school_year_id = sy.id AND e.status = 'enrolled'
+           JOIN students st ON st.id = e.student_id AND st.school_id = sy.school_id
+           JOIN student_guardians sg ON sg.student_id = st.id
+           JOIN users parent_users ON parent_users.id = sg.parent_user_id AND parent_users.role = 'parent'
+           WHERE sy.school_id = :schoolId AND sy.status = 'active'
+         ) AS current_parents,
+         (
+           SELECT COUNT(DISTINCT st.id)
+           FROM students st
+           WHERE st.school_id = :schoolId
+         ) AS total_students,
+         (
+           SELECT COUNT(DISTINCT parent_users.id)
+           FROM students st
+           JOIN student_guardians sg ON sg.student_id = st.id
+           JOIN users parent_users ON parent_users.id = sg.parent_user_id AND parent_users.role = 'parent'
+           WHERE st.school_id = :schoolId
+         ) AS total_parents`,
+      { schoolId },
+    ),
+    pool.execute<SchoolEnrollmentStatusRow[]>(
+      `SELECT
+         e.status,
+         COUNT(DISTINCT e.student_id) AS student_count
+       FROM school_years sy
+       JOIN enrollments e ON e.school_year_id = sy.id
+       JOIN students st ON st.id = e.student_id AND st.school_id = sy.school_id
+       WHERE sy.school_id = :schoolId
+         AND sy.status = 'active'
+       GROUP BY e.status
+       ORDER BY FIELD(e.status, 'enrolled', 'submitted', 'draft', 'withdrawn', 'rejected')`,
+      { schoolId },
+    ),
+    pool.execute<SchoolGradeLevelRow[]>(
+      `SELECT
+         gl.id,
+         gl.name,
+         COUNT(DISTINCT e.student_id) AS student_count
+       FROM school_years sy
+       JOIN enrollments e ON e.school_year_id = sy.id AND e.status = 'enrolled'
+       JOIN students st ON st.id = e.student_id AND st.school_id = sy.school_id
+       JOIN grade_levels gl ON gl.id = e.grade_level_id AND gl.school_id = sy.school_id
+       WHERE sy.school_id = :schoolId
+         AND sy.status = 'active'
+       GROUP BY gl.id, gl.name, gl.sort_order
+       ORDER BY gl.sort_order ASC, gl.name ASC`,
+      { schoolId },
+    ),
+  ]);
+
+  const school = schoolRows[0];
+  if (!school) {
+    return null;
+  }
+
+  const counts = countRows[0];
+
+  return {
+    school: {
+      id: school.id,
+      name: school.name,
+      code: school.code,
+      status: statusLabel(school.status),
+      activeYear: school.active_year_id
+        ? {
+            id: school.active_year_id,
+            name: school.active_year_name ?? "Active school year",
+            startsOn: formatDate(school.active_year_starts_on),
+            endsOn: formatDate(school.active_year_ends_on),
+          }
+        : null,
+    },
+    counts: {
+      adminAccounts: Number(counts?.admin_accounts ?? 0),
+      activeAdmins: Number(counts?.active_admins ?? 0),
+      pendingAdmins: Number(counts?.pending_admins ?? 0),
+      disabledAdmins: Number(counts?.disabled_admins ?? 0),
+      currentStudents: Number(counts?.current_students ?? 0),
+      currentParents: Number(counts?.current_parents ?? 0),
+      totalStudents: Number(counts?.total_students ?? 0),
+      totalParents: Number(counts?.total_parents ?? 0),
+    },
+    enrollmentStatuses: enrollmentStatusRows.map((row) => ({
+      status: row.status,
+      label: statusLabel(row.status),
+      count: Number(row.student_count),
+    })),
+    gradeLevels: gradeRows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      count: Number(row.student_count),
+    })),
+  };
 }
 
 function buildRegistrationTrend(rows: RegistrationTrendCounts[], config: RegistrationTrendConfig): SuperAdminRegistrationTrendRow[] {
@@ -367,6 +562,7 @@ function advanceCursor(cursor: Date, granularity: RegistrationTrendConfig["granu
 function formatAdminRow(row: AdminRow): SuperAdminAccountRow {
   return {
     id: row.id,
+    schoolId: row.school_id === null ? null : Number(row.school_id),
     name: row.name,
     email: row.email,
     phone: row.phone ?? "Pending",
@@ -376,6 +572,16 @@ function formatAdminRow(row: AdminRow): SuperAdminAccountRow {
     lastLogin: formatDateTime(row.last_login_at),
     createdAt: formatDateTime(row.created_at),
   };
+}
+
+function formatDate(value: Date | string | null) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+  }).format(value instanceof Date ? value : new Date(value));
 }
 
 function staffRoleLabel(value: string) {
@@ -428,6 +634,7 @@ type SchoolRow = RowDataPacket & {
 
 type AdminRow = RowDataPacket & {
   id: number;
+  school_id: number | null;
   name: string;
   email: string;
   phone: string | null;
@@ -437,6 +644,39 @@ type AdminRow = RowDataPacket & {
   school_name: string;
   staff_role: string;
   resolved_school_name: string | null;
+};
+
+type SchoolProfileRow = RowDataPacket & {
+  id: number;
+  name: string;
+  code: string;
+  status: string;
+  active_year_id: number | null;
+  active_year_name: string | null;
+  active_year_starts_on: Date | string | null;
+  active_year_ends_on: Date | string | null;
+};
+
+type SchoolProfileCountsRow = RowDataPacket & {
+  admin_accounts: number;
+  active_admins: number;
+  pending_admins: number;
+  disabled_admins: number;
+  current_students: number;
+  current_parents: number;
+  total_students: number;
+  total_parents: number;
+};
+
+type SchoolEnrollmentStatusRow = RowDataPacket & {
+  status: string;
+  student_count: number;
+};
+
+type SchoolGradeLevelRow = RowDataPacket & {
+  id: number;
+  name: string;
+  student_count: number;
 };
 
 type RegistrationTrendCounts = {

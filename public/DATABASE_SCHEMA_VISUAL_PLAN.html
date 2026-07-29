@@ -298,7 +298,7 @@
             users start with <code>users.status = pending</code> until the
             company super admin approves or rejects them. Admins and parents
             have role-specific registration routes; company super admins use
-            sign-in-only <code>/login</code>. Public, authentication, and all dashboard screens default to Dark and share an optional Light preference in browser storage; dashboard sidebars use light semantic navigation in Light mode and XMETA charcoal in Dark mode. Parent top-level and nested routes share one current-page interaction model, and Parent rows, selection cards, tabs, dialogs, and actions use contrast-safe semantic interaction surfaces. The presentation adds no schema fields.
+            sign-in-only <code>/login</code>. Company super admins can open read-only school profiles that derive distinct current/total student and parent counts plus active-year enrollment and grade breakdowns from existing relationships; no directory or financial fields are exposed and no new schema is required. Public, authentication, and all dashboard screens default to Dark and share an optional Light preference in browser storage; dashboard sidebars use light semantic navigation in Light mode and XMETA charcoal in Dark mode. Parent top-level and nested routes share one current-page interaction model, and Parent rows, selection cards, tabs, dialogs, and actions use contrast-safe semantic interaction surfaces. The presentation adds no schema fields.
           </div>
           <div class="card">
             <strong>Admin staff roles</strong>
@@ -329,7 +329,7 @@
             <tr>
               <td>School setup</td>
               <td><code>schools</code>, <code>school_years</code>, <code>grade_levels</code>, <code>sections</code></td>
-              <td>School structure with one or many school years and one active year. An overview hub, focused metadata modals, selected-year structure page, and dedicated rollover page reuse this schema; activation closes the previous active year.</td>
+              <td>School structure with one or many school years and one active year. An overview hub, focused metadata modals, selected-year structure page, dedicated rollover page, and aggregate company school profile reuse this schema; activation closes the previous active year.</td>
             </tr>
             <tr>
               <td>Students</td>

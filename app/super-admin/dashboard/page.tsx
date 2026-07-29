@@ -1,4 +1,5 @@
 import { BarChart3, Building2, Clock3, ShieldCheck, Users, UserX } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SuperAdminRegistrationTrendChart } from "../_components/super-admin-registration-trend-chart";
@@ -98,6 +99,12 @@ export default async function SuperAdminDashboardPage({
                     <span>{school.studentCount} students</span>
                     <span>{school.parentCount} parents</span>
                   </div>
+                  <Link
+                    href={`/super-admin/schools/${school.id}`}
+                    className="mt-2 inline-flex min-h-11 items-center rounded-lg px-2 text-[12px] font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                  >
+                    View school
+                  </Link>
                 </div>
               )) : (
                 <div className="px-[18px] py-8 text-center text-[12.5px] text-[#5a6070]">

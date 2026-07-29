@@ -35,6 +35,11 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   },
 };
 
+const schoolProfileMeta = {
+  title: "School profile",
+  subtitle: "Review aggregate school population and enrollment context.",
+};
+
 export function SuperAdminShell({
   children,
   pendingApprovals,
@@ -43,7 +48,10 @@ export function SuperAdminShell({
 }: SuperAdminShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const meta = pageMeta[pathname] ?? pageMeta["/super-admin/dashboard"];
+  const isSchoolProfile = pathname.startsWith("/super-admin/schools/");
+  const meta = isSchoolProfile
+    ? schoolProfileMeta
+    : pageMeta[pathname] ?? pageMeta["/super-admin/dashboard"];
   const initials = initialsFor(sessionName);
   const navItems = [
     {
@@ -136,7 +144,9 @@ export function SuperAdminShell({
           </div>
           <div className="grid gap-0.5">
             {navItems.map((item) => {
-              const active = pathname === item.href || (pathname === "/super-admin" && item.href === "/super-admin/dashboard");
+              const active = pathname === item.href
+                || (pathname === "/super-admin" && item.href === "/super-admin/dashboard")
+                || (isSchoolProfile && item.href === "/super-admin/admin-accounts");
               const Icon = item.icon;
 
               return (
@@ -144,6 +154,7 @@ export function SuperAdminShell({
                   key={item.href}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-semibold text-sidebar-foreground/65 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30",
                     active && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground",

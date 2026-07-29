@@ -21,6 +21,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Parent dashboard rows, selection cards, tabs, dialogs, and table actions retain readable text during hover, selected, pressed, and focus states in Light and Dark modes.
 - [x] Company super admin uses a sidebar-based monitoring workspace.
 - [x] Company super admin can monitor schools and manage school admin accounts from a dedicated accounts page.
+- [x] Company super admin can open a read-only school profile with distinct current/total student and parent counts plus active-year enrollment and grade breakdowns, without parent or student directories.
 - [x] Company super admin can export all filtered School admin accounts as branded Excel or PDF with filter and status-count context.
 - [x] Company super admin can export all filtered pending Admin registrations as branded Excel or PDF without including approval controls.
 - [x] Company super admin dashboard includes a Recharts-backed school-admin registration trend with daily, weekly, monthly, and custom date views.

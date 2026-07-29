@@ -683,6 +683,40 @@ test.describe("XMETA Pay super admin branding", () => {
     expect(download.suggestedFilename()).toBe("super-admin-school-admins.pdf");
   });
 
+  test("school profile shows aggregate current and total population responsively", async ({ page }) => {
+    const schoolId = await ensureE2ESchoolProfile();
+
+    await page.goto("/super-admin/admin-accounts", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(`a[href="/super-admin/schools/${schoolId}"]`, { hasText: "View school" }).first()).toHaveAttribute(
+      "href",
+      `/super-admin/schools/${schoolId}`,
+    );
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/super-admin/schools/${schoolId}`, { waitUntil: "domcontentloaded" });
+
+      await expect(page.getByRole("heading", { level: 1, name: "School profile" })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 2, name: "E2E Test School" })).toBeVisible();
+      await expect(page.getByText("Current students", { exact: true })).toBeVisible();
+      await expect(page.getByText("Current parents", { exact: true })).toBeVisible();
+      await expect(page.getByText("Active-year enrollment", { exact: true })).toBeVisible();
+      await expect(page.getByText("Enrolled students by grade", { exact: true })).toBeVisible();
+      await expect(
+        page.getByLabel("Company navigation").getByRole("link", { name: "School admin accounts" })
+      ).toHaveAttribute("aria-current", "page");
+      await expectNoHorizontalOverflow(page);
+    }
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await expect(page.getByRole("heading", { level: 2, name: "E2E Test School" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto("/super-admin/schools/not-a-school", { waitUntil: "domcontentloaded" });
+    await expect(page.getByText("This page could not be found.")).toBeVisible();
+  });
+
   test("pending admin registration exports stay responsive and download", async ({ page }) => {
     test.setTimeout(60_000);
     await ensureE2EUser("admin", {
@@ -815,6 +849,97 @@ async function ensureE2EUser(
     }
 
     return userId;
+  } finally {
+    await connection.end();
+  }
+}
+
+async function ensureE2ESchoolProfile() {
+  const adminUserId = await ensureE2EUser("admin", {
+    name: "E2E School Profile Admin",
+    email: "e2e-school-profile-admin@xmetapay.test",
+  });
+  const parentUserId = await ensureE2EUser("parent", {
+    name: "E2E School Profile Parent",
+    email: "e2e-school-profile-parent@xmetapay.test",
+  });
+  const connection = await mysql.createConnection(databaseConfig());
+
+  try {
+    await connection.execute(
+      `INSERT INTO schools (name, code, status)
+       VALUES ('E2E Test School', 'E2E-SCHOOL', 'active')
+       ON DUPLICATE KEY UPDATE name = VALUES(name), status = VALUES(status)`,
+    );
+    const [schoolRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM schools WHERE code = 'E2E-SCHOOL' LIMIT 1",
+    );
+    const schoolId = schoolRows[0].id;
+
+    await connection.execute(
+      "UPDATE admin_profiles SET school_id = :schoolId WHERE user_id = :adminUserId",
+      { schoolId, adminUserId },
+    );
+    await connection.execute(
+      `INSERT INTO school_years (school_id, name, starts_on, ends_on, status)
+       VALUES (:schoolId, 'E2E 2026-2027', '2026-06-01', '2027-03-31', 'active')
+       ON DUPLICATE KEY UPDATE status = 'active'`,
+      { schoolId },
+    );
+    const [yearRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM school_years WHERE school_id = :schoolId AND name = 'E2E 2026-2027' LIMIT 1",
+      { schoolId },
+    );
+    const schoolYearId = yearRows[0].id;
+
+    await connection.execute(
+      `INSERT INTO grade_levels (school_id, name, sort_order)
+       VALUES (:schoolId, 'Grade E2E', 1)
+       ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`,
+      { schoolId },
+    );
+    const [gradeRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM grade_levels WHERE school_id = :schoolId AND name = 'Grade E2E' LIMIT 1",
+      { schoolId },
+    );
+    const gradeLevelId = gradeRows[0].id;
+
+    await connection.execute(
+      `INSERT INTO sections (school_id, school_year_id, grade_level_id, name)
+       VALUES (:schoolId, :schoolYearId, :gradeLevelId, 'Section E2E')
+       ON DUPLICATE KEY UPDATE grade_level_id = VALUES(grade_level_id)`,
+      { schoolId, schoolYearId, gradeLevelId },
+    );
+
+    await connection.execute(
+      `INSERT INTO students (school_id, student_reference, first_name, last_name, status)
+       VALUES (:schoolId, 'E2E-PROFILE-001', 'E2E', 'Profile Student', 'active')
+       ON DUPLICATE KEY UPDATE status = 'active'`,
+      { schoolId },
+    );
+    const [studentRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM students WHERE school_id = :schoolId AND student_reference = 'E2E-PROFILE-001' LIMIT 1",
+      { schoolId },
+    );
+    const studentId = studentRows[0].id;
+
+    await connection.execute(
+      `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, status, enrolled_at)
+       VALUES (:studentId, :schoolYearId, :gradeLevelId, 'enrolled', CURRENT_TIMESTAMP)
+       ON DUPLICATE KEY UPDATE
+         grade_level_id = VALUES(grade_level_id),
+         status = 'enrolled',
+         enrolled_at = COALESCE(enrolled_at, CURRENT_TIMESTAMP)`,
+      { studentId, schoolYearId, gradeLevelId },
+    );
+    await connection.execute(
+      `INSERT INTO student_guardians (student_id, parent_user_id, relationship, is_primary)
+       VALUES (:studentId, :parentUserId, 'guardian', TRUE)
+       ON DUPLICATE KEY UPDATE is_primary = TRUE`,
+      { studentId, parentUserId },
+    );
+
+    return schoolId;
   } finally {
     await connection.end();
   }

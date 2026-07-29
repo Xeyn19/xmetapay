@@ -164,21 +164,31 @@ export function SuperAdminAdminsTable({ rows }: { rows: SuperAdminAccountRow[] }
                     {row.status === "pending" ? (
                       <Link
                         href="/super-admin/registrations"
-                        className="inline-flex min-h-9 items-center justify-center rounded-lg border border-[#e64a19]/35 bg-[#fff4f0] px-3 text-[12px] font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#e64a19]/35 bg-[#fff4f0] px-3 text-[12px] font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
                       >
                         Review
                       </Link>
                     ) : (
-                      <form action={updateSchoolAdminStatusAction}>
-                        <input type="hidden" name="userId" value={row.id} />
-                        <input type="hidden" name="status" value={row.status === "disabled" ? "active" : "disabled"} />
-                        <button
-                          type="submit"
-                          className="inline-flex min-h-9 items-center justify-center rounded-lg border border-black/15 bg-white px-3 text-[12px] font-semibold text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
-                        >
-                          {row.status === "disabled" ? "Enable" : "Disable"}
-                        </button>
-                      </form>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {row.schoolId ? (
+                          <Link
+                            href={`/super-admin/schools/${row.schoolId}`}
+                            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#e64a19]/35 bg-[#fff4f0] px-3 text-[12px] font-bold text-[#bf360c] transition hover:bg-[#fbe9e7] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                          >
+                            View school
+                          </Link>
+                        ) : null}
+                        <form action={updateSchoolAdminStatusAction}>
+                          <input type="hidden" name="userId" value={row.id} />
+                          <input type="hidden" name="status" value={row.status === "disabled" ? "active" : "disabled"} />
+                          <button
+                            type="submit"
+                            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-black/15 bg-white px-3 text-[12px] font-semibold text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                          >
+                            {row.status === "disabled" ? "Enable" : "Disable"}
+                          </button>
+                        </form>
+                      </div>
                     )}
                   </td>
                 </tr>
