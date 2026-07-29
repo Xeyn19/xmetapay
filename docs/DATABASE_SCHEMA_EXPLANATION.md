@@ -132,6 +132,8 @@ Main purpose:
 
 The `student_reference` is important because parent registration can use it to connect a parent account to the correct student.
 
+The exact admin Student Profile can correct the existing `students` name, reference, birthdate, and sex without creating a replacement record. A changed reference is checked for school-wide uniqueness; existing guardian rows remain linked through `student_id`, while future parent linking must use the new reference. Student status remains read-only in this correction workflow.
+
 ### `student_guardians`
 
 Links parent accounts to students.
@@ -164,6 +166,8 @@ Main purpose:
 This table becomes the core source for enrollment dashboards and class assignments.
 
 Legacy records may have missing sex or student type and display `Pending`. New student and enrollment writes validate these values, while rollover defaults the target enrollment type to `Returned` and allows an administrator to change it per student.
+
+For an existing active-year enrollment, the exact admin Student Profile can also correct grade, section, and student type in the same transaction as student-master corrections. The server verifies the active year and section ownership. Historical placement and enrollment status remain read-only, and a missing enrollment must use the existing Enroll existing students workflow. No additional table or migration is required.
 
 During manual rollover, the school administrator explicitly checks one or many source-year students, reviews each target grade and section, and saves only selected promote/repeat placements. The system creates the new year-specific enrollment and does not copy the student master record or financial history.
 

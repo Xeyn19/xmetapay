@@ -578,7 +578,12 @@ flowchart TD
   J --> K["Student appears in enrolled students table"]
   K --> L["Admin can open exact profile at /admin/students/studentId"]
   K --> M["Parent can now link using student_reference"]
+  L --> N["Admin or registrar corrects student master details"]
+  N --> O{"Active year and enrollment still valid?"}
+  O -->|Yes| P["Atomically correct grade, section, and student type"]
+  O -->|No| Q["Placement stays read-only"]
           </pre>
+          <p>Profile correction reuses the existing student and enrollment rows. Historical placement, lifecycle statuses, guardian accounts, and financial records remain unchanged.</p>
         </div>
 
         <h3>Admin Parent Directory</h3>

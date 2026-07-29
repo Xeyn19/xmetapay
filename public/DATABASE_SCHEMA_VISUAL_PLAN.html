@@ -674,7 +674,12 @@ flowchart TD
   G --> H["Student appears in admin student table"]
   H --> I["Student profile selector links to /admin/students/studentId"]
   H --> J["Parent can link later using student_reference"]
+  I --> K["Correct existing school-scoped student details"]
+  K --> L{"Active-year enrollment exists?"}
+  L -->|Yes| M["Correct grade, section, and student type in one transaction"]
+  L -->|No| N["Keep placement read-only and use enrollment workflow"]
           </pre>
+          <p>The editor updates existing <code>students</code> and active-year <code>enrollments</code> rows only. Historical placement and lifecycle statuses stay read-only, guardian links remain keyed by student ID, and no migration is required.</p>
         </div>
 
         <h3>Admin Payment Monitoring Flow</h3>

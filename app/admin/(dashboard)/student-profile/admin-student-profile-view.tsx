@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CreditCard, Edit, History, IdCard, Plus, Users, Wallet } from "lucide-react";
+import { CreditCard, History, IdCard, Plus, Users, Wallet } from "lucide-react";
 
 import {
   DashboardTableControls,
@@ -25,6 +25,7 @@ import {
   StatusPill,
   SummaryRows,
 } from "../../_components/admin-ui";
+import { StudentProfileEditModal } from "./student-profile-edit-modal";
 
 type StudentProfile = NonNullable<AdminStudentProfileRealData["student"]>;
 
@@ -242,7 +243,11 @@ export function AdminStudentProfileView({ student }: { student: StudentProfile }
       </section>
 
       <div className="mb-[18px] grid gap-[18px] xl:grid-cols-3">
-        <DashboardCard title="Student details" icon={IdCard} action={<AdminButton disabled><Edit className="size-4" />Edit pending</AdminButton>}>
+        <DashboardCard
+          title="Student details"
+          icon={IdCard}
+          action={<StudentProfileEditModal studentId={student.id} fullName={student.fullName} editable={student.editable} />}
+        >
           <SummaryRows rows={student.details} />
         </DashboardCard>
         <DashboardCard title="Parent / guardian" icon={Users}>

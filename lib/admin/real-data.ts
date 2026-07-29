@@ -201,6 +201,24 @@ export type AdminStudentProfileRealData = {
     tags: string[];
     walletBalance: string;
     openBalance: string;
+    editable: {
+      studentReference: string;
+      firstName: string;
+      middleName: string;
+      lastName: string;
+      birthdate: string;
+      sex: string;
+      studentStatus: string;
+      enrollmentId: number | null;
+      gradeLevelId: number | null;
+      sectionId: number | null;
+      studentType: string;
+      enrollmentStatus: string;
+      selectedSchoolYearName: string;
+      selectedSchoolYearIsActive: boolean;
+      gradeOptions: Array<{ id: number; name: string }>;
+      sectionOptions: Array<{ id: number; gradeLevelId: number; label: string }>;
+    };
     details: SummaryRow[];
     guardian: SummaryRow[];
     wallet: {
@@ -235,6 +253,7 @@ type AdminSetup = {
   schoolId: number | null;
   schoolYearId: number | null;
   schoolYearName: string | null;
+  selectedSchoolYearIsActive: boolean;
   warning: string | null;
 };
 
@@ -552,7 +571,8 @@ export async function getAdminStudentProfileRealData(
     const selectedStudentClause = typeof studentId === "number" ? "AND st.id = :studentId" : "";
     const [rows] = await pool.execute<StudentProfileRow[]>(
       `SELECT st.id, st.student_reference, st.first_name, st.middle_name, st.last_name,
-         st.birthdate, st.sex, st.status AS student_status,
+         DATE_FORMAT(st.birthdate, '%Y-%m-%d') AS birthdate, st.sex, st.status AS student_status,
+         e.id AS enrollment_id, e.grade_level_id, e.section_id,
          COALESCE(gl.name, 'Not enrolled') AS grade_name,
          COALESCE(sec.name, '-') AS section_name,
          COALESCE(e.status, 'pending') AS enrollment_status,
@@ -573,7 +593,7 @@ export async function getAdminStudentProfileRealData(
        WHERE st.school_id = :schoolId
        ${selectedStudentClause}
        GROUP BY st.id, st.student_reference, st.first_name, st.middle_name, st.last_name, st.birthdate, st.sex, st.status,
-         gl.name, sec.name, e.status, e.student_type, w.balance, w.status
+         e.id, e.grade_level_id, e.section_id, gl.name, sec.name, e.status, e.student_type, w.balance, w.status
        ORDER BY st.created_at DESC, st.id DESC
        LIMIT 1`,
       typeof studentId === "number"
@@ -593,10 +613,12 @@ export async function getAdminStudentProfileRealData(
       };
     }
 
-    const [feeSummary, transactionRows, walletSummary] = await Promise.all([
+    const [feeSummary, transactionRows, walletSummary, gradeOptions, sectionOptions] = await Promise.all([
       getStudentFeeSummary(row.id, setup.schoolYearId),
       getStudentTransactions(row.id),
       getStudentWalletSummary(row.id),
+      getStudentProfileGradeOptions(setup.schoolId),
+      getStudentProfileSectionOptions(setup.schoolId, setup.schoolYearId),
     ]);
     const fullStudentName = fullName(row.first_name, row.middle_name, row.last_name);
     const walletBalance = money(row.wallet_balance);
@@ -614,6 +636,24 @@ export async function getAdminStudentProfileRealData(
         tags: [labelForStatus(row.enrollment_status), row.wallet_status === "closed" ? "Wallet pending" : `Wallet ${labelForStatus(row.wallet_status)}`, feeSummary.assignmentCount > 0 ? "Fees assigned" : "Fees pending"],
         walletBalance,
         openBalance,
+        editable: {
+          studentReference: row.student_reference,
+          firstName: row.first_name,
+          middleName: row.middle_name ?? "",
+          lastName: row.last_name,
+          birthdate: row.birthdate ?? "",
+          sex: row.sex ?? "",
+          studentStatus: row.student_status,
+          enrollmentId: row.enrollment_id,
+          gradeLevelId: row.grade_level_id,
+          sectionId: row.section_id,
+          studentType: row.student_type ?? "",
+          enrollmentStatus: row.enrollment_status,
+          selectedSchoolYearName: setup.schoolYearName ?? "School year pending",
+          selectedSchoolYearIsActive: setup.selectedSchoolYearIsActive,
+          gradeOptions,
+          sectionOptions,
+        },
         details: [
           { label: "Full name", value: fullStudentName },
           { label: "Student reference", value: row.student_reference },
@@ -705,8 +745,43 @@ async function getAdminSetup(adminUserId: number): Promise<AdminSetup> {
     schoolId: setup.schoolId,
     schoolYearId: setup.schoolYearId,
     schoolYearName: setup.schoolYearName,
+    selectedSchoolYearIsActive: setup.selectedSchoolYearIsActive,
     warning: setup.warning,
   };
+}
+
+async function getStudentProfileGradeOptions(schoolId: number) {
+  const [rows] = await pool.execute<Array<RowDataPacket & { id: number; name: string }>>(
+    `SELECT id, name
+     FROM grade_levels
+     WHERE school_id = :schoolId
+     ORDER BY sort_order ASC, name ASC`,
+    { schoolId },
+  );
+
+  return rows.map((row) => ({ id: row.id, name: row.name }));
+}
+
+async function getStudentProfileSectionOptions(schoolId: number, schoolYearId: number) {
+  const [rows] = await pool.execute<Array<RowDataPacket & {
+    id: number;
+    grade_level_id: number;
+    grade_name: string;
+    section_name: string;
+  }>>(
+    `SELECT s.id, s.grade_level_id, gl.name AS grade_name, s.name AS section_name
+     FROM sections s
+     JOIN grade_levels gl ON gl.id = s.grade_level_id AND gl.school_id = s.school_id
+     WHERE s.school_id = :schoolId AND s.school_year_id = :schoolYearId
+     ORDER BY gl.sort_order ASC, gl.name ASC, s.name ASC`,
+    { schoolId, schoolYearId },
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    gradeLevelId: row.grade_level_id,
+    label: `${row.grade_name} - ${row.section_name}`,
+  }));
 }
 
 async function getStudentSummary(schoolId: number, schoolYearId: number) {
@@ -1773,9 +1848,12 @@ type StudentProfileRow = RowDataPacket & {
   first_name: string;
   middle_name: string | null;
   last_name: string;
-  birthdate: Date | string | null;
+  birthdate: string | null;
   sex: string | null;
   student_status: string;
+  enrollment_id: number | null;
+  grade_level_id: number | null;
+  section_id: number | null;
   grade_name: string;
   section_name: string;
   enrollment_status: string;

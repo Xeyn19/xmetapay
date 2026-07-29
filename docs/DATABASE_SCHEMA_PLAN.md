@@ -202,6 +202,8 @@ CREATE TABLE sections (
 
 Stores each student profile.
 
+The admin exact-profile correction workflow updates this existing row in place. Reference changes remain unique within the school and do not replace the student ID, so existing guardian, fee, payment, wallet, and audit relationships stay connected. Student lifecycle status is read-only in this workflow.
+
 ```sql
 CREATE TABLE students (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -253,6 +255,8 @@ Stores a student's enrollment per school year.
 The school-year rollover workflow lets an administrator explicitly select one or many source-year students, review per-student promote, repeat, or skip decisions, and insert new target-year enrollments only for checked promote/repeat rows. The shared `students` record and all year-specific fee, payment, wallet, store, and reminder records remain separate.
 
 The admin uses one Add students chooser for three focused workflows: one new student, multiple new students with optional shared grade/section/student-type defaults and per-row overrides, or one/many existing Pending students. Existing-student enrollment creates only missing `enrollments` rows and never inserts a second `students` row or re-enters identity and guardian-link data. This workflow organization requires no schema change.
+
+The exact Student Profile may correct grade, section, and student type only on an enrollment that already belongs to the active school year. Historical enrollment placement and enrollment status are read-only, and the profile editor never creates a missing enrollment. These rules reuse the existing table and require no migration.
 
 ```sql
 CREATE TABLE enrollments (
