@@ -276,6 +276,38 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
     }
   });
 
+  test("Enrolled students keeps one contextual Add students action while other Admin pages retain the shortcut", async ({
+    page,
+  }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/admin/students", { waitUntil: "domcontentloaded" });
+
+      await expect(page.getByRole("link", { name: "Add students", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Add students", exact: true })).toHaveCount(1);
+      await expect(page.locator("html")).not.toHaveCSS("overflow-x", "scroll");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    }
+
+    await page.goto("/admin/students", { waitUntil: "networkidle" });
+    const contextualAction = page.getByRole("button", { name: "Add students", exact: true });
+    await expect(contextualAction).toBeEnabled();
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await expect(contextualAction).toBeVisible();
+    await contextualAction.click();
+    await expect(page.getByRole("dialog", { name: "Add students" })).toBeVisible();
+    await page.getByRole("button", { name: "Close modal" }).click();
+
+    await page.goto("/admin/dashboard", { waitUntil: "networkidle" });
+    const shortcut = page.getByRole("link", { name: "Add students", exact: true });
+    await expect(shortcut).toBeVisible();
+    await shortcut.click();
+    await expect(page).toHaveURL(/\/admin\/students\?intake=choose$/);
+    await expect(page.getByRole("dialog", { name: "Add students" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Add students", exact: true })).toHaveCount(0);
+  });
+
   test("admin dashboard shares the persisted app theme with an adaptive sidebar", async ({
     page,
   }) => {

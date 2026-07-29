@@ -254,7 +254,7 @@ Stores a student's enrollment per school year.
 
 The school-year rollover workflow lets an administrator explicitly select one or many source-year students, review per-student promote, repeat, or skip decisions, and insert new target-year enrollments only for checked promote/repeat rows. The shared `students` record and all year-specific fee, payment, wallet, store, and reminder records remain separate.
 
-The admin uses one Add students chooser for three focused workflows: one new student, multiple new students with optional shared grade/section/student-type defaults and per-row overrides, or one/many existing Pending students. Existing-student enrollment creates only missing `enrollments` rows and never inserts a second `students` row or re-enters identity and guardian-link data. This workflow organization requires no schema change.
+The admin uses one Add students chooser for three focused workflows: one new student, multiple new students with optional shared grade/section/student-type defaults and per-row overrides, or one/many existing Pending students. The Enrolled students page renders one contextual trigger; the shared Admin header links to the same chooser only from other authorized pages. Existing-student enrollment creates only missing `enrollments` rows and never inserts a second `students` row or re-enters identity and guardian-link data. This workflow organization requires no schema change.
 
 The exact Student Profile may correct grade, section, and student type only on an enrollment that already belongs to the active school year. Historical enrollment placement and enrollment status are read-only, and the profile editor never creates a missing enrollment. These rules reuse the existing table and require no migration.
 

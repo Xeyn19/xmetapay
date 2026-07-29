@@ -59,6 +59,7 @@ export function AdminShell({
   const visibleNavSections = filterAdminNavSectionsForStaffRole(navSections, schoolContext.staffRole);
   const canManageSetup = canManageSchoolSetup(schoolContext.staffRole);
   const canAddStudents = canUseAdminHeaderAction(schoolContext.staffRole, "add_student");
+  const showAddStudentsShortcut = canAddStudents && pathname !== "/admin/students";
   const canRecordPayments = canUseAdminHeaderAction(schoolContext.staffRole, "record_payment");
   const canSendReminders = canUseAdminHeaderAction(schoolContext.staffRole, "send_reminder");
   const logout = logoutAction.bind(null, "admin");
@@ -263,7 +264,7 @@ export function AdminShell({
                     <span className="text-[10px] font-medium">Coming soon</span>
                   </AdminButton>
                 ) : null}
-                {canAddStudents ? (
+                {showAddStudentsShortcut ? (
                   <Link
                     href="/admin/students?intake=choose"
                     className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto"
