@@ -48,6 +48,14 @@ test("authentication treatment includes recovery and accessible password control
   assert.match(passwordInput, /public-field/);
 });
 
+test("native public auth select options stay readable on the Windows popup surface", () => {
+  assert.match(authUi, /<select[\s\S]*className="public-field/);
+  assert.match(globalCss, /\.public-auth-shell select\.public-field option\s*\{/);
+  assert.match(globalCss, /color: #17191d;/);
+  assert.match(globalCss, /background-color: #ffffff;/);
+  assert.match(globalCss, /\.public-auth-shell select\.public-field option:disabled/);
+});
+
 test("public theme defaults to dark, persists locally, and exposes an accessible toggle", () => {
   assert.match(themeProvider, /defaultTheme="dark"/);
   assert.match(themeProvider, /enableSystem=\{false\}/);

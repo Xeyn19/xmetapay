@@ -256,6 +256,15 @@ body {
   color: var(--public-subtle);
 }
 
+.public-auth-shell select.public-field option {
+  color: #17191d;
+  background-color: #ffffff;
+}
+
+.public-auth-shell select.public-field option:disabled {
+  color: #6b7280;
+}
+
 .public-panel {
   border-color: var(--public-divider);
   background: var(--public-panel);
