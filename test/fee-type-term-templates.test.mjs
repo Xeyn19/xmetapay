@@ -56,7 +56,9 @@ test("tuition add fee type form no longer renders payment term template fields",
   assert.match(termFields, /name="termAmount"/);
   assert.match(termFields, /name="termDueDate"/);
   assert.match(termFields, /Term due date/);
-  assert.match(termFields, /Term dates must be on or before the fee due date/);
+  assert.match(termFields, /student tuition schedule window/);
+  assert.match(termFields, /earliestDueDate/);
+  assert.match(termFields, /latestDueDate/);
   assert.match(termFields, /Rebalance to/);
   assert.match(termFields, /Term amounts must match the tuition amount/);
   assert.match(tuitionTable, /TuitionTermScheduleFields/);
@@ -78,7 +80,8 @@ test("fee actions keep terms as per-student Manage terms work", () => {
   assert.match(terms, /INSERT INTO fee_type_term_templates/);
   assert.match(terms, /export async function getFeeTypeTermTemplate/);
   assert.match(terms, /export async function createTuitionTermsFromTemplate/);
-  assert.match(terms, /Term schedule dates cannot be later than the fee due date/);
+  assert.match(terms, /Term schedule dates cannot be earlier than the school year start date/);
+  assert.match(terms, /Term schedule dates cannot be later than the tuition due date/);
   assert.match(terms, /Set the fee due date before adding payment terms/);
   assert.match(terms, /scaleTuitionTermTemplate/);
   assert.match(terms, /final term absorbs|remainingCents|allocatedCents/);

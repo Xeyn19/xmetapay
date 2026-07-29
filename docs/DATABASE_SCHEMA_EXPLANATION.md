@@ -221,7 +221,7 @@ Main purpose:
 
 This table is the main source for outstanding balances.
 
-The parent-facing payment deadline comes from `student_fee_assignments.due_date`, even when a tuition assignment has installment terms. When terms exist, `tuition_payment_terms.due_date` is shown as installment schedule detail.
+The parent-facing payment deadline comes from `student_fee_assignments.due_date`, even when a tuition assignment has installment terms. When terms exist, `tuition_payment_terms.due_date` is shown as installment schedule detail. Manage terms derives an inclusive scheduling window from the related `school_years.starts_on` through this assignment deadline; both the native date control and the locked server transaction enforce that range.
 
 ### `parent_fee_summary_archives`
 
@@ -245,6 +245,7 @@ Main purpose:
 
 - Split one tuition assignment into due terms.
 - Track each term amount, paid amount, due date, and status.
+- Keep each due date on or after the assignment school year's start and on or before the assignment's official tuition deadline.
 - Let parents pay open or partial terms, including early payment before the due date.
 - Keep other fees on the normal fee-assignment flow.
 

@@ -99,6 +99,8 @@ export type TuitionRow = {
   due: number;
   paid: number;
   dueDate: string | null;
+  termStartDate: string;
+  termEndDate: string | null;
   lastPayment: string;
   status: "paid" | "partial" | "unpaid";
   statusValue: "open" | "partial" | "paid" | "cancelled";
@@ -1002,7 +1004,11 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
        st.first_name, st.middle_name, st.last_name,
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
        COALESCE(sec.name, '-') AS section_name,
-       sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
+       sfa.amount_due, sfa.amount_paid,
+       DATE_FORMAT(sfa.due_date, '%Y-%m-%d') AS due_date,
+       DATE_FORMAT(sy.starts_on, '%Y-%m-%d') AS term_start_date,
+       DATE_FORMAT(sfa.due_date, '%Y-%m-%d') AS term_end_date,
+       sfa.status,
        GREATEST(
          COALESCE(MAX(p.paid_at), TIMESTAMP('1000-01-01 00:00:00')),
          COALESCE(MAX(term_payment.paid_at), TIMESTAMP('1000-01-01 00:00:00'))
@@ -1024,6 +1030,7 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
        ) AS terms_blob
      FROM student_fee_assignments sfa
      JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
+     JOIN school_years sy ON sy.id = sfa.school_year_id
      JOIN students st ON st.id = sfa.student_id
      LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = sfa.school_year_id
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
@@ -1034,7 +1041,8 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
      LEFT JOIN payment_term_allocations pta ON pta.tuition_payment_term_id = tpt.id
      LEFT JOIN payments term_payment ON term_payment.id = pta.payment_id AND term_payment.status = 'paid'
      WHERE st.school_id = :schoolId AND sfa.school_year_id = :schoolYearId
-     GROUP BY sfa.id, st.first_name, st.middle_name, st.last_name, gl.name, sec.name, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status
+     GROUP BY sfa.id, st.first_name, st.middle_name, st.last_name, gl.name, sec.name,
+       sfa.amount_due, sfa.amount_paid, sfa.due_date, sy.starts_on, sfa.status
      ORDER BY gl.sort_order ASC, st.last_name ASC, st.first_name ASC`,
     { schoolId, schoolYearId },
   );
@@ -1046,7 +1054,9 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
     section: row.section_name,
     due: decimalValue(row.amount_due),
     paid: decimalValue(row.amount_paid),
-    dueDate: row.due_date ? dateKey(row.due_date) : null,
+    dueDate: row.due_date,
+    termStartDate: row.term_start_date,
+    termEndDate: row.term_end_date,
     lastPayment: validLastPayment(row.last_payment_at) ? formatDateTime(row.last_payment_at) : "Pending",
     status: feeStatusTone(row.status, row.amount_due, row.amount_paid),
     statusValue: statusValue(row.status),
@@ -1602,14 +1612,6 @@ function formatDate(value: Date | string | null) {
   });
 }
 
-function dateKey(value: Date | string) {
-  if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
-  }
-
-  return String(value).slice(0, 10);
-}
-
 function statusValue(value: string): TuitionRow["statusValue"] {
   return value === "partial" || value === "paid" || value === "cancelled" ? value : "open";
 }
@@ -1717,7 +1719,9 @@ type TuitionSqlRow = RowDataPacket & {
   section_name: string;
   amount_due: number | string;
   amount_paid: number | string;
-  due_date: Date | string | null;
+  due_date: string | null;
+  term_start_date: string;
+  term_end_date: string | null;
   status: string;
   last_payment_at: Date | string | null;
   term_count: number | string;

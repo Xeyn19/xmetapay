@@ -10,6 +10,11 @@ export type TuitionTermInput = {
   dueDate: string;
 };
 
+export type TuitionTermDateWindow = {
+  earliestDueDate: string;
+  latestDueDate: string;
+};
+
 export type ParsedTuitionTerm = {
   id: number;
   name: string;
@@ -153,17 +158,33 @@ export function isTuitionTermPayable(status: string, balance: number) {
   return balance > 0 && (status === "open" || status === "partial");
 }
 
-export function validateTuitionTermSchedule(terms: TuitionTermInput[], remainingBalance: number, officialDueDate?: string | null) {
+export function validateTuitionTermSchedule(
+  terms: TuitionTermInput[],
+  remainingBalance: number,
+  dateWindow: TuitionTermDateWindow,
+) {
   if (terms.length === 0) {
     throw new TuitionTermsError("Add at least one payment term.");
   }
 
-  if (officialDueDate) {
-    const lateTerm = terms.find((term) => term.dueDate > officialDueDate);
+  if (
+    !validDate(dateWindow.earliestDueDate)
+    || !validDate(dateWindow.latestDueDate)
+    || dateWindow.earliestDueDate > dateWindow.latestDueDate
+  ) {
+    throw new TuitionTermsError("Set a valid tuition schedule window before adding payment terms.");
+  }
 
-    if (lateTerm) {
-      throw new TuitionTermsError("Term schedule dates cannot be later than the fee due date.");
-    }
+  const earlyTerm = terms.find((term) => term.dueDate < dateWindow.earliestDueDate);
+
+  if (earlyTerm) {
+    throw new TuitionTermsError("Term schedule dates cannot be earlier than the school year start date.");
+  }
+
+  const lateTerm = terms.find((term) => term.dueDate > dateWindow.latestDueDate);
+
+  if (lateTerm) {
+    throw new TuitionTermsError("Term schedule dates cannot be later than the tuition due date.");
   }
 
   const totalTerms = roundMoney(terms.reduce((sum, term) => sum + term.amount, 0));
@@ -331,13 +352,15 @@ export async function saveTuitionTermSchedule(
     throw new TuitionTermsError("This tuition already has paid terms. Keep the current schedule for audit safety.");
   }
 
-  if (!assignment.due_date) {
+  if (!assignment.term_end_date) {
     throw new TuitionTermsError("Set the fee due date before adding payment terms.");
   }
 
-  const officialDueDate = formatDateForInput(assignment.due_date);
   const remainingBalance = roundMoney(decimalValue(assignment.amount_due) - decimalValue(assignment.amount_paid));
-  validateTuitionTermSchedule(params.terms, remainingBalance, officialDueDate);
+  validateTuitionTermSchedule(params.terms, remainingBalance, {
+    earliestDueDate: assignment.term_start_date,
+    latestDueDate: assignment.term_end_date,
+  });
 
   await connection.execute<ResultSetHeader>(
     `DELETE FROM tuition_payment_terms
@@ -531,7 +554,10 @@ async function getLockedTuitionAssignment(
   params: SaveTuitionTermScheduleParams,
 ) {
   const [rows] = await connection.execute<TuitionAssignmentRow[]>(
-    `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status
+    `SELECT sfa.id, sfa.amount_due, sfa.amount_paid,
+       DATE_FORMAT(sy.starts_on, '%Y-%m-%d') AS term_start_date,
+       DATE_FORMAT(sfa.due_date, '%Y-%m-%d') AS term_end_date,
+       sfa.status
      FROM student_fee_assignments sfa
      JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
      JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
@@ -639,6 +665,7 @@ type TuitionAssignmentRow = RowDataPacket & {
   id: number;
   amount_due: number | string;
   amount_paid: number | string;
-  due_date: Date | string | null;
+  term_start_date: string;
+  term_end_date: string | null;
   status: string;
 };

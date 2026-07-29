@@ -55,7 +55,11 @@ test("admin tuition term action requires finance access and validates totals", (
   assert.match(terms, /FOR UPDATE/);
   assert.match(terms, /amount_paid > 0/);
   assert.match(terms, /Term amounts must total the remaining tuition balance/);
-  assert.match(terms, /Term schedule dates cannot be later than the fee due date/);
+  assert.match(terms, /Term schedule dates cannot be earlier than the school year start date/);
+  assert.match(terms, /Term schedule dates cannot be later than the tuition due date/);
+  assert.match(terms, /Set a valid tuition schedule window before adding payment terms/);
+  assert.match(terms, /DATE_FORMAT\(sy\.starts_on, '%Y-%m-%d'\) AS term_start_date/);
+  assert.match(terms, /DATE_FORMAT\(sfa\.due_date, '%Y-%m-%d'\) AS term_end_date/);
   assert.match(terms, /Set the fee due date before adding payment terms/);
   assert.match(terms, /DELETE FROM tuition_payment_terms/);
   assert.match(terms, /INSERT INTO tuition_payment_terms/);
@@ -89,6 +93,10 @@ test("admin tuition report exposes per-student manage terms UI", () => {
 
   assert.match(helper, /assignmentId: number/);
   assert.match(helper, /dueDate: string \| null/);
+  assert.match(helper, /termStartDate: string/);
+  assert.match(helper, /termEndDate: string \| null/);
+  assert.match(helper, /DATE_FORMAT\(sy\.starts_on, '%Y-%m-%d'\) AS term_start_date/);
+  assert.match(helper, /JOIN school_years sy ON sy\.id = sfa\.school_year_id/);
   assert.match(helper, /statusValue: "open" \| "partial" \| "paid" \| "cancelled"/);
   assert.match(helper, /terms: TuitionTermRow\[\]/);
   assert.match(helper, /LEFT JOIN tuition_payment_terms tpt/);
@@ -114,12 +122,19 @@ test("admin tuition report exposes per-student manage terms UI", () => {
   assert.match(table, /Amount is locked while terms exist/);
   assert.match(table, /Official parent deadline\. Term dates must be on or before this date/);
   assert.match(table, /TuitionTermScheduleFields/);
-  assert.match(table, /latestDueDate=\{row\.dueDate\}/);
+  assert.match(table, /earliestDueDate=\{row\.termStartDate\}/);
+  assert.match(table, /latestDueDate=\{row\.termEndDate\}/);
+  assert.match(table, /disabled=\{!validDateWindow\(row\.termStartDate, row\.termEndDate\)\}/);
   assert.match(termFields, /name="termName"/);
   assert.match(termFields, /name="termAmount"/);
   assert.match(termFields, /name="termDueDate"/);
   assert.match(termFields, /Term due date/);
+  assert.match(termFields, /min=\{earliestDueDate \?\? undefined\}/);
   assert.match(termFields, /max=\{latestDueDate \?\? undefined\}/);
+  assert.match(termFields, /Term schedule window/);
+  assert.match(termFields, /Both the start and end dates are selectable/);
+  assert.match(termFields, /One or more existing term dates are outside this window/);
+  assert.match(termFields, /Set this student's official tuition due date in Edit tuition assignment/);
   assert.match(termFields, /Term amounts must match the tuition amount before saving/);
   assert.match(termFields, /function rebalanceTerms/);
 });
