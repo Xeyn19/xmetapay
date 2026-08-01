@@ -129,7 +129,7 @@ function RequestCodeForm({
           type="email"
           required
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder="Enter your account email"
           aria-invalid={Boolean(state.errors?.email)}
           className="public-field min-h-12 w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
         />
@@ -310,14 +310,14 @@ function NewPasswordForm({
       <PasswordField
         name="password"
         label="New password"
-        placeholder="Create a new password"
+        placeholder="Create a secure new password"
         error={state.errors?.password}
         showHelp
       />
       <PasswordField
         name="confirmPassword"
         label="Confirm new password"
-        placeholder="Re-enter your new password"
+        placeholder="Confirm your new password"
         error={state.errors?.confirmPassword}
       />
       <StatusMessage message={state.message} />

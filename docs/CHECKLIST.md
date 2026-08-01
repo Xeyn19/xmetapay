@@ -16,6 +16,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Company login gives clear enumeration-safe credential feedback, explains inactive access only after password verification, and logout shows one confirmation toast.
 - [x] The public entry page routes school admins and parents to their own sign-in and registration pages while company access remains sign-in-only and unlisted at the direct `/login` route.
 - [x] Landing, role login/register, company login, and password recovery share the responsive dark XMETA Pay public shell without changing authentication contracts.
+- [x] All portal email and password placeholders use professional instruction-only copy without sample or stored user addresses.
 - [x] Public and authentication screens provide a remembered Light/Dark toggle with Dark as the first-visit default while dashboard interiors remain unchanged.
 - [x] Admin, Parent, and Super Admin dashboards share the same remembered Light/Dark preference, semantic operational surfaces, theme-aware charts and statuses, and adaptive light/charcoal sidebars.
 - [x] Keep Admin report-download rows readable during hover in both themes by using semantic foreground, muted, border, and hover surfaces.

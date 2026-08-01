@@ -35,7 +35,7 @@ test("auth pages show fields that match the role-specific schema", () => {
   const parentRegisterPage = readFileSync("app/parent/register/page.tsx", "utf8");
 
   assert.match(adminLoginPage, /label: "Email or phone"/);
-  assert.match(adminLoginPage, /placeholder: "admin@school\.edu\.ph or 0917 000 0000"/);
+  assert.match(adminLoginPage, /placeholder: "Enter your email or mobile number"/);
   assert.doesNotMatch(adminLoginPage, /type: "email"/);
 
   assert.match(adminRegisterPage, /Register your school owner account for approval/);

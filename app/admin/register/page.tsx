@@ -23,7 +23,7 @@ export default function AdminRegisterPage() {
             label: "School email",
             name: "email",
             type: "email",
-            placeholder: "admin@school.edu.ph",
+            placeholder: "Enter your work email",
           },
           {
             label: "Phone number",
@@ -35,13 +35,13 @@ export default function AdminRegisterPage() {
             label: "Password",
             name: "password",
             type: "password",
-            placeholder: "Create a password",
+            placeholder: "Create a secure password",
           },
           {
             label: "Confirm password",
             name: "confirmPassword",
             type: "password",
-            placeholder: "Re-enter password",
+            placeholder: "Confirm your password",
           },
         ]}
       />
