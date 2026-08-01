@@ -1,13 +1,16 @@
 # XMETA Pay
 
-XMETA Pay is a Next.js school-fintech app for parent payments and school administration workflows. It includes parent portal screens, admin dashboard screens, shared UI components, and automated tests.
+XMETA Pay is a Next.js school-fintech application for parent payments, student administration, and company-level school account oversight. It provides role-protected Parent, School Admin, and Super Admin portals backed by shared responsive UI and automated tests.
 
 ## Features
 
-- Parent portal flows for login, registration, dashboard, enrollment, fees, tuition payment, receipts, transaction history, wallet, and student profile views.
-- Admin flows for login, registration, dashboard, student and parent management, tuition, other fees, collections, reports, allowance, and store transactions.
-- Toast feedback for login, registration, and logout across the admin and parent auth flows.
-- Shared UI components built with React, Tailwind CSS, Base UI, and lucide-react icons.
+- Parent flows for account access, linked students, fee and payment history, tuition payments, receipts, allowance wallets, and student profiles.
+- School Admin workflows for school setup, enrollment, student and parent records, tuition, collections, other fees, reminders, allowance, store transactions, and financial reports.
+- Company Super Admin workflows for registration review, school-admin account management, school population summaries, and branded account exports.
+- Role-aware email OTP password recovery using the configured SMTP service.
+- Browser-remembered Light and Dark themes across public pages and dashboards, with Dark as the first-visit default and contrast-safe controls in both modes.
+- Branded XMETA Pay Excel and PDF exports from authorized filtered data.
+- Shared UI components built with React, Tailwind CSS, Base UI, Recharts, and lucide-react icons.
 - Playwright end-to-end coverage and Node test scripts.
 - Project-local Codex skills for workflow automation, including `$update-readme-date` to refresh this README from safe public project changes and update the footer date.
 
@@ -37,8 +40,9 @@ npm run test:e2e     # Run Playwright tests
 ## Project Notes
 
 - The app uses Next.js 16, React 19, TypeScript, and Tailwind CSS.
+- Authentication, permissions, and data access remain role- and school-scoped.
 - End-to-end tests live in `e2e/`.
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
-Last updated: 2026-06-22
+Last updated: 2026-08-01

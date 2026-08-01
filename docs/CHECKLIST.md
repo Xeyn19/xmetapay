@@ -18,6 +18,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Public and authentication screens provide a remembered Light/Dark toggle with Dark as the first-visit default while dashboard interiors remain unchanged.
 - [x] Admin, Parent, and Super Admin dashboards share the same remembered Light/Dark preference, semantic operational surfaces, theme-aware charts and statuses, and adaptive light/charcoal sidebars.
 - [x] Keep Admin report-download rows readable during hover in both themes by using semantic foreground, muted, border, and hover surfaces.
+- [x] Keep disabled Admin exports, pagination, selection, and bulk actions readable with opaque neutral surfaces, and use semantic state colors for Admin alerts and status badges in both themes.
 - [x] Use the outlined XMETA red/orange treatment for every School Admin, Super Admin, and protected Reports-page PDF control while preserving Excel styling.
 - [x] Parent sidebar navigation provides consistent hover, pressed, keyboard-focus, and current-page states across top-level and nested Parent routes.
 - [x] Parent dashboard rows, selection cards, tabs, dialogs, and table actions retain readable text during hover, selected, pressed, and focus states in Light and Dark modes.
