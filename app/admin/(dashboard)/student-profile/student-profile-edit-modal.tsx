@@ -11,6 +11,7 @@ import {
   type StudentProfileUpdateActionState,
 } from "@/app/admin/students/actions";
 import type { AdminStudentProfileRealData } from "@/lib/admin/real-data";
+import { readableDisabledControlClass } from "@/lib/ui/control-styles";
 import { cn } from "@/lib/utils";
 
 import { AdminButton, Field, fieldControlClass } from "../../_components/admin-ui";
@@ -139,7 +140,7 @@ export function StudentProfileEditModal({
                 type="button"
                 onClick={closeModal}
                 disabled={pending}
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+                className={cn("inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25", readableDisabledControlClass)}
                 aria-label="Close modal"
               >
                 <X className="size-4" />

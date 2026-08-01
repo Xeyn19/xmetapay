@@ -814,6 +814,35 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
     await expect(page.getByText("No other fee records yet.")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Outstanding by grade" })).toBeVisible();
   });
+
+  test("Admin disabled table controls remain readable in both themes", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/admin/store-transactions", { waitUntil: "domcontentloaded" });
+      test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+      await page.getByPlaceholder("Search store transactions...").fill("no-matching-store-transaction");
+      await expect(page.getByRole("button", { name: "Export Excel" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Export PDF" })).toBeDisabled();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    const excelButton = page.getByRole("button", { name: "Export Excel" });
+    await expect(excelButton).toHaveCSS("background-color", "rgb(34, 40, 58)");
+    await expect(excelButton).toHaveCSS("color", "rgb(185, 192, 204)");
+    await expect(excelButton).toHaveCSS("border-color", "rgb(56, 64, 82)");
+
+    await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
+    await page.getByPlaceholder("Search reminder history...").fill("no-matching-reminder");
+    const selectVisible = page.getByRole("button", { name: "Select visible" }).first();
+    await expect(selectVisible).toBeDisabled();
+    await expect(selectVisible).toHaveCSS("background-color", "rgb(34, 40, 58)");
+    await expect(selectVisible).toHaveCSS("color", "rgb(185, 192, 204)");
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(selectVisible).toHaveCSS("background-color", "rgb(238, 240, 243)");
+    await expect(selectVisible).toHaveCSS("color", "rgb(95, 102, 115)");
+    await expect(selectVisible).toHaveCSS("border-color", "rgb(215, 220, 227)");
+  });
 });
 
 test.describe("XMETA Pay dashboard protection", () => {
