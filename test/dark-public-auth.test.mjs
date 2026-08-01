@@ -27,14 +27,15 @@ test("public and authentication pages share a scoped light and dark XMETA shell"
   assert.match(resetPage, /<PublicPageShell/);
 });
 
-test("landing keeps two public portals and discreet sign-in-only company access", () => {
+test("landing keeps two public portals while company access stays unlisted", () => {
   assert.match(home, /title="School Admin"/);
   assert.match(home, /title="Parent \/ Guardian"/);
   assert.match(home, /href="\/admin\/login"/);
   assert.match(home, /registerHref="\/admin\/register"/);
   assert.match(home, /href="\/parent\/login"/);
   assert.match(home, /registerHref="\/parent\/register"/);
-  assert.match(home, /href="\/login"/);
+  assert.doesNotMatch(home, /href="\/login"|Company login/i);
+  assert.match(companyLogin, /Company sign in/);
   assert.doesNotMatch(home, /company.*register|super-admin.*register/i);
 });
 

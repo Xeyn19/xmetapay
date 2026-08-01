@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getSession } from "@/lib/auth/session";
@@ -20,16 +19,7 @@ export default async function Home() {
   }
 
   return (
-    <PublicPageShell
-      headerAction={
-        <Link
-          href="/login"
-          className="public-secondary-action inline-flex min-h-11 shrink-0 items-center rounded-lg px-3 text-xs font-bold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 sm:px-4 sm:text-sm"
-        >
-          Company login
-        </Link>
-      }
-    >
+    <PublicPageShell>
         <section className="flex flex-1 items-center py-8 sm:py-10 lg:py-12">
           <div className="mx-auto w-full max-w-4xl text-center">
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-[#e64a19]">
