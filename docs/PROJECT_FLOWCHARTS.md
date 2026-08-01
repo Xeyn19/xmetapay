@@ -806,7 +806,7 @@ SMTP configuration uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `S
 
 ## Real-Data Table Export Flow
 
-Implemented for super-admin, admin, and parent database-backed tables. Tables paginate on screen while exports use all filtered authorized rows. Every visible Admin and Parent table export uses branded Excel/PDF with the logo, authorized context, filters, summaries, frozen headings, and print setup. School Admin, Super Admin, and protected Reports-page PDF controls use the outlined XMETA red/orange style; Excel remains visually distinct. Protected Reports-page Excel/PDF is generated server-side from authorized report queries; legacy CSV URLs remain compatible.
+Implemented for super-admin, admin, and parent database-backed tables. Tables paginate on screen while exports use all filtered authorized rows. Every visible Admin and Parent table export uses branded Excel/PDF with the logo, authorized context, filters, summaries, frozen headings, and print setup. School Admin, Super Admin, and protected Reports-page PDF controls use the outlined XMETA red/orange style; Excel remains visually distinct. Disabled Admin exports, pagination, selection, and bulk actions use readable opaque neutral surfaces, while Admin alerts and status badges use semantic state colors in Light and Dark modes. Protected Reports-page Excel/PDF is generated server-side from authorized report queries; legacy CSV URLs remain compatible.
 
 ```mermaid
 flowchart TD
