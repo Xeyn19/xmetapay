@@ -13,6 +13,14 @@ const themeProvider = readFileSync("app/_components/app-theme-provider.tsx", "ut
 const themeToggle = readFileSync("app/_components/theme-toggle.tsx", "utf8");
 const rootLayout = readFileSync("app/layout.tsx", "utf8");
 const toaster = readFileSync("components/ui/sonner.tsx", "utf8");
+const authPlaceholderSources = [
+  readFileSync("app/login/super-admin-login-form.tsx", "utf8"),
+  readFileSync("app/admin/login/page.tsx", "utf8"),
+  readFileSync("app/parent/login/page.tsx", "utf8"),
+  readFileSync("app/admin/register/page.tsx", "utf8"),
+  readFileSync("app/parent/register/page.tsx", "utf8"),
+  resetFlow,
+].join("\n");
 
 test("public and authentication pages share a scoped light and dark XMETA shell", () => {
   assert.match(authUi, /public-auth-shell/);
@@ -47,6 +55,16 @@ test("authentication treatment includes recovery and accessible password control
   assert.match(passwordInput, /aria-label=\{visible \? "Hide password" : "Show password"\}/);
   assert.match(passwordInput, /min-h-12/);
   assert.match(passwordInput, /public-field/);
+});
+
+test("all portal email and password placeholders use neutral instructions", () => {
+  assert.doesNotMatch(authPlaceholderSources, /placeholder(?:=|:)\s*["'][^"']*@/i);
+  assert.match(authPlaceholderSources, /Enter your company email/);
+  assert.match(authPlaceholderSources, /Enter your email or mobile number/);
+  assert.match(authPlaceholderSources, /Enter your account email/);
+  assert.match(authPlaceholderSources, /Enter your password/);
+  assert.match(authPlaceholderSources, /Create a secure password/);
+  assert.match(authPlaceholderSources, /Confirm your password/);
 });
 
 test("native public auth select options stay readable on the Windows popup surface", () => {

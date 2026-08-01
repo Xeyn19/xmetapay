@@ -6,6 +6,8 @@ Related role guide: `ADMIN_ROLES.md` explains what company `super_admin`, `schoo
 
 The public entry and authentication screens reuse this foundation: admins and parents can register through their role-specific routes, while company super admins use the unlisted sign-in-only route `/login`. The landing page does not expose a company-login control; direct URL knowledge does not replace the existing company authentication and protected-route checks. Landing, authentication, recovery, and all three dashboard portals share a responsive XMETA Pay Light/Dark preference with a Dark first-visit default. The browser-local preference themes both operational surfaces and dashboard navigation, using a light sidebar in Light mode and XMETA charcoal in Dark mode. Parent top-level and nested routes share the same current-page treatment, while rows, selection cards, tabs, dialogs, and actions use semantic contrast-safe hover, selected, pressed, and focus surfaces. Admin report-download rows use the same semantic contrast treatment; disabled Admin table controls remain visibly inactive through opaque neutral surfaces instead of unreadable opacity, and Admin alerts/status badges use semantic state colors. The Tuition report no longer duplicates the non-tuition summary owned by the Other fees page; these presentation boundaries require no authentication or schema change.
 
+Public authentication placeholders are instruction-only UI copy. They do not read from `users.email`, `users.phone`, or password hashes, and changing them requires no database import or schema field.
+
 ## Import Order
 
 The database is split into two SQL files so the current authentication work stays stable.

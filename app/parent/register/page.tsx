@@ -18,7 +18,7 @@ export default function ParentRegisterPage() {
             label: "Email",
             name: "email",
             type: "email",
-            placeholder: "parent@email.com",
+            placeholder: "Enter your email address",
           },
           {
             label: "Phone number",
@@ -43,13 +43,13 @@ export default function ParentRegisterPage() {
             label: "Password",
             name: "password",
             type: "password",
-            placeholder: "Create a password",
+            placeholder: "Create a secure password",
           },
           {
             label: "Confirm password",
             name: "confirmPassword",
             type: "password",
-            placeholder: "Re-enter password",
+            placeholder: "Confirm your password",
           },
         ]}
       />

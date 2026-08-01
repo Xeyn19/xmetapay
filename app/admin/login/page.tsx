@@ -36,7 +36,7 @@ export default async function AdminLoginPage({
           {
             label: "Email or phone",
             name: "email",
-            placeholder: "admin@school.edu.ph or 0917 000 0000",
+            placeholder: "Enter your email or mobile number",
           },
           {
             label: "Password",

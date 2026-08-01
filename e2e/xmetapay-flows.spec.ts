@@ -63,6 +63,32 @@ test.describe("XMETA Pay portal entry", () => {
     });
   }
 
+  test("all portal email and password placeholders stay professional and account-neutral", async ({ page }) => {
+    for (const route of [
+      "/login",
+      "/admin/login",
+      "/admin/register",
+      "/parent/login",
+      "/parent/register",
+      "/admin/forgot-password",
+      "/parent/forgot-password",
+      "/forgot-password",
+    ]) {
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+
+      const placeholders = await page
+        .locator('input[name="email"], input[name="identifier"], input[name="password"], input[name="confirmPassword"]')
+        .evaluateAll((inputs) => inputs.map((input) => input.getAttribute("placeholder") ?? ""));
+
+      expect(placeholders.length).toBeGreaterThan(0);
+      for (const placeholder of placeholders) {
+        expect(placeholder).toMatch(/^(Enter|Create|Confirm)/);
+        expect(placeholder).not.toMatch(/@|\.com\b|09\d{2}/i);
+      }
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
   for (const route of [
     "/PROJECT_FLOWCHARTS_VISUAL.html",
     "/DATABASE_SCHEMA_VISUAL_PLAN.html",

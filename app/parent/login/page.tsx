@@ -36,7 +36,7 @@ export default async function ParentLoginPage({
           {
             label: "Email or mobile number",
             name: "identifier",
-            placeholder: "parent@email.com or 0917 000 0000",
+            placeholder: "Enter your email or mobile number",
           },
           {
             label: "Password",

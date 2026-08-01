@@ -37,7 +37,7 @@ export function SuperAdminLoginForm() {
           required
           value={values.email}
           onChange={(event) => setValues((current) => ({ ...current, email: event.target.value }))}
-          placeholder="xmeta@gmail.com"
+          placeholder="Enter your company email"
           aria-invalid={Boolean(state.errors?.email)}
           className="public-field min-h-12 w-full rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
         />
@@ -53,7 +53,7 @@ export function SuperAdminLoginForm() {
           required
           value={values.password}
           onChange={(event) => setValues((current) => ({ ...current, password: event.target.value }))}
-          placeholder="Enter company password"
+          placeholder="Enter your password"
           aria-invalid={Boolean(state.errors?.password)}
           className="px-3 py-2 text-sm text-[var(--public-text)] placeholder:text-[var(--public-subtle)]"
         />
