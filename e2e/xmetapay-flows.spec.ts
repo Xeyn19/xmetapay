@@ -15,7 +15,7 @@ test.describe("XMETA Pay portal entry", () => {
     ).toBeVisible();
     await expect(page.getByText("School Admin")).toBeVisible();
     await expect(page.getByText("Parent / Guardian")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Company login" })).toHaveAttribute("href", "/login");
+    await expect(page.getByRole("link", { name: "Company login" })).toHaveCount(0);
     await expect(page.getByText("Brentwood Academy of Las Pinas")).toHaveCount(0);
     await expectDarkPublicShell(page);
     await expectBrandLogo(page);
@@ -149,7 +149,7 @@ test.describe("XMETA Pay portal entry", () => {
       }));
 
       expect(metrics.scrollWidth).toBe(metrics.clientWidth);
-      await expect(page.getByRole("link", { name: "Company login" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Company login" })).toHaveCount(0);
       await expect(page.getByRole("button", { name: /Switch to (light|dark) mode/ })).toBeVisible();
       await expectDarkPublicShell(page);
       await expectBrandLogo(page);

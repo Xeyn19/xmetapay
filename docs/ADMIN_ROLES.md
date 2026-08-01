@@ -2,7 +2,7 @@
 
 This guide explains the company super admin role and the three school/admin staff roles used by XMETA Pay.
 
-The public XMETA Pay entry page uses a shared dark charcoal, orange, and blue branded shell for school-admin and parent/guardian portal choices. The same responsive shell covers role login, registration, and password recovery. Company super admins use the separate `/login` link and do not have a public registration route.
+The public XMETA Pay entry page uses a shared dark charcoal, orange, and blue branded shell for school-admin and parent/guardian portal choices. The same responsive shell covers role login, registration, and password recovery. Company super admins use the unlisted direct route `/login`; the public landing page does not link to it, and no public company registration route exists. The unlisted URL is only a navigation choice—company authentication and protected-route checks remain authoritative.
 
 Active company, school-admin, and parent accounts can request an email OTP from their role-specific login page. Password recovery never approves a pending account or re-enables a disabled account, and a successful reset revokes the user's existing sessions.
 

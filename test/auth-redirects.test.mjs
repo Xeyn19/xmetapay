@@ -213,7 +213,8 @@ test("home page redirects already-authenticated users to the correct dashboard",
   assert.match(homePage, /if \(session\?\.role === "parent"\) \{\s*redirect\("\/parent\/dashboard"\);/);
   assert.match(homePage, /if \(session\?\.role === "super_admin"\) \{\s*redirect\("\/super-admin\/dashboard"\);/);
   assert.match(homePage, /School payments, made simple/);
-  assert.match(homePage, /Company login/);
+  assert.doesNotMatch(homePage, /Company login|href="\/login"/);
+  assert.match(companyLoginPage, /Company sign in/);
   assert.doesNotMatch(homePage, /Brentwood Academy of Las Pinas/);
   assert.doesNotMatch(homePage, /registerHref="\/login"/);
 });
