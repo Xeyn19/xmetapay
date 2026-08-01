@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { readableDisabledControlClass } from "@/lib/ui/control-styles";
 import type { Kpi, StatusTone, Tone } from "../_data/admin-dashboard-data";
 
 const toneBorder: Record<Tone, string> = {
@@ -22,15 +23,15 @@ const noteToneClass = {
 };
 
 const pillClass: Record<StatusTone, string> = {
-  paid: "bg-[#e8f5e9] text-[#2e7d32]",
-  partial: "bg-[#fff3e0] text-[#f57c00]",
-  unpaid: "bg-[#ffebee] text-[#c62828]",
-  enrolled: "bg-[#e3f2fd] text-[#1565c0]",
-  active: "bg-[#e8f5e9] text-[#2e7d32]",
-  inactive: "bg-[#eff1f5] text-[#5a6070]",
-  pending: "bg-[#f3e5f5] text-[#6a1b9a]",
-  low: "bg-[#fff3e0] text-[#f57c00]",
-  online: "bg-[#e0f2f1] text-[#00695c]",
+  paid: "bg-status-success-bg text-status-success-foreground",
+  partial: "bg-status-warning-bg text-status-warning-foreground",
+  unpaid: "bg-status-danger-bg text-status-danger-foreground",
+  enrolled: "bg-status-info-bg text-status-info-foreground",
+  active: "bg-status-success-bg text-status-success-foreground",
+  inactive: "bg-status-inactive-bg text-status-inactive-foreground",
+  pending: "bg-status-pending-bg text-status-pending-foreground",
+  low: "bg-status-warning-bg text-status-warning-foreground",
+  online: "bg-status-info-bg text-status-info-foreground",
 };
 
 const valueToneClass = {
@@ -76,10 +77,10 @@ export function AlertBanner({
   children: ReactNode;
 }) {
   const classes = {
-    danger: "border-[#c62828]/15 bg-[#ffebee] text-[#c62828]",
-    warn: "border-[#f57c00]/20 bg-[#fff3e0] text-[#f57c00]",
-    info: "border-[#1565c0]/15 bg-[#e3f2fd] text-[#1565c0]",
-    success: "border-[#2e7d32]/15 bg-[#e8f5e9] text-[#2e7d32]",
+    danger: "border-status-danger-foreground/20 bg-status-danger-bg text-status-danger-foreground",
+    warn: "border-status-warning-foreground/25 bg-status-warning-bg text-status-warning-foreground",
+    info: "border-status-info-foreground/20 bg-status-info-bg text-status-info-foreground",
+    success: "border-status-success-foreground/20 bg-status-success-bg text-status-success-foreground",
   };
 
   return (
@@ -315,8 +316,9 @@ export function AdminButton({
     <button
       type="button"
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-3.5 text-[12.5px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60",
+        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-3.5 text-[12.5px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
         toneClasses[tone],
+        readableDisabledControlClass,
         className
       )}
       {...props}

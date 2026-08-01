@@ -21,6 +21,7 @@ import {
   type CollectionArchiveActionState,
 } from "@/app/admin/collections/actions";
 import type { AdminCollectionDisplayRow } from "@/lib/admin/real-data";
+import { readableDisabledControlClass } from "@/lib/ui/control-styles";
 import { cn } from "@/lib/utils";
 
 import { AdminTable, StatusPill } from "../../_components/admin-ui";
@@ -224,7 +225,7 @@ export function CollectionsTable({
             type="button"
             onClick={() => setConfirmationIds(validSelectedIds)}
             disabled={validSelectedIds.length === 0 || pending}
-            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#0f1117] bg-[#0f1117] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#2d3348] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50"
+            className={cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#0f1117] bg-[#0f1117] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#2d3348] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass)}
           >
             {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
             {operationLabel} selected
@@ -269,7 +270,7 @@ export function CollectionsTable({
                   type="button"
                   onClick={() => setConfirmationIds([row.paymentId])}
                   disabled={pending}
-                  className="inline-flex size-10 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:opacity-50"
+                  className={cn("inline-flex size-10 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass)}
                   aria-label={`${operationLabel} collection ${row.ref}`}
                   title={`${operationLabel} collection`}
                 >
@@ -315,7 +316,7 @@ export function CollectionsTable({
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setConfirmationIds([])} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>
-              <button type="button" onClick={confirmAction} disabled={pending} className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-[#e64a19] px-4 text-[12.5px] font-semibold text-white hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:opacity-60 sm:w-auto">
+              <button type="button" onClick={confirmAction} disabled={pending} className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-4 text-[12.5px] font-semibold text-white hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto", readableDisabledControlClass)}>
                 {pending ? "Updating..." : `${operationLabel} collections`}
               </button>
             </div>
@@ -326,7 +327,7 @@ export function CollectionsTable({
   );
 }
 
-const secondaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50";
+const secondaryButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass);
 
 function viewTabClass(active: boolean) {
   return cn(

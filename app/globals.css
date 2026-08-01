@@ -20,6 +20,9 @@
   --button-outline: rgb(230 74 25 / 0.28);
   --button-outline-foreground: #bf360c;
   --button-soft: #fbe9e7;
+  --control-disabled: #eef0f3;
+  --control-disabled-foreground: #5f6673;
+  --control-disabled-border: #d7dce3;
   --secondary: #e8f1ff;
   --secondary-foreground: #24518f;
   --muted: #f1f3f5;
@@ -51,6 +54,10 @@
   --status-danger-foreground: #c62828;
   --status-info-bg: #e8f1ff;
   --status-info-foreground: #24518f;
+  --status-pending-bg: #f3e5f5;
+  --status-pending-foreground: #6a1b9a;
+  --status-inactive-bg: #f1f3f5;
+  --status-inactive-foreground: #5f6673;
 }
 
 .dark {
@@ -69,6 +76,9 @@
   --button-outline: rgb(255 106 61 / 0.4);
   --button-outline-foreground: #ffb09a;
   --button-soft: #3a231d;
+  --control-disabled: #22283a;
+  --control-disabled-foreground: #b9c0cc;
+  --control-disabled-border: #384052;
   --secondary: #263348;
   --secondary-foreground: #d8e7ff;
   --muted: #22283a;
@@ -100,6 +110,10 @@
   --status-danger-foreground: #ff9ca8;
   --status-info-bg: #1b2b45;
   --status-info-foreground: #9fc3ff;
+  --status-pending-bg: #34243c;
+  --status-pending-foreground: #d8a6e4;
+  --status-inactive-bg: #22283a;
+  --status-inactive-foreground: #b9c0cc;
 }
 
 @theme inline {
@@ -122,6 +136,9 @@
   --color-button-outline: var(--button-outline);
   --color-button-outline-foreground: var(--button-outline-foreground);
   --color-button-soft: var(--button-soft);
+  --color-control-disabled: var(--control-disabled);
+  --color-control-disabled-foreground: var(--control-disabled-foreground);
+  --color-control-disabled-border: var(--control-disabled-border);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -145,6 +162,18 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-danger-bg: var(--status-danger-bg);
+  --color-status-danger-foreground: var(--status-danger-foreground);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-foreground: var(--status-info-foreground);
+  --color-status-pending-bg: var(--status-pending-bg);
+  --color-status-pending-foreground: var(--status-pending-foreground);
+  --color-status-inactive-bg: var(--status-inactive-bg);
+  --color-status-inactive-foreground: var(--status-inactive-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

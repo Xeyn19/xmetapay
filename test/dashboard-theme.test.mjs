@@ -9,6 +9,12 @@ const superAdminShell = readFileSync("app/super-admin/_components/super-admin-sh
 const adminReportsPage = readFileSync("app/admin/(dashboard)/reports/page.tsx", "utf8");
 const adminTuitionPage = readFileSync("app/admin/(dashboard)/tuition/page.tsx", "utf8");
 const adminRealData = readFileSync("lib/admin/real-data.ts", "utf8");
+const adminUi = readFileSync("app/admin/_components/admin-ui.tsx", "utf8");
+const tableControls = readFileSync("app/_components/table-controls.tsx", "utf8");
+const controlStyles = readFileSync("lib/ui/control-styles.ts", "utf8");
+const reminderHistory = readFileSync("app/admin/(dashboard)/tuition/payment-reminder-history-table.tsx", "utf8");
+const collectionsTable = readFileSync("app/admin/(dashboard)/collections/collections-table.tsx", "utf8");
+const allowanceTable = readFileSync("app/admin/(dashboard)/allowance/allowance-table.tsx", "utf8");
 
 test("every dashboard shell uses the shared theme boundary and toggle", () => {
   for (const shell of [adminShell, parentShell, superAdminShell]) {
@@ -42,6 +48,28 @@ test("dashboard shells use semantic sidebar navigation states", () => {
     assert.match(shell, /bg-sidebar-primary/);
     assert.match(shell, /focus-visible:ring-sidebar-ring/);
   }
+});
+
+test("Admin disabled controls stay opaque and readable in both dashboard themes", () => {
+  assert.match(globalCss, /--control-disabled: #eef0f3/);
+  assert.match(globalCss, /\.dark \{[\s\S]*--control-disabled: #22283a/);
+  assert.match(globalCss, /--color-control-disabled-foreground: var\(--control-disabled-foreground\)/);
+  assert.match(controlStyles, /disabled:!bg-control-disabled/);
+  assert.match(controlStyles, /disabled:!text-control-disabled-foreground/);
+  assert.match(controlStyles, /disabled:opacity-100/);
+
+  for (const component of [adminUi, tableControls, reminderHistory, collectionsTable, allowanceTable]) {
+    assert.match(component, /readableDisabledControlClass/);
+  }
+});
+
+test("Admin alerts and status pills use semantic contrast-safe status colors", () => {
+  assert.match(globalCss, /--color-status-warning-bg: var\(--status-warning-bg\)/);
+  assert.match(globalCss, /--status-pending-bg: #f3e5f5/);
+  assert.match(globalCss, /\.dark \{[\s\S]*--status-pending-bg: #34243c/);
+  assert.match(adminUi, /warn: "border-status-warning-foreground\/25 bg-status-warning-bg text-status-warning-foreground"/);
+  assert.match(adminUi, /partial: "bg-status-warning-bg text-status-warning-foreground"/);
+  assert.match(adminUi, /pending: "bg-status-pending-bg text-status-pending-foreground"/);
 });
 
 test("admin finance pages keep report hover contrast and separate tuition from other fees", () => {

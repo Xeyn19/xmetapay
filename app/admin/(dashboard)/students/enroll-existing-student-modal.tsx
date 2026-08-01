@@ -5,6 +5,8 @@ import { CheckSquare, Search, UserRoundPlus, X } from "lucide-react";
 
 import type { AdminStudentRow } from "@/lib/students/records";
 import { enrollExistingStudentsBatchAction } from "@/app/admin/students/actions";
+import { readableDisabledControlClass } from "@/lib/ui/control-styles";
+import { cn } from "@/lib/utils";
 
 type Placement = {
   studentId: number;
@@ -196,9 +198,9 @@ export function EnrollExistingStudentModal({
                     <div className="mt-4 grid gap-3">
                       <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[0.05em] text-[#737b8d]">Target grade<select value={bulkGradeLevelId || ""} onChange={(event) => { setBulkGradeLevelId(Number(event.target.value)); setBulkSectionId(0); }} className={fieldClass}><option value="">Choose target grade</option>{gradeOptions.map((grade) => <option key={grade.id} value={grade.id}>{grade.name}</option>)}</select></label>
                       <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[0.05em] text-[#737b8d]">Target section<select value={bulkSectionId || ""} onChange={(event) => setBulkSectionId(Number(event.target.value))} className={fieldClass} disabled={!bulkGradeLevelId}><option value="">Choose target section</option>{bulkSections.map((section) => <option key={section.id} value={section.id}>{section.label}</option>)}</select></label>
-                      <button type="button" onClick={applyBulkPlacement} disabled={!bulkGradeLevelId || !bulkSectionId || selectedVisibleCount === 0} className="min-h-11 rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] hover:bg-[#fff5f2] disabled:cursor-not-allowed disabled:opacity-50">Apply to selected ({selectedVisibleCount})</button>
+                      <button type="button" onClick={applyBulkPlacement} disabled={!bulkGradeLevelId || !bulkSectionId || selectedVisibleCount === 0} className={cn("min-h-11 rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] hover:bg-[#fff5f2]", readableDisabledControlClass)}>Apply to selected ({selectedVisibleCount})</button>
                       <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[0.05em] text-[#737b8d]">Student type<select value={bulkStudentType} onChange={(event) => setBulkStudentType(event.target.value as Placement["studentType"])} className={fieldClass}><option value="returned">Returned</option><option value="new">New</option><option value="transferee">Transferee</option></select></label>
-                      <button type="button" onClick={applyBulkStudentType} disabled={selectedVisibleCount === 0} className="min-h-11 rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] hover:bg-[#fff5f2] disabled:cursor-not-allowed disabled:opacity-50">Apply type to selected ({selectedVisibleCount})</button>
+                      <button type="button" onClick={applyBulkStudentType} disabled={selectedVisibleCount === 0} className={cn("min-h-11 rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#0f1117] hover:bg-[#fff5f2]", readableDisabledControlClass)}>Apply type to selected ({selectedVisibleCount})</button>
                     </div>
                     <div className="mt-5 rounded-lg border border-[#e64a19]/15 bg-[#fff8f5] p-3 text-[11px] leading-5 text-[#5a6070]">
                       Selected: <strong className="text-[#0f1117]">{selectedCount}</strong>. {selectedCount === 0 ? (
@@ -219,7 +221,7 @@ export function EnrollExistingStudentModal({
                 <p className="text-[11px] leading-5 text-[#5a6070]">Only checked students with complete placements will be enrolled. Existing identity and parent data is preserved.</p>
                 <div className="flex flex-col-reverse gap-2 sm:flex-row">
                   <button type="button" onClick={close} className="min-h-11 rounded-lg border border-black/10 px-4 text-[12px] font-semibold text-[#5a6070] hover:bg-[#eff1f5]">Cancel</button>
-                  <button type="submit" disabled={selectedCount === 0 || incompleteSelectedCount > 0} className="min-h-11 rounded-lg bg-[#e64a19] px-4 text-[12px] font-bold text-white hover:bg-[#cc3f12] disabled:cursor-not-allowed disabled:opacity-50">Enroll {selectedCount > 0 ? selectedCount : "selected"} student{selectedCount === 1 ? "" : "s"}</button>
+                  <button type="submit" disabled={selectedCount === 0 || incompleteSelectedCount > 0} className={cn("min-h-11 rounded-lg border border-[#e64a19] bg-[#e64a19] px-4 text-[12px] font-bold text-white hover:bg-[#cc3f12]", readableDisabledControlClass)}>Enroll {selectedCount > 0 ? selectedCount : "selected"} student{selectedCount === 1 ? "" : "s"}</button>
                 </div>
               </div>
             </form>

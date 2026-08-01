@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Download, FileText, LoaderCircle, RotateCcw, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { readableDisabledControlClass } from "@/lib/ui/control-styles";
 
 export type FilterOption = {
   label: string;
@@ -136,11 +137,11 @@ export function DashboardTableControls({
         }}
         disabled={exportDisabled || exportingPrimary}
         className={cn(
-          "inline-flex min-h-11 items-center justify-center gap-1.5 border px-3.5 transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60",
+          "inline-flex min-h-11 items-center justify-center gap-1.5 border px-3.5 transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
           buttonClass,
           isParent
-            ? "border-[#e64a19] bg-[#e64a19] text-white hover:bg-[#bf360c]"
-            : "border-[#0f1117] bg-[#0f1117] text-white hover:bg-[#2d3348]",
+            ? "border-[#e64a19] bg-[#e64a19] text-white hover:bg-[#bf360c] disabled:pointer-events-none disabled:opacity-60"
+            : cn("border-[#0f1117] bg-[#0f1117] text-white hover:bg-[#2d3348]", readableDisabledControlClass),
         )}
       >
         {exportingPrimary ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}
@@ -160,8 +161,9 @@ export function DashboardTableControls({
           }}
           disabled={exportDisabled || exportingPdf}
           className={cn(
-            "inline-flex min-h-11 items-center justify-center gap-1.5 border border-primary bg-card px-3.5 text-primary transition hover:bg-button-soft hover:text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-60",
+            "inline-flex min-h-11 items-center justify-center gap-1.5 border border-primary bg-card px-3.5 text-primary transition hover:bg-button-soft hover:text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",
             buttonClass,
+            isParent ? "disabled:pointer-events-none disabled:opacity-60" : readableDisabledControlClass,
           )}
         >
           {exportingPdf ? <LoaderCircle className="size-4 animate-spin" /> : <FileText className="size-4" />}
@@ -232,8 +234,9 @@ export function DashboardTablePagination({
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
           className={cn(
-            "inline-flex min-h-9 items-center justify-center gap-1.5 border border-black/15 bg-white px-3 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50",
+            "inline-flex min-h-9 items-center justify-center gap-1.5 border border-black/15 bg-white px-3 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
             buttonClass,
+            isParent ? "disabled:pointer-events-none disabled:opacity-50" : readableDisabledControlClass,
           )}
         >
           <ChevronLeft className="size-4" />
@@ -244,8 +247,9 @@ export function DashboardTablePagination({
           onClick={() => onPageChange(page + 1)}
           disabled={page >= pageCount}
           className={cn(
-            "inline-flex min-h-9 items-center justify-center gap-1.5 border border-black/15 bg-white px-3 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50",
+            "inline-flex min-h-9 items-center justify-center gap-1.5 border border-black/15 bg-white px-3 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
             buttonClass,
+            isParent ? "disabled:pointer-events-none disabled:opacity-50" : readableDisabledControlClass,
           )}
         >
           Next
