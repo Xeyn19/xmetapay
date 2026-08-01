@@ -15,6 +15,8 @@ const requiredPublicFiles = [
   "DATABASE_SCHEMA_VISUAL_PLAN.html",
 ];
 
+const requiredRootFiles = ["README.md"];
+
 function repoRoot() {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   return path.resolve(scriptDir, "../../../..");
@@ -37,6 +39,13 @@ function main() {
   const docsDir = path.join(root, "docs");
   const publicDir = path.join(root, "public");
   const errors = [];
+
+  for (const fileName of requiredRootFiles) {
+    const filePath = path.join(root, fileName);
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+      errors.push(`Missing required root documentation file: ${fileName}`);
+    }
+  }
 
   if (!fs.existsSync(docsDir) || !fs.statSync(docsDir).isDirectory()) {
     errors.push(`Missing docs directory: ${docsDir}`);
@@ -69,6 +78,7 @@ function main() {
 
     console.log("Refresh Project Docs target set");
     console.log(`Repo: ${root}`);
+    console.log(`Root docs: ${requiredRootFiles.join(", ")}`);
     console.log(`Docs: ${expectedDocs.map((name) => `docs/${name}`).join(", ")}`);
     console.log(
       `Visuals: ${requiredPublicFiles.map((name) => `public/${name}`).join(", ")}`,
