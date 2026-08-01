@@ -20,6 +20,7 @@ export default async function ParentLoginPage({
         role: "parent" as const,
         title: "Signed out",
         description: "You have signed out of the parent portal.",
+        eventId: "parent-signed-out",
       }
     : await consumeAuthFlashToast("parent");
 

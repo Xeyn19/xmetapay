@@ -10,16 +10,23 @@ import { verifyPassword } from "@/lib/auth/password.mjs";
 
 export type SuperAdminLoginState = {
   message: string;
+  feedbackId: number;
   errors?: Record<string, string>;
 };
 
-const initialState: SuperAdminLoginState = { message: "" };
+const initialState: SuperAdminLoginState = { message: "", feedbackId: 0 };
+const invalidCompanyLoginMessage = "The company email or password is incorrect. Check your details and try again.";
 
 export async function superAdminLoginAction(
   _state: SuperAdminLoginState = initialState,
   formData: FormData,
 ): Promise<SuperAdminLoginState> {
-  void _state;
+  const feedbackId = Number.isSafeInteger(_state.feedbackId) ? _state.feedbackId + 1 : 1;
+  const failure = (message: string, errors?: Record<string, string>): SuperAdminLoginState => ({
+    message,
+    feedbackId,
+    ...(errors ? { errors } : {}),
+  });
   const email = value(formData, "email").toLowerCase();
   const password = value(formData, "password");
   const errors: Record<string, string> = {};
@@ -33,7 +40,7 @@ export async function superAdminLoginAction(
   }
 
   if (Object.keys(errors).length > 0) {
-    return { message: "Please enter your company login details.", errors };
+    return failure("Please enter your company login details.", errors);
   }
 
   try {
@@ -46,14 +53,18 @@ export async function superAdminLoginAction(
     );
     const user = rows[0];
 
-    if (!user || user.status !== "active") {
-      return { message: "Invalid company login details or inactive account." };
+    if (!user) {
+      return failure(invalidCompanyLoginMessage);
     }
 
     const validPassword = await verifyPassword(password, user.password_hash);
 
     if (!validPassword) {
-      return { message: "Invalid company login details or inactive account." };
+      return failure(invalidCompanyLoginMessage);
+    }
+
+    if (user.status !== "active") {
+      return failure("Your company account is inactive. Contact the XMETA Pay system administrator to restore access.");
     }
 
     await pool.execute(
@@ -69,11 +80,11 @@ export async function superAdminLoginAction(
   } catch (error) {
     console.error("[super-admin:login]", databaseErrorDetails(error));
 
-    return {
-      message: process.env.NODE_ENV === "production"
+    return failure(
+      process.env.NODE_ENV === "production"
         ? "Unable to sign in. The production database connection is unavailable."
         : "Unable to sign in. Check that MySQL/XAMPP is running and try again.",
-    };
+    );
   }
 
   redirect("/super-admin/dashboard");
@@ -81,11 +92,6 @@ export async function superAdminLoginAction(
 
 export async function superAdminLogoutAction() {
   await deleteSession();
-  await setAuthFlashToast({
-    role: "super_admin",
-    title: "Signed out",
-    description: "You have signed out of company monitoring.",
-  });
 
   redirect("/login?signedOut=1");
 }

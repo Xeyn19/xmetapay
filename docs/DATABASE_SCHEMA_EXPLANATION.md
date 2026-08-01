@@ -61,6 +61,7 @@ Important behavior:
 - Only active accounts receive or complete recovery; password reset never changes `users.status`.
 - `last_used_at` updates when a valid session is read.
 - Company super admin sessions use the same table and cookie model, but they are only accepted by `/super-admin/*` routes.
+- Company login verifies the password before exposing inactive-account guidance. Logout uses the existing `revoked_at` update and cookie deletion, then the destination login page owns the single confirmation toast; no toast or login-error field is stored in MySQL.
 
 ### `admin_profiles`
 

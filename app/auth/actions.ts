@@ -188,13 +188,6 @@ export async function loginAction(role: PortalRole, _state: AuthFormState = init
 
 export async function logoutAction(role: PortalRole) {
   await deleteSession();
-  await setAuthFlashToast({
-    role,
-    title: "Signed out",
-    description: role === "admin"
-      ? "You have signed out of the school admin dashboard."
-      : "You have signed out of the parent portal.",
-  });
 
   redirect(role === "admin" ? "/admin/login?signedOut=1" : "/parent/login?signedOut=1");
 }

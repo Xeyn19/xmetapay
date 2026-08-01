@@ -13,6 +13,7 @@ export type AuthFlashToast = {
   role: AuthRole;
   title: string;
   description: string;
+  eventId?: string;
 };
 
 type SessionPayload = {

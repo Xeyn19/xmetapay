@@ -223,6 +223,25 @@ test.describe("XMETA Pay portal entry", () => {
 });
 
 test.describe("XMETA Pay login flows", () => {
+  test("company login explains incorrect credentials clearly", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Company email").fill("unknown-company@example.com");
+    await page.locator('input[name="password"]').fill("not-the-company-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+
+    await expect(page).toHaveURL("/login");
+    await expect(page.locator('p[aria-live="polite"]')).toContainText(
+      /company email or password is incorrect|unable to sign in/i,
+    );
+    const errorToast = page.locator("[data-sonner-toast]").filter({ hasText: "Unable to sign in" });
+    await expect(errorToast).toHaveCount(1);
+    await errorToast.locator("button").click();
+    await expect(errorToast).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(errorToast).toHaveCount(1);
+  });
+
   test("admin login form handles invalid or unavailable credentials without query-string passwords", async ({ page }) => {
     await page.goto("/admin/login");
 
@@ -420,7 +439,7 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
     await page.getByRole("button", { name: "Log out" }).press("Enter");
 
     await expect(page).toHaveURL("/admin/login?signedOut=1");
-    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Signed out" })).toBeVisible();
+    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Signed out" })).toHaveCount(1);
     await page.goto("/admin/dashboard");
     await expect(page).toHaveURL("/admin/login");
   });
@@ -539,7 +558,7 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
     await page.getByRole("button", { name: "Log out" }).press("Enter");
 
     await expect(page).toHaveURL("/parent/login?signedOut=1");
-    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Signed out" })).toBeVisible();
+    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Signed out" })).toHaveCount(1);
     await page.goto("/parent/dashboard");
     await expect(page).toHaveURL("/parent/login");
   });
@@ -876,6 +895,16 @@ test.describe("XMETA Pay super admin branding", () => {
       "background-color",
       "rgb(255, 255, 255)"
     );
+  });
+
+  test("company logout shows one confirmation toast", async ({ page }) => {
+    await page.goto("/super-admin/dashboard", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Log out" }).press("Enter");
+
+    await expect(page).toHaveURL("/login?signedOut=1");
+    await expect(page.locator("[data-sonner-toast]").filter({ hasText: "Signed out" })).toHaveCount(1);
+    await page.goto("/super-admin/dashboard");
+    await expect(page).toHaveURL("/login");
   });
 
   test("school admin account exports stay responsive and download", async ({ page }) => {

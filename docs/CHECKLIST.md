@@ -13,6 +13,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Admin/school login works.
 - [x] Parent login works.
 - [x] Company super admin login exists at `/login`.
+- [x] Company login gives clear enumeration-safe credential feedback, explains inactive access only after password verification, and logout shows one confirmation toast.
 - [x] The public entry page routes school admins and parents to their own sign-in and registration pages while company access remains sign-in-only.
 - [x] Landing, role login/register, company login, and password recovery share the responsive dark XMETA Pay public shell without changing authentication contracts.
 - [x] Public and authentication screens provide a remembered Light/Dark toggle with Dark as the first-visit default while dashboard interiors remain unchanged.

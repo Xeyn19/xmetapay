@@ -74,6 +74,8 @@ Server-managed sessions for public web auth.
 | `revoked_at` | Logout/revocation timestamp |
 | `created_at` | Creation timestamp |
 
+Company sign-in uses `users.status` only after password verification when it needs to explain inactive access. Logout revokes this session row and deletes the browser session cookie; its one-time user feedback is presentation state on the destination login route, so no additional authentication column or table is required.
+
 Important indexes:
 
 ```sql

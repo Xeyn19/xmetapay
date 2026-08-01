@@ -377,7 +377,7 @@ flowchart TD
         <h2>Company Super Admin</h2>
         <p>
           The company super admin is an XMETA Pay account, not a school staff
-          account. It signs in at <code>/login</code>, then uses the sidebar-based
+          account. It signs in at <code>/login</code>, where unknown-email and wrong-password attempts share safe guidance and inactive access is explained only after password verification, then uses the sidebar-based
           company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from <code>/super-admin/dashboard</code>,
           manage and export filtered school admin accounts from <code>/super-admin/admin-accounts</code>,
           open read-only aggregate school population profiles at <code>/super-admin/schools/[schoolId]</code>,
@@ -391,10 +391,12 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["XMETA staff opens /login"] --> B["Find active user where role = super_admin"]
+  A["XMETA staff opens /login"] --> B["Find user where role = super_admin"]
   B --> C{"Password valid?"}
-  C -->|No| D["Show company login error"]
-  C -->|Yes| E["Create DB-backed session"]
+  C -->|No| D["Show safe incorrect-credentials guidance"]
+  C -->|Yes| C2{"Account active?"}
+  C2 -->|No| D2["Explain inactive access and who to contact"]
+  C2 -->|Yes| E["Create DB-backed session"]
   E --> F["Redirect to /super-admin/dashboard"]
   F --> G["Use sidebar to open /super-admin/registrations"]
   G --> H["Review pending school admin accounts"]
@@ -739,9 +741,12 @@ flowchart TD
   I["User clicks Log out"] --> J["Server action sets auth_sessions.revoked_at"]
   J --> K["Delete xmetapay_session cookie"]
   K --> L{"Portal role?"}
-  L -->|Admin| M["Redirect to /admin/login"]
-  L -->|Parent| N["Redirect to /parent/login"]
-  L -->|Super admin| O["Redirect to /login"]
+  L -->|Admin| M["Redirect to /admin/login? signedOut=1"]
+  L -->|Parent| N["Redirect to /parent/login? signedOut=1"]
+  L -->|Super admin| O["Redirect to /login? signedOut=1"]
+  M --> P["Destination renders one Signed out toast"]
+  N --> P
+  O --> P
           </pre>
         </div>
       </section>

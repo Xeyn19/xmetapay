@@ -79,14 +79,15 @@ test("admin registration waits for super admin approval before login", () => {
 test("logout clears the auth session and redirects by portal role", () => {
   const adminShell = readFileSync("app/admin/_components/admin-shell.tsx", "utf8");
   const parentShell = readFileSync("app/parent/_components/parent-shell.tsx", "utf8");
+  const logoutBody = authActions.match(/export async function logoutAction[\s\S]*?\n}/)?.[0] ?? "";
 
   assert.match(session, /export async function deleteSession\(\)/);
   assert.match(session, /UPDATE auth_sessions\s+SET revoked_at = CURRENT_TIMESTAMP/);
   assert.match(session, /cookieStore\.delete\(\{[\s\S]*name: cookieName,[\s\S]*path: "\/",[\s\S]*\}\);/);
   assert.match(authActions, /export async function logoutAction\(role: PortalRole\)/);
-  assert.match(authActions, /await deleteSession\(\);/);
-  assert.match(authActions, /title: "Signed out"/);
-  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/login\?signedOut=1" : "\/parent\/login\?signedOut=1"\);/);
+  assert.match(logoutBody, /await deleteSession\(\);/);
+  assert.doesNotMatch(logoutBody, /setAuthFlashToast/);
+  assert.match(logoutBody, /redirect\(role === "admin" \? "\/admin\/login\?signedOut=1" : "\/parent\/login\?signedOut=1"\);/);
   assert.match(adminShell, /logoutAction\.bind\(null, "admin"\)/);
   assert.match(parentShell, /logoutAction\.bind\(null, "parent"\)/);
   assert.match(adminShell, /Log out/);
@@ -176,13 +177,16 @@ test("auth flows surface toast feedback for login and register across portals", 
   assert.match(parentLayout, /<FlashToast toast={toast} \/>/);
 });
 
-test("logout flash toasts render on the redirected login pages", () => {
+test("logout renders one deduplicated toast from the redirected login page", () => {
   assert.match(adminLoginPage, /import \{ FlashToast \} from "@\/app\/_components\/flash-toast";/);
   assert.match(parentLoginPage, /import \{ FlashToast \} from "@\/app\/_components\/flash-toast";/);
   assert.match(adminLoginPage, /searchParams: Promise<\{ signedOut\?: string \}>/);
   assert.match(parentLoginPage, /searchParams: Promise<\{ signedOut\?: string \}>/);
   assert.match(adminLoginPage, /signedOut === "1"/);
   assert.match(parentLoginPage, /signedOut === "1"/);
+  assert.match(adminLoginPage, /eventId: "admin-signed-out"/);
+  assert.match(parentLoginPage, /eventId: "parent-signed-out"/);
+  assert.match(companyLoginPage, /eventId: "super-admin-signed-out"/);
   assert.match(adminLoginPage, /await consumeAuthFlashToast\("admin"\)/);
   assert.match(parentLoginPage, /await consumeAuthFlashToast\("parent"\)/);
   assert.match(adminLoginPage, /<FlashToast toast={toast} \/>/);
@@ -237,5 +241,6 @@ test("flash toast allows repeated identical server-action messages", () => {
   assert.doesNotMatch(flashToast, /useRef/);
   assert.doesNotMatch(flashToast, /shownToast\.current === toastKey/);
   assert.match(flashToast, /toast\.success\(flashToast\.title/);
+  assert.match(flashToast, /id: flashToast\.eventId/);
   assert.match(flashToast, /fetch\("\/auth\/flash-toast", \{ method: "DELETE" \}\)/);
 });
