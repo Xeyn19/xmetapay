@@ -14,6 +14,7 @@ export function FlashToast({ toast: flashToast }: { toast: AuthFlashToast | null
     const timeout = window.setTimeout(() => {
       toast.success(flashToast.title, {
         description: flashToast.description,
+        id: flashToast.eventId,
       });
       void fetch("/auth/flash-toast", { method: "DELETE" });
     }, 0);

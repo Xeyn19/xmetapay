@@ -31,6 +31,7 @@ export default async function CompanyLoginPage({
         role: "super_admin" as const,
         title: "Signed out",
         description: "You have signed out of company monitoring.",
+        eventId: "super-admin-signed-out",
       }
     : await consumeAuthFlashToast("super_admin");
 

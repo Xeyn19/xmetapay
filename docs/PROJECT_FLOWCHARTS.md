@@ -116,14 +116,16 @@ flowchart TD
 
 Implemented.
 
-The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage and export filtered school admin accounts from `/super-admin/admin-accounts`, open read-only aggregate school profiles at `/super-admin/schools/[schoolId]`, and review or export filtered pending school admin registrations from `/super-admin/registrations`. School profiles show distinct current/total student and parent counts plus active-year enrollment and grade breakdowns without exposing parent/student directories or financial data.
+The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, where unknown email and wrong password share one safe, actionable message; inactive-account guidance appears only after password verification. It then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage and export filtered school admin accounts from `/super-admin/admin-accounts`, open read-only aggregate school profiles at `/super-admin/schools/[schoolId]`, and review or export filtered pending school admin registrations from `/super-admin/registrations`. School profiles show distinct current/total student and parent counts plus active-year enrollment and grade breakdowns without exposing parent/student directories or financial data.
 
 ```mermaid
 flowchart TD
-  A["XMETA staff opens /login"] --> B["Find active user where role = super_admin"]
+  A["XMETA staff opens /login"] --> B["Find user where role = super_admin"]
   B --> C{"Password valid?"}
-  C -->|No| D["Show company login error"]
-  C -->|Yes| E["Create DB-backed session"]
+  C -->|No| D["Show safe incorrect-credentials guidance"]
+  C -->|Yes| C2{"Account active?"}
+  C2 -->|No| D2["Explain inactive access and who to contact"]
+  C2 -->|Yes| E["Create DB-backed session"]
   E --> F["Redirect to /super-admin/dashboard"]
   F --> G["Use sidebar to open /super-admin/registrations"]
   G --> H["Review pending school admin accounts"]
@@ -538,7 +540,7 @@ Database touchpoints:
 
 Implemented.
 
-All portals use the same `xmetapay_session` cookie, but the cookie only stores a random session token. The server stores the hashed token in `auth_sessions`, and role checks decide which dashboard is allowed.
+All portals use the same `xmetapay_session` cookie, but the cookie only stores a random session token. The server stores the hashed token in `auth_sessions`, and role checks decide which dashboard is allowed. Logout feedback has one owner: the redirected login page renders a deduplicated role-specific confirmation instead of also setting a logout flash cookie.
 
 ```mermaid
 flowchart TD
@@ -554,9 +556,12 @@ flowchart TD
   I["User clicks Log out"] --> J["Server action sets auth_sessions.revoked_at"]
   J --> K["Delete xmetapay_session cookie"]
   K --> L{"Portal role?"}
-  L -->|Admin| M["Redirect to /admin/login"]
-  L -->|Parent| N["Redirect to /parent/login"]
-  L -->|Super admin| O["Redirect to /login"]
+  L -->|Admin| M["Redirect to /admin/login? signedOut=1"]
+  L -->|Parent| N["Redirect to /parent/login? signedOut=1"]
+  L -->|Super admin| O["Redirect to /login? signedOut=1"]
+  M --> P["Destination renders one Signed out toast"]
+  N --> P
+  O --> P
 ```
 
 Database touchpoints:

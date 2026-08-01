@@ -20,6 +20,7 @@ export default async function AdminLoginPage({
         role: "admin" as const,
         title: "Signed out",
         description: "You have signed out of the school admin dashboard.",
+        eventId: "admin-signed-out",
       }
     : await consumeAuthFlashToast("admin");
 

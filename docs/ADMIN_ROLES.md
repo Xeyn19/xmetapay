@@ -6,6 +6,8 @@ The public XMETA Pay entry page uses a shared dark charcoal, orange, and blue br
 
 Active company, school-admin, and parent accounts can request an email OTP from their role-specific login page. Password recovery never approves a pending account or re-enables a disabled account, and a successful reset revokes the user's existing sessions.
 
+Company sign-in keeps unknown-email and wrong-password responses identical. When the submitted password is valid but the company account is inactive, the page gives explicit recovery guidance. Logout revokes the database session, removes the session cookie, and presents one role-specific confirmation toast on the destination login page.
+
 ## Company Role
 
 | Auth role | Main purpose | Can do | Cannot do |

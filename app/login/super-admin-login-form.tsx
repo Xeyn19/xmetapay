@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { superAdminLoginAction, type SuperAdminLoginState } from "@/app/super-admin/actions";
@@ -10,20 +10,20 @@ import { PasswordInput } from "@/app/_components/password-input";
 export function SuperAdminLoginForm() {
   const [state, action, pending] = useActionState<SuperAdminLoginState, FormData>(superAdminLoginAction, {
     message: "",
+    feedbackId: 0,
   });
   const [values, setValues] = useState({ email: "", password: "" });
-  const lastMessage = useRef("");
 
   useEffect(() => {
-    if (!state.message || lastMessage.current === state.message) {
+    if (!state.message || state.feedbackId === 0) {
       return;
     }
 
-    lastMessage.current = state.message;
-    toast.error("Company sign in failed", {
+    toast.error("Unable to sign in", {
       description: state.message,
+      id: "company-sign-in-error",
     });
-  }, [state.message]);
+  }, [state.feedbackId, state.message]);
 
   return (
     <form action={action} className="space-y-4">

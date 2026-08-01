@@ -7,6 +7,7 @@ const seedPath = "database/local/seed-super-admin-account.sql";
 const session = readFileSync("lib/auth/session.ts", "utf8");
 const loginAction = readFileSync("app/super-admin/actions.ts", "utf8");
 const loginPage = readFileSync("app/login/page.tsx", "utf8");
+const loginForm = readFileSync("app/login/super-admin-login-form.tsx", "utf8");
 const superAdminLayout = existsSync("app/super-admin/layout.tsx")
   ? readFileSync("app/super-admin/layout.tsx", "utf8")
   : "";
@@ -73,6 +74,27 @@ test("root login uses company super admin action and redirects to company dashbo
   assert.match(loginAction, /verifyPassword\(password, user\.password_hash\)/);
   assert.match(loginAction, /createSession\(\{ userId: user\.id, role: "super_admin", name: user\.name \}\)/);
   assert.match(loginAction, /redirect\("\/super-admin\/dashboard"\)/);
+});
+
+test("company login gives clear credential and inactive-account guidance without enumerating accounts", () => {
+  const loginFlowStart = loginAction.indexOf("export async function superAdminLoginAction");
+  const loginFlowEnd = loginAction.indexOf("export async function superAdminLogoutAction");
+  const loginFlow = loginAction.slice(loginFlowStart, loginFlowEnd);
+  const logoutFlow = loginAction.match(/export async function superAdminLogoutAction[\s\S]*?\n}/)?.[0] ?? "";
+
+  assert.match(loginAction, /The company email or password is incorrect\. Check your details and try again\./);
+  assert.match(loginFlow, /feedbackId = Number\.isSafeInteger\(_state\.feedbackId\) \? _state\.feedbackId \+ 1 : 1/);
+  assert.match(loginFlow, /return failure\(invalidCompanyLoginMessage\)/);
+  assert.match(loginFlow, /verifyPassword\(password, user\.password_hash\)[\s\S]*user\.status !== "active"/);
+  assert.match(loginFlow, /Your company account is inactive\. Contact the XMETA Pay system administrator to restore access\./);
+  assert.doesNotMatch(loginFlow, /Invalid company login details or inactive account\./);
+  assert.match(loginForm, /toast\.error\("Unable to sign in"/);
+  assert.match(loginForm, /\[state\.feedbackId, state\.message\]/);
+  assert.match(loginForm, /id: "company-sign-in-error"/);
+  assert.doesNotMatch(loginForm, /lastMessage|useRef/);
+  assert.match(logoutFlow, /await deleteSession\(\);/);
+  assert.doesNotMatch(logoutFlow, /setAuthFlashToast/);
+  assert.match(logoutFlow, /redirect\("\/login\?signedOut=1"\)/);
 });
 
 test("super admin dashboard is protected and manages only school admin account status", () => {
