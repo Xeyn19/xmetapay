@@ -1,11 +1,18 @@
 "use client";
 
 import { useActionState, useEffect, useId, useState } from "react";
-import { MailCheck, Send, X } from "lucide-react";
+import { Eye, MailCheck, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { sendPaymentReminderEmailsAction, type ReminderActionState } from "@/app/admin/reminders/actions";
 import { cn } from "@/lib/utils";
+import {
+  builtInPaymentReminderTemplates,
+  renderEmailTemplateText,
+  sampleEmailTemplateValues,
+  type PaymentReminderType,
+  type SchoolEmailTemplate,
+} from "@/lib/email/template-contract";
 
 import { AdminButton, Field, fieldControlClass } from "../../_components/admin-ui";
 
@@ -16,10 +23,26 @@ const initialReminderActionState: ReminderActionState = {
   submittedAt: 0,
 };
 
-export function PaymentReminderForm() {
+export function PaymentReminderForm({
+  templates = builtInPaymentReminderTemplates,
+}: {
+  templates?: SchoolEmailTemplate[];
+}) {
   const [open, setOpen] = useState(false);
   const [sendTo, setSendTo] = useState("all_unpaid");
+  const [reminderType, setReminderType] = useState<PaymentReminderType>("tuition_due");
+  const [templateReference, setTemplateReference] = useState(
+    () => defaultTemplateReference(templates, "tuition_due"),
+  );
+  const [customMessage, setCustomMessage] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
   const titleId = useId();
+  const matchingTemplates = templates.filter(
+    (template) => template.reminderType === reminderType && template.status === "active",
+  );
+  const selectedTemplate = matchingTemplates.find((template) => template.reference === templateReference)
+    ?? matchingTemplates.find((template) => template.isDefault)
+    ?? matchingTemplates[0];
   const [, formAction, pending] = useActionState(async (previousState: ReminderActionState, formData: FormData) => {
     const nextState = await sendPaymentReminderEmailsAction(previousState, formData);
 
@@ -124,25 +147,91 @@ export function PaymentReminderForm() {
                 ) : null}
 
                 <Field label="Reminder type" required>
-                  <select name="reminderType" className={fieldControlClass} required defaultValue="tuition_due">
+                  <select
+                    name="reminderType"
+                    className={fieldControlClass}
+                    required
+                    value={reminderType}
+                    onChange={(event) => {
+                      const nextType = event.target.value as PaymentReminderType;
+                      setReminderType(nextType);
+                      setTemplateReference(defaultTemplateReference(templates, nextType));
+                      setShowPreview(false);
+                    }}
+                  >
                     <option value="tuition_due">Tuition due reminder</option>
                     <option value="overdue_notice">Overdue notice</option>
                     <option value="final_notice">Final notice</option>
                   </select>
                 </Field>
 
-                <Field label="Custom message (optional)">
+                <Field label="Email template" required>
+                  <select
+                    name="templateReference"
+                    className={fieldControlClass}
+                    required
+                    value={selectedTemplate?.reference ?? ""}
+                    onChange={(event) => {
+                      setTemplateReference(event.target.value);
+                      setShowPreview(false);
+                    }}
+                  >
+                    {matchingTemplates.map((template) => (
+                      <option key={template.reference} value={template.reference}>
+                        {template.name}{template.isDefault ? " (Default)" : ""}{template.source === "builtin" ? " · XMETA" : " · School"}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="One-time message override (optional)">
                   <textarea
                     name="customMessage"
                     rows={3}
                     maxLength={500}
                     className={cn(fieldControlClass, "min-h-[74px] resize-y py-3")}
-                    placeholder="Leave blank to use the default message template..."
+                    placeholder="Leave blank to use the selected template message..."
+                    value={customMessage}
+                    onChange={(event) => {
+                      setCustomMessage(event.target.value);
+                      setShowPreview(false);
+                    }}
                   />
                 </Field>
                 <p className="text-[11.5px] leading-5 text-[#5a6070]">
-                  Custom message text is saved in reminder history. Leave it blank to use the default reminder template.
+                  A one-time override changes only this send. XMETA Pay still adds the protected fee statement and saves the rendered message, template name, and subject in reminder history.
                 </p>
+
+                <AdminButton
+                  type="button"
+                  tone="outline"
+                  className="w-full"
+                  disabled={!selectedTemplate}
+                  onClick={() => setShowPreview((current) => !current)}
+                >
+                  <Eye className="size-4" /> {showPreview ? "Hide preview" : "Preview selected template"}
+                </AdminButton>
+
+                {showPreview && selectedTemplate ? (
+                  <div className="overflow-hidden rounded-lg border border-black/[0.08] bg-[#f7f8fa]">
+                    <div className="bg-[#0f1117] px-4 py-3 text-white">
+                      <div className="text-[12.5px] font-bold">XMETA Pay email preview</div>
+                      <div className="mt-1 text-[10.5px] text-[#c7cad1]">Sample data only</div>
+                    </div>
+                    <div className="bg-white p-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#e64a19]">Subject</div>
+                      <div className="mt-1 break-words text-[12.5px] font-bold leading-5 text-[#0f1117]">
+                        {renderEmailTemplateText(selectedTemplate.subjectTemplate, sampleEmailTemplateValues)}
+                      </div>
+                      <div className="mt-3 whitespace-pre-wrap break-words text-[12px] leading-5 text-[#303443]">
+                        {renderEmailTemplateText(customMessage || selectedTemplate.messageTemplate, sampleEmailTemplateValues)}
+                      </div>
+                      <div className="mt-3 rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-3 text-[11px] leading-5 text-[#5a6070]">
+                        The itemized fees, official deadlines, installment schedule, and parent portal action are added automatically.
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex flex-col-reverse gap-2 border-t border-black/[0.07] px-4 py-3.5 sm:flex-row sm:justify-end sm:px-[22px]">
@@ -160,4 +249,11 @@ export function PaymentReminderForm() {
       ) : null}
     </>
   );
+}
+
+function defaultTemplateReference(templates: SchoolEmailTemplate[], reminderType: PaymentReminderType) {
+  const matching = templates.filter(
+    (template) => template.reminderType === reminderType && template.status === "active",
+  );
+  return matching.find((template) => template.isDefault)?.reference ?? matching[0]?.reference ?? `builtin:${reminderType}`;
 }

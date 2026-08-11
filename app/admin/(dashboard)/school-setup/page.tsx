@@ -1,17 +1,29 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Info, Layers3, School } from "lucide-react";
+import { ArrowRight, CalendarDays, Info, Layers3, Mail, School } from "lucide-react";
 
 import { AlertBanner, AdminTable, DashboardCard, KpiCard, KpiGrid, StatusPill } from "@/app/admin/_components/admin-ui";
 import { AddSchoolYearModal, EditSchoolDetailsModal, EditSchoolYearModal } from "@/app/admin/_components/school-setup-management-modals";
 import { SchoolYearActivationControl } from "@/app/admin/_components/school-year-activation-control";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { requireRole } from "@/lib/auth/session";
-import { getAdminSchoolSetupOverview } from "@/lib/school/setup";
+import { getSchoolEmailTemplateLibrary } from "@/lib/email/templates";
+import { builtInPaymentReminderTemplates } from "@/lib/email/template-contract";
+import { getAdminSchoolContext, getAdminSchoolSetupOverview } from "@/lib/school/setup";
+import { EmailTemplateLibrary } from "./email-template-library";
 
 export default async function AdminSchoolSetupPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/school-setup");
-  const overview = await getAdminSchoolSetupOverview(session.userId);
+  const [overview, schoolContext] = await Promise.all([
+    getAdminSchoolSetupOverview(session.userId),
+    getAdminSchoolContext(session.userId),
+  ]);
+  const emailTemplateLibrary = schoolContext.schoolId
+    ? await getSchoolEmailTemplateLibrary(schoolContext.schoolId)
+    : {
+        templates: builtInPaymentReminderTemplates,
+        warning: "Complete school setup before creating school-specific email templates.",
+      };
   const duplicateYearNames = duplicateSchoolYearNames(overview.schoolYears);
 
   return (
@@ -46,6 +58,10 @@ export default async function AdminSchoolSetupPage() {
       </section>
 
       <KpiGrid>{overview.kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} />)}</KpiGrid>
+
+      <DashboardCard title="Email templates" icon={Mail}>
+        <EmailTemplateLibrary library={emailTemplateLibrary} />
+      </DashboardCard>
 
       <DashboardCard title="School years" icon={CalendarDays} bodyClassName="p-0">
         {duplicateYearNames.size > 0 ? (

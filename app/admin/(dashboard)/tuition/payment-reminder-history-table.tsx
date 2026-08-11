@@ -46,6 +46,8 @@ export function PaymentReminderHistoryTable({
       row.channel,
       row.status,
       row.message,
+      row.templateName,
+      row.subjectLine,
       row.created,
       row.archivedAt,
     ].filter(Boolean).join(" "));
@@ -70,8 +72,12 @@ export function PaymentReminderHistoryTable({
     showToast(actionState.title, { description: actionState.description });
 
     if (actionState.status === "success") {
-      setSelectedIds([]);
-      setConfirmationIds([]);
+      const resetSelection = window.setTimeout(() => {
+        setSelectedIds([]);
+        setConfirmationIds([]);
+      }, 0);
+
+      return () => window.clearTimeout(resetSelection);
     }
   }, [actionState]);
 
@@ -203,7 +209,10 @@ export function PaymentReminderHistoryTable({
               <td>{row.channel}</td>
               <td><span className={statusClassName(row.status)}>{row.status}</span></td>
               {view === "archived" ? <td className="font-mono text-[11px] text-[#5a6070]">{row.archivedAt}</td> : null}
-              <td className="max-w-[240px] truncate text-[#5a6070]" title={row.message}>{row.message}</td>
+              <td className="max-w-[240px] text-[#5a6070]" title={[row.subjectLine, row.message].filter(Boolean).join(" — ")}>
+                <div className="truncate">{row.message}</div>
+                {row.templateName ? <div className="mt-1 truncate text-[10.5px] text-[#9ba3b8]">{row.templateName}</div> : null}
+              </td>
               <td className="text-center">
                 <button
                   type="button"

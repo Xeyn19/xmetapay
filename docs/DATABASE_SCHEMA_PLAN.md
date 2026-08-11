@@ -666,6 +666,28 @@ CREATE TABLE store_transactions (
 
 ### Notifications And Reporting
 
+#### `school_email_templates`
+
+Stores school-owned subject and introductory-message templates for the three implemented payment-reminder types. Only school administrators manage these rows. Templates contain plain text plus allowlisted placeholders; SMTP credentials and raw HTML are never stored. Protected XMETA defaults remain in application code, so a school without custom rows can still send reminders.
+
+```sql
+CREATE TABLE school_email_templates (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  school_id BIGINT UNSIGNED NOT NULL,
+  reminder_type ENUM('tuition_due', 'overdue_notice', 'final_notice') NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  subject_template VARCHAR(220) NOT NULL,
+  message_template TEXT NOT NULL,
+  is_default TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_school_email_templates_name (school_id, name)
+);
+```
+
 #### `notification_logs`
 
 Stores reminder and notification history for parents.
@@ -681,6 +703,9 @@ CREATE TABLE notification_logs (
   channel ENUM('email', 'sms', 'in_app') NOT NULL,
   status ENUM('queued', 'sent', 'failed') NOT NULL DEFAULT 'queued',
   message_body TEXT NULL,
+  email_template_id BIGINT UNSIGNED NULL,
+  email_template_name VARCHAR(120) NULL,
+  subject_line VARCHAR(220) NULL,
   sent_at DATETIME NULL,
   archived_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -697,7 +722,7 @@ CREATE TABLE notification_logs (
 );
 ```
 
-Implementation status: real payment reminder email delivery is implemented with Nodemailer and SMTP. School administrators and finance officers can send linked parents an itemized statement built from matching fee assignments and optional tuition terms. The assignment due date is the official deadline; term dates remain schedule details. New rows use `channel = 'email'`, start as `queued`, store the custom or generated introductory text in `message_body`, and then become `sent` with `sent_at` or `failed`. `archived_at` provides reversible active/archived history views without changing those delivery fields or deleting audit data. Archived sent rows and recent queued attempts still prevent duplicate same-day sends; failed attempts may be retried. Historical SMS rows remain readable. SMS delivery, scheduling, delivery webhooks, and notification-based report alerts remain future.
+Implementation status: real payment reminder delivery uses pooled Nodemailer SMTP plus protected XMETA or school-owned templates. School administrators manage template lifecycle; finance-authorized staff select active matching templates. The server resolves and locks school ownership, replaces only allowlisted placeholders, escapes rendered HTML, and always appends the authoritative fee and tuition-term statement. New `notification_logs` rows snapshot `email_template_id`, `email_template_name`, `subject_line`, and the rendered introductory `message_body`, then move from `queued` to `sent` or `failed`. Legacy rows keep nullable audit fields. Archive, same-day duplicate protection, and failed retries remain unchanged. SMTP credentials stay in deployment configuration; SMS, scheduling, webhooks, and report alerts remain future.
 
 Reports are generated from query views over payments, fee assignments, wallets, store transactions, and reminder history instead of storing separate report rows. Every visible Admin and Parent table export uses branded Excel/PDF. School Admin, Super Admin, and protected Reports-page PDF controls share an outlined semantic XMETA red/orange style; Excel controls keep their existing treatment. Parent coverage includes Fee summary, Payment history, dashboard recent payments, and wallet activity on Dashboard, Wallet, and Student Profile, including Current, Archived, and Removed scopes where applicable. Browser ExcelJS loads only on export; protected Admin reports generate workbooks server-side from authorized queries. Legacy protected CSV URLs remain compatible, and this presentation change adds no report storage or accounting fields.
 

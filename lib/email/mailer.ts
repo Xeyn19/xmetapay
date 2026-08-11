@@ -35,6 +35,7 @@ type PaymentReminderEmail = {
   schoolName: string;
   schoolYearName: string;
   reminderType: string;
+  subjectLine: string;
   messageBody: string;
 };
 
@@ -83,7 +84,6 @@ export async function verifyEmailTransport() {
 export async function sendPaymentReminderEmail(reminder: PaymentReminderEmail) {
   const emailTransport = getTransporter();
   const config = getEmailConfiguration();
-  const subject = `${reminder.schoolName}: ${reminder.reminderType} for ${reminder.studentName}`;
 
   await emailTransport.sendMail({
     from: {
@@ -94,10 +94,14 @@ export async function sendPaymentReminderEmail(reminder: PaymentReminderEmail) {
       name: reminder.parentName,
       address: reminder.parentEmail,
     },
-    subject,
+    subject: reminder.subjectLine,
     text: paymentReminderText(reminder, config.parentPortalUrl),
     html: paymentReminderHtml(reminder, config.parentPortalUrl),
   });
+}
+
+export function getEmailParentPortalUrl() {
+  return getEmailConfiguration().parentPortalUrl;
 }
 
 export async function sendPasswordResetOtpEmail(reset: PasswordResetOtpEmail) {

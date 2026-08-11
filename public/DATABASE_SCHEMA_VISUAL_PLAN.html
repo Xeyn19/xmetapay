@@ -368,8 +368,8 @@
             </tr>
             <tr>
               <td>Notifications</td>
-              <td><code>notification_logs</code></td>
-              <td>Implemented itemized SMTP payment reminders built from fee assignments and optional tuition terms, with assignment dates as official deadlines. Reminder logs retain <code>message_body</code>, school-year stamps, queued/sent/failed status, <code>sent_at</code>, and reversible <code>archived_at</code> visibility. Archiving does not alter delivery audit data or same-day protection. Historical SMS rows remain readable; SMS delivery, permanent deletion, low-wallet alerts, and enrollment-update notifications remain future.</td>
+              <td><code>school_email_templates</code>, <code>notification_logs</code></td>
+              <td>School administrators manage active/inactive school-owned payment-reminder wording while protected XMETA defaults remain in code. Finance-authorized staff select active templates; the server accepts only escaped allowlisted placeholders and always adds the authoritative fee and tuition-term statement. Reminder logs snapshot nullable template id, template name, rendered subject/message, school year, queued/sent/failed status, <code>sent_at</code>, and reversible <code>archived_at</code>. SMTP credentials remain environment-only. Historical SMS rows remain readable; SMS delivery, scheduling, webhooks, low-wallet alerts, and enrollment-update notifications remain future.</td>
             </tr>
           </tbody>
         </table>
@@ -393,6 +393,7 @@ erDiagram
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
+  USERS ||--o{ SCHOOL_EMAIL_TEMPLATES : "creates or updates"
 
   SCHOOLS ||--o{ SCHOOL_YEARS : "has"
   SCHOOLS ||--o{ ADMIN_PROFILES : "linked admins"
@@ -402,6 +403,7 @@ erDiagram
   SCHOOLS ||--o{ FEE_TYPES : "defines"
   SCHOOLS ||--o{ PAYMENTS : "collects"
   SCHOOLS ||--o{ STORE_MERCHANTS : "has"
+  SCHOOLS ||--o{ SCHOOL_EMAIL_TEMPLATES : "owns"
   SCHOOLS ||--o{ NOTIFICATION_LOGS : "sends"
 
   SCHOOL_YEARS ||--o{ SECTIONS : "organizes"
@@ -420,6 +422,7 @@ erDiagram
   STUDENTS ||--o| WALLETS : "owns"
   STUDENTS ||--o{ STORE_TRANSACTIONS : "spends"
   STUDENTS ||--o{ NOTIFICATION_LOGS : "about"
+  SCHOOL_EMAIL_TEMPLATES o|--o{ NOTIFICATION_LOGS : "selected by"
 
   ENROLLMENTS ||--o{ ENROLLMENT_DOCUMENTS : "requires"
   FEE_TYPES ||--o{ STUDENT_FEE_ASSIGNMENTS : "assigned as"
@@ -614,15 +617,29 @@ erDiagram
     decimal fee_amount
   }
 
+  SCHOOL_EMAIL_TEMPLATES {
+    bigint id PK
+    bigint school_id FK
+    enum reminder_type
+    varchar name
+    varchar subject_template
+    text message_template
+    boolean is_default
+    enum status
+  }
+
   NOTIFICATION_LOGS {
     bigint id PK
     bigint school_id FK
     bigint school_year_id FK
     bigint recipient_user_id FK
     bigint student_id FK
+    bigint email_template_id FK
     enum type
     enum channel
     enum status
+    varchar email_template_name
+    varchar subject_line
   }
           </pre>
         </div>
@@ -798,7 +815,7 @@ flowchart TD
           <li>Add wallet and wallet transaction tables.</li>
           <li>Add store merchant and store transaction tables. These already exist in the schema and support the implemented Phase 6B write flow.</li>
           <li>Build branded Excel/PDF reports from operational query views and authorized filtered dashboard rows instead of separate report storage tables; retain protected Admin CSV URLs for compatibility.</li>
-          <li>Use notification logs for implemented SMTP email payment reminders: queue each row, mark delivery sent with <code>sent_at</code> or failed, and prevent duplicate same-day sends. SMS and scheduled delivery remain future.</li>
+          <li>Use protected or school-owned safe templates for implemented SMTP payment reminders; snapshot rendered content in notification logs, mark delivery sent with <code>sent_at</code> or failed, and prevent duplicate same-day sends. SMS and scheduled delivery remain future.</li>
         </ol>
         <div class="note">
           No real credentials, database passwords, session secrets, committed

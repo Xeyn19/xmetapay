@@ -87,6 +87,8 @@ export type PaymentReminderHistoryRow = {
   channel: string;
   status: string;
   message: string;
+  templateName: string | null;
+  subjectLine: string | null;
   archivedAt: string | null;
 };
 
@@ -1035,7 +1037,8 @@ async function getRecentReminderRows(
 ) {
   const archiveFilter = reminderView === "archived" ? "nl.archived_at IS NOT NULL" : "nl.archived_at IS NULL";
   const [rows] = await pool.execute<ReminderHistoryRow[]>(
-    `SELECT nl.id AS notification_id, nl.created_at, nl.channel, nl.status, nl.message_body, nl.archived_at,
+    `SELECT nl.id AS notification_id, nl.created_at, nl.channel, nl.status, nl.message_body,
+       nl.email_template_name, nl.subject_line, nl.archived_at,
        COALESCE(u.name, 'Parent pending') AS parent_name,
        COALESCE(st.first_name, '') AS first_name,
        st.middle_name,
@@ -1065,6 +1068,8 @@ async function getRecentReminderRows(
       channel: labelForStatus(row.channel),
       status: labelForStatus(row.status),
       message: row.message_body ?? "Default reminder",
+      templateName: row.email_template_name,
+      subjectLine: row.subject_line,
       archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,
     };
   });
@@ -1754,6 +1759,8 @@ type ReminderHistoryRow = RowDataPacket & {
   channel: string;
   status: string;
   message_body: string | null;
+  email_template_name: string | null;
+  subject_line: string | null;
   archived_at: Date | string | null;
   parent_name: string;
   first_name: string;
