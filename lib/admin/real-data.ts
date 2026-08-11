@@ -1067,7 +1067,7 @@ async function getRecentReminderRows(
       grade: row.grade_name,
       channel: labelForStatus(row.channel),
       status: labelForStatus(row.status),
-      message: row.message_body ?? "Default reminder",
+      message: row.message_body ?? "",
       templateName: row.email_template_name,
       subjectLine: row.subject_line,
       archivedAt: row.archived_at ? formatDateTime(row.archived_at) : null,

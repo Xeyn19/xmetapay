@@ -9,6 +9,7 @@ const packagePath = "package.json";
 const tuitionPagePath = "app/admin/(dashboard)/tuition/page.tsx";
 const tuitionReminderFormPath = "app/admin/(dashboard)/tuition/payment-reminder-form.tsx";
 const tuitionReminderHistoryTablePath = "app/admin/(dashboard)/tuition/payment-reminder-history-table.tsx";
+const tuitionReminderMessageDialogPath = "app/admin/(dashboard)/tuition/payment-reminder-message-dialog.tsx";
 const realDataPath = "lib/admin/real-data.ts";
 const permissionsPath = "lib/admin/permissions.ts";
 const adminShellPath = "app/admin/_components/admin-shell.tsx";
@@ -120,6 +121,7 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   const page = readFileSync(tuitionPagePath, "utf8");
   const form = readFileSync(tuitionReminderFormPath, "utf8");
   const historyTable = readFileSync(tuitionReminderHistoryTablePath, "utf8");
+  const messageDialog = readFileSync(tuitionReminderMessageDialogPath, "utf8");
   const realData = readFileSync(realDataPath, "utf8");
 
   assert.match(page, /<PaymentReminderForm templates=\{reminderTemplates\} \/>/);
@@ -149,7 +151,22 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   assert.match(historyTable, /usePaginatedRows\(filteredRows, `\$\{view\}\|\$\{query\}\|\$\{status\}`\)/);
   assert.match(historyTable, /DashboardTablePagination/);
   assert.match(historyTable, /Message/);
-  assert.match(historyTable, /title=\{\[row\.subjectLine, row\.message\]\.filter\(Boolean\)\.join\(" — "\)\}/);
+  assert.match(historyTable, /line-clamp-2/);
+  assert.match(historyTable, /View message for/);
+  assert.match(historyTable, /<PaymentReminderMessageDialog row=\{viewingRow\} onClose=\{closeViewer\} \/>/);
+  assert.doesNotMatch(historyTable, /title=\{\[row\.subjectLine, row\.message\]/);
+  assert.match(messageDialog, /role="dialog"/);
+  assert.match(messageDialog, /aria-modal="true"/);
+  assert.match(messageDialog, /Email subject/);
+  assert.match(messageDialog, /Stored message/);
+  assert.match(messageDialog, /Template/);
+  assert.match(messageDialog, /Archived/);
+  assert.match(messageDialog, /whitespace-pre-wrap/);
+  assert.match(messageDialog, /overflow-wrap:anywhere/);
+  assert.match(messageDialog, /navigator\.clipboard\.writeText\(row\.message\)/);
+  assert.match(messageDialog, /Message copied/);
+  assert.match(messageDialog, /event\.key === "Escape"/);
+  assert.match(messageDialog, /max-h-\[calc\(100svh-2rem\)\]/);
   assert.match(page, /id="payment-reminders"/);
   assert.match(page, /<DashboardCard\s+id="payment-reminders"/);
   assert.match(page, /className="mb-\[18px\] scroll-mt-24"/);
@@ -162,7 +179,7 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   assert.match(realData, /async function getRecentReminderRows/);
   assert.match(realData, /FROM notification_logs nl/);
   assert.match(realData, /nl\.message_body/);
-  assert.match(realData, /Default reminder/);
+  assert.match(realData, /message: row\.message_body \?\? ""/);
   assert.match(realData, /nl\.type = 'payment_reminder'/);
   assert.match(realData, /LEFT JOIN users u ON u\.id = nl\.recipient_user_id/);
   assert.match(realData, /LEFT JOIN students st ON st\.id = nl\.student_id/);
