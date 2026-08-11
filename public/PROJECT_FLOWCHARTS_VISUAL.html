@@ -895,22 +895,23 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="payment-reminder-history-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> responsive HTML and plain-text reminders with itemized active-year fee balances, official assignment deadlines, optional tuition schedule details, delivery history, and same-day duplicate prevention.</p>
+          <p><strong>Implemented:</strong> protected XMETA and school-owned templates, safe allowlisted placeholders, sample preview, responsive HTML/plain-text delivery, locked itemized fee details, template audit snapshots, and same-day duplicate prevention.</p>
           <pre class="mermaid">
 flowchart TD
   A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
   B --> C{"Can access finance?"}
   C -->|No| D["Redirect to admin dashboard"]
   C -->|Yes| E["Open Send email reminders modal"]
-  E --> E2["Choose target, type, and optional message"]
-  E2 --> F["Verify SMTP configuration"]
+  E --> E2["Choose target, type, active template, and optional one-time message"]
+  E2 --> E3["Resolve protected or school template and validate placeholders"]
+  E3 --> F["Verify SMTP configuration"]
   F --> G["Find linked parents with matching balances and email addresses"]
   G --> G2["Exclude sent emails and recent queued attempts recorded today"]
   G2 --> H{"Any new reminder targets?"}
   H -->|No open balances| I["Show no reminders logged"]
   H -->|Already reminded today| J["Show reminders already logged today"]
   H -->|Yes| H2["Bulk-load matching fee assignments and tuition terms"]
-  H2 --> K["Build itemized HTML/text and insert queued reminder rows"]
+  H2 --> K["Render safe content, add locked statement, and snapshot template audit"]
   K --> L["Commit, then send through pooled Nodemailer SMTP"]
   L --> M{"Delivery result"}
   M -->|Sent| N["Set status sent and sent_at"]
@@ -918,7 +919,7 @@ flowchart TD
   N --> P["Reminder history and activity feed update"]
   O --> P
           </pre>
-          <p>New reminder rows use <code>type = payment_reminder</code> and <code>channel = email</code>. They start as <code>queued</code>, then become <code>sent</code> with <code>sent_at</code> or <code>failed</code>, while <code>message_body</code> keeps the sent text. School administrators and finance officers can archive or restore selected payment-reminder rows through <code>archived_at</code>; delivery status and audit data are retained, and archived sent rows still prevent duplicate same-day emails. Historical SMS rows remain visible. Registrars cannot send or organize reminders. SMS, scheduling, delivery webhooks, bounce handling, and permanent deletion remain future work.</p>
+          <p>Only school administrators manage school templates; finance officers can select active templates while sending. New reminder rows snapshot <code>email_template_id</code>, <code>email_template_name</code>, <code>subject_line</code>, and rendered <code>message_body</code>, then move from <code>queued</code> to <code>sent</code> with <code>sent_at</code> or <code>failed</code>. Archive/restore and same-day protection remain audit-safe. SMTP credentials stay outside the dashboard. Historical SMS rows remain visible; SMS, scheduling, delivery webhooks, bounce handling, and permanent deletion remain future work.</p>
         </div>
       </section>
 

@@ -38,7 +38,7 @@ The company account screens, every school Admin table, and every export-enabled 
 
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
-| `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections, review promote/repeat rollover placements, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |
+| `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections and school email templates, review promote/repeat rollover placements, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |
 | `registrar` | Student and guardian records | View dashboard, use the unified Add students chooser to add new students individually or in a validated batch, enroll existing pending students, correct school-scoped student details and active-year placement from Student Profile, view parent contacts | Set up school records, use finance pages, view reports |
 | `finance_officer` | Fees, tuition collections, allowance, reminders, and reports | View dashboard, tuition, collections (tuition-focused), other fees, allowance, store transactions, reports, send payment reminder emails, create store merchants, record wallet purchases | Set up school records, add/enroll students, manage parent contacts |
 
@@ -58,6 +58,8 @@ The company account screens, every school Admin table, and every export-enabled 
 | Store transactions | Yes | No | Yes |
 | Financial reports | Yes | No | Yes |
 | View, archive, and restore payment reminder history | Yes | No | Yes |
+| Create, edit, activate, or deactivate school email templates | Yes | No | No |
+| Select active email templates when sending payment reminders | Yes | No | Yes |
 
 ## Setup Rule
 
@@ -101,7 +103,7 @@ Parents can organize Payment history through Current, Archived, and Removed view
 
 Parents can top up one or as many as 20 linked student wallets in one reviewed batch, including students from different schools. Each student keeps an independent active-year payment, receipt, and wallet transaction; the parent-owned batch provides atomic processing, retry safety, and a combined result page without merging financial records.
 
-Payment reminder email delivery is a finance action. School administrators and finance officers can send immediate, itemized email reminders to linked parent addresses for open or partial balances. Each email includes the student reference, matching fee balances, official assignment deadlines, and tuition installment schedules when present; custom text is an introduction and does not replace the statement. New rows use `channel = 'email'`; each delivery is recorded as `queued`, then updated to `sent` with `sent_at` or `failed`. They can archive and restore individual or selected reminder-history rows to organize the table without deleting or changing delivery results. Archived sent rows still block another same-day email for the same school year, school, linked parent, and student, while failed attempts may be retried. Registrars cannot send, archive, or restore reminders. SMS, scheduled delivery, and delivery webhooks remain future work.
+Payment reminder email delivery is a finance action. School administrators manage school-owned templates from School setup; protected XMETA defaults remain available, and finance officers can select active templates without editing them. School administrators and finance officers can send immediate, itemized email reminders to linked parent addresses for open or partial balances. Template placeholders are allowlisted and escaped, while the student reference, balances, official assignment deadlines, tuition terms, and parent action remain a locked server-generated statement. New rows use `channel = 'email'`, snapshot the rendered subject, message, and template name, and move from `queued` to `sent` with `sent_at` or `failed`. SMTP credentials remain environment-only. Archive/restore, same-day duplicate protection, and failed retry behavior remain unchanged; registrars cannot manage templates or reminders. SMS, scheduled delivery, and delivery webhooks remain future work.
 
 ## Database Source
 

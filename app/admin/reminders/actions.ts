@@ -10,10 +10,18 @@ import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import {
   EmailConfigurationError,
+  getEmailParentPortalUrl,
   sendPaymentReminderEmail,
   type PaymentReminderFee,
   verifyEmailTransport,
 } from "@/lib/email/mailer";
+import {
+  renderEmailTemplateText,
+  unsupportedEmailTemplateVariables,
+  type EmailTemplateValues,
+  type PaymentReminderType,
+} from "@/lib/email/template-contract";
+import { EmailTemplateValidationError, resolvePaymentReminderTemplate } from "@/lib/email/templates";
 import { getResolvedAdminSchoolSetup, getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
 
 export type ReminderActionState = {
@@ -150,19 +158,46 @@ export async function sendPaymentReminderEmailsAction(
       rows,
       options,
     );
+    const selectedTemplate = await resolvePaymentReminderTemplate(
+      connection,
+      context.schoolId,
+      options.reminderType,
+      options.templateReference,
+    );
+    const parentPortalUrl = getEmailParentPortalUrl();
 
     for (const row of rows) {
-      const messageBody = reminderMessageFor(row, options);
       const fees = feeStatements.get(row.student_id) ?? [];
       const outstandingBalance = formatBalance(
         fees.reduce((total, fee) => total + fee.balanceAmount, 0),
       );
+      const earliestDueDate = earliestOfficialDueDate(fees);
+      const studentName = fullName(row.first_name, row.middle_name, row.last_name) || "Student";
+      const templateValues: EmailTemplateValues = {
+        parent_name: row.parent_name,
+        student_name: studentName,
+        student_reference: row.student_reference,
+        school_name: context.schoolName,
+        school_year: context.schoolYearName,
+        total_outstanding: outstandingBalance,
+        earliest_due_date: earliestDueDate,
+        parent_portal_url: parentPortalUrl,
+      };
+      const messageBody = renderEmailTemplateText(
+        options.customMessage || selectedTemplate.messageTemplate,
+        templateValues,
+      );
+      const subjectLine = renderEmailTemplateText(selectedTemplate.subjectTemplate, templateValues)
+        .replace(/[\r\n]+/g, " ")
+        .trim();
       const [insertResult] = await connection.execute<ResultSetHeader>(
         `INSERT INTO notification_logs (
-           school_id, school_year_id, recipient_user_id, student_id, type, channel, status, message_body
+           school_id, school_year_id, recipient_user_id, student_id, type, channel, status,
+           message_body, email_template_id, email_template_name, subject_line
          )
          VALUES (
-           :schoolId, :schoolYearId, :recipientUserId, :studentId, 'payment_reminder', 'email', 'queued', :messageBody
+           :schoolId, :schoolYearId, :recipientUserId, :studentId, 'payment_reminder', 'email', 'queued',
+           :messageBody, :emailTemplateId, :emailTemplateName, :subjectLine
          )`,
         {
           schoolId: context.schoolId,
@@ -170,6 +205,9 @@ export async function sendPaymentReminderEmailsAction(
           recipientUserId: row.parent_user_id,
           studentId: row.student_id,
           messageBody,
+          emailTemplateId: selectedTemplate.id,
+          emailTemplateName: selectedTemplate.name,
+          subjectLine,
         },
       );
 
@@ -177,12 +215,13 @@ export async function sendPaymentReminderEmailsAction(
         notificationId: insertResult.insertId,
         parentEmail: row.parent_email,
         parentName: row.parent_name,
-        studentName: fullName(row.first_name, row.middle_name, row.last_name) || "Student",
+        studentName,
         studentReference: row.student_reference,
         outstandingBalance,
-        earliestDueDate: earliestOfficialDueDate(fees),
+        earliestDueDate,
         fees,
         messageBody,
+        subjectLine,
       });
     }
 
@@ -193,12 +232,13 @@ export async function sendPaymentReminderEmailsAction(
       await connection.rollback().catch(() => undefined);
     }
 
+    const validationError = error instanceof ReminderValidationError || error instanceof EmailTemplateValidationError;
     return actionToast(
-      error instanceof ReminderValidationError ? "info" : "error",
+      validationError ? "info" : "error",
       error instanceof ReminderValidationError ? error.title : "Email reminders not sent",
-      error instanceof ReminderValidationError
+      validationError
         ? error.message
-        : "Unable to create email reminder history. Check MySQL/XAMPP and try again.",
+        : "Unable to create email reminder history. Check MySQL/XAMPP and import the email template migration, then try again.",
     );
   } finally {
     connection?.release();
@@ -218,6 +258,7 @@ export async function sendPaymentReminderEmailsAction(
           schoolName: context.schoolName,
           schoolYearName: context.schoolYearName,
           reminderType: options.reminderTypeLabel,
+          subjectLine: reminder.subjectLine,
           messageBody: reminder.messageBody,
         });
         await updateReminderDeliveryStatus(reminder.notificationId, "sent");
@@ -573,6 +614,7 @@ function parseReminderOptions(formData: FormData): ReminderOptions {
   const reminderType = stringValue(formData.get("reminderType"));
   const studentReference = stringValue(formData.get("studentReference"));
   const customMessage = stringValue(formData.get("customMessage"));
+  const templateReference = stringValue(formData.get("templateReference"));
 
   if (sendTo === "specific_student" && !studentReference) {
     throw new ReminderValidationError("Enter the student reference for a specific reminder target.");
@@ -581,33 +623,21 @@ function parseReminderOptions(formData: FormData): ReminderOptions {
   if (customMessage.length > 500) {
     throw new ReminderValidationError("Keep the optional reminder message under 500 characters.");
   }
+  const unsupportedVariables = unsupportedEmailTemplateVariables(customMessage);
+  if (unsupportedVariables.length > 0) {
+    throw new ReminderValidationError(
+      `Unsupported message placeholder${unsupportedVariables.length === 1 ? "" : "s"}: ${unsupportedVariables.join(", ")}.`,
+    );
+  }
 
   return {
     sendTo: sendTo === "overdue_tuition" || sendTo === "specific_student" ? sendTo : "all_unpaid",
     reminderType: reminderType === "overdue_notice" || reminderType === "final_notice" ? reminderType : "tuition_due",
     reminderTypeLabel: labelForReminderType(reminderType),
+    templateReference,
     customMessage,
     studentReference,
   };
-}
-
-function reminderMessageFor(row: ReminderCandidateRow, options: ReminderOptions) {
-  if (options.customMessage) {
-    return options.customMessage;
-  }
-
-  const studentName = fullName(row.first_name, row.middle_name, row.last_name) || "your student";
-  const balanceText = formatBalance(row.open_balance);
-
-  if (options.reminderType === "final_notice") {
-    return `Final notice: ${studentName} still has ${balanceText} in unpaid school fees. Please settle this balance as soon as possible.`;
-  }
-
-  if (options.reminderType === "overdue_notice") {
-    return `Overdue notice: ${studentName} has ${balanceText} in overdue tuition or school fees. Please review the parent portal.`;
-  }
-
-  return `Tuition due reminder: ${studentName} has ${balanceText} in unpaid school fees. Please review the parent portal.`;
 }
 
 function buildReminderTargetFilter(options: ReminderOptions): ReminderTargetFilter {
@@ -698,8 +728,9 @@ function logSafeDeliveryError(error: unknown) {
 
 type ReminderOptions = {
   sendTo: "all_unpaid" | "overdue_tuition" | "specific_student";
-  reminderType: "tuition_due" | "overdue_notice" | "final_notice";
+  reminderType: PaymentReminderType;
   reminderTypeLabel: string;
+  templateReference: string;
   customMessage: string;
   studentReference: string;
 };
@@ -726,6 +757,7 @@ type QueuedReminder = {
   earliestDueDate: string;
   fees: PaymentReminderFee[];
   messageBody: string;
+  subjectLine: string;
 };
 
 type CountRow = RowDataPacket & {

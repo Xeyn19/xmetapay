@@ -47,7 +47,8 @@ test("admin payment reminder action queues and sends real email reminders", () =
   assert.match(actions, /INSERT INTO notification_logs/);
   assert.match(actions, /message_body/);
   assert.match(actions, /:messageBody/);
-  assert.match(actions, /reminderMessageFor\(row, options\)/);
+  assert.match(actions, /resolvePaymentReminderTemplate/);
+  assert.match(actions, /renderEmailTemplateText/);
   assert.match(actions, /customMessage/);
   assert.match(actions, /'payment_reminder', 'email', 'queued'/);
   assert.match(actions, /verifyEmailTransport\(\)/);
@@ -121,7 +122,7 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   const historyTable = readFileSync(tuitionReminderHistoryTablePath, "utf8");
   const realData = readFileSync(realDataPath, "utf8");
 
-  assert.match(page, /<PaymentReminderForm \/>/);
+  assert.match(page, /<PaymentReminderForm templates=\{reminderTemplates\} \/>/);
   assert.match(page, /activeRows=\{data\.reminderRows\}/);
   assert.match(page, /archivedRows=\{data\.archivedReminderRows\}/);
   assert.match(form, /useActionState\(async \(previousState: ReminderActionState, formData: FormData\)/);
@@ -144,11 +145,11 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   assert.doesNotMatch(form, /SMS only/);
   assert.match(form, /Emails are sent immediately to linked parent email addresses/);
   assert.match(form, /name="customMessage"/);
-  assert.match(form, /Custom message text is saved in reminder history/);
+  assert.match(form, /saves the rendered message, template name, and subject in reminder history/);
   assert.match(historyTable, /usePaginatedRows\(filteredRows, `\$\{view\}\|\$\{query\}\|\$\{status\}`\)/);
   assert.match(historyTable, /DashboardTablePagination/);
   assert.match(historyTable, /Message/);
-  assert.match(historyTable, /title=\{row\.message\}/);
+  assert.match(historyTable, /title=\{\[row\.subjectLine, row\.message\]\.filter\(Boolean\)\.join\(" — "\)\}/);
   assert.match(page, /id="payment-reminders"/);
   assert.match(page, /<DashboardCard\s+id="payment-reminders"/);
   assert.match(page, /className="mb-\[18px\] scroll-mt-24"/);

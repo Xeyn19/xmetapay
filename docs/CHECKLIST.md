@@ -45,8 +45,9 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Store spending backend is implemented through admin/finance local test purchase recording.
 - [x] Admin spreadsheet and PDF report exports are implemented from operational MySQL records.
 - [x] Real-data tables paginate on screen; every visible Admin and Parent table export uses branded Excel/PDF from all filtered authorized rows.
-- [x] Queued SMS/email payment reminder history is recorded in `notification_logs` once per day for the same school, linked parent, student, and selected channel.
-- [ ] Real notification sending, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
+- [x] Real SMTP payment reminders are recorded in `notification_logs` with same-day protection for the same school, linked parent, and student; SMS remains future.
+- [x] School administrators manage safe school-owned reminder templates while finance-authorized staff select active templates for delivery.
+- [ ] SMS notifications, real payment gateways, refunds, cashier/POS, item catalog, and admin manual fee payment recording are not implemented yet.
 
 ## Completed Foundation Step
 
@@ -215,9 +216,13 @@ Done when: school administrators and finance officers can download branded Excel
 - [x] Prevent same-day duplicates for sent emails and recent queued attempts while allowing failed attempts to retry.
 - [x] Show historical email/SMS reminder rows on the tuition page and activity feed.
 - [x] Let school administrators and finance officers archive or restore one or many payment-reminder history rows without deleting delivery audit data.
+- [x] Provide three protected XMETA reminder templates plus school-owned create, copy, edit, preview, default, activate, and deactivate controls.
+- [x] Allow only school administrators to manage templates; finance officers can select active templates when sending.
+- [x] Restrict templates to escaped allowlisted placeholders and keep the financial statement server generated.
+- [x] Snapshot the rendered subject, template name, and template reference with each new reminder audit row.
 - [ ] Add SMS, scheduled/background notifications, delivery webhooks, bounce handling, cashier/POS portal, item catalog, refunds, real payment gateways, and real-time purchase notifications.
 
-Done when: email reminders are sent from operational fee balances, delivery results are auditable in `notification_logs`, active and archived history can be organized reversibly, repeated clicks remain protected even when a sent row is archived, and SMS remains clearly labeled future.
+Done when: email reminders use protected or school-owned templates over operational fee balances, rendered content and delivery results are auditable in `notification_logs`, active and archived history remains reversible, repeated clicks remain protected even when a sent row is archived, and SMS remains clearly labeled future.
 
 ## Safe Testing Checklist
 

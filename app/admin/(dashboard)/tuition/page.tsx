@@ -5,6 +5,8 @@ import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminTuitionPageRealData } from "@/lib/admin/real-data";
 import { getAdminFeeSetupData } from "@/lib/fees/records";
 import { getAdminSchoolContext } from "@/lib/school/setup";
+import { getActiveSchoolEmailTemplates } from "@/lib/email/templates";
+import { builtInPaymentReminderTemplates } from "@/lib/email/template-contract";
 import { FeeAssignStudentsForm, FeeCreateTypeForm } from "@/app/admin/fees/fee-management-forms";
 import { OtherFeeActionModal } from "@/app/admin/(dashboard)/other-fees/other-fees-management-modal";
 import { PaymentReminderHistoryTable } from "./payment-reminder-history-table";
@@ -25,6 +27,9 @@ export default async function TuitionPage() {
     ...row,
     balance: row.due - row.paid,
   }));
+  const reminderTemplates = schoolContext.schoolId
+    ? await getActiveSchoolEmailTemplates(schoolContext.schoolId)
+    : builtInPaymentReminderTemplates;
 
   return (
     <>
@@ -42,7 +47,7 @@ export default async function TuitionPage() {
         icon={Send}
         className="mb-[18px] scroll-mt-24"
         bodyClassName="p-0"
-        action={<PaymentReminderForm />}
+        action={<PaymentReminderForm templates={reminderTemplates} />}
       >
         <div className="border-b border-black/[0.07] px-[18px] py-3 text-[12.5px] leading-5 text-[#5a6070]">
           Sends email reminders to linked parents with open or partial balances and records each delivery result. SMS delivery remains future.

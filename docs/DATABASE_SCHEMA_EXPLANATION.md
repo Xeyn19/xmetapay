@@ -415,6 +415,10 @@ Real-data dashboard tables also support browser-side pagination plus browser-gen
 
 ## Notification Table
 
+### `school_email_templates`
+
+Stores school-wide payment-reminder wording without storing SMTP credentials or raw HTML. Each row belongs to one school and one implemented reminder type, can be active or inactive, and may be the school default for that type. School administrators manage these records from School setup; finance officers only consume active templates in the reminder sender. Protected XMETA defaults live in application code and remain available when no custom default exists.
+
 ### `notification_logs`
 
 Stores reminders and system notification history.
@@ -427,8 +431,9 @@ Main purpose:
 - Connect notifications to a school, recipient user, and optionally a student.
 - Store the school year for new reminder history rows.
 - Store `archived_at` for reversible history organization without deleting or changing delivery records.
+- Snapshot the nullable school-template reference, template name, rendered subject, and rendered introductory message for new emails.
 
-Current implementation: school administrators and finance officers can send real payment reminder emails to linked parents with open or partial balances. The server reads matching `student_fee_assignments`, `fee_types`, and optional `tuition_payment_terms` in bounded bulk queries, then builds matching HTML and plain-text statements. Assignment due dates remain the official deadlines; term dates are schedule details. The server verifies SMTP, creates an email `payment_reminder` row as `queued`, sends through pooled Nodemailer, then updates the row to `sent` with `sent_at` or `failed`. Each row stores the custom or generated introductory text in `message_body`. Finance-authorized staff can archive and restore one or many reminder rows; this changes only `archived_at`. Archived sent rows and recent queued attempts still block duplicate same-day sends, and failed rows may be retried. There is no permanent-delete action. SMS, scheduled delivery, and delivery webhooks remain future work.
+Current implementation: school administrators configure safe school-owned templates and finance-authorized staff select an active template when sending linked parents a payment reminder. The server validates school ownership, reminder type, template status, and allowlisted placeholders, then renders a responsive HTML/plain-text message around authoritative fee and optional tuition-term data. A one-time introductory override does not change the saved template or remove the locked statement. `notification_logs` snapshots the template name, nullable template id, rendered subject, and message before pooled SMTP delivery updates the row from `queued` to `sent` or `failed`. Legacy rows remain valid. Archive, same-day duplicate protection, and failed retries remain unchanged; SMTP credentials remain environment-only. SMS, scheduled delivery, and delivery webhooks remain future work.
 
 ## Main Data Flow
 
@@ -469,7 +474,7 @@ The schema supports this practical backend flow:
 - `wallets`, `wallet_transactions`, and `wallet_top_up_batches` track student allowance balances, atomic parent batches, dashboard wallet activity, selected student wallet activity, full wallet ledger history, and the school year for new ledger rows. `wallet_ledger_archives` only controls selected-year admin Allowance ledger visibility.
 - `store_transactions` records wallet spending at school merchants and stores the school year for new purchase rows.
 - Branded Excel and PDF exports read from authorized operational rows and do not require separate report storage tables; protected Admin report CSV URLs remain available for compatibility.
-- `notification_logs` records communication history and stores the school year for new reminder rows.
+- `school_email_templates` stores school-owned reminder wording; `notification_logs` records the rendered communication, template audit context, and school year.
 
 ## Safety Notes
 

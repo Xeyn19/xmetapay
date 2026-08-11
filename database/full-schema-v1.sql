@@ -56,6 +56,33 @@ CREATE TABLE IF NOT EXISTS schools (
   KEY idx_schools_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS school_email_templates (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  school_id BIGINT UNSIGNED NOT NULL,
+  reminder_type ENUM('tuition_due', 'overdue_notice', 'final_notice') NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  subject_template VARCHAR(220) NOT NULL,
+  message_template TEXT NOT NULL,
+  is_default TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_school_email_templates_name (school_id, name),
+  KEY idx_school_email_templates_type_status (school_id, reminder_type, status, is_default),
+  CONSTRAINT fk_school_email_templates_school
+    FOREIGN KEY (school_id) REFERENCES schools(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_school_email_templates_created_by
+    FOREIGN KEY (created_by) REFERENCES users(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_school_email_templates_updated_by
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET @admin_school_column_exists := (
   SELECT COUNT(*)
   FROM information_schema.COLUMNS
@@ -508,6 +535,9 @@ CREATE TABLE IF NOT EXISTS notification_logs (
   channel ENUM('email', 'sms', 'in_app') NOT NULL,
   status ENUM('queued', 'sent', 'failed') NOT NULL DEFAULT 'queued',
   message_body TEXT NULL,
+  email_template_id BIGINT UNSIGNED NULL,
+  email_template_name VARCHAR(120) NULL,
+  subject_line VARCHAR(220) NULL,
   sent_at DATETIME NULL,
   archived_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -517,8 +547,12 @@ CREATE TABLE IF NOT EXISTS notification_logs (
   KEY idx_notification_logs_school_year_type_archive_created (school_id, school_year_id, type, archived_at, created_at),
   KEY idx_notification_logs_recipient_created (recipient_user_id, created_at),
   KEY idx_notification_logs_student_created (student_id, created_at),
+  KEY idx_notification_logs_email_template (email_template_id),
   CONSTRAINT fk_notification_logs_school FOREIGN KEY (school_id) REFERENCES schools(id),
   CONSTRAINT fk_notification_logs_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE SET NULL,
   CONSTRAINT fk_notification_logs_recipient FOREIGN KEY (recipient_user_id) REFERENCES users(id),
-  CONSTRAINT fk_notification_logs_student FOREIGN KEY (student_id) REFERENCES students(id)
+  CONSTRAINT fk_notification_logs_student FOREIGN KEY (student_id) REFERENCES students(id),
+  CONSTRAINT fk_notification_logs_email_template
+    FOREIGN KEY (email_template_id) REFERENCES school_email_templates(id)
+    ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

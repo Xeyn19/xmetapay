@@ -62,15 +62,15 @@ Implemented:
 - Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table, with contrast-safe report rows and outlined XMETA red/orange PDF controls across School Admin and Super Admin in both dashboard themes.
 - Tuition report presents tuition assignments, reminders, and outstanding-by-grade data without duplicating the non-tuition summary owned by Other fees.
 - Admin and parent real-data tables paginate on screen and export all filtered authorized rows as branded Excel/PDF.
-- Queued in-app payment reminder history through `notification_logs`.
+- Real SMTP payment reminders with protected and school-owned templates plus audited delivery history in `notification_logs`.
 
 Next:
 
-- Admin manual fee payment recording or real notification delivery.
+- Admin manual fee payment recording.
 
 Future:
 
-- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, email/SMS notification sending, and scheduled report delivery.
+- Cashier/POS portal, item catalog, real payment gateway integration, refunds, admin manual fee payment recording, SMS notification sending, and scheduled report delivery.
 
 ## Whole Project Overview
 
@@ -763,7 +763,7 @@ Future reporting:
 
 ## Payment Reminder Email Flow
 
-Implemented for MVP email delivery. The tuition page opens an email-only reminder modal with target, reminder type, optional specific-student reference, and optional message fields. The protected action verifies SMTP, queues audit rows, sends real emails to linked parent addresses through Nodemailer, and records each delivery result. SMS remains future work.
+Implemented for MVP email delivery. School administrators manage plain-text, placeholder-safe school templates in School setup, while protected XMETA defaults remain available. The tuition page lets school administrators and finance officers choose a matching active template, preview sample content, optionally override only the introductory message, and send the locked itemized statement through SMTP. SMS remains future work.
 
 ```mermaid
 flowchart TD
@@ -771,15 +771,16 @@ flowchart TD
   B --> C{"Can access finance?"}
   C -->|No| D["Redirect to admin dashboard"]
   C -->|Yes| E["Open Send email reminders modal"]
-  E --> E2["Choose target, type, and optional message"]
-  E2 --> F["Verify SMTP configuration"]
+  E --> E2["Choose target, type, active template, and optional one-time message"]
+  E2 --> E3["Resolve protected or school-owned template and validate allowlisted placeholders"]
+  E3 --> F["Verify SMTP configuration"]
   F --> G["Find linked parents with matching open or partial fee balances and real email addresses"]
   G --> G2["Exclude sent emails and recent queued attempts already recorded today"]
   G2 --> H{"Any new reminder targets?"}
   H -->|No open balances| I["Show no reminders logged"]
   H -->|Already reminded today| J["Show reminders already logged today"]
   H -->|Yes| H2["Bulk-load matching fee assignments and tuition terms"]
-  H2 --> K["Build itemized HTML/text and insert queued reminder rows"]
+  H2 --> K["Render safe subject/message, add locked statement, and snapshot queued reminder audit"]
   K --> L["Commit rows, then send through pooled Nodemailer SMTP"]
   L --> M{"Delivery result"}
   M -->|Sent| N["Set status sent and sent_at"]
@@ -794,15 +795,16 @@ flowchart TD
 Current reminder rules:
 
 - Only `school_administrator` and `finance_officer` can send payment reminder emails.
+- Only `school_administrator` can create, copy, edit, default, activate, or deactivate school templates; finance officers can select active templates.
 - `registrar` cannot send reminders because reminders are tied to finance balances.
 - Reminder candidates must have a linked parent through `student_guardians`.
 - The server bulk-loads matching active-year fee assignments and optional tuition terms for up to 100 targets.
 - HTML and plain-text emails show the student reference, itemized billed/paid/balance amounts, official assignment due dates, and term schedule details.
-- Custom reminder text is introductory and never replaces the itemized financial statement.
+- Template and one-time custom text are introductory and never replace the itemized financial statement; raw HTML and unsupported placeholders are rejected.
 - New reminder rows use `type = payment_reminder` and `channel = email`; older email/SMS history remains visible.
 - A sent row or recently queued attempt prevents another same-day email for the same school year, school, linked parent, and student. Failed attempts may be retried.
 - Successful delivery sets `status = sent` and `sent_at`; unsuccessful delivery sets `status = failed`.
-- The custom message field is stored in `notification_logs.message_body`; if it is blank, the server stores a generated default reminder message.
+- New rows snapshot the rendered `message_body`, `subject_line`, `email_template_name`, and nullable `email_template_id`; legacy rows keep null audit fields.
 - School administrators and finance officers can archive or restore one or many payment-reminder rows. Archive changes only `archived_at`; it does not delete the row or change delivery status, recipient, message, or sent time.
 - Active and archived reminder views use the selected admin school-year context. Archived sent reminders continue to participate in same-day duplicate protection.
 - Registrars cannot send, archive, or restore payment reminders, and no permanent-delete action is available.
