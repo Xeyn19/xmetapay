@@ -1,7 +1,7 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useMemo, useState } from "react";
-import { Archive, ArchiveRestore, CheckSquare, Search, X } from "lucide-react";
+import { startTransition, useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Archive, ArchiveRestore, CheckSquare, Eye, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { DashboardTablePagination, filterByQuery, usePaginatedRows } from "@/app/_components/table-controls";
@@ -15,6 +15,7 @@ import { readableDisabledControlClass } from "@/lib/ui/control-styles";
 import { cn } from "@/lib/utils";
 
 import { AdminTable } from "../../_components/admin-ui";
+import { PaymentReminderMessageDialog } from "./payment-reminder-message-dialog";
 
 const initialActionState: ReminderArchiveActionState = {
   status: "idle",
@@ -38,6 +39,8 @@ export function PaymentReminderHistoryTable({
   const [status, setStatus] = useState("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [confirmationIds, setConfirmationIds] = useState<number[]>([]);
+  const [viewingRow, setViewingRow] = useState<PaymentReminderHistoryRow | null>(null);
+  const viewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const filteredRows = useMemo(() => {
     const searchedRows = filterByQuery(rows, query, (row) => [
       row.student,
@@ -93,7 +96,12 @@ export function PaymentReminderHistoryTable({
     setView(nextView);
     setSelectedIds([]);
     setConfirmationIds([]);
+    setViewingRow(null);
   };
+  const closeViewer = useCallback(() => {
+    setViewingRow(null);
+    window.setTimeout(() => viewTriggerRef.current?.focus(), 0);
+  }, []);
   const confirmAction = () => {
     const formData = new FormData();
     confirmationIds.forEach((notificationId) => formData.append("notificationIds", String(notificationId)));
@@ -186,7 +194,7 @@ export function PaymentReminderHistoryTable({
           { label: "Status", className: "w-[100px]" },
           ...(view === "archived" ? [{ label: "Archived", className: "w-[130px]" }] : []),
           { label: "Message", className: "w-[220px]" },
-          { label: "Action", className: "w-[72px] text-center" },
+          { label: "Actions", className: "w-[124px] text-center" },
         ]}
       >
         {pagination.pageRows.length > 0 ? (
@@ -209,21 +217,39 @@ export function PaymentReminderHistoryTable({
               <td>{row.channel}</td>
               <td><span className={statusClassName(row.status)}>{row.status}</span></td>
               {view === "archived" ? <td className="font-mono text-[11px] text-[#5a6070]">{row.archivedAt}</td> : null}
-              <td className="max-w-[240px] text-[#5a6070]" title={[row.subjectLine, row.message].filter(Boolean).join(" — ")}>
-                <div className="truncate">{row.message}</div>
+              <td className="max-w-[240px] text-[#5a6070]">
+                <div className="line-clamp-2 break-words [overflow-wrap:anywhere]">
+                  {row.message.trim() || "Message unavailable"}
+                </div>
                 {row.templateName ? <div className="mt-1 truncate text-[10.5px] text-[#9ba3b8]">{row.templateName}</div> : null}
               </td>
               <td className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setConfirmationIds([row.notificationId])}
-                  disabled={pending}
-                  className={cn("inline-flex size-10 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass)}
-                  aria-label={`${operationLabel} reminder for ${row.student}`}
-                  title={`${operationLabel} reminder`}
-                >
-                  {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-                </button>
+                <div className="flex items-center justify-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      viewTriggerRef.current = event.currentTarget;
+                      setConfirmationIds([]);
+                      setViewingRow(row);
+                    }}
+                    className="inline-flex size-11 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                    aria-label={`View message for ${row.student}`}
+                  >
+                    <Eye className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewingRow(null);
+                      setConfirmationIds([row.notificationId]);
+                    }}
+                    disabled={pending}
+                    className={cn("inline-flex size-11 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass)}
+                    aria-label={`${operationLabel} reminder for ${row.student}`}
+                  >
+                    {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+                  </button>
+                </div>
               </td>
             </tr>
           ))
@@ -245,6 +271,8 @@ export function PaymentReminderHistoryTable({
         onPageChange={pagination.setPage}
         onPageSizeChange={pagination.setPageSize}
       />
+
+      <PaymentReminderMessageDialog row={viewingRow} onClose={closeViewer} />
 
       {confirmationIds.length > 0 ? (
         <div className="fixed inset-0 z-[220] grid place-items-center bg-[#0f1117]/45 px-4 py-6 backdrop-blur-sm">
