@@ -8,6 +8,7 @@ import { AuthToastListener } from "./auth-toast-listener";
 import { BrandLogo } from "./brand-logo";
 import { PasswordInput } from "./password-input";
 import { ThemeToggle } from "./theme-toggle";
+import { PRODUCT_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 type Portal = "admin" | "parent";
@@ -30,7 +31,7 @@ export function BrandMark() {
       <BrandLogo />
       <span className="min-w-0">
         <span className="block truncate text-base font-bold tracking-tight text-[var(--public-text)]">
-          XMETA Pay
+          {PRODUCT_NAME}
         </span>
         <span className="block truncate text-xs font-medium text-[var(--public-muted)]">
           School payments, simplified

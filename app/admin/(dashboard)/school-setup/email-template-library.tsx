@@ -11,6 +11,7 @@ import {
   type SchoolEmailTemplateActionState,
 } from "@/app/admin/email-templates/actions";
 import { AdminButton, Field, StatusPill, fieldControlClass } from "@/app/admin/_components/admin-ui";
+import { PRODUCT_NAME } from "@/lib/brand";
 import {
   emailTemplateVariableKeys,
   labelForPaymentReminderType,
@@ -73,7 +74,7 @@ export function EmailTemplateLibrary({ library }: { library: TemplateLibraryData
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-2xl text-[12.5px] leading-5 text-[#5a6070]">
-          SMTP credentials remain protected in the environment. Templates control only the subject and introductory message; XMETA Pay always adds the authoritative fee statement and parent portal link.
+          SMTP credentials remain protected in the environment. Templates control only the subject and introductory message; {PRODUCT_NAME} always adds the authoritative fee statement and parent portal link.
         </div>
         <AdminButton
           tone="primary"
@@ -323,12 +324,12 @@ function TemplatePreview({ template, onClose }: { template: SchoolEmailTemplate;
 function EmailPreviewCard({ subject, message }: { subject: string; message: string }) {
   return (
     <aside className="self-start overflow-hidden rounded-lg border border-black/[0.08] bg-[#f4f5f7]">
-      <div className="bg-[#0f1117] px-4 py-3 text-white"><div className="flex items-center gap-2 text-[13px] font-bold"><Mail className="size-4 text-[#e64a19]" /> XMETA Pay</div><div className="mt-1 text-[10.5px] text-[#c7cad1]">Sample Academy · 2026-2027</div></div>
+      <div className="bg-[#0f1117] px-4 py-3 text-white"><div className="flex items-center gap-2 text-[13px] font-bold"><Mail className="size-4 text-[#e64a19]" /> {PRODUCT_NAME}</div><div className="mt-1 text-[10.5px] text-[#c7cad1]">Sample Academy · 2026-2027</div></div>
       <div className="bg-white p-4">
         <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#e64a19]">Subject</div>
         <div className="mt-1 break-words text-[13px] font-bold leading-5 text-[#0f1117]">{subject || "Email subject preview"}</div>
         <div className="mt-4 whitespace-pre-wrap break-words text-[12.5px] leading-6 text-[#303443]">{message || "Message preview"}</div>
-        <div className="mt-4 rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-3 text-[11.5px] leading-5 text-[#5a6070]">XMETA Pay adds the student reference, fee balances, official deadlines, installment details, and secure parent portal action here.</div>
+        <div className="mt-4 rounded-lg border border-black/[0.07] bg-[#f7f8fa] p-3 text-[11.5px] leading-5 text-[#5a6070]">{PRODUCT_NAME} adds the student reference, fee balances, official deadlines, installment details, and secure parent portal action here.</div>
       </div>
     </aside>
   );

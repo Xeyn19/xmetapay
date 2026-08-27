@@ -2,6 +2,8 @@ import "server-only";
 
 import nodemailer, { type Transporter } from "nodemailer";
 
+import { PRODUCT_NAME } from "@/lib/brand";
+
 export type PaymentReminderTerm = {
   name: string;
   billed: string;
@@ -107,8 +109,8 @@ export function getEmailParentPortalUrl() {
 export async function sendPasswordResetOtpEmail(reset: PasswordResetOtpEmail) {
   const emailTransport = getTransporter();
   const config = getEmailConfiguration();
-  const subject = "Your XMETA Pay password reset code";
-  const name = reset.name.trim() || "XMETA Pay user";
+  const subject = `Your ${PRODUCT_NAME} password reset code`;
+  const name = reset.name.trim() || `${PRODUCT_NAME} user`;
 
   await emailTransport.sendMail({
     from: {
@@ -123,12 +125,12 @@ export async function sendPasswordResetOtpEmail(reset: PasswordResetOtpEmail) {
     text: [
       `Hello ${name},`,
       "",
-      `Your XMETA Pay ${reset.portalLabel} password reset code is: ${reset.otp}`,
+      `Your ${PRODUCT_NAME} ${reset.portalLabel} password reset code is: ${reset.otp}`,
       "",
       "This code expires in 5 minutes. Do not share it with anyone.",
       "If you did not request a password reset, you can ignore this email.",
       "",
-      "XMETA Pay",
+      PRODUCT_NAME,
     ].join("\n"),
     html: passwordResetOtpHtml({
       ...reset,
@@ -201,7 +203,7 @@ function getEmailConfiguration() {
     user,
     password: requiredEnvironmentValue("SMTP_PASSWORD"),
     fromEmail,
-    fromName: (process.env.SMTP_FROM_NAME ?? "XMETA Pay").trim() || "XMETA Pay",
+    fromName: (process.env.SMTP_FROM_NAME ?? PRODUCT_NAME).trim() || PRODUCT_NAME,
     parentPortalUrl,
   };
 
@@ -238,7 +240,7 @@ function paymentReminderText(reminder: PaymentReminderEmail, parentPortalUrl: st
   ]);
 
   return [
-    "XMETA Pay payment reminder",
+    `${PRODUCT_NAME} payment reminder`,
     `${reminder.schoolName} - ${reminder.schoolYearName}`,
     "",
     `Hello ${reminder.parentName},`,
@@ -257,7 +259,7 @@ function paymentReminderText(reminder: PaymentReminderEmail, parentPortalUrl: st
     `Sign in to review and pay: ${parentPortalUrl}`,
     "For questions about this balance, contact your school finance office.",
     "",
-    "This is an automated payment reminder from XMETA Pay.",
+    `This is an automated payment reminder from ${PRODUCT_NAME}.`,
   ].join("\n");
 }
 
@@ -276,7 +278,7 @@ function passwordResetOtpHtml(reset: PasswordResetOtpEmail) {
     <div style="padding:24px 12px;">
       <div style="max-width:520px;margin:0 auto;overflow:hidden;border:1px solid #e4e7ec;border-radius:8px;background:#ffffff;">
         <div style="background:#11131a;padding:18px 24px;color:#ffffff;">
-          <strong style="font-size:18px;">XMETA Pay</strong>
+          <strong style="font-size:18px;">${PRODUCT_NAME}</strong>
           <div style="margin-top:4px;color:#c7cad1;font-size:13px;">Secure ${portalLabel} access</div>
         </div>
         <div style="padding:24px;">
@@ -315,7 +317,7 @@ function paymentReminderHtml(reminder: PaymentReminderEmail, parentPortalUrl: st
     <div style="padding:24px 12px;">
       <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
         <div style="background:#0f1117;padding:18px 24px;color:#ffffff;">
-          <strong style="font-size:18px;">XMETA Pay</strong>
+          <strong style="font-size:18px;">${PRODUCT_NAME}</strong>
           <div style="margin-top:4px;color:#c7cad1;font-size:13px;">${schoolName} &middot; ${schoolYearName}</div>
         </div>
         <div style="padding:24px;">
@@ -333,7 +335,7 @@ function paymentReminderHtml(reminder: PaymentReminderEmail, parentPortalUrl: st
           <p style="margin:4px 0 20px;color:#5a6070;font-size:12px;line-height:1.6;">Term dates are installment schedule information. The fee due date is the official parent deadline.</p>
           <a href="${portalUrl}" style="display:inline-block;background:#ef4b1a;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 18px;border-radius:6px;">Sign in to review and pay</a>
           <p style="margin:20px 0 0;color:#5a6070;font-size:13px;line-height:1.6;">For questions about this balance, contact your school finance office.</p>
-          <p style="margin:12px 0 0;color:#747b89;font-size:12px;line-height:1.5;">This is an automated payment reminder from XMETA Pay.</p>
+          <p style="margin:12px 0 0;color:#747b89;font-size:12px;line-height:1.5;">This is an automated payment reminder from ${PRODUCT_NAME}.</p>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { createSession, deleteSession, setAuthFlashToast, type PortalRole } from
 import { hashPassword, verifyPassword } from "@/lib/auth/password.mjs";
 import { linkParentToStudentByReference } from "@/lib/students/records";
 import { parseLoginForm, parseRegisterForm } from "@/lib/auth/validation.mjs";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export type AuthFormState = {
   message: string;
@@ -94,7 +95,7 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
       await setAuthFlashToast({
         role,
         title: "Registration submitted",
-        description: "Your admin account is waiting for XMETA Pay approval.",
+        description: `Your admin account is waiting for ${PRODUCT_NAME} approval.`,
       });
     }
   } catch (error) {
@@ -148,7 +149,7 @@ export async function loginAction(role: PortalRole, _state: AuthFormState = init
     if (user.status === "pending") {
       return {
         message: role === "admin"
-          ? "Your admin account is waiting for XMETA Pay approval."
+          ? `Your admin account is waiting for ${PRODUCT_NAME} approval.`
           : "Your account is waiting for approval.",
       };
     }

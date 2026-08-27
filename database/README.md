@@ -1,4 +1,4 @@
-# XMETA Pay Database Setup
+# XMETA EDU Database Setup
 
 Use these SQL files for local XAMPP/phpMyAdmin setup.
 

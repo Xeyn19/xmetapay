@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { AppThemeProvider } from "@/app/_components/app-theme-provider";
+import { PRODUCT_NAME } from "@/lib/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "XMETA Pay",
+  title: PRODUCT_NAME,
   description: "School admin and parent payment portal prototype",
 };
 

@@ -1,3 +1,5 @@
+import { PRODUCT_NAME } from "@/lib/brand";
+
 export const paymentReminderTypes = ["tuition_due", "overdue_notice", "final_notice"] as const;
 
 export type PaymentReminderType = (typeof paymentReminderTypes)[number];
@@ -50,7 +52,7 @@ export const builtInPaymentReminderTemplates: SchoolEmailTemplate[] = [
     name: "Friendly payment reminder",
     subjectTemplate: "{{school_name}}: Payment reminder for {{student_name}}",
     messageTemplate:
-      "Hello {{parent_name}}, this is a friendly reminder that {{student_name}} has an outstanding school balance of {{total_outstanding}}. Please review the details below and sign in to XMETA Pay when convenient.",
+      `Hello {{parent_name}}, this is a friendly reminder that {{student_name}} has an outstanding school balance of {{total_outstanding}}. Please review the details below and sign in to ${PRODUCT_NAME} when convenient.`,
     status: "active",
     isDefault: true,
     editable: false,

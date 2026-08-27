@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { getSession } from "@/lib/auth/session";
+import { PRODUCT_NAME } from "@/lib/brand";
 import { PortalCard, PublicPageShell } from "./_components/auth-ui";
 
 export default async function Home() {
@@ -23,7 +24,7 @@ export default async function Home() {
         <section className="flex flex-1 items-center py-8 sm:py-10 lg:py-12">
           <div className="mx-auto w-full max-w-4xl text-center">
             <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-[#e64a19]">
-              Welcome to XMETA Pay
+              Welcome to {PRODUCT_NAME}
             </p>
             <h1 className="mx-auto mt-3 max-w-2xl text-balance text-[2rem] font-bold leading-[1.08] tracking-tight text-[var(--public-text)] sm:text-[2.75rem] lg:text-5xl">
               School payments, made simple.

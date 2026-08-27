@@ -8,6 +8,7 @@ import { ManualSchoolSetupForm } from "@/app/admin/_components/manual-school-set
 import { getAdminStaffRole } from "@/lib/admin/access";
 import { canManageSchoolSetup } from "@/lib/admin/permissions";
 import { consumeAuthFlashToast, requireRole } from "@/lib/auth/session";
+import { PRODUCT_NAME } from "@/lib/brand";
 import { getAdminSchoolContext, getAdminSchoolSetupFormData } from "@/lib/school/setup";
 
 export default async function AdminSchoolSetupOnboardingPage() {
@@ -37,7 +38,7 @@ export default async function AdminSchoolSetupOnboardingPage() {
           <div className="flex min-w-0 items-center gap-3">
             <BrandLogo />
             <div className="min-w-0">
-              <p className="text-sm font-bold tracking-[-0.02em]">XMETA Pay</p>
+              <p className="text-sm font-bold tracking-[-0.02em]">{PRODUCT_NAME}</p>
               <p className="truncate text-[12px] leading-5 text-[#5a6070]">
                 School setup onboarding
               </p>

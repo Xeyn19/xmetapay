@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Download, FileText, LoaderCircle, RotateCcw,
 
 import { cn } from "@/lib/utils";
 import { readableDisabledControlClass } from "@/lib/ui/control-styles";
+import { PRODUCT_EXPORT_SLUG, PRODUCT_NAME } from "@/lib/brand";
 
 export type FilterOption = {
   label: string;
@@ -366,8 +367,8 @@ export async function exportRowsToExcel<T>(
   const lastColumn = worksheet.getColumn(columnCount).letter;
   const logo = await loadBrandLogo();
 
-  workbook.creator = "XMETA Pay";
-  workbook.company = "XMETA Pay";
+  workbook.creator = PRODUCT_NAME;
+  workbook.company = PRODUCT_NAME;
   workbook.title = cleanSpreadsheetText(title);
   workbook.created = new Date();
 
@@ -375,7 +376,7 @@ export async function exportRowsToExcel<T>(
   worksheet.mergeCells(`B2:${lastColumn}2`);
   worksheet.getRow(1).height = 24;
   worksheet.getRow(2).height = 22;
-  worksheet.getCell("B1").value = "XMETA Pay";
+  worksheet.getCell("B1").value = PRODUCT_NAME;
   worksheet.getCell("B1").font = { name: "Arial", size: 16, bold: true, color: { argb: "FF0F1117" } };
   worksheet.getCell("B2").value = cleanSpreadsheetText(title);
   worksheet.getCell("B2").font = { name: "Arial", size: 12, bold: true, color: { argb: "FFE64A19" } };
@@ -452,7 +453,7 @@ export async function exportRowsToExcel<T>(
     from: { row: headerRowNumber, column: 1 },
     to: { row: headerRowNumber, column: columnCount },
   };
-  worksheet.headerFooter.oddFooter = "&LXMETA Pay&RPage &P of &N";
+  worksheet.headerFooter.oddFooter = `&L${PRODUCT_NAME}&RPage &P of &N`;
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([new Uint8Array(buffer)], {
@@ -511,7 +512,7 @@ export async function createBrandedPdfDocument(
   doc.setTextColor(15, 17, 23);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
-  doc.text("XMETA Pay", 74, 36);
+  doc.text(PRODUCT_NAME, 74, 36);
   doc.setFontSize(11);
   doc.text(cleanPdfText(title), 74, 52);
 
@@ -601,7 +602,7 @@ export function finalizeBrandedPdf(doc: jsPDF, filename: string) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(90, 96, 112);
-    doc.text("XMETA Pay · School payment records", 30, pageHeight - 12);
+    doc.text(`${PRODUCT_NAME} · School payment records`, 30, pageHeight - 12);
     doc.text(`Page ${page} of ${pageCount}`, pageWidth - 30, pageHeight - 12, { align: "right" });
   }
   doc.save(filename);
@@ -697,12 +698,12 @@ function cleanSpreadsheetText(value: string | number) {
 
 function cleanWorksheetName(value: string) {
   const cleaned = cleanSpreadsheetText(value).replaceAll(/[\\/*?:[\]]/g, " ").slice(0, 31).trim();
-  return cleaned || "XMETA Pay";
+  return cleaned || PRODUCT_NAME;
 }
 
 function cleanExcelFilename(value: string) {
   const cleaned = value.replaceAll(/[<>:"/\\|?*\u0000-\u001f]/g, "-").replaceAll(/^\.+|\.+$/g, "");
-  const filename = cleaned || "xmetapay-export.xlsx";
+  const filename = cleaned || `${PRODUCT_EXPORT_SLUG}-export.xlsx`;
   return filename.toLowerCase().endsWith(".xlsx") ? filename : `${filename}.xlsx`;
 }
 

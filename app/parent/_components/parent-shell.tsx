@@ -8,6 +8,7 @@ import { useState } from "react";
 import { logoutAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/app/_components/brand-logo";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
+import { PRODUCT_NAME } from "@/lib/brand";
 import type { ParentPortalContext } from "@/lib/students/records";
 import { cn } from "@/lib/utils";
 import {
@@ -70,7 +71,7 @@ export function ParentShell({
         <div className="shrink-0 border-b border-sidebar-border px-[18px] pb-3.5 pt-4">
           <div className="mb-1.5 flex items-center gap-2.5">
             <BrandLogo size="compact" />
-            <span className="min-w-0 truncate text-[15px] font-semibold">XMETA Pay</span>
+            <span className="min-w-0 truncate text-[15px] font-semibold">{PRODUCT_NAME}</span>
           </div>
           <div className="space-y-0.5 text-[11px] leading-4 text-sidebar-foreground/55">
             <div className="truncate">Parent portal</div>

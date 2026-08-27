@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path) => readFileSync(path, "utf8");
 
-test("shared XMETA Pay brand logo uses the canonical optimized image contract", () => {
+test("shared XMETA EDU brand logo uses the canonical optimized image contract", () => {
   const component = read("app/_components/brand-logo.tsx");
 
   assert.equal(existsSync("public/xmetapay-logo.jpg"), true);
@@ -33,7 +33,7 @@ test("all shared app shells consume the canonical brand logo", () => {
   assert.doesNotMatch(read("app/_components/dashboard-ui.tsx"), />\s*XP\s*</);
 });
 
-test("public visual plans and app metadata use the XMETA Pay logo", () => {
+test("public visual plans and app metadata use the XMETA EDU logo", () => {
   for (const path of [
     "public/PROJECT_FLOWCHARTS_VISUAL.html",
     "public/DATABASE_SCHEMA_VISUAL_PLAN.html",
@@ -46,4 +46,11 @@ test("public visual plans and app metadata use the XMETA Pay logo", () => {
 
   assert.equal(existsSync("app/icon.png"), true);
   assert.equal(existsSync("app/favicon.ico"), false);
+});
+
+test("runtime branding has one display name and export slug source of truth", () => {
+  const brand = read("lib/brand.ts");
+
+  assert.match(brand, /PRODUCT_NAME = "XMETA EDU"/);
+  assert.match(brand, /PRODUCT_EXPORT_SLUG = "xmeta-edu"/);
 });

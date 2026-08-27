@@ -71,7 +71,7 @@ test("admin registration waits for super admin approval before login", () => {
   assert.match(authActions, /status: role === "admin" \? "pending" : "active"/);
   assert.match(authActions, /if \(role === "parent"\) \{[\s\S]*createSession\(\{ userId: userResult\.insertId, role, name: parsed\.data\.name \}\)/);
   assert.match(authActions, /title: "Registration submitted"/);
-  assert.match(authActions, /Your admin account is waiting for XMETA Pay approval\./);
+  assert.match(authActions, /Your admin account is waiting for \$\{PRODUCT_NAME\} approval\./);
   assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/login\?pendingApproval=1" : "\/parent\/dashboard"\);/);
   assert.doesNotMatch(authActions, /redirect\(role === "admin" \? "\/admin\/onboarding\/school-setup"/);
 });

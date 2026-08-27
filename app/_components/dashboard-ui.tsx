@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PRODUCT_NAME } from "@/lib/brand";
 import { BrandMark } from "./auth-ui";
 import { BrandLogo } from "./brand-logo";
 
@@ -37,7 +38,7 @@ export function AdminDashboardShell() {
         <div className="flex items-center gap-3">
           <BrandLogo />
           <div>
-            <div className="font-bold">XMETA Pay</div>
+            <div className="font-bold">{PRODUCT_NAME}</div>
             <div className="text-xs text-zinc-400">Admin dashboard</div>
           </div>
         </div>

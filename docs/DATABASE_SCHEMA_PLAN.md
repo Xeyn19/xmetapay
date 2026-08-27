@@ -1,16 +1,16 @@
-# XMETA Pay Database Schema Plan
+# XMETA EDU Database Schema Plan
 
 ## Project Database Overview
 
-XMETA Pay uses one MySQL database for three connected access areas:
+XMETA EDU uses one MySQL database for three connected access areas:
 
-- Company super admin: XMETA Pay monitoring for schools, school admin account access, and read-only aggregate school population profiles.
+- Company super admin: XMETA EDU monitoring for schools, school admin account access, and read-only aggregate school population profiles.
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
 - Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
 Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
 
-The public entry page exposes only admin and parent portal choices through the shared responsive XMETA Pay shell used by role login, registration, recovery, and all dashboard portals. The app defaults to Dark and remembers an optional Light preference in the browser; theme state is never stored in MySQL. Dashboard sidebars use semantic light surfaces in Light mode and XMETA charcoal in Dark mode, and Parent top-level and nested routes use one declarative current-page interaction model plus contrast-safe semantic hover and selection surfaces. Admin report-download rows use the same semantic surfaces so hover never hides their labels; disabled Admin controls use opaque neutral state tokens, while alerts and status badges use semantic state tokens in both themes. The Tuition report remains tuition-specific while the dedicated Other fees page owns non-tuition summaries. Company super-admin access remains available only by directly opening the unlisted sign-in route `/login`; authentication still uses `users` and `auth_sessions`, so this navigation change adds no schema fields and the schema does not support public company-account registration.
+The public entry page exposes only admin and parent portal choices through the shared responsive XMETA EDU shell used by role login, registration, recovery, and all dashboard portals. The app defaults to Dark and remembers an optional Light preference in the browser; theme state is never stored in MySQL. Dashboard sidebars use semantic light surfaces in Light mode and XMETA charcoal in Dark mode, and Parent top-level and nested routes use one declarative current-page interaction model plus contrast-safe semantic hover and selection surfaces. Admin report-download rows use the same semantic surfaces so hover never hides their labels; disabled Admin controls use opaque neutral state tokens, while alerts and status badges use semantic state tokens in both themes. The Tuition report remains tuition-specific while the dedicated Other fees page owns non-tuition summaries. Company super-admin access remains available only by directly opening the unlisted sign-in route `/login`; authentication still uses `users` and `auth_sessions`, so this navigation change adds no schema fields and the schema does not support public company-account registration.
 
 Login, registration, and recovery placeholders are fixed professional instructions rather than sample emails, phone numbers, or account-derived values. This presentation rule does not alter the `users` schema, form field contracts, normalization, or authentication queries.
 
@@ -126,7 +126,7 @@ The following tables extend the current auth schema into the full dashboard and 
 
 #### `schools`
 
-Stores schools using XMETA Pay.
+Stores schools using XMETA EDU.
 
 ```sql
 CREATE TABLE schools (

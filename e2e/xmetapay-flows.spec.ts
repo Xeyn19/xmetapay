@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import mysql from "mysql2/promise";
 import type { RowDataPacket } from "mysql2/promise";
 
-test.describe("XMETA Pay portal entry", () => {
+test.describe("XMETA EDU portal entry", () => {
   test("home page shows both portal choices", async ({ page }) => {
     await page.goto("/");
 
@@ -100,7 +100,7 @@ test.describe("XMETA Pay portal entry", () => {
     });
   }
 
-  test("root metadata exposes the XMETA Pay app icon", async ({ page }) => {
+  test("root metadata exposes the XMETA EDU app icon", async ({ page }) => {
     await page.goto("/");
 
     const icon = page.locator('link[rel="icon"]');
@@ -248,7 +248,7 @@ test.describe("XMETA Pay portal entry", () => {
   });
 });
 
-test.describe("XMETA Pay login flows", () => {
+test.describe("XMETA EDU login flows", () => {
   test("company login explains incorrect credentials clearly", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Company email").fill("unknown-company@example.com");
@@ -295,7 +295,7 @@ test.describe("XMETA Pay login flows", () => {
   });
 });
 
-test.describe("XMETA Pay dashboard smoke tests", () => {
+test.describe("XMETA EDU dashboard smoke tests", () => {
   test.beforeEach(async ({ context }) => {
     await addDatabaseSessionCookie(context, "admin");
   });
@@ -490,7 +490,7 @@ test.describe("XMETA Pay dashboard smoke tests", () => {
   });
 });
 
-test.describe("XMETA Pay parent portal smoke tests", () => {
+test.describe("XMETA EDU parent portal smoke tests", () => {
   test.beforeEach(async ({ context }) => {
     await addDatabaseSessionCookie(context, "parent");
   });
@@ -671,7 +671,7 @@ test.describe("XMETA Pay parent portal smoke tests", () => {
   });
 });
 
-test.describe("XMETA Pay admin branded Excel exports", () => {
+test.describe("XMETA EDU admin branded Excel exports", () => {
   test.beforeEach(async ({ context }) => {
     await addDatabaseSessionCookie(context, "admin");
   });
@@ -787,7 +787,7 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
     const excelDownloadPromise = page.waitForEvent("download");
     await page.getByRole("link", { name: "Excel" }).first().click();
     const excelDownload = await excelDownloadPromise;
-    expect(excelDownload.suggestedFilename()).toBe("xmetapay-monthly-revenue.xlsx");
+    expect(excelDownload.suggestedFilename()).toBe("xmeta-edu-monthly-revenue.xlsx");
     await expectExcelWorkbook(excelDownload, {
       worksheetName: "Monthly revenue",
       title: "Monthly revenue",
@@ -797,7 +797,7 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
     const pdfDownloadPromise = page.waitForEvent("download");
     await page.getByRole("link", { name: "PDF" }).first().click();
     const pdfDownload = await pdfDownloadPromise;
-    expect(pdfDownload.suggestedFilename()).toBe("xmetapay-monthly-revenue.pdf");
+    expect(pdfDownload.suggestedFilename()).toBe("xmeta-edu-monthly-revenue.pdf");
   });
 
   test("Admin PDF controls use the XMETA outline treatment in both themes", async ({ page }) => {
@@ -890,7 +890,7 @@ test.describe("XMETA Pay admin branded Excel exports", () => {
   });
 });
 
-test.describe("XMETA Pay dashboard protection", () => {
+test.describe("XMETA EDU dashboard protection", () => {
   test("admin dashboard redirects to admin login without a session", async ({ page }) => {
     await page.goto("/admin/dashboard");
     await expect(page).toHaveURL("/admin/login");
@@ -902,7 +902,7 @@ test.describe("XMETA Pay dashboard protection", () => {
   });
 });
 
-test.describe("XMETA Pay super admin branding", () => {
+test.describe("XMETA EDU super admin branding", () => {
   test.beforeEach(async ({ context }) => {
     await addDatabaseSessionCookie(context, "super_admin");
   });
@@ -1469,14 +1469,14 @@ async function expectExcelWorkbook(
   const worksheet = workbook.getWorksheet(expected.worksheetName);
 
   expect(worksheet).toBeTruthy();
-  expect(worksheet!.getCell("B1").value).toBe("XMETA Pay");
+  expect(worksheet!.getCell("B1").value).toBe("XMETA EDU");
   expect(worksheet!.getCell("B2").value).toBe(expected.title);
   expect(worksheet!.views[0]?.state).toBe("frozen");
   expect(worksheet!.autoFilter).toBeTruthy();
 
   let headerRowNumber = 0;
   worksheet!.eachRow((row, rowNumber) => {
-    if (row.getCell(1).value === "Name") headerRowNumber = rowNumber;
+    if (row.getCell(1).value === expected.headers[0]) headerRowNumber = rowNumber;
   });
   expect(headerRowNumber).toBeGreaterThan(0);
   expect(

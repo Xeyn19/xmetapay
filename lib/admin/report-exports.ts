@@ -9,6 +9,7 @@ import type { RowDataPacket } from "mysql2/promise";
 import { pool } from "@/lib/auth/db";
 import { getTuitionCollectionRows } from "@/lib/admin/tuition-collections";
 import { getAdminSchoolContext, getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
+import { PRODUCT_EXPORT_SLUG, PRODUCT_NAME } from "@/lib/brand";
 
 export const reportExportTypes = [
   "monthly-revenue",
@@ -67,7 +68,7 @@ export async function getAdminReportExportData(adminUserId: number, type: Report
   if (!setup.schoolId || !setup.schoolYearId) {
     return {
       title: reportTitle(type),
-      filenameBase: `xmetapay-${type}`,
+      filenameBase: `${PRODUCT_EXPORT_SLUG}-${type}`,
       contextLines: ["School setup incomplete"],
       context: [{ label: "School", value: "School setup incomplete" }],
       summary: [{ label: "Records", value: 1 }],
@@ -128,8 +129,8 @@ export async function getAdminReportExcel(report: AdminReportExportData) {
   const lastColumn = worksheet.getColumn(columnCount).letter;
   const logo = await loadServerBrandLogo();
 
-  workbook.creator = "XMETA Pay";
-  workbook.company = "XMETA Pay";
+  workbook.creator = PRODUCT_NAME;
+  workbook.company = PRODUCT_NAME;
   workbook.title = cleanSpreadsheetText(report.title);
   workbook.created = new Date();
 
@@ -137,7 +138,7 @@ export async function getAdminReportExcel(report: AdminReportExportData) {
   worksheet.mergeCells(`B2:${lastColumn}2`);
   worksheet.getRow(1).height = 24;
   worksheet.getRow(2).height = 22;
-  worksheet.getCell("B1").value = "XMETA Pay";
+  worksheet.getCell("B1").value = PRODUCT_NAME;
   worksheet.getCell("B1").font = { name: "Arial", size: 16, bold: true, color: { argb: "FF0F1117" } };
   worksheet.getCell("B2").value = cleanSpreadsheetText(report.title);
   worksheet.getCell("B2").font = { name: "Arial", size: 12, bold: true, color: { argb: "FFE64A19" } };
@@ -201,7 +202,7 @@ export async function getAdminReportExcel(report: AdminReportExportData) {
     from: { row: headerRowNumber, column: 1 },
     to: { row: headerRowNumber, column: dataColumnCount },
   };
-  worksheet.headerFooter.oddFooter = "&LXMETA Pay&RPage &P of &N";
+  worksheet.headerFooter.oddFooter = `&L${PRODUCT_NAME}&RPage &P of &N`;
 
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
@@ -244,7 +245,7 @@ async function monthlyRevenueExport(schoolId: number, schoolYearId: number, cont
 
   return reportData(
     "Monthly revenue",
-    "xmetapay-monthly-revenue",
+    `${PRODUCT_EXPORT_SLUG}-monthly-revenue`,
     contextLines,
     rows,
     [
@@ -260,7 +261,7 @@ async function collectionsExport(schoolId: number, schoolYearId: number, context
 
   return reportData(
     "Tuition collections report",
-    "xmetapay-collections",
+    `${PRODUCT_EXPORT_SLUG}-collections`,
     contextLines,
     rows,
     [
@@ -300,7 +301,7 @@ async function outstandingBalancesExport(
 
   return reportData(
     "Outstanding balances",
-    "xmetapay-outstanding-balances",
+    `${PRODUCT_EXPORT_SLUG}-outstanding-balances`,
     contextLines,
     rows,
     [
@@ -345,7 +346,7 @@ async function walletStoreExport(schoolId: number, schoolYearId: number, context
 
   return reportData(
     "Wallet and store report",
-    "xmetapay-wallet-store",
+    `${PRODUCT_EXPORT_SLUG}-wallet-store`,
     contextLines,
     rows,
     [
@@ -426,7 +427,7 @@ function renderPdfReport(doc: jsPDF, report: AdminReportExportData, logo: string
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor("#0f1117");
-  doc.text("XMETA Pay", 74, 32);
+  doc.text(PRODUCT_NAME, 74, 32);
   doc.setFontSize(11);
   doc.text(report.title, 74, 48);
   doc.setFont("helvetica", "normal");
@@ -491,7 +492,7 @@ function renderPdfReport(doc: jsPDF, report: AdminReportExportData, logo: string
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(90, 96, 112);
-    doc.text("XMETA Pay - School payment records", 30, height - 12);
+    doc.text(`${PRODUCT_NAME} - School payment records`, 30, height - 12);
     doc.text(`Page ${page} of ${pageCount}`, width - 30, height - 12, { align: "right" });
   }
 }
@@ -509,20 +510,20 @@ function reportSummary(filenameBase: string, columns: string[], rows: string[][]
     return index < 0 ? 0 : rows.reduce((total, row) => total + Number(String(row[index] ?? "").replaceAll(/[^0-9.-]/g, "") || 0), 0);
   };
 
-  if (filenameBase === "xmetapay-monthly-revenue") {
+  if (filenameBase === `${PRODUCT_EXPORT_SLUG}-monthly-revenue`) {
     return [
       { label: "Months", value: rows.length },
       { label: "Paid payments", value: sum("Paid payment count") },
       { label: "Paid amount", value: moneySummary(sum("Paid amount")) },
     ];
   }
-  if (filenameBase === "xmetapay-collections") {
+  if (filenameBase === `${PRODUCT_EXPORT_SLUG}-collections`) {
     return [
       { label: "Payments", value: rows.length },
       { label: "Collected", value: moneySummary(sum("Amount")) },
     ];
   }
-  if (filenameBase === "xmetapay-outstanding-balances") {
+  if (filenameBase === `${PRODUCT_EXPORT_SLUG}-outstanding-balances`) {
     return [
       { label: "Assignments", value: rows.length },
       { label: "Amount due", value: moneySummary(sum("Amount due")) },
@@ -555,7 +556,7 @@ function cleanSpreadsheetText(value: string | number) {
 
 function cleanWorksheetName(value: string) {
   const cleaned = cleanSpreadsheetText(value).replaceAll(/[\\/*?:[\]]/g, " ").slice(0, 31).trim();
-  return cleaned || "XMETA Pay";
+  return cleaned || PRODUCT_NAME;
 }
 
 function addWorkbookMetadata(

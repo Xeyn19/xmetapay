@@ -1,10 +1,10 @@
-# XMETA Pay Database Schema Explanation
+# XMETA EDU Database Schema Explanation
 
-This document explains the purpose of the XMETA Pay database schema in `database/full-schema-v1.sql`. The schema extends the existing authentication database into the full project backend for company monitoring, school administration, parent access, student records, enrollment, fees, payments, receipts, wallet activity, store/canteen spending, and notifications.
+This document explains the purpose of the XMETA EDU database schema in `database/full-schema-v1.sql`. The schema extends the existing authentication database into the full project backend for company monitoring, school administration, parent access, student records, enrollment, fees, payments, receipts, wallet activity, store/canteen spending, and notifications.
 
 Related role guide: `ADMIN_ROLES.md` explains what company `super_admin`, `school_administrator`, `registrar`, and `finance_officer` accounts can do.
 
-The public entry and authentication screens reuse this foundation: admins and parents can register through their role-specific routes, while company super admins use the unlisted sign-in-only route `/login`. The landing page does not expose a company-login control; direct URL knowledge does not replace the existing company authentication and protected-route checks. Landing, authentication, recovery, and all three dashboard portals share a responsive XMETA Pay Light/Dark preference with a Dark first-visit default. The browser-local preference themes both operational surfaces and dashboard navigation, using a light sidebar in Light mode and XMETA charcoal in Dark mode. Parent top-level and nested routes share the same current-page treatment, while rows, selection cards, tabs, dialogs, and actions use semantic contrast-safe hover, selected, pressed, and focus surfaces. Admin report-download rows use the same semantic contrast treatment; disabled Admin table controls remain visibly inactive through opaque neutral surfaces instead of unreadable opacity, and Admin alerts/status badges use semantic state colors. The Tuition report no longer duplicates the non-tuition summary owned by the Other fees page; these presentation boundaries require no authentication or schema change.
+The public entry and authentication screens reuse this foundation: admins and parents can register through their role-specific routes, while company super admins use the unlisted sign-in-only route `/login`. The landing page does not expose a company-login control; direct URL knowledge does not replace the existing company authentication and protected-route checks. Landing, authentication, recovery, and all three dashboard portals share a responsive XMETA EDU Light/Dark preference with a Dark first-visit default. The browser-local preference themes both operational surfaces and dashboard navigation, using a light sidebar in Light mode and XMETA charcoal in Dark mode. Parent top-level and nested routes share the same current-page treatment, while rows, selection cards, tabs, dialogs, and actions use semantic contrast-safe hover, selected, pressed, and focus surfaces. Admin report-download rows use the same semantic contrast treatment; disabled Admin table controls remain visibly inactive through opaque neutral surfaces instead of unreadable opacity, and Admin alerts/status badges use semantic state colors. The Tuition report no longer duplicates the non-tuition summary owned by the Other fees page; these presentation boundaries require no authentication or schema change.
 
 Public authentication placeholders are instruction-only UI copy. They do not read from `users.email`, `users.phone`, or password hashes, and changing them requires no database import or schema field.
 
@@ -25,7 +25,7 @@ The database is split into two SQL files so the current authentication work stay
 
 The schema uses MySQL with XAMPP/phpMyAdmin in mind. Every table uses `InnoDB` so foreign keys work correctly, and `utf8mb4_unicode_ci` so names and school text can support broad characters. Money values use `DECIMAL(10,2)` instead of floating point numbers to avoid rounding errors.
 
-Most tables include indexes based on the screens XMETA Pay will need: student lookup, parent linked students, fee summaries, tuition reports, payment history, wallet ledgers, store reports, and notification history. The schema is intentionally additive, meaning it builds around the current auth backend without changing the working sign-in, sign-out, registration, session, and protected dashboard flow.
+Most tables include indexes based on the screens XMETA EDU will need: student lookup, parent linked students, fee summaries, tuition reports, payment history, wallet ledgers, store reports, and notification history. The schema is intentionally additive, meaning it builds around the current auth backend without changing the working sign-in, sign-out, registration, session, and protected dashboard flow.
 
 ## Existing Authentication Foundation
 
@@ -71,7 +71,7 @@ This stores school-side profile details for users with the `admin` role. It reco
 
 After a school administrator completes manual school setup, `admin_profiles.school_id` links the admin profile to the real `schools.id` record. The original `school_name` field remains useful for display, registration history, and fallback matching for older local accounts.
 
-School setup is shared across staff accounts. If a registrar or finance officer has the same exact `school_name`, XMETA Pay resolves that account to the existing `schools.id` and saves the matched `school_id` back to `admin_profiles`. This keeps staff accounts accurate after the first school administrator has finished setup. A future production version should use invite codes or school codes for stricter matching.
+School setup is shared across staff accounts. If a registrar or finance officer has the same exact `school_name`, XMETA EDU resolves that account to the existing `schools.id` and saves the matched `school_id` back to `admin_profiles`. This keeps staff accounts accurate after the first school administrator has finished setup. A future production version should use invite codes or school codes for stricter matching.
 
 ### `parent_profiles`
 
@@ -81,7 +81,7 @@ This stores parent-side profile details for users with the `parent` role. Parent
 
 ### `schools`
 
-Stores each school using XMETA Pay. This table is the top-level owner for most school data.
+Stores each school using XMETA EDU. This table is the top-level owner for most school data.
 
 Main purpose:
 

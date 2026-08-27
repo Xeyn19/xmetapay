@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/app/_components/theme-toggle";
 import { FlashToast } from "@/app/_components/flash-toast";
 import { superAdminLogoutAction } from "@/app/super-admin/actions";
 import type { AuthFlashToast } from "@/lib/auth/session";
+import { PRODUCT_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 type SuperAdminShellProps = {
@@ -111,7 +112,7 @@ export function SuperAdminShell({
         <div className="shrink-0 border-b border-sidebar-border px-4 pb-3 pt-4">
           <div className="mb-1.5 flex items-center gap-2.5">
             <BrandLogo size="compact" />
-            <span className="min-w-0 truncate text-sm font-bold tracking-[-0.02em]">XMETA Pay</span>
+            <span className="min-w-0 truncate text-sm font-bold tracking-[-0.02em]">{PRODUCT_NAME}</span>
           </div>
           <div className="space-y-0.5 text-[10.5px] leading-4 text-sidebar-foreground/55">
             <div className="truncate">Company monitoring</div>
