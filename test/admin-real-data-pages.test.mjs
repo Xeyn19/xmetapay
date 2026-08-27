@@ -164,7 +164,7 @@ test("admin real-data tables use working search filters plus spreadsheet and PDF
   assert.match(controls, /export function addBrandedPdfTable/);
   assert.match(controls, /export function finalizeBrandedPdf/);
   assert.match(controls, /\/xmetapay-logo\.jpg/);
-  assert.match(controls, /XMETA Pay/);
+  assert.match(controls, /PRODUCT_NAME/);
   assert.match(controls, /Page \$\{page\} of \$\{pageCount\}/);
   assert.match(controls, /Generating PDF/);
   assert.match(controls, /alternateRowStyles/);

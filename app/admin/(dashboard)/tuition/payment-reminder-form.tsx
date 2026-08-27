@@ -5,6 +5,7 @@ import { Eye, MailCheck, Send, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { sendPaymentReminderEmailsAction, type ReminderActionState } from "@/app/admin/reminders/actions";
+import { PRODUCT_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import {
   builtInPaymentReminderTemplates,
@@ -199,7 +200,7 @@ export function PaymentReminderForm({
                   />
                 </Field>
                 <p className="text-[11.5px] leading-5 text-[#5a6070]">
-                  A one-time override changes only this send. XMETA Pay still adds the protected fee statement and saves the rendered message, template name, and subject in reminder history.
+                  A one-time override changes only this send. {PRODUCT_NAME} still adds the protected fee statement and saves the rendered message, template name, and subject in reminder history.
                 </p>
 
                 <AdminButton
@@ -215,7 +216,7 @@ export function PaymentReminderForm({
                 {showPreview && selectedTemplate ? (
                   <div className="overflow-hidden rounded-lg border border-black/[0.08] bg-[#f7f8fa]">
                     <div className="bg-[#0f1117] px-4 py-3 text-white">
-                      <div className="text-[12.5px] font-bold">XMETA Pay email preview</div>
+                      <div className="text-[12.5px] font-bold">{PRODUCT_NAME} email preview</div>
                       <div className="mt-1 text-[10.5px] text-[#c7cad1]">Sample data only</div>
                     </div>
                     <div className="bg-white p-4">

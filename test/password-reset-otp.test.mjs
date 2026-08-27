@@ -94,7 +94,7 @@ test("password reset actions remain thin and redirect by role", () => {
 
 test("SMTP mailer sends a branded expiring OTP without logging it", () => {
   assert.match(mailer, /export async function sendPasswordResetOtpEmail/);
-  assert.match(mailer, /Your XMETA Pay password reset code/);
+  assert.match(mailer, /Your \$\{PRODUCT_NAME\} password reset code/);
   assert.match(mailer, /This code expires in 5 minutes/);
   assert.match(mailer, /Do not share it with anyone/);
   assert.match(mailer, /passwordResetOtpHtml/);

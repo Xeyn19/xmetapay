@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>XMETA Pay Visual Database Schema Plan</title>
+    <title>XMETA EDU Visual Database Schema Plan</title>
     <link rel="icon" href="/xmetapay-logo.jpg" type="image/jpeg" />
     <style>
       :root {
@@ -257,7 +257,7 @@
       <header>
         <div class="brand-lockup">
           <img class="brand-logo" src="/xmetapay-logo.jpg" alt="" width="48" height="48" data-brand-logo />
-          <h1>XMETA Pay Visual Database Schema Plan</h1>
+          <h1>XMETA EDU Visual Database Schema Plan</h1>
         </div>
         <p>
           A browser-viewable version of the full practical MVP database plan for
@@ -383,7 +383,7 @@
         </p>
         <div class="diagram-card large">
           <div class="diagram-actions">
-            <button type="button" data-diagram-download="svg" data-file-name="xmetapay-erd.svg">Download SVG</button>
+            <button type="button" data-diagram-download="svg" data-file-name="xmeta-edu-erd.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 erDiagram
@@ -883,7 +883,7 @@ flowchart TD
           return;
         }
 
-        const fileName = button.dataset.fileName || "xmetapay-diagram.svg";
+        const fileName = button.dataset.fileName || "xmeta-edu-diagram.svg";
         const svgText = serializeDiagramSvg(svg);
         saveBlob(
           new Blob([svgText], { type: "image/svg+xml;charset=utf-8" }),

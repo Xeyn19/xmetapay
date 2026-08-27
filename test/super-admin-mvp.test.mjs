@@ -86,7 +86,7 @@ test("company login gives clear credential and inactive-account guidance without
   assert.match(loginFlow, /feedbackId = Number\.isSafeInteger\(_state\.feedbackId\) \? _state\.feedbackId \+ 1 : 1/);
   assert.match(loginFlow, /return failure\(invalidCompanyLoginMessage\)/);
   assert.match(loginFlow, /verifyPassword\(password, user\.password_hash\)[\s\S]*user\.status !== "active"/);
-  assert.match(loginFlow, /Your company account is inactive\. Contact the XMETA Pay system administrator to restore access\./);
+  assert.match(loginFlow, /Your company account is inactive\. Contact the \$\{PRODUCT_NAME\} system administrator to restore access\./);
   assert.doesNotMatch(loginFlow, /Invalid company login details or inactive account\./);
   assert.match(loginForm, /toast\.error\("Unable to sign in"/);
   assert.match(loginForm, /\[state\.feedbackId, state\.message\]/);
@@ -212,7 +212,7 @@ test("shared Excel exporter builds branded formula-safe workbooks on demand", ()
   assert.match(tableControls, /export async function exportRowsToExcel/);
   assert.match(tableControls, /await import\("exceljs"\)/);
   assert.match(tableControls, /\/xmetapay-logo\.jpg/);
-  assert.match(tableControls, /workbook\.creator = "XMETA Pay"/);
+  assert.match(tableControls, /workbook\.creator = PRODUCT_NAME/);
   assert.match(tableControls, /fitToPage: true/);
   assert.match(tableControls, /worksheet\.views = \[\{ state: "frozen"/);
   assert.match(tableControls, /worksheet\.autoFilter/);

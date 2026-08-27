@@ -1,6 +1,6 @@
-# XMETA Pay Project Flowcharts
+# XMETA EDU Project Flowcharts
 
-This document explains the whole XMETA Pay project flow from the user side and the database side. It covers company super admin monitoring, plus how the admin/school portal and parent portal interact from registration through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, store/canteen purchase recording, report exports, and queued in-app reminder history.
+This document explains the whole XMETA EDU project flow from the user side and the database side. It covers company super admin monitoring, plus how the admin/school portal and parent portal interact from registration through student enrollment, guardian linking, fees, payments, receipts, wallet top-ups, store/canteen purchase recording, report exports, and queued in-app reminder history.
 
 Related documents:
 
@@ -23,7 +23,7 @@ Related documents:
 
 Implemented:
 
-- Responsive XMETA Pay public shell at `/` with only admin and parent portal choices plus one browser-remembered Light/Dark toggle that defaults to Dark across public, authentication, Admin, Parent, and Super Admin screens. Dashboard sidebars switch between light and XMETA charcoal semantic navigation surfaces while preserving orange active states; Parent receipt, student-detail, and wallet-result routes keep the correct navigation item current, and Parent rows, selection cards, tabs, dialogs, and actions retain readable hover, selected, press, and focus feedback in both themes.
+- Responsive XMETA EDU public shell at `/` with only admin and parent portal choices plus one browser-remembered Light/Dark toggle that defaults to Dark across public, authentication, Admin, Parent, and Super Admin screens. Dashboard sidebars switch between light and XMETA charcoal semantic navigation surfaces while preserving orange active states; Parent receipt, student-detail, and wallet-result routes keep the correct navigation item current, and Parent rows, selection cards, tabs, dialogs, and actions retain readable hover, selected, press, and focus feedback in both themes.
 - Company super admin login remains available through the unlisted direct route `/login`; the landing page does not link to it, while authentication and protected-route enforcement remain unchanged.
 - Company, Admin, and Parent login, registration, and recovery forms use neutral email/password instructions without displaying example or stored account addresses.
 - Admin/school registration and login.
@@ -117,7 +117,7 @@ flowchart TD
 
 Implemented.
 
-The company super admin is an XMETA Pay account, not a school staff account. It signs in at `/login`, where unknown email and wrong password share one safe, actionable message; inactive-account guidance appears only after password verification. It then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage and export filtered school admin accounts from `/super-admin/admin-accounts`, open read-only aggregate school profiles at `/super-admin/schools/[schoolId]`, and review or export filtered pending school admin registrations from `/super-admin/registrations`. School profiles show distinct current/total student and parent counts plus active-year enrollment and grade breakdowns without exposing parent/student directories or financial data.
+The company super admin is an XMETA EDU account, not a school staff account. It signs in at `/login`, where unknown email and wrong password share one safe, actionable message; inactive-account guidance appears only after password verification. It then uses the sidebar-based company workspace to monitor schools and a daily, weekly, monthly, or custom-date school-admin registration trend from `/super-admin/dashboard`, manage and export filtered school admin accounts from `/super-admin/admin-accounts`, open read-only aggregate school profiles at `/super-admin/schools/[schoolId]`, and review or export filtered pending school admin registrations from `/super-admin/registrations`. School profiles show distinct current/total student and parent counts plus active-year enrollment and grade breakdowns without exposing parent/student directories or financial data.
 
 ```mermaid
 flowchart TD
@@ -194,7 +194,7 @@ flowchart TD
   M["Admin opens /admin/login"] --> N["Find admin user by email or phone"]
   N --> O{"Password valid?"}
   O -->|No| P["Show invalid login error"]
-  O -->|Pending| P2["Show waiting for XMETA Pay approval"]
+  O -->|Pending| P2["Show waiting for XMETA EDU approval"]
   O -->|Disabled| P3["Show not approved or disabled message"]
   O -->|Yes and active| Q["Create DB-backed session and HttpOnly cookie"]
   Q --> R{"School setup complete?"}

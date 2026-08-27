@@ -1,6 +1,6 @@
-# XMETA Pay Backend Implementation Checklist
+# XMETA EDU Backend Implementation Checklist
 
-Use this checklist to move from the current auth-only backend into the full XMETA Pay database and dashboard backend step by step. Keep each phase small, test it, then move to the next one.
+Use this checklist to move from the current auth-only backend into the full XMETA EDU database and dashboard backend step by step. Keep each phase small, test it, then move to the next one.
 
 Source schema reference: `DATABASE_SCHEMA_PLAN.md`
 
@@ -15,7 +15,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Company super admin login exists at `/login`.
 - [x] Company login gives clear enumeration-safe credential feedback, explains inactive access only after password verification, and logout shows one confirmation toast.
 - [x] The public entry page routes school admins and parents to their own sign-in and registration pages while company access remains sign-in-only and unlisted at the direct `/login` route.
-- [x] Landing, role login/register, company login, and password recovery share the responsive dark XMETA Pay public shell without changing authentication contracts.
+- [x] Landing, role login/register, company login, and password recovery share the responsive dark XMETA EDU public shell without changing authentication contracts.
 - [x] All portal email and password placeholders use professional instruction-only copy without sample or stored user addresses.
 - [x] Public and authentication screens provide a remembered Light/Dark toggle with Dark as the first-visit default while dashboard interiors remain unchanged.
 - [x] Admin, Parent, and Super Admin dashboards share the same remembered Light/Dark preference, semantic operational surfaces, theme-aware charts and statuses, and adaptive light/charcoal sidebars.
@@ -199,7 +199,7 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 - [x] Show separate branded Excel and PDF report buttons on the Admin reports page while preserving legacy protected CSV URLs.
 - [x] Add pagination plus CSV and PDF filtered-row exports to real-data admin and parent tables.
 - [x] Keep the Tuition report focused on tuition data and manage non-tuition summaries through the dedicated Other fees page.
-- [x] Apply the shared XMETA Pay logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition report and Collection log.
+- [x] Apply the shared XMETA EDU logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition report and Collection log.
 - [x] Replace every visible Admin CSV control with branded Excel and apply the canonical logo, context, summaries, repeated headings, and page footers to protected report PDFs.
 - [x] Replace every visible Parent CSV control with branded Excel while retaining branded PDFs, filtered summaries, Removed recovery metadata, and nested Fee summary tuition terms.
 

@@ -1,8 +1,8 @@
-# XMETA Pay Admin Roles
+# XMETA EDU Admin Roles
 
-This guide explains the company super admin role and the three school/admin staff roles used by XMETA Pay.
+This guide explains the company super admin role and the three school/admin staff roles used by XMETA EDU.
 
-The public XMETA Pay entry page uses a shared dark charcoal, orange, and blue branded shell for school-admin and parent/guardian portal choices. The same responsive shell covers role login, registration, and password recovery. Company super admins use the unlisted direct route `/login`; the public landing page does not link to it, and no public company registration route exists. The unlisted URL is only a navigation choice—company authentication and protected-route checks remain authoritative.
+The public XMETA EDU entry page uses a shared dark charcoal, orange, and blue branded shell for school-admin and parent/guardian portal choices. The same responsive shell covers role login, registration, and password recovery. Company super admins use the unlisted direct route `/login`; the public landing page does not link to it, and no public company registration route exists. The unlisted URL is only a navigation choice—company authentication and protected-route checks remain authoritative.
 
 Email and password fields across company, Admin, and Parent login, registration, and recovery screens use neutral instructions such as “Enter your email address” instead of sample account addresses. Placeholders never display stored user values and do not change submitted field names or validation.
 
@@ -14,11 +14,11 @@ Company sign-in keeps unknown-email and wrong-password responses identical. When
 
 | Auth role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
-| `super_admin` | XMETA Pay company monitoring | Sign in at `/login`, review and export filtered pending school admin registrations, approve or reject admin access, view schools and school admin accounts, open aggregate school population profiles, export both account lists as branded Excel or PDF, enable or disable school admin access | View parent/student directories, manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
+| `super_admin` | XMETA EDU company monitoring | Sign in at `/login`, review and export filtered pending school admin registrations, approve or reject admin access, view schools and school admin accounts, open aggregate school population profiles, export both account lists as branded Excel or PDF, enable or disable school admin access | View parent/student directories, manage school records, enroll students, record payments, impersonate schools, or edit operational school data in MVP |
 
 The first company account is seeded through a local-only SQL file after importing the `super_admin` role migration. That seed file lives under `database/local/`, is ignored by Git, and should be deleted after phpMyAdmin import.
 
-The company super admin area uses a sidebar-based XMETA Pay workspace. `/super-admin/dashboard` is for company monitoring and a filterable school-admin registration trend with daily, weekly, monthly, and custom date views, `/super-admin/admin-accounts` is for school admin enable/disable management, `/super-admin/schools/[schoolId]` is a read-only aggregate school profile for current and total student/parent counts plus enrollment and grade breakdowns, and `/super-admin/registrations` is for pending school admin approval. School profiles never expose parent or student names, contacts, payments, or financial records.
+The company super admin area uses a sidebar-based XMETA EDU workspace. `/super-admin/dashboard` is for company monitoring and a filterable school-admin registration trend with daily, weekly, monthly, and custom date views, `/super-admin/admin-accounts` is for school admin enable/disable management, `/super-admin/schools/[schoolId]` is a read-only aggregate school profile for current and total student/parent counts plus enrollment and grade breakdowns, and `/super-admin/registrations` is for pending school admin approval. School profiles never expose parent or student names, contacts, payments, or financial records.
 
 New school/admin registrations start as `pending`. They cannot sign in or start school setup until a company super admin approves them from `/super-admin/registrations`. Rejecting a registration keeps the account record but changes `users.status` to `disabled`.
 
@@ -28,13 +28,13 @@ All school staff accounts sign in through the admin/school portal, but their das
 
 Finance pages include tuition, collections, other fees, allowance, store transactions, reports. The Collections page is tuition-focused; wallet activity belongs to Allowance ledger and store spending belongs to Store transactions.
 
-Browser-generated table PDFs use the shared XMETA Pay logo, orange report styling, generated time, filtered record count, repeated table headings, and page numbering. Every visible school Admin and company Super Admin PDF control uses the outlined XMETA red/orange treatment in both themes, while Excel retains its existing primary treatment. Every visible school Admin table export pairs that branded PDF with branded Excel containing the authenticated school, selected school year, active filters, counts, and applicable totals. The protected Reports page also serves branded Excel/PDF from server-owned report queries with the same PDF control hierarchy.
+Browser-generated table PDFs use the shared XMETA EDU logo, orange report styling, generated time, filtered record count, repeated table headings, and page numbering. Every visible school Admin and company Super Admin PDF control uses the outlined XMETA red/orange treatment in both themes, while Excel retains its existing primary treatment. Every visible school Admin table export pairs that branded PDF with branded Excel containing the authenticated school, selected school year, active filters, counts, and applicable totals. The protected Reports page also serves branded Excel/PDF from server-owned report queries with the same PDF control hierarchy.
 
 Landing, authentication, password recovery, and every company, school Admin, and Parent dashboard share one remembered Light/Dark presentation toggle. Dark is the first-visit default, the preference is browser-local, and role permissions are unaffected. Dashboard sidebars use white semantic navigation surfaces in Light mode and XMETA charcoal surfaces in Dark mode; orange active and focus states remain consistent. School Admin table, export, pagination, and bulk-action controls use opaque semantic neutral colors while disabled, and Admin alerts plus status badges use contrast-safe semantic state colors in both themes. Parent navigation additionally keeps one explicit current-page state across dashboard, student, fee, receipt, history, and nested wallet routes, with uniform hover and pressed feedback. Parent rows, payment-method cards, tabs, dialogs, and secondary controls use semantic hover and selected surfaces so their labels retain contrast in both themes.
 
 Admin Financial reports download rows use the shared semantic dashboard surfaces so report names and descriptions remain readable during hover in both themes. The Tuition report stays focused on tuition assignments and reminders; non-tuition summaries remain on the dedicated Other fees page.
 
-The company account screens, every school Admin table, and every export-enabled Parent table replace visible plain CSV controls with branded Excel workbooks. Excel files use the same filtered rows and columns as PDF, add the XMETA Pay logo and report context, and freeze and filter the data headings. Parent Fee summary, Payment history, dashboard recent payments, and wallet activity export all filtered authorized rows as branded Excel/PDF. Protected legacy Reports-page CSV URLs remain compatible even though the UI presents Excel/PDF.
+The company account screens, every school Admin table, and every export-enabled Parent table replace visible plain CSV controls with branded Excel workbooks. Excel files use the same filtered rows and columns as PDF, add the XMETA EDU logo and report context, and freeze and filter the data headings. Parent Fee summary, Payment history, dashboard recent payments, and wallet activity export all filtered authorized rows as branded Excel/PDF. Protected legacy Reports-page CSV URLs remain compatible even though the UI presents Excel/PDF.
 
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
@@ -71,7 +71,7 @@ Only a school administrator can complete `Set up school records`. After approval
 Ask a school administrator to complete school setup first.
 ```
 
-School setup is school-wide, not per staff account. After the school administrator saves setup, XMETA Pay links other unlinked `admin_profiles` with the same exact `school_name` to the same `schools.id`. New registrar and finance accounts also try to join the existing school context during registration. That means a registrar should not need to repeat setup when the school administrator already completed it for the same school name.
+School setup is school-wide, not per staff account. After the school administrator saves setup, XMETA EDU links other unlinked `admin_profiles` with the same exact `school_name` to the same `schools.id`. New registrar and finance accounts also try to join the existing school context during registration. That means a registrar should not need to repeat setup when the school administrator already completed it for the same school name.
 
 For the MVP, this matching uses the exact school name from admin registration. A future production improvement should use a school invite code or required school code during staff registration so staff can join the correct school even when two schools have similar names.
 
@@ -88,7 +88,7 @@ Only one school year is still the active/current year. For MVP safety, operation
 3. The approved school administrator signs in and completes setup-only onboarding.
 4. The school administrator reviews and edits all school years from `School setup`.
 5. The school administrator can prepare a manual rollover by explicitly selecting one or many source-year students, reviewing each target placement, and saving only checked students.
-6. When the next year is ready, the school administrator activates it; XMETA Pay closes the previous active year.
+6. When the next year is ready, the school administrator activates it; XMETA EDU closes the previous active year.
 7. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
 8. New operational history rows are stamped with the active school year where supported.
 9. Registrar and finance officer accounts with the same school name are linked to the existing school context.

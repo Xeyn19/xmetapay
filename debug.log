@@ -1,0 +1,4 @@
+[0827/162959.028:ERROR:net\base\network_change_notifier_win.cc:213] WSALookupServiceBegin failed with: -1
+[0827/162959.794:ERROR:gpu\ipc\client\command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+[0827/163220.880:ERROR:net\base\network_change_notifier_win.cc:213] WSALookupServiceBegin failed with: -1
+[0827/163222.129:ERROR:gpu\ipc\client\command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.

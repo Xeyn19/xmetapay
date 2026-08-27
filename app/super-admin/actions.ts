@@ -7,6 +7,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { pool } from "@/lib/auth/db";
 import { createSession, deleteSession, requireSuperAdmin, setAuthFlashToast } from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password.mjs";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export type SuperAdminLoginState = {
   message: string;
@@ -64,7 +65,7 @@ export async function superAdminLoginAction(
     }
 
     if (user.status !== "active") {
-      return failure("Your company account is inactive. Contact the XMETA Pay system administrator to restore access.");
+      return failure(`Your company account is inactive. Contact the ${PRODUCT_NAME} system administrator to restore access.`);
     }
 
     await pool.execute(
