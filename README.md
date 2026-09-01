@@ -25,6 +25,12 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Database Setup
+
+- Local XAMPP/phpMyAdmin setup follows the canonical import order in `database/README.md`.
+- For a new empty cPanel database, select the exact target in phpMyAdmin and import `utilities/database/xmetapay-production-schema.sql`.
+- The production bundle contains schema only and does not create the cPanel database, insert accounts or application records, or upgrade an existing live database.
+
 ## Scripts
 
 ```bash
@@ -42,7 +48,6 @@ npm run test:e2e     # Run Playwright tests
 - The app uses Next.js 16, React 19, TypeScript, and Tailwind CSS.
 - Authentication, permissions, and data access remain role- and school-scoped.
 - End-to-end tests live in `e2e/`.
-- A schema-only cPanel/phpMyAdmin import for a new empty production database lives at `utilities/database/xmetapay-production-schema.sql`; see the adjacent README before importing it.
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
