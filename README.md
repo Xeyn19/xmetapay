@@ -42,7 +42,8 @@ npm run test:e2e     # Run Playwright tests
 - The app uses Next.js 16, React 19, TypeScript, and Tailwind CSS.
 - Authentication, permissions, and data access remain role- and school-scoped.
 - End-to-end tests live in `e2e/`.
+- A schema-only cPanel/phpMyAdmin import for a new empty production database lives at `utilities/database/xmetapay-production-schema.sql`; see the adjacent README before importing it.
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
-Last updated: 2026-08-27
+Last updated: 2026-09-01

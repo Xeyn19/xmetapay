@@ -105,6 +105,10 @@ Parents can top up one or as many as 20 linked student wallets in one reviewed b
 
 Payment reminder email delivery is a finance action. School administrators manage school-owned templates from School setup; protected XMETA defaults remain available, and finance officers can select active templates without editing them. School administrators and finance officers can send immediate, itemized email reminders to linked parent addresses for open or partial balances. Template placeholders are allowlisted and escaped, while the student reference, balances, official assignment deadlines, tuition terms, and parent action remain a locked server-generated statement. New rows use `channel = 'email'`, snapshot the rendered subject, message, and template name, and move from `queued` to `sent` with `sent_at` or `failed`. SMTP credentials remain environment-only. Archive/restore, same-day duplicate protection, and failed retry behavior remain unchanged; registrars cannot manage templates or reminders. SMS, scheduled delivery, and delivery webhooks remain future work.
 
+## Database Deployment Responsibility
+
+Production schema import is an infrastructure operation, not an application permission. No `super_admin`, school administrator, registrar, finance officer, or parent screen can import the schema. An authorized deployer selects a new empty cPanel database in phpMyAdmin and imports `utilities/database/xmetapay-production-schema.sql`; normal application startup never changes the schema.
+
 ## Database Source
 
 The company/school portal role is stored in:

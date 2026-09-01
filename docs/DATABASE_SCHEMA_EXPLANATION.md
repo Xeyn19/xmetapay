@@ -21,6 +21,12 @@ The database is split into two SQL files so the current authentication work stay
    - Assumes the authentication tables already exist.
    - Does not include seed data, real school data, real student data, credentials, or payment records.
 
+## Production cPanel/phpMyAdmin Import
+
+`utilities/database/xmetapay-production-schema.sql` combines the current authentication and application table definitions for a new empty production database. It includes all tables, indexes, foreign keys, and guarded schema compatibility statements, but no account, school, student, payment, seed, or other row data. The two files under `database/` remain canonical, and an automated freshness test ensures the generated bundle matches them.
+
+The bundle omits `CREATE DATABASE` and `USE xmetapay_db` because cPanel commonly prefixes database names. The deployer creates the database and user in cPanel, selects the exact empty target in phpMyAdmin, and imports the bundle. It must not be used as a shortcut for upgrading a live database with records; those changes still require individually reviewed migrations and a verified backup. No application role or startup path can invoke schema import.
+
 ## Design Principles
 
 The schema uses MySQL with XAMPP/phpMyAdmin in mind. Every table uses `InnoDB` so foreign keys work correctly, and `utf8mb4_unicode_ci` so names and school text can support broad characters. Money values use `DECIMAL(10,2)` instead of floating point numbers to avoid rounding errors.

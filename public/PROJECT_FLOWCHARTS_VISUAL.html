@@ -946,6 +946,21 @@ flowchart TD
       </section>
 
       <section>
+        <h2>Production Database Import</h2>
+        <div class="diagram-card">
+          <p><strong>Implemented fresh-install asset:</strong> an authorized deployer selects a new empty cPanel database in phpMyAdmin and imports the schema-only bundle. It contains no accounts or application row data. Existing live databases require reviewed migrations instead, and application startup never applies schema changes.</p>
+          <pre class="mermaid">
+flowchart TD
+  A["Create database and user in cPanel"] --> B["Select exact empty database in phpMyAdmin"]
+  B --> C["Import xmetapay-production-schema.sql"]
+  C --> D["Create all current tables, indexes, and foreign keys"]
+  D --> E["Verify schema and configure MYSQL environment values"]
+  B -->|Target already has live data| F["Stop and use reviewed migrations with a backup"]
+          </pre>
+        </div>
+      </section>
+
+      <section>
         <h2>Manual Testing Order</h2>
         <table>
           <thead>
