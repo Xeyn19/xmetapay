@@ -1,6 +1,16 @@
 # XMETA EDU Database Setup
 
-Use these SQL files for local XAMPP/phpMyAdmin setup.
+These files are the canonical XMETA EDU schema source. Use the manual import order below for local XAMPP/phpMyAdmin setup. A generated, schema-only bundle for a new empty cPanel/phpMyAdmin database is available at `utilities/database/xmetapay-production-schema.sql`.
+
+## Production cPanel/phpMyAdmin Import
+
+Create the production database and user in cPanel first. In phpMyAdmin, select that exact empty database and import:
+
+```text
+utilities/database/xmetapay-production-schema.sql
+```
+
+The bundle creates the complete current table structure without inserting accounts or application data. It omits `CREATE DATABASE` and `USE xmetapay_db`, so it works with cPanel-prefixed database names after the target is selected. Do not import this fresh-install bundle over an existing live database as a replacement for reviewed migrations. See `utilities/database/README.md` for the safe import steps.
 
 ## Import Order
 

@@ -926,6 +926,12 @@ flowchart TD
 10. Build branded Excel and PDF report exports from existing operational queries and authorized filtered dashboard rows instead of adding report storage tables; retain protected Admin CSV URLs only for compatibility.
 11. Add SMS, scheduled/background delivery, webhooks, bounce handling, and report alerts later.
 
+## Production Fresh-Schema Import
+
+The canonical bootstrap SQL stays under `database/`. `utilities/database/xmetapay-production-schema.sql` is a generated schema-only bundle for importing all current tables into a new empty cPanel/phpMyAdmin database. It contains no row data and omits database creation and selection statements so cPanel-prefixed names remain under the deployer's control.
+
+The bundle is checked against both canonical schema files and rejected by tests if it contains insert, update, delete, bulk-load, table-drop, database-drop, or truncate statements. It is not an upgrade mechanism for an existing database. Application startup and every portal role remain unable to import or modify the schema.
+
 ## MySQL/XAMPP Notes
 
 - Use InnoDB so foreign keys work correctly.
@@ -934,3 +940,4 @@ flowchart TD
 - Keep authentication secrets in `.env`, not in SQL or Markdown.
 - Do not commit real parent, student, school, payment, or credential data.
 - Add full SQL migrations only after reviewing this plan and confirming the app screens that should become database-backed first.
+- Provision production databases and backups through the hosting provider; the fresh-schema bundle does not create databases, seed accounts, export data, upgrade live records, or perform automatic backups.

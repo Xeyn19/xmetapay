@@ -70,8 +70,11 @@ Done when: the full database structure exists locally and auth still works.
 - [x] Keep foreign keys and indexes from `DATABASE_SCHEMA_PLAN.md`.
 - [x] Add a short `database/README.md` explaining import order.
 - [x] Verify the SQL imports cleanly in XAMPP/phpMyAdmin.
+- [x] Add one schema-only cPanel/phpMyAdmin bundle containing every current table, index, and foreign key.
+- [x] Keep cPanel database creation and selection outside the SQL so prefixed database names work safely.
+- [x] Verify the generated bundle stays aligned with both canonical schema files and contains no row-data or destructive statements.
 
-Done when: the full schema can be imported from a clean local database without errors.
+Done when: the full schema can be imported locally or into a new empty cPanel database without application startup changing schema or committed SQL inserting real data.
 
 ## Phase 2: School Setup Backend
 

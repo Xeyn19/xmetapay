@@ -32,6 +32,7 @@ Implemented:
 - Logout and protected dashboard redirects.
 - Local MySQL/XAMPP database connection through environment variables.
 - Full schema import through `database/full-schema-v1.sql`.
+- Schema-only production import for a new empty cPanel/phpMyAdmin database through `utilities/database/xmetapay-production-schema.sql`.
 - Manual school setup by `school_administrator`.
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Company super admin approval for new school admin registrations.
@@ -830,6 +831,20 @@ flowchart TD
 ```
 
 Company account screens, all school Admin table/report exports, and the Parent Fee summary, Payment history, dashboard recent payments, and wallet activity tables use branded Excel/PDF. Parent Current, Archived, and Removed exports remain isolated and preserve their existing financial and recovery details.
+
+## Production Database Import Flow
+
+This fresh-install infrastructure flow is outside every company, school, and parent portal. Application startup never runs it, and existing live databases require reviewed migrations instead.
+
+```mermaid
+flowchart TD
+  A["Create database and user in cPanel"] --> B["Open phpMyAdmin and select exact empty database"]
+  B --> C["Import xmetapay-production-schema.sql"]
+  C --> D["Create authentication and application tables only"]
+  D --> E["Verify tables, indexes, and foreign keys"]
+  E --> F["Configure deployment MYSQL environment values"]
+  B -->|Existing live database| G["Stop and use reviewed migrations with a verified backup"]
+```
 
 ## Practical Testing Flow
 
