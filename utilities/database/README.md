@@ -1,15 +1,15 @@
-# cPanel/phpMyAdmin production schema
+# Production hosted-database schema
 
-Import `xmetapay-production-schema.sql` when setting up a new, empty production database in cPanel/phpMyAdmin. It contains the complete current table structure, indexes, foreign keys, and guarded compatibility statements, but no seed accounts or application row data.
+Import `xmetapay-production-schema.sql` when setting up a new, empty GoDaddy Hosted Database or cPanel/phpMyAdmin database. It contains the complete current table structure, indexes, foreign keys, and guarded compatibility statements, but no seed accounts or application row data.
 
 ## Safe import
 
-1. Create the production database and database user in cPanel.
-2. Grant that user the required privileges for the database.
-3. Open phpMyAdmin and select the exact empty target database in the left sidebar.
+1. Provision the production database through GoDaddy Hosted Database, or create the database and privileged user in cPanel.
+2. Open GoDaddy's **Import SQL** action or select the exact empty cPanel target in phpMyAdmin.
+3. Confirm the selected target is new and empty.
 4. Make a recoverable backup if the target has ever been used.
 5. Use **Import** and upload `xmetapay-production-schema.sql`.
-6. Confirm the import completed without errors, then configure the app's deployment-only `MYSQL_*` environment values.
+6. Confirm the import completed without errors. GoDaddy Hosted Database injects `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`; other deployments can supply those names or the compatible `MYSQL_*` fallback values.
 
 The bundle deliberately contains no `CREATE DATABASE` or `USE xmetapay_db` statement because cPanel often prefixes database names. It never drops or truncates tables and contains no `INSERT`, `UPDATE`, `DELETE`, `REPLACE`, or `LOAD DATA` statements. Do not use this fresh-install bundle as a substitute for a reviewed migration on a database that already contains application tables or real records.
 

@@ -21,11 +21,13 @@ The database is split into two SQL files so the current authentication work stay
    - Assumes the authentication tables already exist.
    - Does not include seed data, real school data, real student data, credentials, or payment records.
 
-## Production cPanel/phpMyAdmin Import
+## Production Hosted Database or cPanel Import
 
-`utilities/database/xmetapay-production-schema.sql` combines the current authentication and application table definitions for a new empty production database. It includes all tables, indexes, foreign keys, and guarded schema compatibility statements, but no account, school, student, payment, seed, or other row data. The two files under `database/` remain canonical, and an automated freshness test ensures the generated bundle matches them.
+`utilities/database/xmetapay-production-schema.sql` combines the current authentication and application table definitions for a new empty GoDaddy Hosted Database or cPanel database. It includes all tables, indexes, foreign keys, and guarded schema compatibility statements, but no account, school, student, payment, seed, or other row data. The two files under `database/` remain canonical, and an automated freshness test ensures the generated bundle matches them.
 
-The bundle omits `CREATE DATABASE` and `USE xmetapay_db` because cPanel commonly prefixes database names. The deployer creates the database and user in cPanel, selects the exact empty target in phpMyAdmin, and imports the bundle. It must not be used as a shortcut for upgrading a live database with records; those changes still require individually reviewed migrations and a verified backup. No application role or startup path can invoke schema import.
+The bundle omits `CREATE DATABASE` and `USE xmetapay_db` so the hosting provider controls the target. The deployer uses GoDaddy Hosted Database's **Import SQL** action or selects the exact empty cPanel target in phpMyAdmin before importing. It must not be used as a shortcut for upgrading a live database with records; those changes still require individually reviewed migrations and a verified backup. No application role or startup path can invoke schema import.
+
+The runtime connection layer is compatible with both supported environments without changing the schema. GoDaddy Hosted Database injects `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`, which take precedence in production. Local XAMPP uses the matching `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` values from an ignored environment file.
 
 ## Design Principles
 

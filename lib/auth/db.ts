@@ -17,11 +17,11 @@ if (!isProduction) {
 
 function createDatabasePool() {
   return mysql.createPool({
-    host: envValue("MYSQL_HOST", "127.0.0.1"),
-    port: Number(process.env.MYSQL_PORT || "3306"),
-    database: envValue("MYSQL_DATABASE", "xmetapay_db"),
-    user: envValue("MYSQL_USER", "root"),
-    password: envValue("MYSQL_PASSWORD", ""),
+    host: envValue("DB_HOST", "MYSQL_HOST", "127.0.0.1"),
+    port: Number(envValue("DB_PORT", "MYSQL_PORT", "3306")),
+    database: envValue("DB_NAME", "MYSQL_DATABASE", "xmetapay_db"),
+    user: envValue("DB_USER", "MYSQL_USER", "root"),
+    password: envValue("DB_PASSWORD", "MYSQL_PASSWORD", ""),
     waitForConnections: true,
     connectionLimit: 10,
     maxIdle: 10,
@@ -31,15 +31,15 @@ function createDatabasePool() {
   });
 }
 
-function envValue(name: string, localFallback: string) {
-  const value = process.env[name];
+function envValue(hostedName: string, localName: string, localFallback: string) {
+  const value = process.env[hostedName] || process.env[localName];
 
   if (value !== undefined && value !== "") {
     return value;
   }
 
   if (isProduction && !isProductionBuild) {
-    throw new Error(`${name} must be set in production.`);
+    throw new Error(`${hostedName} or ${localName} must be set in production.`);
   }
 
   return localFallback;

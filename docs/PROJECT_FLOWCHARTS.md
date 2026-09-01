@@ -30,9 +30,9 @@ Implemented:
 - Parent registration and login.
 - Role-specific email OTP password recovery for active company, admin, and parent accounts.
 - Logout and protected dashboard redirects.
-- Local MySQL/XAMPP database connection through environment variables.
+- Provider-aware MySQL connection through injected GoDaddy Hosted Database `DB_*` values in production and ignored local `MYSQL_*` values for XAMPP.
 - Full schema import through `database/full-schema-v1.sql`.
-- Schema-only production import for a new empty cPanel/phpMyAdmin database through `utilities/database/xmetapay-production-schema.sql`.
+- Schema-only production import for a new empty GoDaddy Hosted Database or cPanel/phpMyAdmin database through `utilities/database/xmetapay-production-schema.sql`.
 - Manual school setup by `school_administrator`.
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Company super admin approval for new school admin registrations.
@@ -838,11 +838,11 @@ This fresh-install infrastructure flow is outside every company, school, and par
 
 ```mermaid
 flowchart TD
-  A["Create database and user in cPanel"] --> B["Open phpMyAdmin and select exact empty database"]
+  A["Provision GoDaddy Hosted DB or cPanel database"] --> B["Open Import SQL or select exact empty database"]
   B --> C["Import xmetapay-production-schema.sql"]
   C --> D["Create authentication and application tables only"]
   D --> E["Verify tables, indexes, and foreign keys"]
-  E --> F["Configure deployment MYSQL environment values"]
+  E --> F["Use injected GoDaddy DB values or local MYSQL values"]
   B -->|Existing live database| G["Stop and use reviewed migrations with a verified backup"]
 ```
 

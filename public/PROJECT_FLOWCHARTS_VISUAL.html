@@ -948,13 +948,13 @@ flowchart TD
       <section>
         <h2>Production Database Import</h2>
         <div class="diagram-card">
-          <p><strong>Implemented fresh-install asset:</strong> an authorized deployer selects a new empty cPanel database in phpMyAdmin and imports the schema-only bundle. It contains no accounts or application row data. Existing live databases require reviewed migrations instead, and application startup never applies schema changes.</p>
+          <p><strong>Implemented fresh-install asset:</strong> an authorized deployer imports the schema-only bundle into a new empty GoDaddy Hosted Database or an explicitly selected empty cPanel database. It contains no accounts or application row data. Existing live databases require reviewed migrations instead, and application startup never applies schema changes. At runtime, injected GoDaddy Hosted Database <code>DB_*</code> values take precedence while ignored local <code>MYSQL_*</code> values keep XAMPP development compatible.</p>
           <pre class="mermaid">
 flowchart TD
-  A["Create database and user in cPanel"] --> B["Select exact empty database in phpMyAdmin"]
+  A["Provision GoDaddy Hosted DB or cPanel database"] --> B["Open Import SQL or select exact empty database"]
   B --> C["Import xmetapay-production-schema.sql"]
   C --> D["Create all current tables, indexes, and foreign keys"]
-  D --> E["Verify schema and configure MYSQL environment values"]
+  D --> E["Verify schema and use hosted DB or local MYSQL values"]
   B -->|Target already has live data| F["Stop and use reviewed migrations with a backup"]
           </pre>
         </div>

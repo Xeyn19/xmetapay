@@ -28,8 +28,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Database Setup
 
 - Local XAMPP/phpMyAdmin setup follows the canonical import order in `database/README.md`.
-- For a new empty cPanel database, select the exact target in phpMyAdmin and import `utilities/database/xmetapay-production-schema.sql`.
-- The production bundle contains schema only and does not create the cPanel database, insert accounts or application records, or upgrade an existing live database.
+- For a new empty GoDaddy Hosted Database, use its **Import SQL** action with `utilities/database/xmetapay-production-schema.sql`; the same bundle can be imported into an explicitly selected empty cPanel database through phpMyAdmin.
+- The production bundle contains schema only and does not create or select the database, insert accounts or application records, or upgrade an existing live database.
+- Database runtime configuration prefers GoDaddy Hosted Database's injected `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`; local XAMPP development continues to use the corresponding `MYSQL_*` values from an ignored `.env` file.
 
 ## Scripts
 

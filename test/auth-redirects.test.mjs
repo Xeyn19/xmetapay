@@ -108,11 +108,16 @@ test("auth sessions are database-backed and never expose raw tokens", () => {
   assert.match(fullSchema, /CREATE TABLE IF NOT EXISTS auth_sessions/);
   assert.match(envExample, /AUTH_SESSION_DAYS=1/);
 
-  assert.match(authDb, /function envValue\(name: string, localFallback: string\)/);
-  assert.match(authDb, /port: Number\(process\.env\.MYSQL_PORT \|\| "3306"\)/);
+  assert.match(authDb, /host: envValue\("DB_HOST", "MYSQL_HOST", "127\.0\.0\.1"\)/);
+  assert.match(authDb, /port: Number\(envValue\("DB_PORT", "MYSQL_PORT", "3306"\)\)/);
+  assert.match(authDb, /database: envValue\("DB_NAME", "MYSQL_DATABASE", "xmetapay_db"\)/);
+  assert.match(authDb, /user: envValue\("DB_USER", "MYSQL_USER", "root"\)/);
+  assert.match(authDb, /password: envValue\("DB_PASSWORD", "MYSQL_PASSWORD", ""\)/);
+  assert.match(authDb, /function envValue\(hostedName: string, localName: string, localFallback: string\)/);
+  assert.match(authDb, /process\.env\[hostedName\] \|\| process\.env\[localName\]/);
   assert.match(authDb, /process\.env\.NEXT_PHASE === "phase-production-build"/);
   assert.match(authDb, /isProduction && !isProductionBuild/);
-  assert.match(authDb, /throw new Error\(`\$\{name\} must be set in production\.`\)/);
+  assert.match(authDb, /throw new Error\(`\$\{hostedName\} or \$\{localName\} must be set in production\.`\)/);
   assert.match(authDb, /globalForDatabase\.xmetaPayDatabasePool \?\? createDatabasePool\(\)/);
   assert.match(authDb, /if \(!isProduction\) \{[\s\S]*globalForDatabase\.xmetaPayDatabasePool = pool/);
   assert.match(authDb, /connectionLimit: 10/);

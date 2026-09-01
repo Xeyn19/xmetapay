@@ -107,7 +107,9 @@ Payment reminder email delivery is a finance action. School administrators manag
 
 ## Database Deployment Responsibility
 
-Production schema import is an infrastructure operation, not an application permission. No `super_admin`, school administrator, registrar, finance officer, or parent screen can import the schema. An authorized deployer selects a new empty cPanel database in phpMyAdmin and imports `utilities/database/xmetapay-production-schema.sql`; normal application startup never changes the schema.
+Production schema import is an infrastructure operation, not an application permission. No `super_admin`, school administrator, registrar, finance officer, or parent screen can import the schema. An authorized deployer imports `utilities/database/xmetapay-production-schema.sql` into a new empty GoDaddy Hosted Database or an explicitly selected empty cPanel database; normal application startup never changes the schema.
+
+Database connection settings are also infrastructure-owned. GoDaddy Hosted Database injects `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` for the runtime, while local XAMPP development uses ignored `MYSQL_*` values. No portal role can view or change these credentials.
 
 ## Database Source
 
