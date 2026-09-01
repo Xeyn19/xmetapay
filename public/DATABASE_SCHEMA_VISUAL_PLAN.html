@@ -806,12 +806,12 @@ flowchart TD
       <section>
         <h2>Production Fresh-Schema Import</h2>
         <div class="diagram-card">
-          <p>The SQL under <code>database/</code> remains canonical. The generated <code>xmetapay-production-schema.sql</code> bundle gives cPanel/phpMyAdmin one schema-only import for a new empty database. It omits database targeting and all account or application row data, and it never runs during application startup.</p>
+          <p>The SQL under <code>database/</code> remains canonical. The generated <code>xmetapay-production-schema.sql</code> bundle gives GoDaddy Hosted Database or cPanel/phpMyAdmin one schema-only import for a new empty database. It omits database targeting and all account or application row data, and it never runs during application startup. Connection configuration is separate from schema import: GoDaddy Hosted Database injects preferred <code>DB_*</code> runtime values, with ignored local <code>MYSQL_*</code> values retained for XAMPP.</p>
           <pre class="mermaid">
 flowchart LR
   A["auth-schema.sql"] --> C["Generated schema-only bundle"]
   B["full-schema-v1.sql"] --> C
-  C --> D["Selected empty cPanel database"]
+  C --> D["Selected empty hosted database"]
   D --> E["All current tables, indexes, and foreign keys"]
           </pre>
           <p>Automated tests keep the bundle aligned with the canonical files and reject row-data or destructive statements. Existing databases with records still require reviewed migrations and a verified backup.</p>

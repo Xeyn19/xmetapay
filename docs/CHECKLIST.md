@@ -35,6 +35,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Protected admin and parent dashboards redirect correctly.
 - [x] Admin/school staff roles are documented and enforced for key pages/actions.
 - [x] Local database environment file is ignored by Git.
+- [x] Prefer GoDaddy Hosted Database's injected `DB_*` credentials in production while preserving ignored local `MYSQL_*` values for XAMPP development.
 - [x] Auth uses database-backed `auth_sessions` with hashed tokens and logout revocation.
 - [x] Active admin, parent, and company accounts support SMTP-delivered six-digit OTP password recovery with expiry, resend cooldown, attempt limits, and session revocation.
 - [x] Admin dashboard pages use MySQL-backed reads where tables exist, with honest pending/empty states where feature data is not created yet.
@@ -70,7 +71,7 @@ Done when: the full database structure exists locally and auth still works.
 - [x] Keep foreign keys and indexes from `DATABASE_SCHEMA_PLAN.md`.
 - [x] Add a short `database/README.md` explaining import order.
 - [x] Verify the SQL imports cleanly in XAMPP/phpMyAdmin.
-- [x] Add one schema-only cPanel/phpMyAdmin bundle containing every current table, index, and foreign key.
+- [x] Add one schema-only production bundle for GoDaddy Hosted Database or cPanel/phpMyAdmin containing every current table, index, and foreign key.
 - [x] Keep cPanel database creation and selection outside the SQL so prefixed database names work safely.
 - [x] Verify the generated bundle stays aligned with both canonical schema files and contains no row-data or destructive statements.
 

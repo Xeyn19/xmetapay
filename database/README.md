@@ -1,16 +1,18 @@
 # XMETA EDU Database Setup
 
-These files are the canonical XMETA EDU schema source. Use the manual import order below for local XAMPP/phpMyAdmin setup. A generated, schema-only bundle for a new empty cPanel/phpMyAdmin database is available at `utilities/database/xmetapay-production-schema.sql`.
+These files are the canonical XMETA EDU schema source. Use the manual import order below for local XAMPP/phpMyAdmin setup. A generated, schema-only bundle for a new empty GoDaddy Hosted Database or cPanel/phpMyAdmin database is available at `utilities/database/xmetapay-production-schema.sql`.
 
-## Production cPanel/phpMyAdmin Import
+## Production Hosted Database or cPanel Import
 
-Create the production database and user in cPanel first. In phpMyAdmin, select that exact empty database and import:
+For GoDaddy Hosted Database, open its **Import SQL** action. For cPanel, create the production database and user first, then select that exact empty database in phpMyAdmin. Import:
 
 ```text
 utilities/database/xmetapay-production-schema.sql
 ```
 
-The bundle creates the complete current table structure without inserting accounts or application data. It omits `CREATE DATABASE` and `USE xmetapay_db`, so it works with cPanel-prefixed database names after the target is selected. Do not import this fresh-install bundle over an existing live database as a replacement for reviewed migrations. See `utilities/database/README.md` for the safe import steps.
+Schema import does not configure the runtime connection. GoDaddy Hosted Database injects preferred `DB_*` credentials automatically, while local XAMPP continues to use ignored `MYSQL_*` environment values.
+
+The bundle creates the complete current table structure without inserting accounts or application data. It omits `CREATE DATABASE` and `USE xmetapay_db`, so the hosting provider keeps control of the target database. Do not import this fresh-install bundle over an existing live database as a replacement for reviewed migrations. See `utilities/database/README.md` for the safe import steps.
 
 ## Import Order
 

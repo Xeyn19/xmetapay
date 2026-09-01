@@ -928,9 +928,11 @@ flowchart TD
 
 ## Production Fresh-Schema Import
 
-The canonical bootstrap SQL stays under `database/`. `utilities/database/xmetapay-production-schema.sql` is a generated schema-only bundle for importing all current tables into a new empty cPanel/phpMyAdmin database. It contains no row data and omits database creation and selection statements so cPanel-prefixed names remain under the deployer's control.
+The canonical bootstrap SQL stays under `database/`. `utilities/database/xmetapay-production-schema.sql` is a generated schema-only bundle for importing all current tables into a new empty GoDaddy Hosted Database or cPanel/phpMyAdmin database. It contains no row data and omits database creation and selection statements so the hosting provider remains in control of the target.
 
 The bundle is checked against both canonical schema files and rejected by tests if it contains insert, update, delete, bulk-load, table-drop, database-drop, or truncate statements. It is not an upgrade mechanism for an existing database. Application startup and every portal role remain unable to import or modify the schema.
+
+Runtime database configuration prefers the GoDaddy Hosted Database variables `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`. The existing `MYSQL_*` names remain a local XAMPP fallback, so deployments use provider-managed credentials without changing local development or the persistent schema.
 
 ## MySQL/XAMPP Notes
 
