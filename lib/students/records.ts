@@ -1,14 +1,11 @@
 import "server-only";
 
-import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
+import type { RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
 import { labelForChannel } from "@/lib/payments/records";
 import { getResolvedAdminSchoolSetup, getResolvedAdminSchoolViewSetup } from "@/lib/school/setup";
-import { getParentSchoolScope } from "@/lib/parents/school-scope";
 import { calculateAge, labelForSex, labelForStudentType } from "@/lib/students/demographics";
-
-type Queryable = Pick<Pool | PoolConnection, "execute">;
 
 export type AdminStudentPageData = {
   ready: boolean;
@@ -237,7 +234,7 @@ export async function getParentPortalContext(parentUserId: number, fallbackName 
            JOIN students st_count ON st_count.id = sg_count.student_id
            JOIN student_fee_assignments sfa_count ON sfa_count.student_id = st_count.id
            JOIN school_years sy_count ON sy_count.id = sfa_count.school_year_id AND sy_count.status = 'active'
-           WHERE sg_count.parent_user_id = u.id
+           WHERE sg_count.parent_user_id = u.id AND sg_count.status = 'active'
              AND st_count.school_id = pp.school_id
              AND sfa_count.status IN ('open', 'partial')
              AND sfa_count.amount_due > sfa_count.amount_paid
@@ -245,7 +242,7 @@ export async function getParentPortalContext(parentUserId: number, fallbackName 
        FROM users u
        LEFT JOIN parent_profiles pp ON pp.user_id = u.id
        LEFT JOIN schools sc ON sc.id = pp.school_id
-       LEFT JOIN student_guardians sg ON sg.parent_user_id = u.id
+       LEFT JOIN student_guardians sg ON sg.parent_user_id = u.id AND sg.status = 'active'
        LEFT JOIN students st ON st.id = sg.student_id AND st.school_id = pp.school_id
        LEFT JOIN enrollments e ON e.student_id = st.id
        LEFT JOIN school_years sy ON sy.id = e.school_year_id
@@ -292,6 +289,7 @@ export async function getParentStudentProfileData(
        LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
        LEFT JOIN sections sec ON sec.id = e.section_id
        WHERE sg.parent_user_id = :parentUserId
+         AND sg.status = 'active'
        ${selectedStudentClause}
        ORDER BY sg.is_primary DESC, st.last_name ASC, st.first_name ASC,
          (sy.status = 'active') DESC, sy.starts_on DESC, e.id DESC
@@ -394,7 +392,7 @@ async function getParentStudentWalletSummary(
            AND wt_topup.type = 'top_up'
        ) AS last_top_up_at
      FROM student_guardians sg
-     JOIN students st ON st.id = sg.student_id
+     JOIN students st ON st.id = sg.student_id AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN wallets w ON w.student_id = st.id
      WHERE sg.parent_user_id = :parentUserId
@@ -404,83 +402,6 @@ async function getParentStudentWalletSummary(
   );
 
   return rows[0] ?? null;
-}
-
-export async function linkParentToStudentByReference(
-  executor: Queryable,
-  parentUserId: number,
-  studentReference: string,
-) {
-  const normalizedReference = studentReference.trim();
-
-  if (!normalizedReference) {
-    return "not_found" as const;
-  }
-
-  const [profileRows] = await executor.execute<ParentProfileRow[]>(
-    `SELECT pp.relationship
-     FROM parent_profiles pp
-     WHERE pp.user_id = :parentUserId
-     LIMIT 1`,
-    { parentUserId },
-  );
-  const profile = profileRows[0];
-
-  if (!profile) {
-    return "missing_profile" as const;
-  }
-
-  const schoolScope = await getParentSchoolScope(parentUserId, executor);
-
-  if (!schoolScope) {
-    return "school_unassigned" as const;
-  }
-
-  if (schoolScope.schoolStatus !== "active") {
-    return "school_inactive" as const;
-  }
-
-  const [studentRows] = await executor.execute<StudentMatchRow[]>(
-    `SELECT id
-     FROM students
-     WHERE school_id = :schoolId
-       AND student_reference = :studentReference
-     LIMIT 1`,
-    { schoolId: schoolScope.schoolId, studentReference: normalizedReference },
-  );
-
-  if (studentRows.length === 0) {
-    return "not_found" as const;
-  }
-
-  const studentId = studentRows[0].id;
-  const [existingLinkRows] = await executor.execute<CountRow[]>(
-    "SELECT COUNT(*) AS total FROM student_guardians WHERE student_id = :studentId AND parent_user_id = :parentUserId",
-    { studentId, parentUserId },
-  );
-
-  if (Number(existingLinkRows[0]?.total ?? 0) > 0) {
-    return "already_linked" as const;
-  }
-
-  const [guardianCountRows] = await executor.execute<CountRow[]>(
-    "SELECT COUNT(*) AS total FROM student_guardians WHERE student_id = :studentId",
-    { studentId },
-  );
-  const isPrimary = Number(guardianCountRows[0]?.total ?? 0) === 0;
-
-  await executor.execute(
-    `INSERT INTO student_guardians (student_id, parent_user_id, relationship, is_primary)
-     VALUES (:studentId, :parentUserId, :relationship, :isPrimary)`,
-    {
-      studentId,
-      parentUserId,
-      relationship: profile.relationship,
-      isPrimary,
-    },
-  );
-
-  return "linked" as const;
 }
 
 async function getAdminSetup(adminUserId: number) {
@@ -562,7 +483,7 @@ async function getAdminParentRows(schoolId: number, schoolYearId: number | null)
      FROM student_guardians sg
      JOIN users u ON u.id = sg.parent_user_id
      JOIN parent_profiles pp ON pp.user_id = u.id
-     JOIN students st ON st.id = sg.student_id
+     JOIN students st ON st.id = sg.student_id AND sg.status = 'active'
      LEFT JOIN enrollments e ON e.student_id = st.id AND (:schoolYearId IS NULL OR e.school_year_id = :schoolYearId)
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      WHERE st.school_id = :schoolId
@@ -610,7 +531,7 @@ async function getParentLinkedStudents(parentUserId: number) {
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
        COALESCE(sec.name, '-') AS section_name
      FROM student_guardians sg
-     JOIN students st ON st.id = sg.student_id
+     JOIN students st ON st.id = sg.student_id AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN enrollments e ON e.id = (
        SELECT e_selected.id
@@ -651,7 +572,7 @@ async function getParentPaymentSummary(parentUserId: number) {
          SELECT SUM(p.amount)
          FROM payments p
          JOIN students pst ON pst.id = p.student_id
-         JOIN student_guardians psg ON psg.student_id = pst.id AND psg.parent_user_id = :parentUserId
+         JOIN student_guardians psg ON psg.student_id = pst.id AND psg.parent_user_id = :parentUserId AND psg.status = 'active'
          JOIN parent_profiles pp_payment_scope ON pp_payment_scope.user_id = psg.parent_user_id AND pp_payment_scope.school_id = pst.school_id
          WHERE p.payer_user_id = :parentUserId
            AND p.status = 'paid'
@@ -661,7 +582,7 @@ async function getParentPaymentSummary(parentUserId: number) {
          SELECT COUNT(*)
          FROM payments p
          JOIN students pst ON pst.id = p.student_id
-         JOIN student_guardians psg ON psg.student_id = pst.id AND psg.parent_user_id = :parentUserId
+         JOIN student_guardians psg ON psg.student_id = pst.id AND psg.parent_user_id = :parentUserId AND psg.status = 'active'
          JOIN parent_profiles pp_count_scope ON pp_count_scope.user_id = psg.parent_user_id AND pp_count_scope.school_id = pst.school_id
          WHERE p.payer_user_id = :parentUserId
        ), 0) AS payment_count,
@@ -669,18 +590,18 @@ async function getParentPaymentSummary(parentUserId: number) {
          SELECT SUM(w.balance)
          FROM wallets w
          JOIN students wst ON wst.id = w.student_id
-         JOIN student_guardians wsg ON wsg.student_id = wst.id AND wsg.parent_user_id = :parentUserId
+         JOIN student_guardians wsg ON wsg.student_id = wst.id AND wsg.parent_user_id = :parentUserId AND wsg.status = 'active'
          JOIN parent_profiles pp_wallet_scope ON pp_wallet_scope.user_id = wsg.parent_user_id AND pp_wallet_scope.school_id = wst.school_id
        ), 0) AS wallet_balance,
        COALESCE((
          SELECT COUNT(*)
          FROM wallets w
          JOIN students wst ON wst.id = w.student_id
-         JOIN student_guardians wsg ON wsg.student_id = wst.id AND wsg.parent_user_id = :parentUserId
+         JOIN student_guardians wsg ON wsg.student_id = wst.id AND wsg.parent_user_id = :parentUserId AND wsg.status = 'active'
          JOIN parent_profiles pp_wallet_count_scope ON pp_wallet_count_scope.user_id = wsg.parent_user_id AND pp_wallet_count_scope.school_id = wst.school_id
        ), 0) AS wallet_count
      FROM student_guardians sg
-     JOIN students st ON st.id = sg.student_id
+     JOIN students st ON st.id = sg.student_id AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN student_fee_assignments sfa ON sfa.student_id = st.id AND sfa.status <> 'cancelled'
      WHERE sg.parent_user_id = :parentUserId`,
@@ -708,7 +629,7 @@ async function getParentRecentPayments(parentUserId: number) {
        ) AS description
      FROM payments p
      JOIN students st ON st.id = p.student_id
-     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
      LEFT JOIN student_fee_assignments sfa ON sfa.id = pa.student_fee_assignment_id
@@ -743,7 +664,7 @@ async function getParentRecentWalletActivity(
      FROM wallet_transactions wt
      JOIN wallets w ON w.id = wt.wallet_id
      JOIN students st ON st.id = w.student_id
-     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN school_years sy ON sy.id = wt.school_year_id
      LEFT JOIN payments p ON p.id = wt.payment_id
@@ -1094,16 +1015,4 @@ type ParentStudentWalletSummaryRow = RowDataPacket & {
   wallet_status: string;
   monthly_spend: number | string;
   last_top_up_at: Date | string | null;
-};
-
-type ParentProfileRow = RowDataPacket & {
-  relationship: string;
-};
-
-type StudentMatchRow = RowDataPacket & {
-  id: number;
-};
-
-type CountRow = RowDataPacket & {
-  total: number;
 };

@@ -398,7 +398,7 @@ export async function getParentPayableTuitionTerms(parentUserId: number) {
        ft.name AS fee_name, ft.category,
        st.id AS student_id, st.school_id, sfa.school_year_id, st.student_reference, st.first_name, st.middle_name, st.last_name
      FROM student_guardians sg
-     JOIN students st ON st.id = sg.student_id
+     JOIN students st ON st.id = sg.student_id AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      JOIN student_fee_assignments sfa ON sfa.student_id = st.id
      JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
@@ -591,7 +591,7 @@ async function getLockedParentPayableTuitionTerms(
      JOIN student_fee_assignments sfa ON sfa.id = tpt.student_fee_assignment_id
      JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
      JOIN students st ON st.id = sfa.student_id
-     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      WHERE tpt.id IN (${placeholders})
        AND tpt.status IN ('open', 'partial')

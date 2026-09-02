@@ -83,7 +83,7 @@ School setup is shared across staff accounts. If a registrar or finance officer 
 
 ### `parent_profiles`
 
-This stores parent-side profile details for users with the `parent` role. Parent registration requires one active school, guardian details, required phone number, relationship, and one or more student references. `parent_profiles.school_id` is the immutable school ownership boundary. The first submitted reference is stored in `parent_profiles.student_reference` and `parent_profiles.student_name` as a pending-link display label because those columns are required, but official student identity still comes from the school-created `students` records after linking.
+This stores parent-side profile details for users with the `parent` role. A verified school invitation supplies the guardian identity, relationship, student, and immutable `parent_profiles.school_id`; the Parent supplies only account-completion fields. Legacy display/reference columns remain for compatibility and are not authorization inputs.
 
 The one-school migration is additive and non-destructive. It backfills `school_id` only when existing guardian links or the saved pending reference identify exactly one school. Multi-school, ambiguous, or unmatched profiles remain nullable and receive an account-review screen; their guardian and financial history is not deleted. If an assigned school later becomes inactive, Parent historical reads remain available while new links and financial writes are rejected.
 
@@ -143,7 +143,7 @@ Main purpose:
 - Store student name, optional birthdate, reusable sex, and status. Age is calculated from birthdate at read time and is never stored.
 - Link students to school records, enrollments, fees, payments, wallets, store transactions, and notifications.
 
-The `student_reference` is important because parent registration can use it to connect a parent account to the correct student.
+The `student_reference` remains an important school identifier, but it cannot create Parent access. Only a verified invitation tied to the student ID can create a guardian relationship.
 
 The exact admin Student Profile can correct the existing `students` name, reference, birthdate, and sex without creating a replacement record. A changed reference is checked for school-wide uniqueness; existing guardian rows remain linked through `student_id`, while future parent linking must use the new reference. Student status remains read-only in this correction workflow.
 
@@ -158,7 +158,11 @@ Main purpose:
 - Store the relationship type: mother, father, or guardian.
 - Mark a primary guardian when needed.
 
-This table is one part of Parent authorization. Every Parent read and write also requires the linked student's `students.school_id` to match `parent_profiles.school_id`. Parent registration can create multiple same-school links by looping through submitted `student_reference` values, and the parent dashboard or My students page can add more same-school students later. The unique student-parent pair prevents duplicate links; a stale or manually inserted cross-school link is ignored by application reads and writes.
+This table is one part of Parent authorization. Every Parent read and write requires an `active` guardian link and the student's `students.school_id` to match `parent_profiles.school_id`. Each verified invitation creates one relationship; additional same-school children require separate invitations. Revocation changes access state and records who, when, and why without deleting the relationship or financial history. The unique student-parent pair prevents duplicates, and stale or manually inserted cross-school links are ignored.
+
+### Parent Invitation And Access Audit Tables
+
+`parent_guardian_invitations` records the school, exact student, normalized guardian identity, hashed single-use claim code, issuer, seven-day expiry, delivery state, and claim/revocation state. `parent_claim_challenges` stores only hashed browser tokens and OTPs with short expiry, cooldown, rate, attempt, verification, and consumption timestamps. `guardian_access_events` is append-only for grant, revoke, and restore events. SMTP credentials and plaintext codes are never stored in these tables.
 
 The company super-admin school profile also reuses this relationship for aggregate monitoring. It counts distinct parents linked to active-year enrolled students separately from all distinct parents linked to any student in the school. It does not return parent or student directory fields, and it requires no additional table.
 

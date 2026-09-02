@@ -56,8 +56,9 @@ async function recoverRemovedFees(
      JOIN student_fee_assignments sfa ON sfa.id = pfsa.student_fee_assignment_id
      JOIN students st ON st.id = sfa.student_id
      JOIN student_guardians sg
-       ON sg.student_id = st.id
-      AND sg.parent_user_id = :parentUserId
+      ON sg.student_id = st.id
+     AND sg.parent_user_id = :parentUserId
+     AND sg.status = 'active'
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id
@@ -102,8 +103,9 @@ async function archiveSettledFees(
      FROM student_fee_assignments sfa
      JOIN students st ON st.id = sfa.student_id
      JOIN student_guardians sg
-       ON sg.student_id = st.id
-      AND sg.parent_user_id = :parentUserId
+      ON sg.student_id = st.id
+     AND sg.parent_user_id = :parentUserId
+     AND sg.status = 'active'
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id
@@ -179,8 +181,9 @@ async function getOwnedArchivedIds(
      JOIN student_fee_assignments sfa ON sfa.id = pfsa.student_fee_assignment_id
      JOIN students st ON st.id = sfa.student_id
      JOIN student_guardians sg
-       ON sg.student_id = st.id
-      AND sg.parent_user_id = :parentUserId
+      ON sg.student_id = st.id
+     AND sg.parent_user_id = :parentUserId
+     AND sg.status = 'active'
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id
@@ -209,8 +212,9 @@ async function getOwnedDeletableArchivedIds(
      JOIN student_fee_assignments sfa ON sfa.id = pfsa.student_fee_assignment_id
      JOIN students st ON st.id = sfa.student_id
      JOIN student_guardians sg
-       ON sg.student_id = st.id
-      AND sg.parent_user_id = :parentUserId
+      ON sg.student_id = st.id
+     AND sg.parent_user_id = :parentUserId
+     AND sg.status = 'active'
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id

@@ -27,7 +27,7 @@ export function BrandMark() {
   return (
     <Link
       href="/"
-      className="inline-flex min-w-0 items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
+      className="inline-flex min-h-11 min-w-0 items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/20"
     >
       <BrandLogo />
       <span className="min-w-0">
@@ -114,7 +114,7 @@ export function PortalAuthLayout({
               {mode === "login" ? "New to this portal?" : "Already have access?"}{" "}
               <Link
                 href={`/${portal}/${otherMode}`}
-                className="public-link rounded-md font-bold focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+                className="public-link inline-flex min-h-11 items-center rounded-md font-bold focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
               >
                 {mode === "login" ? "Create an account" : "Sign in instead"}
               </Link>

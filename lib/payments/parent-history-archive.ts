@@ -60,8 +60,9 @@ async function recoverRemovedPayments(
       AND p.payer_user_id = :parentUserId
      JOIN students st ON st.id = p.student_id
      JOIN student_guardians sg
-       ON sg.student_id = st.id
-      AND sg.parent_user_id = :parentUserId
+      ON sg.student_id = st.id
+     AND sg.parent_user_id = :parentUserId
+     AND sg.status = 'active'
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id
@@ -103,8 +104,9 @@ async function archiveFinishedPayments(
      FROM payments p
      JOIN students st ON st.id = p.student_id
      JOIN student_guardians sg
-       ON sg.student_id = st.id
-      AND sg.parent_user_id = :parentUserId
+      ON sg.student_id = st.id
+     AND sg.parent_user_id = :parentUserId
+     AND sg.status = 'active'
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id
@@ -175,8 +177,9 @@ async function getOwnedDeletableArchivedIds(
       AND p.payer_user_id = :parentUserId
      JOIN students st ON st.id = p.student_id
      JOIN student_guardians sg
-       ON sg.student_id = st.id
-      AND sg.parent_user_id = :parentUserId
+      ON sg.student_id = st.id
+     AND sg.parent_user_id = :parentUserId
+     AND sg.status = 'active'
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id
@@ -205,8 +208,9 @@ async function getOwnedArchivedIds(
       AND p.payer_user_id = :parentUserId
      JOIN students st ON st.id = p.student_id
      JOIN student_guardians sg
-       ON sg.student_id = st.id
-      AND sg.parent_user_id = :parentUserId
+      ON sg.student_id = st.id
+     AND sg.parent_user_id = :parentUserId
+     AND sg.status = 'active'
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id

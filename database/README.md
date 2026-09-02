@@ -107,6 +107,11 @@ The bundle creates the complete current table structure without inserting accoun
    - Multi-school, ambiguous, and unmatched accounts remain unresolved; no parent, guardian, student, payment, wallet, receipt, or audit row is deleted.
    - Safe to import more than once.
 
+22. If `full-schema-v1.sql` was already imported before invite-only Parent claims were added, import `migrations/2026-09-02-parent-invitation-otp.sql`.
+   - Adds hashed school-issued invitations, hashed email OTP challenges, reversible guardian access state, and append-only access events.
+   - Preserves every existing guardian link as active and does not delete Parent, student, payment, wallet, receipt, or audit data.
+   - Safe to import more than once. Import it after the single-school-scope migration on an existing database.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.
@@ -119,11 +124,12 @@ After importing both files:
 
 1. Confirm all tables appear in phpMyAdmin.
 2. Register a test admin account.
-3. Register a test parent account by choosing one active school and linking a student reference from that school.
+3. As a school administrator, issue one Parent invitation from the exact Student Profile, then complete the emailed claim code and OTP flow.
 4. Log in and log out from both portals.
 5. Confirm protected admin and parent dashboards still redirect after logout.
 6. Request and complete one local OTP password reset after SMTP is configured.
 7. Archive a settled parent fee, permanently remove it, and confirm school financial records remain available.
-8. Create a school email template, preview it, and send one reminder after SMTP is configured.
+8. Revoke and restore the test guardian access and confirm historical financial records remain unchanged.
+9. Create a school email template, preview it, and send one reminder after SMTP is configured.
 
 Do not commit database exports, real school data, parent data, student data, payment data, credentials, or local environment files.

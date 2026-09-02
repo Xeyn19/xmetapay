@@ -6,7 +6,7 @@ XMETA EDU uses one MySQL database for three connected access areas:
 
 - Company super admin: XMETA EDU monitoring for schools, school admin account access, and read-only aggregate school population profiles.
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
-- Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
+- Parent portal: invitation and email-OTP claim, active linked-student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
 Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
 
@@ -115,11 +115,11 @@ One parent profile per parent user.
 | `id` | Primary key |
 | `user_id` | Links to `users.id` |
 | `school_id` | Nullable immutable link to the one assigned `schools.id`; unresolved legacy profiles remain null |
-| `student_name` | Pending-link display label; parent registration stores the first submitted student reference here until an official student link exists |
-| `student_reference` | First student reference captured during registration; all submitted references attempt `student_guardians` links |
+| `student_name` | Legacy pending-link display label retained for compatibility; verified invitations use the authoritative student row |
+| `student_reference` | Legacy saved reference retained for conservative migration only; it cannot grant Parent access |
 | `relationship` | Mother, father, or guardian |
 
-Parent registration validates an active school before inserting this profile. Existing databases use the idempotent `2026-09-02-parent-single-school-scope.sql` migration, which backfills only unambiguous single-school profiles and never deletes legacy guardian or financial records. A null assignment blocks Parent portal data and actions. An inactive assigned school permits historical reads but no new Parent writes.
+Invitation completion derives the active school from the locked invitation and student rows before inserting this profile. Existing databases use the idempotent `2026-09-02-parent-single-school-scope.sql` migration, which backfills only unambiguous single-school profiles and never deletes legacy guardian or financial records. A null assignment blocks Parent portal data and actions. An inactive assigned school permits historical reads but no new Parent writes.
 
 ## Full Practical MVP Schema
 
@@ -234,7 +234,7 @@ CREATE TABLE students (
 
 #### `student_guardians`
 
-Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per parent. Parent registration can submit one or more student references and creates one row per match inside `parent_profiles.school_id`; later, the parent portal can add more children from that same school. The unique pair key keeps duplicate links from being created. Every Parent query also requires the student's school to equal the parent profile school, so a stale cross-school row grants no portal access.
+Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per Parent. Each verified invitation creates one row for one exact student; later children require separate same-school invitations. `status` makes access revocable without deleting the relationship. Every Parent query requires `status = 'active'` and the student's school to equal the Parent profile school, so revoked or stale cross-school rows grant no portal access.
 
 ```sql
 CREATE TABLE student_guardians (
@@ -243,6 +243,10 @@ CREATE TABLE student_guardians (
   parent_user_id BIGINT UNSIGNED NOT NULL,
   relationship ENUM('mother', 'father', 'guardian') NOT NULL,
   is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+  status ENUM('active', 'revoked') NOT NULL DEFAULT 'active',
+  revoked_at DATETIME NULL,
+  revoked_by_user_id BIGINT UNSIGNED NULL,
+  revocation_reason VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   UNIQUE KEY uq_student_guardians_pair (student_id, parent_user_id),
@@ -252,6 +256,14 @@ CREATE TABLE student_guardians (
   CONSTRAINT fk_student_guardians_parent FOREIGN KEY (parent_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
+
+#### Parent invitation and access audit tables
+
+- `parent_guardian_invitations` owns one school-issued invitation for one student and one normalized guardian identity. It stores only the claim-code hash, seven-day expiry, issuing administrator, delivery state, claim state, and revocation state.
+- `parent_claim_challenges` owns the hashed browser challenge and hashed six-digit OTP, five-minute OTP expiry, resend/attempt limits, ten-minute verified completion window, and consumption timestamps.
+- `guardian_access_events` is append-only for `granted`, `revoked`, and `restored` events and records the school, relationship, actor, reason, and time.
+
+The idempotent `2026-09-02-parent-invitation-otp.sql` migration adds these structures and marks all existing guardian rows active. It contains no record deletion and does not fabricate past audit events.
 
 ### Enrollment
 
@@ -840,7 +852,7 @@ flowchart TD
   F --> G["Assign grade level and section"]
   G --> H["Student appears in admin student table"]
   H --> I["Student profile selector links to /admin/students/studentId"]
-  H --> J["Parent can link later using student_reference"]
+  H --> J["School administrator can issue exact-student Parent invitation"]
 ```
 
 ### Admin Payment Monitoring Flow
@@ -861,20 +873,20 @@ flowchart TD
 
 ## Step-by-Step Parent Flowcharts
 
-### Parent Registration and Login Flow
+### Invite-Only Parent Claim Flow
 
 ```mermaid
 flowchart TD
-  A["Parent opens register page"] --> B["Submit guardian details and one or more student references"]
-  B --> C["Create user with role parent"]
-  C --> D["Create parent profile"]
-  D --> E["Save first reference in parent_profiles"]
-  E --> F["Loop through submitted references"]
-  F --> G{"Student found?"}
-  G -->|Yes| H["Create student_guardians link"]
-  G -->|No| I["Skip that reference for now"]
-  H --> J["Create session after all references are checked"]
-  I --> J
+  A["School admin issues exact-student invitation"] --> B["Email single-use claim code"]
+  B --> C["Parent enters code and receives separate email OTP"]
+  C --> D{"OTP and invitation valid?"}
+  D -->|No| E["Generic retry or blocked state"]
+  D -->|Yes| F{"Matching Parent exists?"}
+  F -->|No| G["Create Parent and immutable school profile"]
+  F -->|Yes| H["Require matching session or password"]
+  G --> I["Create active guardian link and grant event"]
+  H --> I
+  I --> J["Consume invitation and challenge atomically"]
   J --> K["Redirect to parent dashboard"]
 ```
 

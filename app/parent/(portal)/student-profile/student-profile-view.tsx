@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { CreditCard, IdCard, Plus, Users, Wallet } from "lucide-react";
+import { CreditCard, IdCard, KeyRound, Plus, Users, Wallet } from "lucide-react";
 
 import { DashboardTablePagination, usePaginatedRows } from "@/app/_components/table-controls";
-import { linkParentStudentAction } from "@/app/parent/student-link/actions";
 import type { ParentLinkedStudent, ParentStudentProfileData } from "@/lib/students/records";
 
 import {
@@ -12,9 +11,7 @@ import {
   ParentAlert,
   ParentButton,
   ParentCard,
-  ParentField,
   StatusPill,
-  parentControlClass,
 } from "../../_components/parent-ui";
 import { ParentWalletActivityTable } from "../_components/parent-wallet-activity-table";
 
@@ -24,18 +21,9 @@ export function StudentProfileEmptyState() {
   return (
     <ParentCard title="Student profile" icon={IdCard} className="max-w-3xl">
       <ParentAlert>
-        Link your parent portal to a student reference before viewing student profile details.
+        Enter a school-issued invitation code before viewing student profile details.
       </ParentAlert>
-      <form action={linkParentStudentAction} className="grid gap-3">
-        <input type="hidden" name="redirectTo" value="/parent/student-profile" />
-        <ParentField label="Student reference" required>
-          <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
-        </ParentField>
-        <ParentButton type="submit" tone="primary" className="w-full min-[420px]:w-auto">
-          <Plus className="size-4" />
-          Link student
-        </ParentButton>
-      </form>
+      <Link href="/parent/register" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white"><KeyRound className="size-4" />Enter invitation code</Link>
     </ParentCard>
   );
 }

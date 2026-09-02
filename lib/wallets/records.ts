@@ -147,7 +147,7 @@ async function getParentWallets(parentUserId: number) {
        COALESCE(w.balance, 0) AS balance,
        COALESCE(w.status, 'not_started') AS wallet_status
      FROM student_guardians sg
-     JOIN students st ON st.id = sg.student_id
+     JOIN students st ON st.id = sg.student_id AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN enrollments e ON e.id = (
        SELECT e2.id
@@ -194,7 +194,7 @@ async function getParentWalletTransactions(parentUserId: number) {
      FROM wallet_transactions wt
      JOIN wallets w ON w.id = wt.wallet_id
      JOIN students st ON st.id = w.student_id
-     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN school_years sy ON sy.id = wt.school_year_id
      LEFT JOIN payments p ON p.id = wt.payment_id

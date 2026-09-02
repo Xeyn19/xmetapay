@@ -2,68 +2,14 @@
 
 import { redirect } from "next/navigation";
 
-import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
-import { linkParentToStudentByReference } from "@/lib/students/records";
 
 export async function linkParentStudentAction(formData: FormData) {
-  const session = await requireRole("parent");
-  const studentReference = value(formData, "studentReference");
+  await requireRole("parent");
   const redirectTo = safeRedirectPath(value(formData, "redirectTo"));
-
-  try {
-    const result = await linkParentToStudentByReference(pool, session.userId, studentReference);
-
-    await setAuthFlashToast({
-      role: "parent",
-      title: titleForResult(result),
-      description: descriptionForResult(result),
-    });
-  } catch {
-    await setAuthFlashToast({
-      role: "parent",
-      title: "Student not linked",
-      description: "Check that MySQL/XAMPP is running and try again.",
-    });
-  }
+  await setAuthFlashToast({ role: "parent", title: "School invitation required", description: "Student references no longer grant parent access. Enter the invitation code emailed by your school." });
 
   redirect(redirectTo);
-}
-
-function descriptionForResult(result: Awaited<ReturnType<typeof linkParentToStudentByReference>>) {
-  if (result === "linked") {
-    return "Your parent portal is now connected to that student record.";
-  }
-
-  if (result === "already_linked") {
-    return "That student is already connected to your parent portal.";
-  }
-
-  if (result === "school_unassigned") {
-    return "Your parent account is not assigned to one school. Contact support before linking students.";
-  }
-
-  if (result === "school_inactive") {
-    return "This school is inactive. Existing history remains available, but new student links are disabled.";
-  }
-
-  if (result === "missing_profile") {
-    return "Your parent profile was not found. Please register again or contact the school.";
-  }
-
-  return "No student record was found for that reference yet.";
-}
-
-function titleForResult(result: Awaited<ReturnType<typeof linkParentToStudentByReference>>) {
-  if (result === "linked") {
-    return "Student linked";
-  }
-
-  if (result === "already_linked") {
-    return "Student already linked";
-  }
-
-  return "Student not linked";
 }
 
 function safeRedirectPath(path: string) {

@@ -48,6 +48,21 @@ type PasswordResetOtpEmail = {
   portalLabel: string;
 };
 
+type ParentInvitationEmail = {
+  email: string;
+  guardianName: string;
+  studentName: string;
+  schoolName: string;
+  claimCode: string;
+  expiresAt: Date;
+};
+
+type ParentClaimOtpEmail = {
+  email: string;
+  guardianName: string;
+  otp: string;
+};
+
 type EmailConfiguration = {
   host: string;
   port: number;
@@ -135,6 +150,58 @@ export async function sendPasswordResetOtpEmail(reset: PasswordResetOtpEmail) {
     html: passwordResetOtpHtml({
       ...reset,
       name,
+    }),
+  });
+}
+
+export async function sendParentInvitationEmail(invitation: ParentInvitationEmail) {
+  const emailTransport = getTransporter();
+  const config = getEmailConfiguration();
+  const registerUrl = new URL("/parent/register", config.parentPortalUrl).toString();
+  const expires = invitation.expiresAt.toLocaleString("en-PH", { timeZone: "Asia/Manila" });
+  const subject = `${invitation.schoolName} parent portal invitation`;
+  const lines = [
+    `Hello ${invitation.guardianName},`, "",
+    `${invitation.schoolName} invited you to connect with ${invitation.studentName} in ${PRODUCT_NAME}.`,
+    `Claim code: ${invitation.claimCode}`, `Expires: ${expires}`, "",
+    `Open ${registerUrl} and enter the code. A separate verification code will be sent to this email address.`,
+    "If you were not expecting this invitation, contact the school and ignore this message.", "", PRODUCT_NAME,
+  ];
+  await emailTransport.sendMail({
+    from: { name: config.fromName, address: config.fromEmail },
+    to: { name: invitation.guardianName, address: invitation.email },
+    subject,
+    text: lines.join("\n"),
+    html: secureCodeEmailHtml({
+      heading: "Parent portal invitation",
+      name: invitation.guardianName,
+      message: `${invitation.schoolName} invited you to connect with ${invitation.studentName}.`,
+      code: invitation.claimCode,
+      detail: `This invitation expires ${expires}.`,
+      actionUrl: registerUrl,
+      actionLabel: "Claim invitation",
+    }),
+  });
+}
+
+export async function sendParentClaimOtpEmail(claim: ParentClaimOtpEmail) {
+  const emailTransport = getTransporter();
+  const config = getEmailConfiguration();
+  await emailTransport.sendMail({
+    from: { name: config.fromName, address: config.fromEmail },
+    to: { name: claim.guardianName, address: claim.email },
+    subject: `Your ${PRODUCT_NAME} parent verification code`,
+    text: [
+      `Hello ${claim.guardianName},`, "", `Your parent claim verification code is: ${claim.otp}`, "",
+      "This code expires in 5 minutes. Do not share it with anyone.",
+      "If you did not request this code, contact the school.", "", PRODUCT_NAME,
+    ].join("\n"),
+    html: secureCodeEmailHtml({
+      heading: "Verify parent access",
+      name: claim.guardianName,
+      message: "Enter this code to continue your school-issued parent invitation.",
+      code: claim.otp,
+      detail: "This code expires in 5 minutes. Do not share it with anyone.",
     }),
   });
 }
@@ -292,6 +359,21 @@ function passwordResetOtpHtml(reset: PasswordResetOtpEmail) {
     </div>
   </body>
 </html>`;
+}
+
+function secureCodeEmailHtml(input: {
+  heading: string;
+  name: string;
+  message: string;
+  code: string;
+  detail: string;
+  actionUrl?: string;
+  actionLabel?: string;
+}) {
+  const action = input.actionUrl && input.actionLabel
+    ? `<p style="margin:20px 0 0;"><a href="${escapeHtml(input.actionUrl)}" style="display:inline-block;border-radius:8px;background:#e64a19;padding:12px 18px;color:#fff;text-decoration:none;font-weight:700;">${escapeHtml(input.actionLabel)}</a></p>`
+    : "";
+  return `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1" /></head><body style="margin:0;background:#f4f5f7;font-family:Arial,sans-serif;color:#11131a;"><div style="padding:24px 12px;"><div style="max-width:520px;margin:0 auto;overflow:hidden;border:1px solid #e4e7ec;border-radius:8px;background:#fff;"><div style="background:#11131a;padding:18px 24px;color:#fff;"><strong style="font-size:18px;">${PRODUCT_NAME}</strong><div style="margin-top:4px;color:#c7cad1;font-size:13px;">${escapeHtml(input.heading)}</div></div><div style="padding:24px;"><p style="margin:0 0 14px;line-height:1.6;">Hello ${escapeHtml(input.name)},</p><p style="margin:0 0 18px;line-height:1.6;">${escapeHtml(input.message)}</p><div style="margin:0 0 18px;padding:16px;border:1px solid #f4b6a5;border-radius:8px;background:#fff4f0;text-align:center;color:#bf360c;font-size:28px;font-weight:700;letter-spacing:5px;">${escapeHtml(input.code)}</div><p style="margin:0;color:#5f6673;font-size:13px;line-height:1.6;">${escapeHtml(input.detail)}</p>${action}</div></div></div></body></html>`;
 }
 
 function paymentReminderHtml(reminder: PaymentReminderEmail, parentPortalUrl: string) {
