@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-const authUiPath = "app/_components/auth-ui.tsx";
 const parentRegisterPath = "app/parent/register/page.tsx";
 const testCredentialInput = "not-a-real-test-login-value";
 
@@ -183,23 +182,17 @@ test("auth validation normalizes role-specific registration payloads", async () 
   });
 });
 
-test("parent registration requires one school and renders multi-student reference controls", () => {
+test("parent registration renders the staged invitation and OTP claim flow", () => {
   const parentRegister = readFileSync(parentRegisterPath, "utf8");
-  const authUi = readFileSync(authUiPath, "utf8");
+  const claimFlow = readFileSync("app/parent/register/parent-claim-flow.tsx", "utf8");
 
-  assert.match(parentRegister, /Choose one school, then connect children registered at that school/);
-  assert.match(parentRegister, /getActiveParentRegistrationSchools/);
-  assert.match(parentRegister, /name: "schoolId"/);
-  assert.match(parentRegister, /Select your school/);
-  assert.match(parentRegister, /name: "studentReferences"/);
-  assert.match(parentRegister, /type: "studentReferences"/);
-  assert.doesNotMatch(parentRegister, /name: "studentReference"/);
-  assert.match(authUi, /function StudentReferencesField/);
-  assert.match(authUi, /name="studentReferences"/);
-  assert.match(authUi, /Add another student/);
-  assert.match(authUi, /Remove/);
-  assert.match(authUi, /Add all children you want connected to this parent account/);
-  assert.match(authUi, /Duplicate references are ignored safely/);
-  assert.match(authUi, /typeof option === "string" \? option : option\.value/);
+  assert.match(parentRegister, /getParentClaimState/);
+  assert.match(parentRegister, /ParentClaimFlow/);
+  assert.match(claimFlow, /name="claimCode"/);
+  assert.match(claimFlow, /name="otp"/);
+  assert.match(claimFlow, /name="phone"/);
+  assert.match(claimFlow, /name="confirmPassword"/);
+  assert.match(claimFlow, /Existing parent password/);
+  assert.doesNotMatch(claimFlow, /name="schoolId"|name="studentReferences"|name="studentReference"/);
 });
 

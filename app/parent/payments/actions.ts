@@ -176,7 +176,7 @@ async function getLockedPayableFees(
        st.id AS student_id, st.school_id
      FROM student_fee_assignments sfa
      JOIN students st ON st.id = sfa.student_id
-     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId AND sg.status = 'active'
      JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      WHERE sfa.id IN (${placeholders})
        AND sfa.status IN ('open', 'partial')

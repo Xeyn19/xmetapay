@@ -4,7 +4,7 @@ XMETA EDU is a Next.js school-fintech application for parent payments, student a
 
 ## Features
 
-- Parent flows for one-school account access, same-school linked students, fee and payment history, tuition payments, receipts, allowance wallets, and student profiles.
+- Invite-only Parent claims with a school-issued single-use code, email OTP verification, one-school account access, same-school linked students, fee and payment history, tuition payments, receipts, allowance wallets, and student profiles.
 - School Admin workflows for school setup, enrollment, student and parent records, tuition, collections, school-owned payment-reminder email templates, other fees, allowance, store transactions, and financial reports.
 - Company Super Admin workflows for registration review, school-admin account management, school population summaries, and branded account exports.
 - Role-aware email OTP password recovery using the configured SMTP service.
@@ -48,7 +48,8 @@ npm run test:e2e     # Run Playwright tests
 
 - The app uses Next.js 16, React 19, TypeScript, and Tailwind CSS.
 - Authentication, permissions, and data access remain role- and school-scoped.
-- Every Parent account chooses one active school during registration and can link multiple children only within that school; unresolved legacy accounts remain preserved but blocked from portal operations.
+- A school administrator invites a recorded guardian from the exact Student Profile. The emailed claim code and separate email OTP establish one active guardian link; each additional child needs another invitation from the same assigned school.
+- Guardian access can be revoked or restored without deleting accounts, links, payments, wallets, receipts, or audit history. Existing unresolved legacy accounts remain preserved but blocked from portal operations.
 - End-to-end tests live in `e2e/`.
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.

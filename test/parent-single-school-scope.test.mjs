@@ -24,24 +24,19 @@ test("parent school migration is idempotent and preserves every existing record"
   assert.doesNotMatch(migration, /\bDROP\s+TABLE\b/i);
 });
 
-test("registration validates and stores one active school before student linking", () => {
-  const validation = read("lib/auth/validation.mjs");
+test("parent registration is invitation-driven and cannot accept client school ownership", () => {
   const authAction = read("app/auth/actions.ts");
   const registerPage = read("app/parent/register/page.tsx");
-  const authUi = read("app/_components/auth-ui.tsx");
+  const claimFlow = read("app/parent/register/parent-claim-flow.tsx");
+  const invitations = read("lib/parents/invitations.ts");
 
-  assert.match(validation, /const schoolId = positiveInteger\(value\(formData, "schoolId"\)\)/);
-  assert.match(validation, /errors\.schoolId = "Choose your school\."/);
-  assert.match(authAction, /validateActiveRegistrationSchool\(connection, parsed\.data\.profile\.schoolId\)/);
-  assert.match(authAction, /INSERT INTO parent_profiles \(user_id, school_id/);
-  assert.ok(
-    authAction.indexOf("validateActiveRegistrationSchool")
-      < authAction.indexOf("INSERT INTO parent_profiles (user_id, school_id"),
-  );
-  assert.match(registerPage, /getActiveParentRegistrationSchools/);
-  assert.match(registerPage, /await connection\(\)/);
-  assert.match(registerPage, /Parent registration unavailable/);
-  assert.match(authUi, /type FieldOption = string \| \{ label: string; value: string \}/);
+  assert.match(authAction, /Parent registration requires a school-issued invitation/);
+  assert.doesNotMatch(authAction, /INSERT INTO parent_profiles/);
+  assert.match(registerPage, /getParentClaimState/);
+  assert.match(registerPage, /ParentClaimFlow/);
+  assert.doesNotMatch(claimFlow, /name="schoolId"|name="studentReferences"|name="studentReference"/);
+  assert.match(invitations, /INSERT INTO parent_profiles \(user_id,school_id/);
+  assert.match(invitations, /claim\.school_id/);
 });
 
 test("parent school helper is the immutable server-only write boundary", () => {
@@ -56,10 +51,9 @@ test("parent school helper is the immutable server-only write boundary", () => {
   assert.match(helper, /JOIN schools sc ON sc\.id = pp\.school_id/);
   assert.match(helper, /options\.forWrite && scope\.schoolStatus !== "active"/);
   assert.doesNotMatch(helper, /UPDATE parent_profiles/);
-  assert.match(studentRecords, /getParentSchoolScope\(parentUserId, executor\)/);
-  assert.match(studentRecords, /WHERE school_id = :schoolId\s+AND student_reference = :studentReference/);
+  assert.doesNotMatch(studentRecords, /linkParentToStudentByReference/);
   assert.match(studentRecords, /linked_st\.school_id = pp\.school_id/);
-  assert.doesNotMatch(studentRecords, /return "ambiguous" as const/);
+  assert.match(studentRecords, /sg\.status = 'active'/);
   for (const source of [paymentAction, walletService, feeArchive, paymentArchive]) {
     assert.match(source, /requireParentSchoolScope\([^;]+forWrite: true/s);
   }

@@ -33,6 +33,7 @@ test("auth forms submit through server actions instead of static redirects", () 
 test("auth pages show fields that match the role-specific schema", () => {
   const adminRegisterPage = readFileSync("app/admin/register/page.tsx", "utf8");
   const parentRegisterPage = readFileSync("app/parent/register/page.tsx", "utf8");
+  const parentClaimFlow = readFileSync("app/parent/register/parent-claim-flow.tsx", "utf8");
 
   assert.match(adminLoginPage, /label: "Email or phone"/);
   assert.match(adminLoginPage, /placeholder: "Enter your email or mobile number"/);
@@ -46,13 +47,15 @@ test("auth pages show fields that match the role-specific schema", () => {
   assert.doesNotMatch(adminRegisterPage, /name: "role"/);
   assert.match(adminRegisterPage, /name: "phone"/);
   assert.doesNotMatch(adminRegisterPage, /name: "phone"[\s\S]*required: false/);
-  assert.match(parentRegisterPage, /name: "phone"/);
-  assert.doesNotMatch(parentRegisterPage, /name: "phone"[\s\S]*required: false/);
+  assert.match(parentRegisterPage, /ParentClaimFlow/);
+  assert.match(parentClaimFlow, /name="phone"/);
+  assert.match(parentClaimFlow, /name="claimCode"/);
+  assert.match(parentClaimFlow, /name="otp"/);
   assert.doesNotMatch(parentRegisterPage, /name: "studentFirstName"/);
   assert.doesNotMatch(parentRegisterPage, /name: "studentMiddleName"/);
   assert.doesNotMatch(parentRegisterPage, /name: "studentLastName"/);
   assert.doesNotMatch(parentRegisterPage, /name: "studentName"/);
-  assert.match(parentRegisterPage, /name: "relationship"[\s\S]*spanFull: true/);
+  assert.doesNotMatch(parentClaimFlow, /name="relationship"|name="schoolId"|name="studentReference/);
   assert.doesNotMatch(parentRegisterPage, /UI prototype/);
   assert.doesNotMatch(parentLoginPage, /enrollment/);
 });
@@ -67,12 +70,13 @@ test("dashboard route groups protect admin and parent portals by role", () => {
   assert.equal(existsSync("app/parent/(portal)/dashboard/page.tsx"), true);
 });
 
-test("admin registration waits for super admin approval before login", () => {
-  assert.match(authActions, /status: role === "admin" \? "pending" : "active"/);
-  assert.match(authActions, /if \(role === "parent"\) \{[\s\S]*createSession\(\{ userId: userResult\.insertId, role, name: parsed\.data\.name \}\)/);
+test("admin registration waits for super admin approval and direct parent registration is blocked", () => {
+  assert.match(authActions, /status: "pending"/);
+  assert.match(authActions, /Parent registration requires a school-issued invitation/);
+  assert.doesNotMatch(authActions, /INSERT INTO parent_profiles/);
   assert.match(authActions, /title: "Registration submitted"/);
   assert.match(authActions, /Your admin account is waiting for \$\{PRODUCT_NAME\} approval\./);
-  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/login\?pendingApproval=1" : "\/parent\/dashboard"\);/);
+  assert.match(authActions, /redirect\("\/admin\/login\?pendingApproval=1"\);/);
   assert.doesNotMatch(authActions, /redirect\(role === "admin" \? "\/admin\/onboarding\/school-setup"/);
 });
 

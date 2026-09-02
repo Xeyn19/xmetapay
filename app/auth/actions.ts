@@ -6,10 +6,8 @@ import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/prom
 import { pool } from "@/lib/auth/db";
 import { createSession, deleteSession, setAuthFlashToast, type PortalRole } from "@/lib/auth/session";
 import { hashPassword, verifyPassword } from "@/lib/auth/password.mjs";
-import { linkParentToStudentByReference } from "@/lib/students/records";
 import { parseLoginForm, parseRegisterForm } from "@/lib/auth/validation.mjs";
 import { PRODUCT_NAME } from "@/lib/brand";
-import { ParentSchoolScopeError, validateActiveRegistrationSchool } from "@/lib/parents/school-scope";
 
 export type AuthFormState = {
   message: string;
@@ -20,6 +18,9 @@ const initialState: AuthFormState = { message: "" };
 
 export async function registerAction(role: PortalRole, _state: AuthFormState = initialState, formData: FormData): Promise<AuthFormState> {
   void _state;
+  if (String(role) === "parent") {
+    return { message: "Parent registration requires a school-issued invitation at /parent/register." };
+  }
   const parsed = parseRegisterForm(role, formData);
 
   if (!parsed.ok) {
@@ -42,65 +43,27 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
         email: parsed.data.email,
         phone: parsed.data.phone,
         passwordHash,
-        status: role === "admin" ? "pending" : "active",
+        status: "pending",
       },
     );
 
-    if (role === "admin") {
-      await connection.execute(
-        `INSERT INTO admin_profiles (user_id, school_name, staff_role)
-         VALUES (:userId, :schoolName, :staffRole)`,
-        {
-          userId: userResult.insertId,
-          schoolName: parsed.data.profile.schoolName,
-          staffRole: parsed.data.profile.staffRole,
-        },
-      );
-      await tryLinkAdminProfileToExistingSchool(connection, userResult.insertId, parsed.data.profile.schoolName);
-    } else {
-      await validateActiveRegistrationSchool(connection, parsed.data.profile.schoolId);
-      await connection.execute(
-        `INSERT INTO parent_profiles (user_id, school_id, student_name, student_reference, relationship)
-         VALUES (:userId, :schoolId, :studentName, :studentReference, :relationship)`,
-        {
-          userId: userResult.insertId,
-          schoolId: parsed.data.profile.schoolId,
-          studentName: parsed.data.profile.studentName,
-          studentReference: parsed.data.profile.studentReference,
-          relationship: parsed.data.profile.relationship,
-        },
-      );
-
-      const studentReferences = parsed.data.profile.studentReferences ?? [parsed.data.profile.studentReference];
-
-      for (const studentReference of studentReferences) {
-        try {
-          await linkParentToStudentByReference(
-            connection,
-            userResult.insertId,
-            studentReference,
-          );
-        } catch {
-          // Parent accounts can be created before the school has imported or added the student record.
-        }
-      }
-    }
+    await connection.execute(
+      `INSERT INTO admin_profiles (user_id, school_name, staff_role)
+       VALUES (:userId, :schoolName, :staffRole)`,
+      {
+        userId: userResult.insertId,
+        schoolName: parsed.data.profile.schoolName,
+        staffRole: parsed.data.profile.staffRole,
+      },
+    );
+    await tryLinkAdminProfileToExistingSchool(connection, userResult.insertId, parsed.data.profile.schoolName);
 
     await connection.commit();
-    if (role === "parent") {
-      await createSession({ userId: userResult.insertId, role, name: parsed.data.name });
-      await setAuthFlashToast({
-        role,
-        title: "Account created",
-        description: "Welcome to your parent portal.",
-      });
-    } else {
-      await setAuthFlashToast({
-        role,
-        title: "Registration submitted",
-        description: `Your admin account is waiting for ${PRODUCT_NAME} approval.`,
-      });
-    }
+    await setAuthFlashToast({
+      role,
+      title: "Registration submitted",
+      description: `Your admin account is waiting for ${PRODUCT_NAME} approval.`,
+    });
   } catch (error) {
     if (connection) {
       await connection.rollback();
@@ -110,14 +73,12 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
 
     return duplicateAccount(error)
       ? { message: "An account already exists for this portal using that email or phone." }
-      : error instanceof ParentSchoolScopeError
-        ? { message: error.message, errors: { schoolId: error.message } }
-        : { message: databaseFailureMessage("create the account") };
+      : { message: databaseFailureMessage("create the account") };
   } finally {
     connection?.release();
   }
 
-  redirect(role === "admin" ? "/admin/login?pendingApproval=1" : "/parent/dashboard");
+  redirect("/admin/login?pendingApproval=1");
 }
 
 export async function loginAction(role: PortalRole, _state: AuthFormState = initialState, formData: FormData): Promise<AuthFormState> {

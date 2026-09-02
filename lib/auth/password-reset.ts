@@ -687,12 +687,16 @@ function logPasswordResetError(action: string, error: unknown) {
   const details =
     error && typeof error === "object"
       ? {
+          name: "name" in error ? String(error.name) : undefined,
           code: "code" in error ? String(error.code) : undefined,
+          command: "command" in error ? String(error.command) : undefined,
+          responseCode:
+            "responseCode" in error ? String(error.responseCode) : undefined,
           message: "message" in error ? String(error.message) : undefined,
         }
       : { message: String(error) };
 
-  console.error(`[password-reset:${action}]`, details);
+  console.error(`[password-reset:${action}] ${JSON.stringify(details)}`);
 }
 
 type ResetUserRow = RowDataPacket & {

@@ -40,7 +40,7 @@ Implemented:
 - Unified Add students chooser for single-new, batch-new, and existing-student active-year enrollment, with one contextual trigger on Enrolled students and a header shortcut from other authorized Admin pages.
 - New student records require sex; each school-year enrollment records `new`, `transferee`, or `returned` student type. Age is derived from birthdate for profiles and exports.
 - Admin student profile selector and exact profile route `/admin/students/[studentId]`, including school-scoped identity correction and existing active-year placement correction.
-- Parent-to-student linking through `student_reference`.
+- School-admin-issued Parent invitations, email OTP claims, and reversible guardian access.
 - Parent dashboard reads linked students through `student_guardians`.
 - Parent-side mock enrollment wizard has been removed; the parent portal links existing school-created students only.
 - Fees and tuition backend.
@@ -91,12 +91,12 @@ flowchart TD
   F --> G
   F1 --> G
 
-  G["Parent registers or logs in"] --> H["Parent selects assigned school and submits student_reference"]
-  H --> I{"Matching student found inside assigned school?"}
-  I -->|Yes| J["Create student_guardians link"]
-  I -->|No| K["Parent stays active but has no linked student yet"]
+  G["School administrator issues one student invitation"] --> H["Guardian enters claim code and verifies email OTP"]
+  H --> I{"Invitation, school, and recorded email valid?"}
+  I -->|Yes| J["Create or authenticate Parent and active guardian link"]
+  I -->|No| K["Show generic blocked response without student details"]
   J --> L["Parent dashboard shows linked student"]
-  K --> M["Parent can try link-by-reference later"]
+  K --> M["School administrator can review, rotate, or reissue"]
 
   L --> N["Parent views assigned fees"]
   N --> O["Parent records local test payment"]
@@ -351,7 +351,7 @@ flowchart TD
   I --> J["Insert enrollments row for active school year"]
   J --> K["Student appears in enrolled students table"]
   K --> L["Admin can open exact profile at /admin/students/studentId"]
-  K --> M["Parent can now link using student_reference"]
+  K --> M["School administrator can issue a Parent invitation for this student"]
   L --> N["Admin or registrar corrects student master details"]
   N --> O{"Selected year is active and enrollment exists?"}
   O -->|Yes| P["Atomically update student plus grade, section, and student type"]
@@ -395,31 +395,28 @@ Database touchpoints:
 
 ## Parent Portal Flow
 
-### 1. Parent Registration And Automatic Student Linking
+### 1. Invite-Only Parent Claim
 
 Implemented.
 
-During registration, the parent chooses one active school and can submit one or more `student_reference` values. The validated school is saved in `parent_profiles.school_id`, the first reference is retained for pending-link display, and every reference is matched only inside that school. Parents can still add more children from the same school later.
+The school administrator issues one invitation from the exact Student Profile using the guardian name, email, and relationship already confirmed by the school. The emailed claim code starts a browser-bound challenge, and a separate six-digit OTP is sent to the same recorded address. Only after OTP verification may the guardian create a Parent account or authenticate an existing matching account. Each additional child requires another same-school invitation.
 
 ```mermaid
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Load active school choices"]
-  B --> C["Submit one school, guardian details, references, and password"]
-  C --> C2["Validate selected school is active on the server"]
-  C2 --> D{"Email or phone already used for parent role?"}
-  D -->|Yes| E["Show duplicate account error"]
-  D -->|No| F["Hash password"]
-  F --> G["Insert users row with role parent"]
-  G --> H["Insert parent_profiles row with school_id"]
-  H --> I["Save first reference in parent_profiles"]
-  I --> J["Loop through submitted student references"]
-  J --> K{"Reference exists inside assigned school?"}
-  K -->|Yes| L["Insert student_guardians row"]
-  K -->|No| M["Skip that reference and keep account active"]
-  L --> N["Continue checking remaining references"]
-  M --> N
-  N --> O["Create DB-backed session and HttpOnly cookie"]
-  O --> P["Redirect to /parent/dashboard"]
+  A["School admin opens exact Student Profile"] --> B["Record guardian name, email, and relationship"]
+  B --> C["Lock school and student; save queued hashed invitation"]
+  C --> D["Email single-use claim code"]
+  D --> E["Parent enters claim code at /parent/register"]
+  E --> F["Create browser-bound challenge and email six-digit OTP"]
+  F --> G{"OTP valid and invitation claimable?"}
+  G -->|No| H["Generic retry or blocked state"]
+  G -->|Yes| I{"Matching Parent account exists?"}
+  I -->|No| J["Create user, assigned profile, active link, and grant event"]
+  I -->|Yes| K["Require matching session or password"]
+  K --> L["Create active link and grant event"]
+  J --> M["Consume invitation and challenge atomically"]
+  L --> M
+  M --> N["Redirect to /parent/dashboard"]
 ```
 
 Database touchpoints:
@@ -428,6 +425,9 @@ Database touchpoints:
 - `parent_profiles`
 - `students`
 - `student_guardians`
+- `parent_guardian_invitations`
+- `parent_claim_challenges`
+- `guardian_access_events`
 
 ### 2. Parent Login And Dashboard Student Read
 
@@ -448,7 +448,7 @@ flowchart TD
   G2 -->|Yes| H["Read same-school student_guardians links"]
   H --> I{"Linked students found?"}
   I -->|Yes| J["Show linked students and enrollment info"]
-  I -->|No| K["Show link-by-reference form"]
+  I -->|No| K["Show Enter invitation code action"]
 ```
 
 Database touchpoints:
@@ -460,22 +460,21 @@ Database touchpoints:
 - `grade_levels`
 - `sections`
 
-### 3. Parent Add Another Student By Reference
+### 3. Parent Claims Another Student Invitation
 
 Implemented.
 
-If parent registration did not find a student yet, or if the parent has another child at the school, the parent can add another `student_reference` from the dashboard or `/parent/students`.
+For another child, the school administrator issues a separate invitation. The verified invitation email must exactly match the signed-in Parent account and its school must match the immutable assigned school.
 
 ```mermaid
 flowchart TD
-  A["Parent opens dashboard or /parent/students"] --> B["Parent enters student_reference"]
-  B --> C["Require parent session"]
-  C --> D["Resolve assigned active school"]
-  D --> E["Search school_id plus student_reference"]
-  E --> F{"Matching student exists?"}
-  F -->|No| G["Show friendly not found message"]
-  F -->|Already linked| H["Show Student already linked message"]
-  F -->|Yes| I["Create student_guardians link"]
+  A["Parent opens dashboard or /parent/students"] --> B["Open Enter invitation code"]
+  B --> C["Verify claim code and emailed OTP"]
+  C --> D["Require matching Parent session or password"]
+  D --> E{"Invitation school matches assigned school?"}
+  E -->|No| G["Block for school review"]
+  E -->|Already linked| H["Consume nothing and show safe response"]
+  E -->|Yes| I["Create active student_guardians link and grant event"]
   I --> J["Reload dashboard or My students page"]
   J --> K["All same-school linked students remain visible"]
 ```
@@ -490,19 +489,19 @@ Database touchpoints:
 
 Implemented.
 
-The parent does not own a student just because they typed a reference. Access requires both the guardian link and the immutable parent-school assignment. One parent can have many linked students only within that school.
+The parent does not own a student from a typed reference or chosen school. Access requires a verified school-issued invitation, an active guardian link, and the immutable Parent-school assignment. One Parent can have many linked students only within that school.
 
 ```mermaid
 flowchart TD
-  A["Admin creates official student"] --> B["students.student_reference exists"]
-  B --> C["Parent submits assigned school and student_reference"]
-  C --> D{"Reference exists in parent_profiles.school_id?"}
+  A["Admin creates official student"] --> B["School admin issues invitation for exact student"]
+  B --> C["Recorded guardian verifies emailed claim and OTP"]
+  C --> D{"Email and assigned school match?"}
   D -->|No| E["No access link is created"]
-  D -->|Yes| F["Create student_guardians row"]
+  D -->|Yes| F["Create active student_guardians row"]
   F --> G["Parent can read that student"]
   G --> H["Parent dashboard filters by parent_user_id and school_id"]
-  H --> I["Only same-school linked students are returned"]
-  E --> J["Parent can retry after admin fixes or creates student"]
+  H --> I["Only active same-school linked students are returned"]
+  E --> J["School administrator reviews or reissues invitation"]
 ```
 
 Access rule:
@@ -511,6 +510,7 @@ Access rule:
 Parent can view student data only when:
 student_guardians.parent_user_id = signed_in_parent_user_id
 and student_guardians.student_id = students.id
+and student_guardians.status = 'active'
 and parent_profiles.user_id = signed_in_parent_user_id
 and parent_profiles.school_id = students.school_id
 ```
@@ -861,12 +861,12 @@ Use this testing order when checking the project manually in XAMPP:
 3. Set up school records with one or more school years, one active year, grade levels, and active-year sections.
 4. Create a student with a clear `student_reference`.
 5. Confirm the student appears in the admin student table.
-6. Register a parent account using the same `student_reference`.
-7. Confirm the parent dashboard shows the linked student.
+6. As the school administrator, issue a Parent invitation from that exact Student Profile.
+7. Complete the emailed claim code and OTP flow, then confirm the Parent dashboard shows the linked student.
 8. Log out as parent.
 9. Log back in as parent and confirm the linked student is still there.
 10. Log out as admin.
-11. Log back in as admin and confirm the student and parent link are still visible.
+11. Log back in as admin, revoke and restore guardian access with a reason, and confirm the link plus historical records remain visible.
 
 ## Safe Data Notes
 

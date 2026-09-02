@@ -9,8 +9,8 @@ Admin role reference: `ADMIN_ROLES.md`
 ## Current Project Status
 
 - [x] Admin/school registration works.
-- [x] Parent registration works.
-- [x] Parent registration requires one active school and stores the immutable school assignment in `parent_profiles.school_id`.
+- [x] Parent registration uses a school-issued, single-use invitation and a separate email OTP sent to the school-recorded guardian address.
+- [x] Invitation completion stores the immutable school assignment in `parent_profiles.school_id`; the browser cannot choose school or student ownership.
 - [x] Admin/school login works.
 - [x] Parent login works.
 - [x] Company super admin login exists at `/login`.
@@ -105,6 +105,9 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Add backend helpers for `students` and `student_guardians`.
 - [x] Scope every Parent student, fee, tuition, payment, receipt, archive, wallet, and top-up read/write to the one school assigned in `parent_profiles`.
 - [x] Preserve unresolved legacy and multi-school records without exposing them through Parent portal operations.
+- [x] Let only school administrators issue, rotate, resend, and revoke Parent invitations from the exact Student Profile.
+- [x] Require one school-issued invitation per guardian-to-student relationship and email OTP verification before account creation or linking.
+- [x] Revoke and restore guardian access with append-only audit events while preserving every relationship and financial record.
 - [x] Create an admin flow for adding or listing students.
 - [x] Provide one Add students chooser for single new-student entry, validated multi-student batches with shared defaults/per-row overrides, and existing-student enrollment.
 - [x] Show one contextual Add students trigger on the Enrolled students page while retaining the shared header shortcut on other authorized Admin pages.
@@ -112,8 +115,8 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Capture required sex on new student records and school-year student type on new, existing-student, bulk, and rollover enrollment flows; derive age from birthdate and show legacy missing values as Pending.
 - [x] Restrict student creation/enrollment to `school_administrator` and `registrar`.
 - [x] Let school administrators and registrars correct school-scoped student details plus existing active-year grade, section, and student type from the exact Student Profile; keep historical placement and lifecycle statuses read-only.
-- [x] Link parent accounts to students using `student_reference`.
-- [x] Allow parent registration to submit one or more student references.
+- [x] Link Parent accounts only through a verified invitation for one school-owned student.
+- [x] Remove public school selection and student-reference linking controls from Parent registration and portal pages.
 - [x] Show linked students on the parent dashboard from the database.
 - [x] Add a parent My students page for managing multiple linked students.
 - [x] Handle duplicate parent-student links with a friendly already-linked message.

@@ -282,7 +282,7 @@
           </div>
           <div class="card">
             <strong>Parent portal</strong>
-            Dark branded public shell, registration, login, student linking by reference, linked enrolled
+            Dark branded public shell, invite-only registration with email OTP, login, active guardian links, linked enrolled
             student access, fee viewing, tuition payment, receipts, history,
             wallet top-up, and wallet store-spending history.
           </div>
@@ -294,7 +294,7 @@
             role-specific <code>admin_profiles</code> and
             <code>parent_profiles</code>, plus one secure
             <code>password_reset_challenges</code> row per user. Admin profiles link to
-            <code>schools.id</code> after manual setup. Parent profiles require one active-school selection for new registrations and retain nullable unresolved legacy rows without deleting history. New school admin
+            <code>schools.id</code> after manual setup. Parent profiles derive their school from a verified school-issued invitation and retain nullable unresolved legacy rows without deleting history. Invitation claim codes, browser challenges, and OTPs are stored only as hashes; guardian access can be revoked or restored with append-only events. New school admin
             users start with <code>users.status = pending</code> until the
             company super admin approves or rejects them. Admins and parents
             have role-specific registration routes; company super admins use
@@ -333,8 +333,8 @@
             </tr>
             <tr>
               <td>Students</td>
-              <td><code>students</code>, <code>student_guardians</code></td>
-              <td>Student profiles and parent-to-student links, including one parent linked to multiple students.</td>
+              <td><code>students</code>, <code>student_guardians</code>, <code>parent_guardian_invitations</code>, <code>parent_claim_challenges</code>, <code>guardian_access_events</code></td>
+              <td>Student profiles, hashed invite/OTP claims, active or revoked Parent links, and append-only access events. One Parent may link to multiple same-school students through separate invitations.</td>
             </tr>
             <tr>
               <td>Enrollment</td>
@@ -692,7 +692,7 @@ flowchart TD
   F --> G["Assign grade level and section"]
   G --> H["Student appears in admin student table"]
   H --> I["Student profile selector links to /admin/students/studentId"]
-  H --> J["Parent can link later using student_reference"]
+  H --> J["School administrator can issue exact-student Parent invitation"]
   I --> K["Correct existing school-scoped student details"]
   K --> L{"Active-year enrollment exists?"}
   L -->|Yes| M["Correct grade, section, and student type in one transaction"]
@@ -725,25 +725,25 @@ flowchart TD
       <section>
         <h2>Parent Flowcharts</h2>
 
-        <h3>Parent Registration and Login Flow</h3>
+        <h3>Invite-Only Parent Claim Flow</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-registration-login-flow.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens register page"] --> B["Choose one active school and submit guardian details plus references"]
-  B --> C["Create user with role parent"]
-  C --> D["Create parent profile with immutable school_id"]
-  D --> E["Save first reference in parent_profiles"]
-  E --> F["Loop through submitted references"]
-  F --> G{"Student found inside assigned school?"}
-  G -->|Yes| H["Create student_guardians link"]
-  G -->|No| I["Skip that reference for now"]
-  H --> J["Create session after all references are checked"]
+  A["School admin issues one exact-student invitation"] --> B["Email hashed-code counterpart to recorded guardian"]
+  B --> C["Parent enters claim code"]
+  C --> D["Send separate six-digit email OTP"]
+  D --> E{"Verified and claimable?"}
+  E -->|No| F["Generic blocked response"]
+  E -->|Yes| G{"Existing matching Parent?"}
+  G -->|No| H["Create account and immutable school profile"]
+  G -->|Yes| I["Require matching session or password"]
+  H --> J["Create active guardian link and grant event"]
   I --> J
-  J --> K["Redirect to parent dashboard"]
-  K --> L["Parent can add more same-school students later from /parent/students"]
+  J --> K["Consume invitation and challenge atomically"]
+  K --> L["Each additional child needs another same-school invitation"]
           </pre>
         </div>
 

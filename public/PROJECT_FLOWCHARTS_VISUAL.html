@@ -350,12 +350,12 @@ flowchart TD
   F --> G
   F1 --> G
 
-  G["Parent registers or logs in"] --> H["Choose one school and submit student_reference"]
-  H --> I{"Matching student found inside assigned school?"}
-  I -->|Yes| J["Create student_guardians link"]
-  I -->|No| K["Parent stays active but has no linked student yet"]
+  G["School administrator issues one student invitation"] --> H["Guardian enters claim code and verifies email OTP"]
+  H --> I{"Invitation, school, and recorded email valid?"}
+  I -->|Yes| J["Create or authenticate Parent and active guardian link"]
+  I -->|No| K["Show generic blocked response without student details"]
   J --> L["Parent dashboard shows linked student"]
-  K --> M["Parent can try link-by-reference later"]
+  K --> M["School administrator can review or reissue"]
 
   L --> N["Parent views assigned fees"]
   N --> O["Parent records local test payment"]
@@ -584,7 +584,7 @@ flowchart TD
   I --> J["Insert enrollments row for active school year"]
   J --> K["Student appears in enrolled students table"]
   K --> L["Admin can open exact profile at /admin/students/studentId"]
-  K --> M["Parent can now link using student_reference"]
+  K --> M["School administrator can issue a Parent invitation for this student"]
   L --> N["Admin or registrar corrects student master details"]
   N --> O{"Active year and enrollment still valid?"}
   O -->|Yes| P["Atomically correct grade, section, and student type"]
@@ -614,29 +614,26 @@ flowchart TD
       <section>
         <h2>Parent Portal</h2>
 
-        <h3>Parent Registration And Student Links</h3>
+        <h3>Invite-Only Parent Claim</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-registration-auto-link.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Load active school choices"]
-  B --> C["Submit one school, guardian details, references, and password"]
-  C --> C2["Validate selected school is active on the server"]
-  C2 --> D{"Email or phone already used for parent role?"}
-  D -->|Yes| E["Show duplicate account error"]
-  D -->|No| F["Hash password"]
-  F --> G["Insert users row with role parent"]
-  G --> H["Insert parent_profiles row with school_id and first reference"]
-  H --> I["Loop through submitted student references"]
-  I --> J{"Reference exists inside assigned school?"}
-  J -->|Yes| K["Insert student_guardians row"]
-  J -->|No| L["Skip that reference and keep account active"]
-  K --> M["Continue checking remaining references"]
-  L --> M
-  M --> N["Create DB-backed session and HttpOnly cookie"]
-  N --> O["Redirect to /parent/dashboard"]
+  A["School admin opens exact Student Profile"] --> B["Record guardian name, email, and relationship"]
+  B --> C["Save hashed single-use invitation and email claim code"]
+  C --> D["Parent enters code at /parent/register"]
+  D --> E["Email six-digit OTP to recorded guardian"]
+  E --> F{"OTP and invitation valid?"}
+  F -->|No| G["Generic retry or blocked state"]
+  F -->|Yes| H{"Matching Parent exists?"}
+  H -->|No| I["Create Parent, assigned profile, active link, and grant event"]
+  H -->|Yes| J["Require matching session or password"]
+  J --> K["Create active guardian link and grant event"]
+  I --> L["Consume claim atomically"]
+  K --> L
+  L --> M["Redirect to /parent/dashboard"]
           </pre>
         </div>
 
@@ -658,25 +655,24 @@ flowchart TD
   G2 -->|Yes| H["Read same-school student_guardians links"]
   H --> I{"Linked students found?"}
   I -->|Yes| J["Show linked students and enrollment info"]
-  I -->|No| K["Show link-by-reference form"]
+  I -->|No| K["Show Enter invitation code action"]
           </pre>
         </div>
 
-        <h3>Parent Add Another Student By Reference</h3>
+        <h3>Claim Another Student Invitation</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
-            <button type="button" data-diagram-download="svg" data-file-name="parent-manual-link-by-reference.svg">Download SVG</button>
+            <button type="button" data-diagram-download="svg" data-file-name="parent-additional-invitation.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens dashboard or /parent/students"] --> B["Parent enters student_reference"]
-  B --> C["Require parent session"]
-  C --> D["Resolve assigned active school"]
-  D --> E["Search school_id plus student_reference"]
-  E --> F{"Matching student exists?"}
-  F -->|No| G["Show friendly not found message"]
-  F -->|Already linked| H["Show Student already linked message"]
-  F -->|Yes| I["Create student_guardians link"]
+  A["Parent opens dashboard or /parent/students"] --> B["Enter separate school-issued invitation"]
+  B --> C["Verify emailed OTP"]
+  C --> D["Require matching Parent session or password"]
+  D --> E{"Same assigned school and claimable invitation?"}
+  E -->|No| G["Block for school review"]
+  E -->|Already linked| H["Show safe response"]
+  E -->|Yes| I["Create active guardian link and grant event"]
   I --> J["Reload dashboard or My students page"]
   J --> K["All same-school linked students remain visible"]
           </pre>
@@ -693,15 +689,15 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Admin creates official student"] --> B["students.student_reference exists"]
-  B --> C["Parent submits assigned school and student_reference"]
-  C --> D{"Reference exists in parent_profiles.school_id?"}
+  A["Admin creates official student"] --> B["School admin issues invitation for exact student"]
+  B --> C["Guardian verifies emailed claim code and OTP"]
+  C --> D{"Recorded email and assigned school match?"}
   D -->|No| E["No access link is created"]
-  D -->|Yes| F["Create student_guardians row"]
+  D -->|Yes| F["Create active student_guardians row"]
   F --> G["Parent can read that student"]
   G --> H["Filter by parent_user_id and school_id"]
-  H --> I["Only same-school linked students are returned"]
-  E --> J["Parent can retry after admin fixes or creates student"]
+  H --> I["Only active same-school linked students are returned"]
+  E --> J["School administrator reviews or reissues"]
           </pre>
         </div>
 
