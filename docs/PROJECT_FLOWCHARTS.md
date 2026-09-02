@@ -91,8 +91,8 @@ flowchart TD
   F --> G
   F1 --> G
 
-  G["Parent registers or logs in"] --> H["Parent submits student_reference"]
-  H --> I{"Matching student found?"}
+  G["Parent registers or logs in"] --> H["Parent selects assigned school and submits student_reference"]
+  H --> I{"Matching student found inside assigned school?"}
   I -->|Yes| J["Create student_guardians link"]
   I -->|No| K["Parent stays active but has no linked student yet"]
   J --> L["Parent dashboard shows linked student"]
@@ -399,20 +399,21 @@ Database touchpoints:
 
 Implemented.
 
-During registration, the parent can submit one or more `student_reference` values. The first reference is saved in `parent_profiles` for pending-link display, and every submitted reference attempts a separate `student_guardians` link. Parents can still add more children later from the portal.
+During registration, the parent chooses one active school and can submit one or more `student_reference` values. The validated school is saved in `parent_profiles.school_id`, the first reference is retained for pending-link display, and every reference is matched only inside that school. Parents can still add more children from the same school later.
 
 ```mermaid
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Submit guardian details, required phone, relationship, one or more student_reference values, password"]
-  B --> C["Validate required fields"]
-  C --> D{"Email or phone already used for parent role?"}
+  A["Parent opens /parent/register"] --> B["Load active school choices"]
+  B --> C["Submit one school, guardian details, references, and password"]
+  C --> C2["Validate selected school is active on the server"]
+  C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
   F --> G["Insert users row with role parent"]
-  G --> H["Insert parent_profiles row"]
+  G --> H["Insert parent_profiles row with school_id"]
   H --> I["Save first reference in parent_profiles"]
   I --> J["Loop through submitted student references"]
-  J --> K{"Exactly one matching student?"}
+  J --> K{"Reference exists inside assigned school?"}
   K -->|Yes| L["Insert student_guardians row"]
   K -->|No| M["Skip that reference and keep account active"]
   L --> N["Continue checking remaining references"]
@@ -432,7 +433,7 @@ Database touchpoints:
 
 Implemented.
 
-The parent dashboard must only show students linked to the signed-in parent through `student_guardians`.
+The parent dashboard shows students only when both the `student_guardians` link and `parent_profiles.school_id = students.school_id` are true. Unresolved legacy accounts retain their rows but receive an account-review screen.
 
 ```mermaid
 flowchart TD
@@ -442,7 +443,9 @@ flowchart TD
   C -->|Yes| E["Create DB-backed session and HttpOnly cookie"]
   E --> F["Redirect to /parent/dashboard"]
   F --> G["Require parent session"]
-  G --> H["Read student_guardians by parent_user_id"]
+  G --> G2{"One assigned school exists?"}
+  G2 -->|No| G3["Show account review and logout only"]
+  G2 -->|Yes| H["Read same-school student_guardians links"]
   H --> I{"Linked students found?"}
   I -->|Yes| J["Show linked students and enrollment info"]
   I -->|No| K["Show link-by-reference form"]
@@ -467,13 +470,14 @@ If parent registration did not find a student yet, or if the parent has another 
 flowchart TD
   A["Parent opens dashboard or /parent/students"] --> B["Parent enters student_reference"]
   B --> C["Require parent session"]
-  C --> D["Search students by student_reference"]
-  D --> E{"Exactly one matching student?"}
-  E -->|No| F["Show friendly not found or ambiguous message"]
-  E -->|Already linked| G["Show Student already linked message"]
-  E -->|Yes| H["Create student_guardians link"]
-  H --> I["Reload dashboard or My students page"]
-  I --> J["All linked students remain visible"]
+  C --> D["Resolve assigned active school"]
+  D --> E["Search school_id plus student_reference"]
+  E --> F{"Matching student exists?"}
+  F -->|No| G["Show friendly not found message"]
+  F -->|Already linked| H["Show Student already linked message"]
+  F -->|Yes| I["Create student_guardians link"]
+  I --> J["Reload dashboard or My students page"]
+  J --> K["All same-school linked students remain visible"]
 ```
 
 Database touchpoints:
@@ -486,18 +490,18 @@ Database touchpoints:
 
 Implemented.
 
-The parent does not own a student just because they typed a student reference once. The real access rule is the database link in `student_guardians`, and one parent can have many linked students through separate rows.
+The parent does not own a student just because they typed a reference. Access requires both the guardian link and the immutable parent-school assignment. One parent can have many linked students only within that school.
 
 ```mermaid
 flowchart TD
   A["Admin creates official student"] --> B["students.student_reference exists"]
-  B --> C["Parent submits student_reference"]
-  C --> D{"Can the system find exactly one matching student?"}
+  B --> C["Parent submits assigned school and student_reference"]
+  C --> D{"Reference exists in parent_profiles.school_id?"}
   D -->|No| E["No access link is created"]
   D -->|Yes| F["Create student_guardians row"]
   F --> G["Parent can read that student"]
-  G --> H["Parent dashboard filters by parent_user_id"]
-  H --> I["Only linked students are returned"]
+  G --> H["Parent dashboard filters by parent_user_id and school_id"]
+  H --> I["Only same-school linked students are returned"]
   E --> J["Parent can retry after admin fixes or creates student"]
 ```
 
@@ -507,6 +511,8 @@ Access rule:
 Parent can view student data only when:
 student_guardians.parent_user_id = signed_in_parent_user_id
 and student_guardians.student_id = students.id
+and parent_profiles.user_id = signed_in_parent_user_id
+and parent_profiles.school_id = students.school_id
 ```
 
 ## Password Recovery Flow

@@ -264,6 +264,7 @@ async function getParentFeeRows(parentUserId: number) {
        ) AS terms_blob
      FROM student_guardians sg
      JOIN students st ON st.id = sg.student_id
+     JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      JOIN student_fee_assignments sfa ON sfa.student_id = st.id
      JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
      JOIN fee_types ft ON ft.id = sfa.fee_type_id

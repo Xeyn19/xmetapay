@@ -11,6 +11,7 @@ import {
   maxWalletTopUpStudents,
   WalletTopUpValidationError,
 } from "@/lib/wallets/top-up";
+import { ParentSchoolScopeError } from "@/lib/parents/school-scope";
 
 const walletTopUpChannels = new Set<WalletTopUpChannel>(["card", "online_banking", "gcash", "maya"]);
 
@@ -73,7 +74,7 @@ export async function createWalletTopUpAction(formData: FormData) {
   } catch (error) {
     await toast(
       "Top-up not recorded",
-      error instanceof WalletTopUpValidationError
+      error instanceof WalletTopUpValidationError || error instanceof ParentSchoolScopeError
         ? error.message
         : "Unable to record the wallet top-up. Confirm the batch migration and MySQL/XAMPP, then try again.",
     );

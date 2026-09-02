@@ -10,6 +10,7 @@ Admin role reference: `ADMIN_ROLES.md`
 
 - [x] Admin/school registration works.
 - [x] Parent registration works.
+- [x] Parent registration requires one active school and stores the immutable school assignment in `parent_profiles.school_id`.
 - [x] Admin/school login works.
 - [x] Parent login works.
 - [x] Company super admin login exists at `/login`.
@@ -102,6 +103,8 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 ## Phase 3: Students And Guardian Linking
 
 - [x] Add backend helpers for `students` and `student_guardians`.
+- [x] Scope every Parent student, fee, tuition, payment, receipt, archive, wallet, and top-up read/write to the one school assigned in `parent_profiles`.
+- [x] Preserve unresolved legacy and multi-school records without exposing them through Parent portal operations.
 - [x] Create an admin flow for adding or listing students.
 - [x] Provide one Add students chooser for single new-student entry, validated multi-student batches with shared defaults/per-row overrides, and existing-student enrollment.
 - [x] Show one contextual Add students trigger on the Enrolled students page while retaining the shared header shortcut on other authorized Admin pages.
@@ -116,7 +119,7 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Handle duplicate parent-student links with a friendly already-linked message.
 - [x] Keep parent access limited to their linked students only.
 
-Done when: admins can manage students and parents can add or view multiple linked children while only seeing records connected through `student_guardians`.
+Done when: admins can manage students and parents can add or view multiple same-school linked children while access requires both `student_guardians` ownership and the immutable `parent_profiles.school_id` boundary.
 
 ## Phase 4: Fees And Tuition Backend
 

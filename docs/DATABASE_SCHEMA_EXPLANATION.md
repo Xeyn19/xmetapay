@@ -83,7 +83,9 @@ School setup is shared across staff accounts. If a registrar or finance officer 
 
 ### `parent_profiles`
 
-This stores parent-side profile details for users with the `parent` role. Parent registration asks for guardian details, required phone number, relationship, and one or more student references. The first submitted reference is stored in `parent_profiles.student_reference` and `parent_profiles.student_name` as a pending-link display label because those columns are required, but official student identity still comes from the school-created `students` records after linking.
+This stores parent-side profile details for users with the `parent` role. Parent registration requires one active school, guardian details, required phone number, relationship, and one or more student references. `parent_profiles.school_id` is the immutable school ownership boundary. The first submitted reference is stored in `parent_profiles.student_reference` and `parent_profiles.student_name` as a pending-link display label because those columns are required, but official student identity still comes from the school-created `students` records after linking.
+
+The one-school migration is additive and non-destructive. It backfills `school_id` only when existing guardian links or the saved pending reference identify exactly one school. Multi-school, ambiguous, or unmatched profiles remain nullable and receive an account-review screen; their guardian and financial history is not deleted. If an assigned school later becomes inactive, Parent historical reads remain available while new links and financial writes are rejected.
 
 ## School Setup Tables
 
@@ -156,7 +158,7 @@ Main purpose:
 - Store the relationship type: mother, father, or guardian.
 - Mark a primary guardian when needed.
 
-This table is what lets the parent portal show only the children linked to the signed-in parent. Parent registration can create multiple links by looping through submitted `student_reference` values, and the parent dashboard or My students page can add more linked students later by inserting additional `student_guardians` rows. The unique student-parent pair prevents duplicate links.
+This table is one part of Parent authorization. Every Parent read and write also requires the linked student's `students.school_id` to match `parent_profiles.school_id`. Parent registration can create multiple same-school links by looping through submitted `student_reference` values, and the parent dashboard or My students page can add more same-school students later. The unique student-parent pair prevents duplicate links; a stale or manually inserted cross-school link is ignored by application reads and writes.
 
 The company super-admin school profile also reuses this relationship for aggregate monitoring. It counts distinct parents linked to active-year enrolled students separately from all distinct parents linked to any student in the school. It does not return parent or student directory fields, and it requires no additional table.
 

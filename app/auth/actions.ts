@@ -9,6 +9,7 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password.mjs";
 import { linkParentToStudentByReference } from "@/lib/students/records";
 import { parseLoginForm, parseRegisterForm } from "@/lib/auth/validation.mjs";
 import { PRODUCT_NAME } from "@/lib/brand";
+import { ParentSchoolScopeError, validateActiveRegistrationSchool } from "@/lib/parents/school-scope";
 
 export type AuthFormState = {
   message: string;
@@ -57,11 +58,13 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
       );
       await tryLinkAdminProfileToExistingSchool(connection, userResult.insertId, parsed.data.profile.schoolName);
     } else {
+      await validateActiveRegistrationSchool(connection, parsed.data.profile.schoolId);
       await connection.execute(
-        `INSERT INTO parent_profiles (user_id, student_name, student_reference, relationship)
-         VALUES (:userId, :studentName, :studentReference, :relationship)`,
+        `INSERT INTO parent_profiles (user_id, school_id, student_name, student_reference, relationship)
+         VALUES (:userId, :schoolId, :studentName, :studentReference, :relationship)`,
         {
           userId: userResult.insertId,
+          schoolId: parsed.data.profile.schoolId,
           studentName: parsed.data.profile.studentName,
           studentReference: parsed.data.profile.studentReference,
           relationship: parsed.data.profile.relationship,
@@ -107,7 +110,9 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
 
     return duplicateAccount(error)
       ? { message: "An account already exists for this portal using that email or phone." }
-      : { message: databaseFailureMessage("create the account") };
+      : error instanceof ParentSchoolScopeError
+        ? { message: error.message, errors: { schoolId: error.message } }
+        : { message: databaseFailureMessage("create the account") };
   } finally {
     connection?.release();
   }

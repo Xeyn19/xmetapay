@@ -114,9 +114,12 @@ One parent profile per parent user.
 | --- | --- |
 | `id` | Primary key |
 | `user_id` | Links to `users.id` |
+| `school_id` | Nullable immutable link to the one assigned `schools.id`; unresolved legacy profiles remain null |
 | `student_name` | Pending-link display label; parent registration stores the first submitted student reference here until an official student link exists |
 | `student_reference` | First student reference captured during registration; all submitted references attempt `student_guardians` links |
 | `relationship` | Mother, father, or guardian |
+
+Parent registration validates an active school before inserting this profile. Existing databases use the idempotent `2026-09-02-parent-single-school-scope.sql` migration, which backfills only unambiguous single-school profiles and never deletes legacy guardian or financial records. A null assignment blocks Parent portal data and actions. An inactive assigned school permits historical reads but no new Parent writes.
 
 ## Full Practical MVP Schema
 
@@ -231,7 +234,7 @@ CREATE TABLE students (
 
 #### `student_guardians`
 
-Links parent accounts to students. This supports multiple guardians per student and multiple students per parent. Parent registration can submit one or more student references and creates one row per matched student; later, the parent portal can add more children by creating additional rows here. The unique pair key keeps duplicate links from being created.
+Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per parent. Parent registration can submit one or more student references and creates one row per match inside `parent_profiles.school_id`; later, the parent portal can add more children from that same school. The unique pair key keeps duplicate links from being created. Every Parent query also requires the student's school to equal the parent profile school, so a stale cross-school row grants no portal access.
 
 ```sql
 CREATE TABLE student_guardians (

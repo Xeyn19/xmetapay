@@ -94,6 +94,7 @@ test("auth validation normalizes role-specific registration payloads", async () 
   parentForm.append("guardianName", " Maria Santos ");
   parentForm.append("email", "PARENT@EMAIL.COM");
   parentForm.append("phone", "0917 000 0000");
+  parentForm.append("schoolId", "7");
   parentForm.append("studentReferences", "BWA-001");
   parentForm.append("studentReferences", " BWA-002 ");
   parentForm.append("studentReferences", "bwa-001");
@@ -105,6 +106,7 @@ test("auth validation normalizes role-specific registration payloads", async () 
   assert.equal(parent.ok, true);
   assert.equal(parent.data.name, "Maria Santos");
   assert.equal(parent.data.phone, "0917 000 0000");
+  assert.equal(parent.data.profile.schoolId, 7);
   assert.equal(parent.data.profile.studentName, "BWA-001");
   assert.equal(parent.data.profile.studentReference, "BWA-001");
   assert.deepEqual(parent.data.profile.studentReferences, ["BWA-001", "BWA-002"]);
@@ -114,6 +116,7 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["guardianName", " Maria Santos "],
     ["email", "parent2@email.com"],
     ["phone", ""],
+    ["schoolId", "7"],
     ["studentReference", "BWA-002"],
     ["relationship", "Guardian"],
     ["password", testCredentialInput],
@@ -127,6 +130,7 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["guardianName", " Maria Santos "],
     ["email", "parent4@email.com"],
     ["phone", "0999 111 2222"],
+    ["schoolId", "7"],
     ["studentReference", ""],
     ["relationship", "Guardian"],
     ["password", testCredentialInput],
@@ -140,6 +144,7 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["guardianName", " Maria Santos "],
     ["email", "parent3@email.com"],
     ["phone", "0999 111 2222"],
+    ["schoolId", "7"],
     ["studentReference", "BWA-003"],
     ["relationship", "Mother"],
     ["password", testCredentialInput],
@@ -178,11 +183,14 @@ test("auth validation normalizes role-specific registration payloads", async () 
   });
 });
 
-test("parent registration renders multi-student reference controls", () => {
+test("parent registration requires one school and renders multi-student reference controls", () => {
   const parentRegister = readFileSync(parentRegisterPath, "utf8");
   const authUi = readFileSync(authUiPath, "utf8");
 
-  assert.match(parentRegister, /Connect your account to your student records/);
+  assert.match(parentRegister, /Choose one school, then connect children registered at that school/);
+  assert.match(parentRegister, /getActiveParentRegistrationSchools/);
+  assert.match(parentRegister, /name: "schoolId"/);
+  assert.match(parentRegister, /Select your school/);
   assert.match(parentRegister, /name: "studentReferences"/);
   assert.match(parentRegister, /type: "studentReferences"/);
   assert.doesNotMatch(parentRegister, /name: "studentReference"/);
@@ -192,5 +200,6 @@ test("parent registration renders multi-student reference controls", () => {
   assert.match(authUi, /Remove/);
   assert.match(authUi, /Add all children you want connected to this parent account/);
   assert.match(authUi, /Duplicate references are ignored safely/);
+  assert.match(authUi, /typeof option === "string" \? option : option\.value/);
 });
 

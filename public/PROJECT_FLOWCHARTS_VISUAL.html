@@ -319,8 +319,8 @@
         <p>
           The admin creates the official school and student records. New student records require sex, while each
           school-year enrollment records whether the student is new, a transferee, or returned. Age is derived from
-          birthdate and legacy missing values display as Pending. Parents can
-          only see students after a <code>student_guardians</code> link exists.
+          birthdate and legacy missing values display as Pending. Parents choose one active school and
+          only see students when both a <code>student_guardians</code> link and matching <code>parent_profiles.school_id</code> exist.
           One <strong>Add students</strong> chooser opens focused single-new,
           batch-new, or existing-student workflows. Enrolled students shows one
           contextual trigger, while other authorized Admin pages retain a header
@@ -350,8 +350,8 @@ flowchart TD
   F --> G
   F1 --> G
 
-  G["Parent registers or logs in"] --> H["Parent submits student_reference"]
-  H --> I{"Matching student found?"}
+  G["Parent registers or logs in"] --> H["Choose one school and submit student_reference"]
+  H --> I{"Matching student found inside assigned school?"}
   I -->|Yes| J["Create student_guardians link"]
   I -->|No| K["Parent stays active but has no linked student yet"]
   J --> L["Parent dashboard shows linked student"]
@@ -621,15 +621,16 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Submit guardian details, required phone, relationship, one or more student_reference values, password"]
-  B --> C["Validate required fields"]
-  C --> D{"Email or phone already used for parent role?"}
+  A["Parent opens /parent/register"] --> B["Load active school choices"]
+  B --> C["Submit one school, guardian details, references, and password"]
+  C --> C2["Validate selected school is active on the server"]
+  C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
   F --> G["Insert users row with role parent"]
-  G --> H["Insert parent_profiles row with first reference"]
+  G --> H["Insert parent_profiles row with school_id and first reference"]
   H --> I["Loop through submitted student references"]
-  I --> J{"Exactly one matching student?"}
+  I --> J{"Reference exists inside assigned school?"}
   J -->|Yes| K["Insert student_guardians row"]
   J -->|No| L["Skip that reference and keep account active"]
   K --> M["Continue checking remaining references"]
@@ -652,7 +653,9 @@ flowchart TD
   C -->|Yes| E["Create DB-backed session and HttpOnly cookie"]
   E --> F["Redirect to /parent/dashboard"]
   F --> G["Require parent session"]
-  G --> H["Read student_guardians by parent_user_id"]
+  G --> G2{"One assigned school exists?"}
+  G2 -->|No| G3["Show account review and logout only"]
+  G2 -->|Yes| H["Read same-school student_guardians links"]
   H --> I{"Linked students found?"}
   I -->|Yes| J["Show linked students and enrollment info"]
   I -->|No| K["Show link-by-reference form"]
@@ -668,13 +671,14 @@ flowchart TD
 flowchart TD
   A["Parent opens dashboard or /parent/students"] --> B["Parent enters student_reference"]
   B --> C["Require parent session"]
-  C --> D["Search students by student_reference"]
-  D --> E{"Exactly one matching student?"}
-  E -->|No| F["Show friendly not found or ambiguous message"]
-  E -->|Already linked| G["Show Student already linked message"]
-  E -->|Yes| H["Create student_guardians link"]
-  H --> I["Reload dashboard or My students page"]
-  I --> J["All linked students remain visible"]
+  C --> D["Resolve assigned active school"]
+  D --> E["Search school_id plus student_reference"]
+  E --> F{"Matching student exists?"}
+  F -->|No| G["Show friendly not found message"]
+  F -->|Already linked| H["Show Student already linked message"]
+  F -->|Yes| I["Create student_guardians link"]
+  I --> J["Reload dashboard or My students page"]
+  J --> K["All same-school linked students remain visible"]
           </pre>
         </div>
       </section>
@@ -690,13 +694,13 @@ flowchart TD
           <pre class="mermaid">
 flowchart TD
   A["Admin creates official student"] --> B["students.student_reference exists"]
-  B --> C["Parent submits student_reference"]
-  C --> D{"Can the system find exactly one matching student?"}
+  B --> C["Parent submits assigned school and student_reference"]
+  C --> D{"Reference exists in parent_profiles.school_id?"}
   D -->|No| E["No access link is created"]
   D -->|Yes| F["Create student_guardians row"]
   F --> G["Parent can read that student"]
-  G --> H["Parent dashboard filters by parent_user_id"]
-  H --> I["Only linked students are returned"]
+  G --> H["Filter by parent_user_id and school_id"]
+  H --> I["Only same-school linked students are returned"]
   E --> J["Parent can retry after admin fixes or creates student"]
           </pre>
         </div>

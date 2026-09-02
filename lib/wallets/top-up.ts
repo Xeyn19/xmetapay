@@ -6,6 +6,7 @@ import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/prom
 
 import { pool } from "@/lib/auth/db";
 import type { WalletTopUpChannel } from "@/lib/wallets/records";
+import { requireParentSchoolScope } from "@/lib/parents/school-scope";
 
 export const maxWalletTopUpStudents = 20;
 export const maxWalletTopUpAmount = 10000;
@@ -30,6 +31,7 @@ export async function createWalletTopUpBatch(input: {
 }): Promise<WalletTopUpBatchResult> {
   const items = normalizeItems(input.items);
   const submissionTokenHash = createHash("sha256").update(input.submissionToken).digest("hex");
+  await requireParentSchoolScope(input.parentUserId, { forWrite: true });
   const existing = await findExistingBatch(input.parentUserId, submissionTokenHash);
 
   if (existing) {
@@ -41,6 +43,7 @@ export async function createWalletTopUpBatch(input: {
   try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
+    await requireParentSchoolScope(input.parentUserId, { forWrite: true, executor: connection });
 
     const existingLocked = await findExistingBatch(input.parentUserId, submissionTokenHash, connection, true);
     if (existingLocked) {
@@ -208,6 +211,9 @@ async function getLockedLinkedStudents(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      JOIN school_years sy
        ON sy.school_id = st.school_id
       AND sy.status = 'active'

@@ -10,6 +10,7 @@ import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import type { PaymentChannel } from "@/lib/payments/records";
 import { applyTuitionTermPayment, TuitionTermsError } from "@/lib/tuition/terms";
+import { ParentSchoolScopeError, requireParentSchoolScope } from "@/lib/parents/school-scope";
 
 const paymentChannels = new Set<PaymentChannel>(["cash", "card", "online_banking", "gcash", "maya"]);
 
@@ -40,6 +41,7 @@ export async function createParentPaymentAction(formData: FormData) {
   try {
     connection = await pool.getConnection();
     await connection.beginTransaction();
+    await requireParentSchoolScope(session.userId, { forWrite: true, executor: connection });
 
     if (tuitionTermIds.length > 0) {
       receiptId = await applyTuitionTermPayment(connection, {
@@ -148,7 +150,7 @@ export async function createParentPaymentAction(formData: FormData) {
 
     await toast(
       "Payment not recorded",
-      error instanceof PaymentValidationError || error instanceof TuitionTermsError
+      error instanceof PaymentValidationError || error instanceof TuitionTermsError || error instanceof ParentSchoolScopeError
         ? error.message
         : "Unable to record the payment. Check MySQL/XAMPP and try again.",
     );
@@ -175,6 +177,7 @@ async function getLockedPayableFees(
      FROM student_fee_assignments sfa
      JOIN students st ON st.id = sfa.student_id
      JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      WHERE sfa.id IN (${placeholders})
        AND sfa.status IN ('open', 'partial')
        AND sfa.amount_due > sfa.amount_paid

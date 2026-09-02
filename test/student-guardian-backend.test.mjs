@@ -293,8 +293,8 @@ test("parent portal shell and profile use real database-backed identity", () => 
   assert.match(parentShell, /hasPayableFees \? \(/);
   assert.match(parentShell, /No fees due/);
   assert.match(parentShell, /Parent portal/);
-  assert.match(parentShell, /Student-linked access/);
-  assert.doesNotMatch(parentShell, /context\.schoolName/);
+  assert.match(parentShell, /context\.schoolName/);
+  assert.match(parentShell, /context\.schoolStatus === "inactive"/);
   assert.doesNotMatch(parentShell, /Maria Santos|Brentwood Academy of Las Pinas/);
   assert.match(helper, /payable_fee_count/);
   assert.match(helper, /sfa_count\.status IN \('open', 'partial'\)/);

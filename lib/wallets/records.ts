@@ -99,6 +99,7 @@ export async function getParentWalletTopUpBatch(
        JOIN receipts r ON r.payment_id = p.id
        JOIN wallet_transactions wt ON wt.payment_id = p.id AND wt.type = 'top_up'
        JOIN students st ON st.id = p.student_id
+       JOIN parent_profiles pp_scope ON pp_scope.user_id = wtb.parent_user_id AND pp_scope.school_id = st.school_id
        WHERE wtb.parent_user_id = :parentUserId
          AND wtb.batch_reference = :batchReference
        ORDER BY st.last_name, st.first_name, p.id`,
@@ -147,6 +148,7 @@ async function getParentWallets(parentUserId: number) {
        COALESCE(w.status, 'not_started') AS wallet_status
      FROM student_guardians sg
      JOIN students st ON st.id = sg.student_id
+     JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN enrollments e ON e.id = (
        SELECT e2.id
        FROM enrollments e2
@@ -193,6 +195,7 @@ async function getParentWalletTransactions(parentUserId: number) {
      JOIN wallets w ON w.id = wt.wallet_id
      JOIN students st ON st.id = w.student_id
      JOIN student_guardians sg ON sg.student_id = st.id AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope ON pp_scope.user_id = sg.parent_user_id AND pp_scope.school_id = st.school_id
      LEFT JOIN school_years sy ON sy.id = wt.school_year_id
      LEFT JOIN payments p ON p.id = wt.payment_id
      ORDER BY wt.created_at DESC, wt.id DESC
