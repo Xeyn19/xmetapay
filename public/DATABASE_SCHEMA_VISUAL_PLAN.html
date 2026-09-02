@@ -294,7 +294,7 @@
             role-specific <code>admin_profiles</code> and
             <code>parent_profiles</code>, plus one secure
             <code>password_reset_challenges</code> row per user. Admin profiles link to
-            <code>schools.id</code> after manual setup. New school admin
+            <code>schools.id</code> after manual setup. Parent profiles require one active-school selection for new registrations and retain nullable unresolved legacy rows without deleting history. New school admin
             users start with <code>users.status = pending</code> until the
             company super admin approves or rejects them. Admins and parents
             have role-specific registration routes; company super admins use
@@ -390,6 +390,7 @@ erDiagram
   USERS ||--o| ADMIN_PROFILES : "has admin profile"
   USERS ||--o{ AUTH_SESSIONS : "has sessions"
   USERS ||--o| PARENT_PROFILES : "has parent profile"
+  SCHOOLS ||--o{ PARENT_PROFILES : "owns parent accounts"
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
@@ -466,6 +467,7 @@ erDiagram
   PARENT_PROFILES {
     bigint id PK
     bigint user_id FK
+    bigint school_id FK
     varchar student_name
     varchar student_reference
     enum relationship
@@ -730,18 +732,18 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens register page"] --> B["Submit guardian details and one or more student references"]
+  A["Parent opens register page"] --> B["Choose one active school and submit guardian details plus references"]
   B --> C["Create user with role parent"]
-  C --> D["Create parent profile"]
+  C --> D["Create parent profile with immutable school_id"]
   D --> E["Save first reference in parent_profiles"]
   E --> F["Loop through submitted references"]
-  F --> G{"Student found?"}
+  F --> G{"Student found inside assigned school?"}
   G -->|Yes| H["Create student_guardians link"]
   G -->|No| I["Skip that reference for now"]
   H --> J["Create session after all references are checked"]
   I --> J
   J --> K["Redirect to parent dashboard"]
-  K --> L["Parent can add more students later from /parent/students"]
+  K --> L["Parent can add more same-school students later from /parent/students"]
           </pre>
         </div>
 

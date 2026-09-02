@@ -234,6 +234,58 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
+SET @parent_school_column_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'parent_profiles'
+    AND COLUMN_NAME = 'school_id'
+);
+
+SET @sql := IF(
+  @parent_school_column_exists = 0,
+  'ALTER TABLE parent_profiles ADD COLUMN school_id BIGINT UNSIGNED NULL AFTER user_id',
+  'SELECT ''parent_profiles.school_id already exists'' AS migration_note'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @parent_school_index_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'parent_profiles'
+    AND INDEX_NAME = 'idx_parent_profiles_school_id'
+);
+
+SET @sql := IF(
+  @parent_school_index_exists = 0,
+  'CREATE INDEX idx_parent_profiles_school_id ON parent_profiles (school_id)',
+  'SELECT ''idx_parent_profiles_school_id already exists'' AS migration_note'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @parent_school_fk_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'parent_profiles'
+    AND CONSTRAINT_NAME = 'fk_parent_profiles_school'
+    AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+
+SET @sql := IF(
+  @parent_school_fk_exists = 0,
+  'ALTER TABLE parent_profiles ADD CONSTRAINT fk_parent_profiles_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL',
+  'SELECT ''fk_parent_profiles_school already exists'' AS migration_note'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
 CREATE TABLE IF NOT EXISTS school_years (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   school_id BIGINT UNSIGNED NOT NULL,

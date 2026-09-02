@@ -12,12 +12,13 @@ import { PRODUCT_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 type Portal = "admin" | "parent";
+type FieldOption = string | { label: string; value: string };
 type Field = {
   label: string;
   type?: string;
   placeholder: string;
   name: string;
-  options?: string[];
+  options?: FieldOption[];
   spanFull?: boolean;
   required?: boolean;
 };
@@ -277,9 +278,11 @@ function AuthField({
           <option value="" disabled>
             {field.placeholder}
           </option>
-          {field.options.map((option) => (
-            <option key={option}>{option}</option>
-          ))}
+          {field.options.map((option) => {
+            const value = typeof option === "string" ? option : option.value;
+            const label = typeof option === "string" ? option : option.label;
+            return <option key={value} value={value}>{label}</option>;
+          })}
         </select>
       ) : field.type === "password" ? (
         <PasswordInput

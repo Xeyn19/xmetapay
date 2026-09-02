@@ -75,7 +75,7 @@ export function ParentShell({
           </div>
           <div className="space-y-0.5 text-[11px] leading-4 text-sidebar-foreground/55">
             <div className="truncate">Parent portal</div>
-            <div className="truncate">Student-linked access</div>
+            <div className="truncate">{context.schoolName ?? "School assignment pending"}</div>
           </div>
         </div>
 
@@ -168,6 +168,11 @@ export function ParentShell({
             )}
           </div>
         </header>
+        {context.schoolStatus === "inactive" ? (
+          <div className="border-b border-amber-300/70 bg-amber-50 px-4 py-3 text-sm font-medium leading-5 text-amber-900 lg:px-7" role="status">
+            This school is inactive. Historical records remain available, but new links and transactions are disabled.
+          </div>
+        ) : null}
         <main className="min-w-0 max-w-full px-4 py-5 sm:py-6 lg:px-7 lg:py-7">{children}</main>
       </div>
     </div>

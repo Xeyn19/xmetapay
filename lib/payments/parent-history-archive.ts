@@ -3,6 +3,7 @@ import "server-only";
 import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { requireParentSchoolScope } from "@/lib/parents/school-scope";
 
 export type ParentPaymentHistoryArchiveOperation = "archive" | "restore" | "delete" | "recover";
 
@@ -27,6 +28,7 @@ export async function updateParentPaymentHistoryArchiveState({
 
   try {
     await connection.beginTransaction();
+    await requireParentSchoolScope(parentUserId, { forWrite: true, executor: connection });
     const updatedIds = operation === "archive"
       ? await archiveFinishedPayments(connection, parentUserId, uniqueIds)
       : operation === "restore"
@@ -60,6 +62,9 @@ async function recoverRemovedPayments(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      WHERE ppha.parent_user_id = :parentUserId
        AND ppha.deleted_at IS NOT NULL
        AND DATE_ADD(ppha.deleted_at, INTERVAL 30 DAY) > CURRENT_TIMESTAMP
@@ -100,6 +105,9 @@ async function archiveFinishedPayments(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      WHERE p.payer_user_id = :parentUserId
        AND p.id IN (${placeholders})
        AND p.status IN ('paid', 'failed', 'voided', 'refunded')`,
@@ -169,6 +177,9 @@ async function getOwnedDeletableArchivedIds(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      WHERE ppha.parent_user_id = :parentUserId
        AND ppha.deleted_at IS NULL
        AND ppha.payment_id IN (${placeholders})
@@ -196,6 +207,9 @@ async function getOwnedArchivedIds(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      WHERE ppha.parent_user_id = :parentUserId
        AND ppha.deleted_at IS NULL
        AND ppha.payment_id IN (${placeholders})

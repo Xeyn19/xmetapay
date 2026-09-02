@@ -101,6 +101,12 @@ The bundle creates the complete current table structure without inserting accoun
    - Adds nullable template, rendered subject, and template-name audit fields to `notification_logs`; legacy rows remain valid.
    - Safe to import more than once.
 
+21. If `full-schema-v1.sql` was already imported before Parent accounts were restricted to one school, import `migrations/2026-09-02-parent-single-school-scope.sql`.
+   - Adds nullable `parent_profiles.school_id`, its index, and a foreign key to `schools.id`.
+   - Backfills only parents whose existing links or saved pending reference identify exactly one school.
+   - Multi-school, ambiguous, and unmatched accounts remain unresolved; no parent, guardian, student, payment, wallet, receipt, or audit row is deleted.
+   - Safe to import more than once.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.
@@ -113,7 +119,7 @@ After importing both files:
 
 1. Confirm all tables appear in phpMyAdmin.
 2. Register a test admin account.
-3. Register a test parent account.
+3. Register a test parent account by choosing one active school and linking a student reference from that school.
 4. Log in and log out from both portals.
 5. Confirm protected admin and parent dashboards still redirect after logout.
 6. Request and complete one local OTP password reset after SMTP is configured.

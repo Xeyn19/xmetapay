@@ -3,6 +3,7 @@ import "server-only";
 import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { requireParentSchoolScope } from "@/lib/parents/school-scope";
 
 export type ParentFeeArchiveOperation = "archive" | "restore" | "delete" | "recover";
 
@@ -25,6 +26,7 @@ export async function updateParentFeeArchiveState({
 
   try {
     await connection.beginTransaction();
+    await requireParentSchoolScope(parentUserId, { forWrite: true, executor: connection });
     const updatedIds = operation === "archive"
       ? await archiveSettledFees(connection, parentUserId, uniqueIds)
       : operation === "restore"
@@ -56,6 +58,9 @@ async function recoverRemovedFees(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      JOIN school_years sy
        ON sy.id = sfa.school_year_id
       AND sy.status = 'active'
@@ -99,6 +104,9 @@ async function archiveSettledFees(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      JOIN school_years sy
        ON sy.id = sfa.school_year_id
       AND sy.status = 'active'
@@ -173,6 +181,9 @@ async function getOwnedArchivedIds(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      JOIN school_years sy
        ON sy.id = sfa.school_year_id
       AND sy.status = 'active'
@@ -200,6 +211,9 @@ async function getOwnedDeletableArchivedIds(
      JOIN student_guardians sg
        ON sg.student_id = st.id
       AND sg.parent_user_id = :parentUserId
+     JOIN parent_profiles pp_scope
+       ON pp_scope.user_id = sg.parent_user_id
+      AND pp_scope.school_id = st.school_id
      JOIN school_years sy
        ON sy.id = sfa.school_year_id
       AND sy.status = 'active'

@@ -39,8 +39,12 @@ function descriptionForResult(result: Awaited<ReturnType<typeof linkParentToStud
     return "That student is already connected to your parent portal.";
   }
 
-  if (result === "ambiguous") {
-    return "That student reference matches more than one school. Ask the school admin to confirm the record.";
+  if (result === "school_unassigned") {
+    return "Your parent account is not assigned to one school. Contact support before linking students.";
+  }
+
+  if (result === "school_inactive") {
+    return "This school is inactive. Existing history remains available, but new student links are disabled.";
   }
 
   if (result === "missing_profile") {

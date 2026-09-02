@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import { updateParentFeeArchiveState } from "@/lib/fees/parent-archive";
+import { ParentSchoolScopeError } from "@/lib/parents/school-scope";
 
 export type ParentFeeArchiveActionState = {
   status: "idle" | "success" | "info" | "error";
@@ -108,7 +109,7 @@ async function updateArchiveState(
       `${updatedIds.length} fee${updatedIds.length === 1 ? "" : "s"} ${operationLabel}.`,
       updatedIds,
     );
-  } catch {
+  } catch (error) {
     const title = operation === "archive"
       ? "Fees not archived"
       : operation === "restore"
@@ -120,7 +121,9 @@ async function updateArchiveState(
     return actionState(
       "error",
       title,
-      "Unable to update Fee summary. Confirm the parent fee visibility migrations are imported and try again.",
+      error instanceof ParentSchoolScopeError
+        ? error.message
+        : "Unable to update Fee summary. Confirm the parent fee visibility migrations are imported and try again.",
     );
   }
 }
