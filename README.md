@@ -53,4 +53,4 @@ npm run test:e2e     # Run Playwright tests
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
-Last updated: 2026-09-02
+Last updated: 2026-09-11

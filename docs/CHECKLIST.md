@@ -118,6 +118,7 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Add a parent My students page for managing multiple linked students.
 - [x] Handle duplicate parent-student links with a friendly already-linked message.
 - [x] Keep parent access limited to their linked students only.
+- [ ] Replace direct Parent self-registration with the deferred school-issued invitation and email OTP design in [`plans/PARENT_INVITATION_EMAIL_OTP.md`](plans/PARENT_INVITATION_EMAIL_OTP.md).
 
 Done when: admins can manage students and parents can add or view multiple same-school linked children while access requires both `student_guardians` ownership and the immutable `parent_profiles.school_id` boundary.
 
