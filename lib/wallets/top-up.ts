@@ -209,9 +209,8 @@ async function getLockedLinkedStudents(
     `SELECT st.id, st.school_id, sy.id AS school_year_id
      FROM students st
      JOIN student_guardians sg
-      ON sg.student_id = st.id
-     AND sg.parent_user_id = :parentUserId
-     AND sg.status = 'active'
+       ON sg.student_id = st.id
+      AND sg.parent_user_id = :parentUserId
      JOIN parent_profiles pp_scope
        ON pp_scope.user_id = sg.parent_user_id
       AND pp_scope.school_id = st.school_id

@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CalendarClock, KeyRound, Users, Wallet } from "lucide-react";
+import { CalendarClock, Plus, Users, Wallet } from "lucide-react";
 
+import { linkParentStudentAction } from "@/app/parent/student-link/actions";
 import { requireRole } from "@/lib/auth/session";
 import { getParentDashboardData } from "@/lib/students/records";
 
@@ -8,8 +9,11 @@ import {
   MetricCard,
   MetricGrid,
   ParentAlert,
+  ParentButton,
   ParentCard,
+  ParentField,
   StatusPill,
+  parentControlClass,
 } from "../../_components/parent-ui";
 import { ParentRecentPaymentsTable } from "./parent-recent-payments-table";
 import { ParentWalletActivityTable } from "../_components/parent-wallet-activity-table";
@@ -23,7 +27,7 @@ export default async function ParentDashboardPage() {
     <>
       {!hasLinkedStudents ? (
         <ParentAlert>
-          Ask your school administrator for a parent invitation, then verify the emailed code.
+          Link your parent portal to a student reference from the school registrar.
         </ParentAlert>
       ) : null}
 
@@ -57,18 +61,41 @@ export default async function ParentDashboardPage() {
                   </StatusPill>
                 </Link>
               ))}
-              <div className="grid gap-3 border-t border-border p-4 sm:p-5">
-                <p className="text-xs leading-5 text-[#6b6b6b]">Each additional child requires a separate invitation emailed by the school administrator.</p>
+              <form action={linkParentStudentAction} className="grid gap-3 border-t border-border p-4 sm:p-5">
+                <div>
+                  <ParentField label="Add another student" required>
+                    <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
+                  </ParentField>
+                  <p className="mt-2 text-xs leading-5 text-[#6b6b6b]">
+                    Use the student reference from the school. You can add more than one child.
+                  </p>
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link href="/parent/register" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white min-[420px]:w-auto"><KeyRound className="size-4" />Enter invitation code</Link>
+                  <ParentButton type="submit" tone="primary" className="w-full min-[420px]:w-auto">
+                    <Plus className="size-4" />
+                    Add another student
+                  </ParentButton>
                   <Link href="/parent/students" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
                     Manage students
                   </Link>
                 </div>
-              </div>
+              </form>
             </>
           ) : (
-            <div className="grid gap-3"><p className="text-sm leading-6 text-[#6b6b6b]">Student references cannot grant portal access. Use the single-use invitation emailed by your school.</p><Link href="/parent/register" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white"><KeyRound className="size-4" />Enter invitation code</Link></div>
+            <form action={linkParentStudentAction} className="grid gap-3">
+              <div>
+                <ParentField label="Student reference" required>
+                  <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
+                </ParentField>
+                <p className="mt-2 text-xs leading-5 text-[#6b6b6b]">
+                  Use the student reference from the school. You can add more than one child.
+                </p>
+              </div>
+              <ParentButton type="submit" tone="primary">
+                <Plus className="size-4" />
+                Link student
+              </ParentButton>
+            </form>
           )}
         </ParentCard>
         <ParentCard title="Fees and balances" icon={CalendarClock}>
