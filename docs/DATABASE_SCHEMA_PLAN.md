@@ -48,7 +48,7 @@ Shared login table for company super admin, school admin, and parent accounts.
 | `email` | Login/contact email |
 | `phone` | Optional login/contact phone |
 | `password_hash` | Hashed password only |
-| `status` | `active`, `pending`, or `disabled`; school admin registration starts as `pending` until company super admin approval |
+| `status` | `active`, `pending`, or `disabled`; school admin and new parent registrations start as `pending` until their respective reviewers approve them |
 | `last_login_at` | Last successful login time |
 | `created_at`, `updated_at` | Audit timestamps |
 
@@ -116,10 +116,16 @@ One parent profile per parent user.
 | `user_id` | Links to `users.id` |
 | `school_id` | Nullable immutable link to the one assigned `schools.id`; unresolved legacy profiles remain null |
 | `student_name` | Pending-link display label; parent registration stores the first submitted student reference here until an official student link exists |
-| `student_reference` | First student reference captured during registration; all submitted references attempt `student_guardians` links |
+| `student_reference` | First student reference captured during registration; all submitted references are saved separately for review |
 | `relationship` | Mother, father, or guardian |
 
 Parent registration validates an active school before inserting this profile. Existing databases use the idempotent `2026-09-02-parent-single-school-scope.sql` migration, which backfills only unambiguous single-school profiles and never deletes legacy guardian or financial records. A null assignment blocks Parent portal data and actions. An inactive assigned school permits historical reads but no new Parent writes.
+
+### Parent registration review tables
+
+`parent_registration_references` stores each submitted `(parent_user_id, school_id, student_reference)` with a unique parent/reference pair and school lookup index. `parent_registration_reviews` stores school-scoped `approved`, `rejected`, and `reopened` events with reviewer and creation time. Both tables reference users and schools; review history remains after a decision. The idempotent `2026-09-19-parent-registration-approval.sql` migration copies a legacy profile's first saved reference when its school is known without changing existing account statuses or guardian links.
+
+New registration inserts a pending user, parent profile, and every reference in one transaction. School administrator approval requires at least one same-school student match, links all matches, records the decision, and activates the user in one transaction. Rejection disables login; reopening returns only a rejected request to pending review. These decisions are school-wide and do not use the selected school year.
 
 ## Full Practical MVP Schema
 
@@ -234,7 +240,7 @@ CREATE TABLE students (
 
 #### `student_guardians`
 
-Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per parent. Parent registration can submit one or more student references and creates one row per match inside `parent_profiles.school_id`; later, the parent portal can add more children from that same school. The unique pair key keeps duplicate links from being created. Every Parent query also requires the student's school to equal the parent profile school, so a stale cross-school row grants no portal access.
+Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per parent. School administrator approval creates one row per matched submitted reference inside `parent_profiles.school_id`; later, the parent portal can add more children from that same school. The unique pair key keeps duplicate links from being created. Every Parent query also requires the student's school to equal the parent profile school, so a stale cross-school row grants no portal access.
 
 ```sql
 CREATE TABLE student_guardians (
@@ -759,11 +765,15 @@ erDiagram
   USERS ||--o| ADMIN_PROFILES : "has admin profile"
   USERS ||--o{ AUTH_SESSIONS : "has sessions"
   USERS ||--o| PARENT_PROFILES : "has parent profile"
+  USERS ||--o{ PARENT_REGISTRATION_REFERENCES : "submits references"
+  USERS ||--o{ PARENT_REGISTRATION_REVIEWS : "has review history"
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
 
   SCHOOLS ||--o{ SCHOOL_YEARS : "has"
+  SCHOOLS ||--o{ PARENT_REGISTRATION_REFERENCES : "scopes references"
+  SCHOOLS ||--o{ PARENT_REGISTRATION_REVIEWS : "scopes reviews"
   SCHOOLS ||--o{ ADMIN_PROFILES : "linked admins"
   SCHOOLS ||--o{ GRADE_LEVELS : "has"
   SCHOOLS ||--o{ SECTIONS : "has"
@@ -866,16 +876,14 @@ flowchart TD
 ```mermaid
 flowchart TD
   A["Parent opens register page"] --> B["Submit guardian details and one or more student references"]
-  B --> C["Create user with role parent"]
-  C --> D["Create parent profile"]
-  D --> E["Save first reference in parent_profiles"]
-  E --> F["Loop through submitted references"]
-  F --> G{"Student found?"}
-  G -->|Yes| H["Create student_guardians link"]
-  G -->|No| I["Skip that reference for now"]
-  H --> J["Create session after all references are checked"]
-  I --> J
-  J --> K["Redirect to parent dashboard"]
+  B --> C["Create pending parent user and school profile"]
+  C --> D["Save all submitted references"]
+  D --> E["Show submitted status at parent login"]
+  E --> F["School administrator reviews same-school matches"]
+  F --> G{"At least one match and approve?"}
+  G -->|Yes| H["Link all matches, record review, activate account"]
+  G -->|No, reject| I["Record rejection and block login"]
+  H --> J["Parent signs in to dashboard"]
 ```
 
 ### Parent Payment Flow

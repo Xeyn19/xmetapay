@@ -28,6 +28,7 @@ Implemented:
 - Company, Admin, and Parent login, registration, and recovery forms use neutral email/password instructions without displaying example or stored account addresses.
 - Admin/school registration and login.
 - Parent registration and login.
+- School administrator review of parent registration requests on `/admin/parents`; pending and rejected parents receive distinct sign-in alerts.
 - Role-specific email OTP password recovery for active company, admin, and parent accounts.
 - Logout and protected dashboard redirects.
 - Provider-aware MySQL connection through injected GoDaddy Hosted Database `DB_*` values in production and ignored local `MYSQL_*` values for XAMPP.
@@ -368,21 +369,21 @@ Database touchpoints:
 
 Student and enrollment statuses, guardian accounts, and historical placement are not modified by the profile correction workflow.
 
-### 4. Admin Parent Directory
+### 4. Admin Parent Registration Review And Directory
 
 Implemented foundation.
 
-The admin can see parent accounts that have linked students and parent accounts that are still pending because their student reference has not matched an official student yet.
+On `/admin/parents`, the school administrator reviews pending registrations above the approved contact directory. A registrar sees the approved directory only. "Pending approval" describes account access; "Unlinked" describes an approved contact without a guardian link.
 
 ```mermaid
 flowchart TD
-  A["Admin opens /admin/parents"] --> B["Load admin school_id"]
-  B --> C["Load linked guardians through student_guardians"]
-  B --> D["Load parent_profiles with no matching student_guardians link"]
-  C --> E["Show linked parent, student, and relationship"]
-  D --> F["Show pending parent profile"]
-  E --> G["Admin understands who can access student records"]
-  F --> H["Admin can create matching student or ask parent to retry reference"]
+  A["Admin opens /admin/parents"] --> B["Load admin school_id and staff role"]
+  B -->|School administrator| C["Show school-wide registration requests and same-school matches"]
+  C --> D{"Approve with at least one match, reject, or reopen?"}
+  D -->|Approve| E["Link matches and activate parent"]
+  D -->|Reject| F["Disable login and keep review history"]
+  B --> G["Show active parent contacts and guardian links"]
+  G --> H["Label unmatched approved contacts Unlinked"]
 ```
 
 Database touchpoints:
@@ -395,11 +396,11 @@ Database touchpoints:
 
 ## Parent Portal Flow
 
-### 1. Parent Registration And Automatic Student Linking
+### 1. Parent Registration And School Approval
 
 Implemented.
 
-During registration, the parent chooses one active school and can submit one or more `student_reference` values. The validated school is saved in `parent_profiles.school_id`, the first reference is retained for pending-link display, and every reference is matched only inside that school. Parents can still add more children from the same school later.
+During registration, the parent chooses one active school and submits up to ten `student_reference` values. The validated school is saved in `parent_profiles.school_id`, the first reference remains in the legacy profile field, and every reference is stored in `parent_registration_references`. The account stays pending without a session or guardian link. The school administrator reviews same-school matches, approves only when at least one matches, or rejects; rejected requests can be reopened. Approval links every matching reference and activates Parent login. Parents can add more children from the same school later.
 
 ```mermaid
 flowchart TD
@@ -409,23 +410,27 @@ flowchart TD
   C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
-  F --> G["Insert users row with role parent"]
+  F --> G["Insert pending parent user"]
   G --> H["Insert parent_profiles row with school_id"]
-  H --> I["Save first reference in parent_profiles"]
-  I --> J["Loop through submitted student references"]
-  J --> K{"Reference exists inside assigned school?"}
-  K -->|Yes| L["Insert student_guardians row"]
-  K -->|No| M["Skip that reference and keep account active"]
-  L --> N["Continue checking remaining references"]
-  M --> N
-  N --> O["Create DB-backed session and HttpOnly cookie"]
-  O --> P["Redirect to /parent/dashboard"]
+  H --> I["Save every submitted reference"]
+  I --> J["Redirect to /parent/login with submission notice"]
+  J --> K["School administrator reviews request"]
+  K --> L{"At least one same-school match?"}
+  L -->|No| M["Wait for student record or reject"]
+  L -->|Yes, approve| N["Link all matches and activate account"]
+  K -->|Reject| O["Disable account and keep review history"]
+  O -->|Reopen| K
+  N --> P["Parent can sign in to dashboard"]
 ```
 
 Database touchpoints:
 
 - `users`
 - `parent_profiles`
+- `parent_registration_references`
+- `parent_registration_reviews`
+- `parent_registration_references`
+- `parent_registration_reviews`
 - `students`
 - `student_guardians`
 
@@ -433,14 +438,17 @@ Database touchpoints:
 
 Implemented.
 
-The parent dashboard shows students only when both the `student_guardians` link and `parent_profiles.school_id = students.school_id` are true. Unresolved legacy accounts retain their rows but receive an account-review screen.
+Pending parents see an approval notice after a correct password; rejected parents are told to contact the school. Active parents can sign in. The parent dashboard shows students only when both the `student_guardians` link and `parent_profiles.school_id = students.school_id` are true. Unresolved legacy accounts retain their rows but receive an account-review screen.
 
 ```mermaid
 flowchart TD
-  A["Parent opens /parent/login"] --> B["Find active parent user by email or phone"]
+  A["Parent opens /parent/login"] --> B["Find parent user by email or phone"]
   B --> C{"Password valid?"}
   C -->|No| D["Show invalid login error"]
-  C -->|Yes| E["Create DB-backed session and HttpOnly cookie"]
+  C -->|Yes| C2{"Account status?"}
+  C2 -->|Pending| C3["Show waiting for school approval"]
+  C2 -->|Rejected| C4["Show contact school alert"]
+  C2 -->|Active| E["Create DB-backed session and HttpOnly cookie"]
   E --> F["Redirect to /parent/dashboard"]
   F --> G["Require parent session"]
   G --> G2{"One assigned school exists?"}
@@ -464,7 +472,7 @@ Database touchpoints:
 
 Implemented.
 
-If parent registration did not find a student yet, or if the parent has another child at the school, the parent can add another `student_reference` from the dashboard or `/parent/students`.
+After approval, if another submitted reference was unmatched or the parent has another child at the school, the parent can add a `student_reference` from the dashboard or `/parent/students` once the school record exists.
 
 ```mermaid
 flowchart TD

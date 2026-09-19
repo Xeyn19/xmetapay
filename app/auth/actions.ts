@@ -6,14 +6,15 @@ import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/prom
 import { pool } from "@/lib/auth/db";
 import { createSession, deleteSession, setAuthFlashToast, type PortalRole } from "@/lib/auth/session";
 import { hashPassword, verifyPassword } from "@/lib/auth/password.mjs";
-import { linkParentToStudentByReference } from "@/lib/students/records";
 import { parseLoginForm, parseRegisterForm } from "@/lib/auth/validation.mjs";
 import { PRODUCT_NAME } from "@/lib/brand";
 import { ParentSchoolScopeError, validateActiveRegistrationSchool } from "@/lib/parents/school-scope";
+import { saveParentRegistrationReferences } from "@/lib/parents/registration-approval";
 
 export type AuthFormState = {
   message: string;
   errors?: Record<string, string>;
+  tone?: "error" | "info" | "warning";
 };
 
 const initialState: AuthFormState = { message: "" };
@@ -42,7 +43,7 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
         email: parsed.data.email,
         phone: parsed.data.phone,
         passwordHash,
-        status: role === "admin" ? "pending" : "active",
+        status: "pending",
       },
     );
 
@@ -71,28 +72,20 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
         },
       );
 
-      const studentReferences = parsed.data.profile.studentReferences ?? [parsed.data.profile.studentReference];
-
-      for (const studentReference of studentReferences) {
-        try {
-          await linkParentToStudentByReference(
-            connection,
-            userResult.insertId,
-            studentReference,
-          );
-        } catch {
-          // Parent accounts can be created before the school has imported or added the student record.
-        }
-      }
+      await saveParentRegistrationReferences(
+        connection,
+        userResult.insertId,
+        parsed.data.profile.schoolId,
+        parsed.data.profile.studentReferences ?? [parsed.data.profile.studentReference],
+      );
     }
 
     await connection.commit();
     if (role === "parent") {
-      await createSession({ userId: userResult.insertId, role, name: parsed.data.name });
       await setAuthFlashToast({
         role,
-        title: "Account created",
-        description: "Welcome to your parent portal.",
+        title: "Registration submitted",
+        description: "Your school will review your request. You can sign in after approval.",
       });
     } else {
       await setAuthFlashToast({
@@ -117,7 +110,7 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
     connection?.release();
   }
 
-  redirect(role === "admin" ? "/admin/login?pendingApproval=1" : "/parent/dashboard");
+  redirect(role === "admin" ? "/admin/login?pendingApproval=1" : "/parent/login?registrationSubmitted=1");
 }
 
 export async function loginAction(role: PortalRole, _state: AuthFormState = initialState, formData: FormData): Promise<AuthFormState> {
@@ -155,15 +148,30 @@ export async function loginAction(role: PortalRole, _state: AuthFormState = init
       return {
         message: role === "admin"
           ? `Your admin account is waiting for ${PRODUCT_NAME} approval.`
-          : "Your account is waiting for approval.",
+          : "Your registration is waiting for your school's approval. Please try again after the school reviews it.",
+        tone: "info",
       };
     }
 
     if (user.status === "disabled") {
+      if (role === "parent") {
+        const [reviewRows] = await pool.execute<ParentReviewRow[]>(
+          `SELECT decision FROM parent_registration_reviews
+           WHERE parent_user_id = :userId ORDER BY id DESC LIMIT 1`,
+          { userId: user.id },
+        );
+        if (reviewRows[0]?.decision === "rejected") {
+          return {
+            message: "Your registration was not approved. Please contact your school for help.",
+            tone: "warning",
+          };
+        }
+      }
       return {
         message: role === "admin"
           ? "Your admin account was not approved or is currently disabled."
           : "Your account is currently disabled.",
+        tone: "warning",
       };
     }
 
@@ -285,4 +293,8 @@ type AuthUserRow = RowDataPacket & {
   phone: string | null;
   password_hash: string;
   status: "active" | "pending" | "disabled";
+};
+
+type ParentReviewRow = RowDataPacket & {
+  decision: "approved" | "rejected" | "reopened";
 };

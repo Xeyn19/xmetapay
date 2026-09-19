@@ -107,6 +107,11 @@ The bundle creates the complete current table structure without inserting accoun
    - Multi-school, ambiguous, and unmatched accounts remain unresolved; no parent, guardian, student, payment, wallet, receipt, or audit row is deleted.
    - Safe to import more than once.
 
+22. For existing databases, import `migrations/2026-09-19-parent-registration-approval.sql` before enabling new Parent registration.
+   - Creates school-scoped submitted-reference and review-history tables, then copies each legacy profile's saved first reference when its school is known.
+   - New parent accounts remain pending until their school administrator approves a same-school student match. Existing account statuses and guardian links are not changed.
+   - Safe to import more than once.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.

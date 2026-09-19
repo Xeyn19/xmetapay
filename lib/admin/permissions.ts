@@ -25,7 +25,7 @@ export const adminRoleDetails: Record<AdminStaffRole, AdminRoleDetail> = {
     summary: "Owns school setup and can access all admin dashboard areas.",
     allowedAreas: [
       "Set up school records",
-      "Manage students and parent contacts",
+      "Manage students, parent registrations, and contacts",
       "View and manage finance pages",
       "View reports",
     ],
@@ -38,7 +38,7 @@ export const adminRoleDetails: Record<AdminStaffRole, AdminRoleDetail> = {
       "Dashboard",
       "Enrolled students",
       "Student profile",
-      "Parent contacts",
+      "Parent contacts (view only)",
       "Add and enroll students",
     ],
     blockedAreas: ["School setup", "Finance pages", "Reports"],

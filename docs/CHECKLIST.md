@@ -11,6 +11,9 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Admin/school registration works.
 - [x] Parent registration works.
 - [x] Parent registration requires one active school and stores the immutable school assignment in `parent_profiles.school_id`.
+- [x] Save every submitted parent student reference; hold new parent accounts in `pending` until a school administrator reviews them.
+- [x] Show school-scoped parent registration requests with Approve, Reject, and Reopen actions; require one same-school student match for approval.
+- [x] Show distinct parent sign-in alerts for pending approval and rejection while keeping existing active accounts available.
 - [x] Admin/school login works.
 - [x] Parent login works.
 - [x] Company super admin login exists at `/login`.

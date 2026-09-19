@@ -55,7 +55,7 @@ export type AdminParentRow = {
   contact: string;
   email: string;
   relationship: string;
-  status: "Linked" | "Pending";
+  status: "Linked" | "Unlinked";
 };
 
 export type ParentDashboardData = {
@@ -567,6 +567,7 @@ async function getAdminParentRows(schoolId: number, schoolYearId: number | null)
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      WHERE st.school_id = :schoolId
        AND pp.school_id = :schoolId
+       AND u.status = 'active'
      GROUP BY u.id, u.name, u.email, u.phone, pp.relationship, pp.student_name
      ORDER BY u.name ASC`,
     { schoolId, schoolYearId },
@@ -576,7 +577,7 @@ async function getAdminParentRows(schoolId: number, schoolYearId: number | null)
     `SELECT u.name AS parent_name, u.email, u.phone, pp.relationship,
        pp.student_name AS students,
        'Reference pending' AS grade,
-       'Pending' AS link_status
+       'Unlinked' AS link_status
      FROM users u
      JOIN parent_profiles pp ON pp.user_id = u.id
      LEFT JOIN student_guardians sg ON sg.parent_user_id = u.id
@@ -587,7 +588,7 @@ async function getAdminParentRows(schoolId: number, schoolYearId: number | null)
            AND linked_st.school_id = pp.school_id
        )
      JOIN students st ON st.school_id = :schoolId AND st.student_reference = pp.student_reference
-     WHERE u.role = 'parent' AND sg.id IS NULL
+     WHERE u.role = 'parent' AND u.status = 'active' AND sg.id IS NULL
        AND pp.school_id = :schoolId
      ORDER BY u.name ASC`,
     { schoolId },
@@ -808,7 +809,7 @@ function parentKpis(rows: AdminParentRow[]): AdminParentsPageData["kpis"] {
   return [
     { label: "Parent records", value: String(rows.length), note: "Visible for this school", tone: "orange" },
     { label: "Linked guardians", value: String(linked), note: "Connected to students", tone: "green", noteTone: "up" },
-    { label: "Pending links", value: String(pending), note: "Reference needs review", tone: "blue" },
+    { label: "Unlinked contacts", value: String(pending), note: "Student reference needs review", tone: "blue" },
     { label: "Access scope", value: "School-only", note: "Parents see linked students only", tone: "teal" },
   ];
 }
@@ -1004,7 +1005,7 @@ type AdminParentSqlRow = RowDataPacket & {
   phone: string | null;
   email: string;
   relationship: string;
-  link_status: "Linked" | "Pending";
+  link_status: "Linked" | "Unlinked";
 };
 
 type ParentStudentSqlRow = RowDataPacket & {

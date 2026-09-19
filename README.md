@@ -4,8 +4,8 @@ XMETA EDU is a Next.js school-fintech application for parent payments, student a
 
 ## Features
 
-- Parent flows for one-school account access, same-school linked students, fee and payment history, tuition payments, receipts, allowance wallets, and student profiles.
-- School Admin workflows for school setup, enrollment, student and parent records, tuition, collections, school-owned payment-reminder email templates, other fees, allowance, store transactions, and financial reports.
+- Parent flows for school-reviewed registration, one-school account access, same-school linked students, fee and payment history, tuition payments, receipts, allowance wallets, and student profiles.
+- School Admin workflows for school setup, enrollment, parent registration approval, student and parent records, tuition, collections, school-owned payment-reminder email templates, other fees, allowance, store transactions, and financial reports.
 - Company Super Admin workflows for registration review, school-admin account management, school population summaries, and branded account exports.
 - Role-aware email OTP password recovery using the configured SMTP service.
 - Browser-remembered Light and Dark themes across public pages and dashboards, with Dark as the first-visit default and contrast-safe controls in both modes.
@@ -28,6 +28,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## Database Setup
 
 - Local XAMPP/phpMyAdmin setup follows the canonical import order in `database/README.md`.
+- Existing databases must import `database/migrations/2026-09-19-parent-registration-approval.sql` before using the new parent registration flow.
 - For a new empty GoDaddy Hosted Database, use its **Import SQL** action with `utilities/database/xmetapay-production-schema.sql`; the same bundle can be imported into an explicitly selected empty cPanel database through phpMyAdmin.
 - The production bundle contains schema only and does not create or select the database, insert accounts or application records, or upgrade an existing live database.
 - Database runtime configuration prefers GoDaddy Hosted Database's injected `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`; local XAMPP development continues to use the corresponding `MYSQL_*` values from an ignored `.env` file.
@@ -48,9 +49,9 @@ npm run test:e2e     # Run Playwright tests
 
 - The app uses Next.js 16, React 19, TypeScript, and Tailwind CSS.
 - Authentication, permissions, and data access remain role- and school-scoped.
-- Every Parent account chooses one active school during registration and can link multiple children only within that school; unresolved legacy accounts remain preserved but blocked from portal operations.
+- New Parent accounts choose one active school and wait for school administrator approval; at least one submitted student reference must match that school. Existing active parent accounts keep their access, and unresolved legacy accounts remain preserved but blocked from portal operations.
 - End-to-end tests live in `e2e/`.
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
-Last updated: 2026-09-11
+Last updated: 2026-09-19

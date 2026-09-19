@@ -164,17 +164,16 @@ test("parent student link action is protected and links by student reference", (
   assert.match(action, /return "\/parent\/dashboard"/);
 });
 
-test("parent registration attempts guardian linking after creating parent profile", () => {
+test("parent registration saves submitted references for school review before linking", () => {
   const authActions = readFileSync(authActionsPath, "utf8");
 
-  assert.match(authActions, /import \{ linkParentToStudentByReference \} from "@\/lib\/students\/records";/);
+  assert.match(authActions, /saveParentRegistrationReferences/);
   assert.match(authActions, /INSERT INTO parent_profiles/);
   assert.match(authActions, /tryLinkAdminProfileToExistingSchool/);
   assert.match(authActions, /UPDATE admin_profiles ap\s+SET ap\.school_id = \(/);
   assert.match(authActions, /missingFullSchema/);
-  assert.match(authActions, /const studentReferences = parsed\.data\.profile\.studentReferences \?\? \[parsed\.data\.profile\.studentReference\]/);
-  assert.match(authActions, /for \(const studentReference of studentReferences\)/);
-  assert.match(authActions, /await linkParentToStudentByReference\(/);
+  assert.match(authActions, /parsed\.data\.profile\.studentReferences \?\? \[parsed\.data\.profile\.studentReference\]/);
+  assert.doesNotMatch(authActions, /await linkParentToStudentByReference\(/);
 });
 
 test("admin and parent pages use database helpers instead of mock student arrays", () => {

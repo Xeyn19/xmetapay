@@ -187,7 +187,7 @@ test("parent registration requires one school and renders multi-student referenc
   const parentRegister = readFileSync(parentRegisterPath, "utf8");
   const authUi = readFileSync(authUiPath, "utf8");
 
-  assert.match(parentRegister, /Choose one school, then connect children registered at that school/);
+  assert.match(parentRegister, /school must approve your registration before you can sign in/);
   assert.match(parentRegister, /getActiveParentRegistrationSchools/);
   assert.match(parentRegister, /name: "schoolId"/);
   assert.match(parentRegister, /Select your school/);
@@ -199,7 +199,7 @@ test("parent registration requires one school and renders multi-student referenc
   assert.match(authUi, /Add another student/);
   assert.match(authUi, /Remove/);
   assert.match(authUi, /Add all children you want connected to this parent account/);
-  assert.match(authUi, /Duplicate references are ignored safely/);
+  assert.match(authUi, /Up to 10 references\. Duplicates are ignored safely/);
   assert.match(authUi, /typeof option === "string" \? option : option\.value/);
 });
 
