@@ -13,7 +13,7 @@ export default async function ParentRegisterPage() {
         portal="parent"
         mode="register"
         title="Create parent account"
-        subtitle="Choose one school, then connect children registered at that school."
+        subtitle="Choose your school and enter your children's references. The school must approve your registration before you can sign in."
         fields={[
           {
             label: "School",

@@ -67,12 +67,14 @@ test("dashboard route groups protect admin and parent portals by role", () => {
   assert.equal(existsSync("app/parent/(portal)/dashboard/page.tsx"), true);
 });
 
-test("admin registration waits for super admin approval before login", () => {
-  assert.match(authActions, /status: role === "admin" \? "pending" : "active"/);
-  assert.match(authActions, /if \(role === "parent"\) \{[\s\S]*createSession\(\{ userId: userResult\.insertId, role, name: parsed\.data\.name \}\)/);
+test("admin and parent registrations wait for approval before login", () => {
+  assert.match(authActions, /status: "pending"/);
+  assert.doesNotMatch(authActions, /createSession\(\{ userId: userResult\.insertId/);
   assert.match(authActions, /title: "Registration submitted"/);
   assert.match(authActions, /Your admin account is waiting for \$\{PRODUCT_NAME\} approval\./);
-  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/login\?pendingApproval=1" : "\/parent\/dashboard"\);/);
+  assert.match(authActions, /redirect\(role === "admin" \? "\/admin\/login\?pendingApproval=1" : "\/parent\/login\?registrationSubmitted=1"\);/);
+  assert.match(authActions, /Your registration is waiting for your school's approval/);
+  assert.match(authActions, /Your registration was not approved/);
   assert.doesNotMatch(authActions, /redirect\(role === "admin" \? "\/admin\/onboarding\/school-setup"/);
 });
 

@@ -51,7 +51,7 @@ export function ParentsTable({ rows, schoolName, schoolYearName }: { rows: Admin
     summary: [
       { label: "Contacts", value: filteredRows.length },
       { label: "Linked", value: filteredRows.filter((row) => row.status === "Linked").length },
-      { label: "Pending", value: filteredRows.filter((row) => row.status === "Pending").length },
+      { label: "Unlinked", value: filteredRows.filter((row) => row.status === "Unlinked").length },
     ],
   };
 

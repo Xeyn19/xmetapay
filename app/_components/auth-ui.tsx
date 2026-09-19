@@ -221,7 +221,18 @@ export function AuthForm({
       ) : null}
 
       {state.message ? (
-        <p className="public-error rounded-lg border px-3 py-2 text-sm font-semibold" aria-live="polite">
+        <p
+          className={cn(
+            "rounded-lg border px-3 py-2 text-sm font-semibold",
+            state.tone === "info"
+              ? "border-status-info-foreground/20 bg-status-info-bg text-status-info-foreground"
+              : state.tone === "warning"
+                ? "border-status-warning-foreground/25 bg-status-warning-bg text-status-warning-foreground"
+                : "public-error",
+          )}
+          role={state.tone === "info" ? "status" : "alert"}
+          aria-live="polite"
+        >
           {state.message}
         </p>
       ) : null}
@@ -319,6 +330,7 @@ function AuthField({
 
 function StudentReferencesField({ error }: { error?: string }) {
   const [references, setReferences] = useState([""]);
+  const maxReferences = 10;
   const countLabel = `${references.length} ${references.length === 1 ? "student" : "students"}`;
 
   function updateReference(index: number, value: string) {
@@ -326,7 +338,7 @@ function StudentReferencesField({ error }: { error?: string }) {
   }
 
   function addReference() {
-    setReferences((current) => [...current, ""]);
+    setReferences((current) => current.length < maxReferences ? [...current, ""] : current);
   }
 
   function removeReference(index: number) {
@@ -380,12 +392,13 @@ function StudentReferencesField({ error }: { error?: string }) {
           <button
             type="button"
             onClick={addReference}
-            className="min-h-11 rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[var(--public-link)] transition hover:bg-[#e64a19]/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20"
+            disabled={references.length >= maxReferences}
+            className="min-h-11 rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[var(--public-link)] transition hover:bg-[#e64a19]/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Add another student
           </button>
           <span className="text-xs leading-5 text-[var(--public-muted)]">
-            Duplicate references are ignored safely.
+            Up to 10 references. Duplicates are ignored safely.
           </span>
         </div>
       </div>

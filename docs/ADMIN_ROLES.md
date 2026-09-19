@@ -38,8 +38,8 @@ The company account screens, every school Admin table, and every export-enabled 
 
 | Staff role | Main purpose | Can do | Cannot do |
 | --- | --- | --- | --- |
-| `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections and school email templates, review promote/repeat rollover placements, activate the next school year, manage students, view finance pages, view reports | No current admin dashboard restrictions |
-| `registrar` | Student and guardian records | View dashboard, use the unified Add students chooser to add new students individually or in a validated batch, enroll existing pending students, correct school-scoped student details and active-year placement from Student Profile, view parent contacts | Set up school records, use finance pages, view reports |
+| `school_administrator` | School owner and setup manager | Set up school records, manage school years/sections and school email templates, review promote/repeat rollover placements, activate the next school year, manage students, approve/reject/reopen school parent registrations, view finance pages, view reports | No current admin dashboard restrictions |
+| `registrar` | Student and guardian records | View dashboard, use the unified Add students chooser to add new students individually or in a validated batch, enroll existing pending students, correct school-scoped student details and active-year placement from Student Profile, view approved parent contacts | Approve or reject parent registrations, set up school records, use finance pages, view reports |
 | `finance_officer` | Fees, tuition collections, allowance, reminders, and reports | View dashboard, tuition, collections (tuition-focused), other fees, allowance, store transactions, reports, send payment reminder emails, create store merchants, record wallet purchases | Set up school records, add/enroll students, manage parent contacts |
 
 ## Dashboard Access
@@ -51,6 +51,7 @@ The company account screens, every school Admin table, and every export-enabled 
 | Enrolled students | Yes | Yes | No |
 | Student profile and active-year placement corrections | Yes | Yes | No |
 | Parent contacts | Yes | Yes | No |
+| Parent registration review | Yes | No | No |
 | Tuition report | Yes | No | Yes |
 | Tuition collections log, archive, and restore | Yes | No | Yes |
 | Other fees | Yes | No | Yes |
@@ -94,7 +95,7 @@ Only one school year is still the active/current year. For MVP safety, operation
 9. Registrar and finance officer accounts with the same school name are linked to the existing school context.
 10. A registrar uses one `Add students` chooser to add one new student, add a batch with shared grade/section/student-type defaults and per-row overrides, or enroll one or many existing pending students. The Enrolled students page shows one contextual trigger; other authorized Admin pages retain the header shortcut that opens the same chooser. Existing-student enrollment adds only active-year grade, section, and student type; names, birthdates, sex, references, and parent links are preserved. Student age is derived from birthdate and legacy missing values show `Pending`.
 11. From an exact Student Profile, a school administrator or registrar can correct the school-wide reference, name, birthdate, and sex. Grade, section, and student type can be corrected only for an existing active-year enrollment. Historical placement and both lifecycle statuses remain read-only; guardian links stay attached to the student ID.
-12. Parents choose one active school during registration and link students by `student_reference` only inside that assigned school.
+12. Parents choose one active school during registration and submit up to ten student references. New accounts remain `pending` without a session or guardian link. Only that school's administrator can approve after at least one same-school match, reject, or reopen a rejected request. Approval links all matching references; unmatched references remain saved. This review is school-wide and does not depend on the selected school year. Registrars see the approved contact directory but cannot review requests.
 13. A finance officer works on active-year tuition, tuition collections, allowance, store transactions, payment reminder email history, and reports. Tuition collections exclude wallet top-ups, which belong to the allowance ledger. School administrators and finance officers manage each student tuition installment schedule within an inclusive server-owned window from the school-year start through that assignment's official tuition due date. School administrators and finance officers can archive or restore one or many tuition collection rows and selected-year Allowance wallet summaries. These archive controls organize admin views only; they never change payment records, wallet status, balances, transactions, reports, or parent history.
 
 Parents can archive settled Fee summary rows indefinitely. Removing an archived row starts a database-timed 30-day recovery window in Removed; recovery returns it to Archived. After the deadline it remains viewable and exportable as Permanently hidden but cannot be restored. Financial records and another guardian's view remain unchanged.

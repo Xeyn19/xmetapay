@@ -323,8 +323,8 @@
           <tbody>
             <tr>
               <td>Auth</td>
-              <td><code>users</code>, <code>auth_sessions</code>, <code>password_reset_challenges</code>, <code>admin_profiles</code>, <code>parent_profiles</code></td>
-              <td>Company super admin login with password-before-status feedback, admin registration approval, portal registration/login, hashed OTP recovery challenges, DB-backed sessions, single-owner logout confirmation, role redirects, and account status.</td>
+              <td><code>users</code>, <code>auth_sessions</code>, <code>password_reset_challenges</code>, <code>admin_profiles</code>, <code>parent_profiles</code>, <code>parent_registration_references</code>, <code>parent_registration_reviews</code></td>
+              <td>Company super admin login, school-scoped parent approval with saved student references and review history, portal registration/login, hashed OTP recovery challenges, DB-backed sessions, and account status.</td>
             </tr>
             <tr>
               <td>School setup</td>
@@ -391,6 +391,10 @@ erDiagram
   USERS ||--o{ AUTH_SESSIONS : "has sessions"
   USERS ||--o| PARENT_PROFILES : "has parent profile"
   SCHOOLS ||--o{ PARENT_PROFILES : "owns parent accounts"
+  USERS ||--o{ PARENT_REGISTRATION_REFERENCES : "submits references"
+  USERS ||--o{ PARENT_REGISTRATION_REVIEWS : "has review history"
+  SCHOOLS ||--o{ PARENT_REGISTRATION_REFERENCES : "scopes references"
+  SCHOOLS ||--o{ PARENT_REGISTRATION_REVIEWS : "scopes reviews"
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
@@ -471,6 +475,22 @@ erDiagram
     varchar student_name
     varchar student_reference
     enum relationship
+  }
+
+  PARENT_REGISTRATION_REFERENCES {
+    bigint id PK
+    bigint parent_user_id FK
+    bigint school_id FK
+    varchar student_reference
+  }
+
+  PARENT_REGISTRATION_REVIEWS {
+    bigint id PK
+    bigint parent_user_id FK
+    bigint school_id FK
+    bigint reviewer_user_id FK
+    enum decision
+    datetime created_at
   }
 
   SCHOOLS {
@@ -733,17 +753,14 @@ flowchart TD
           <pre class="mermaid">
 flowchart TD
   A["Parent opens register page"] --> B["Choose one active school and submit guardian details plus references"]
-  B --> C["Create user with role parent"]
-  C --> D["Create parent profile with immutable school_id"]
-  D --> E["Save first reference in parent_profiles"]
-  E --> F["Loop through submitted references"]
-  F --> G{"Student found inside assigned school?"}
-  G -->|Yes| H["Create student_guardians link"]
-  G -->|No| I["Skip that reference for now"]
-  H --> J["Create session after all references are checked"]
-  I --> J
-  J --> K["Redirect to parent dashboard"]
-  K --> L["Parent can add more same-school students later from /parent/students"]
+  B --> C["Create pending parent user and school profile"]
+  C --> D["Save every submitted reference"]
+  D --> E["Show submitted status at parent login"]
+  E --> F["School administrator reviews same-school matches"]
+  F --> G{"At least one match and approve?"}
+  G -->|Yes| H["Link all matches and activate account"]
+  G -->|No, reject| I["Record rejection and block login"]
+  H --> J["Parent signs in to dashboard"]
           </pre>
         </div>
 

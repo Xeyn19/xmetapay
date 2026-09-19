@@ -31,7 +31,7 @@ export default async function ParentLoginPage({
         portal="parent"
         mode="login"
         title="Parent sign in"
-        subtitle="Access your family payment dashboard."
+        subtitle="Sign in to your family payment dashboard after your school approves your registration."
         fields={[
           {
             label: "Email or mobile number",

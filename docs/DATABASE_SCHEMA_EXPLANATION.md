@@ -85,6 +85,8 @@ School setup is shared across staff accounts. If a registrar or finance officer 
 
 This stores parent-side profile details for users with the `parent` role. Parent registration requires one active school, guardian details, required phone number, relationship, and one or more student references. `parent_profiles.school_id` is the immutable school ownership boundary. The first submitted reference is stored in `parent_profiles.student_reference` and `parent_profiles.student_name` as a pending-link display label because those columns are required, but official student identity still comes from the school-created `students` records after linking.
 
+New parent accounts start with `users.status = 'pending'`, receive no session, and cannot use the Parent portal until their school administrator approves them. `parent_registration_references` stores every submitted reference for that one school; `parent_registration_reviews` records each approval, rejection, or reopening with the reviewer and time. Approval requires at least one same-school student match, creates guardian links for all matches, and activates the account in one transaction. Rejected accounts stay disabled and retain their request history. Existing active parents are not changed by the migration.
+
 The one-school migration is additive and non-destructive. It backfills `school_id` only when existing guardian links or the saved pending reference identify exactly one school. Multi-school, ambiguous, or unmatched profiles remain nullable and receive an account-review screen; their guardian and financial history is not deleted. If an assigned school later becomes inactive, Parent historical reads remain available while new links and financial writes are rejected.
 
 ## School Setup Tables
@@ -158,7 +160,7 @@ Main purpose:
 - Store the relationship type: mother, father, or guardian.
 - Mark a primary guardian when needed.
 
-This table is one part of Parent authorization. Every Parent read and write also requires the linked student's `students.school_id` to match `parent_profiles.school_id`. Parent registration can create multiple same-school links by looping through submitted `student_reference` values, and the parent dashboard or My students page can add more same-school students later. The unique student-parent pair prevents duplicate links; a stale or manually inserted cross-school link is ignored by application reads and writes.
+This table is one part of Parent authorization. Every Parent read and write also requires the linked student's `students.school_id` to match `parent_profiles.school_id`. School administrator approval creates links for matched submitted references; the parent dashboard or My students page can add more same-school students later. The unique student-parent pair prevents duplicate links; a stale or manually inserted cross-school link is ignored by application reads and writes.
 
 The company super-admin school profile also reuses this relationship for aggregate monitoring. It counts distinct parents linked to active-year enrolled students separately from all distinct parents linked to any student in the school. It does not return parent or student directory fields, and it requires no additional table.
 
@@ -453,7 +455,7 @@ The schema supports this practical backend flow:
 2. A school record is created and linked to school setup records.
 3. Admin creates one or many school years, chooses one active year, then creates grade levels and selected-year sections.
 4. Admin opens the unified Add students chooser, then creates one student, creates a validated batch using optional shared class defaults, or enrolls existing students. Each valid new student still receives an independent master record.
-5. Parent registers and can be linked to a student through `student_guardians`.
+5. Parent registers for one school, then its administrator approves at least one same-school student match before `student_guardians` links and Parent login are enabled.
 6. Admin enrolls students for the active school year.
 7. When a school year changes, the school administrator reviews suggested promote/repeat placements and the system creates target-year `enrollments` without duplicating `students`.
 8. When the upcoming year is ready, the school administrator activates it; the previous active year becomes closed.

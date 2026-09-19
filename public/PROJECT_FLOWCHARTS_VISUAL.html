@@ -319,8 +319,9 @@
         <p>
           The admin creates the official school and student records. New student records require sex, while each
           school-year enrollment records whether the student is new, a transferee, or returned. Age is derived from
-          birthdate and legacy missing values display as Pending. Parents choose one active school and
-          only see students when both a <code>student_guardians</code> link and matching <code>parent_profiles.school_id</code> exist.
+          birthdate and legacy missing values display as Pending. New parents choose one active school and wait for its
+          administrator to approve a matching student reference. Approved parents only see students when both a
+          <code>student_guardians</code> link and matching <code>parent_profiles.school_id</code> exist.
           One <strong>Add students</strong> chooser opens focused single-new,
           batch-new, or existing-student workflows. Enrolled students shows one
           contextual trigger, while other authorized Admin pages retain a header
@@ -593,20 +594,20 @@ flowchart TD
           <p>Profile correction reuses the existing student and enrollment rows. Historical placement, lifecycle statuses, guardian accounts, and financial records remain unchanged.</p>
         </div>
 
-        <h3>Admin Parent Directory</h3>
+        <h3>Admin Parent Registration Review And Directory</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="admin-parent-directory.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Admin opens /admin/parents"] --> B["Load admin school_id"]
-  B --> C["Load linked guardians through student_guardians"]
-  B --> D["Load parent_profiles with no matching student_guardians link"]
-  C --> E["Show linked parent, student, and relationship"]
-  D --> F["Show pending parent profile"]
-  E --> G["Admin understands who can access student records"]
-  F --> H["Admin can create matching student or ask parent to retry reference"]
+  A["Admin opens /admin/parents"] --> B["Load admin school_id and staff role"]
+  B -->|School administrator| C["Show school-wide requests and same-school matches"]
+  C --> D{"Approve with a match, reject, or reopen?"}
+  D -->|Approve| E["Link matches and activate parent"]
+  D -->|Reject| F["Disable login and keep review history"]
+  B --> G["Show active parent contacts and guardian links"]
+  G --> H["Label unmatched approved contacts Unlinked"]
           </pre>
         </div>
       </section>
@@ -614,10 +615,10 @@ flowchart TD
       <section>
         <h2>Parent Portal</h2>
 
-        <h3>Parent Registration And Student Links</h3>
+        <h3>Parent Registration And School Approval</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
-            <button type="button" data-diagram-download="svg" data-file-name="parent-registration-auto-link.svg">Download SVG</button>
+            <button type="button" data-diagram-download="svg" data-file-name="parent-registration-approval.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
@@ -627,16 +628,16 @@ flowchart TD
   C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
-  F --> G["Insert users row with role parent"]
-  G --> H["Insert parent_profiles row with school_id and first reference"]
-  H --> I["Loop through submitted student references"]
-  I --> J{"Reference exists inside assigned school?"}
-  J -->|Yes| K["Insert student_guardians row"]
-  J -->|No| L["Skip that reference and keep account active"]
-  K --> M["Continue checking remaining references"]
-  L --> M
-  M --> N["Create DB-backed session and HttpOnly cookie"]
-  N --> O["Redirect to /parent/dashboard"]
+  F --> G["Insert pending parent user and school profile"]
+  G --> H["Save every submitted reference"]
+  H --> I["Redirect to /parent/login with submission notice"]
+  I --> J["School administrator reviews request"]
+  J --> K{"At least one same-school match?"}
+  K -->|No| L["Wait for student record or reject"]
+  K -->|Yes, approve| M["Link all matches and activate account"]
+  J -->|Reject| N["Disable account and keep review history"]
+  N -->|Reopen| J
+  M --> O["Parent can sign in to dashboard"]
           </pre>
         </div>
 
@@ -647,10 +648,13 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens /parent/login"] --> B["Find active parent user by email or phone"]
+  A["Parent opens /parent/login"] --> B["Find parent user by email or phone"]
   B --> C{"Password valid?"}
   C -->|No| D["Show invalid login error"]
-  C -->|Yes| E["Create DB-backed session and HttpOnly cookie"]
+  C -->|Yes| C2{"Account status?"}
+  C2 -->|Pending| C3["Show waiting for school approval"]
+  C2 -->|Rejected| C4["Show contact school alert"]
+  C2 -->|Active| E["Create DB-backed session and HttpOnly cookie"]
   E --> F["Redirect to /parent/dashboard"]
   F --> G["Require parent session"]
   G --> G2{"One assigned school exists?"}

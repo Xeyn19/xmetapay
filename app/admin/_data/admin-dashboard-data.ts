@@ -96,8 +96,8 @@ export const pageMeta: Record<string, PageMeta> = {
     subtitle: "Choose or view a real student record",
   },
   "/admin/parents": {
-    title: "Parent contacts",
-    subtitle: "Registered parents and contact directory",
+    title: "Parents & guardians",
+    subtitle: "Registration requests and approved parent contacts",
   },
   "/admin/allowance": {
     title: "Allowance ledger",
@@ -134,7 +134,7 @@ export const navSections: NavSection[] = [
     items: [
       { label: "Enrolled students", href: "/admin/students", icon: UserCheck },
       { label: "Student profile", href: "/admin/student-profile", icon: IdCard },
-      { label: "Parent contacts", href: "/admin/parents", icon: Users },
+      { label: "Parents & guardians", href: "/admin/parents", icon: Users },
     ],
   },
   {
