@@ -48,7 +48,7 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
       <p className="px-4 py-2 text-[11px] text-[#5a6070] sm:hidden">Swipe the table to see status and review actions.</p>
       <AdminTable headers={[
         { label: "Parent", className: "w-[25%]" },
-        { label: "Student references", className: "w-[32%]" },
+        { label: "Student matches", className: "w-[32%]" },
         { label: "Submitted", className: "w-[14%]" },
         { label: "Status", className: "w-[13%]" },
         { label: "Actions", className: "w-[16%]" },
@@ -67,6 +67,7 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
                   {row.references.map((reference) => (
                     <div key={reference.value} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <span className="font-mono text-[11px]">{reference.value}</span>
+                      {reference.schoolRecorded ? <span className="text-[11px] font-semibold text-[#1565c0]">School recorded email</span> : null}
                       <span className={reference.studentName ? "text-[11px] text-[#2e7d32]" : "text-[11px] text-[#9a5b00]"}>
                         {reference.studentName ? `Matched: ${reference.studentName}` : "No match yet"}
                       </span>
@@ -93,7 +94,7 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
                       name="decision"
                       value="approve"
                       disabled={matchedCount === 0}
-                      title={matchedCount === 0 ? "At least one student reference must match this school" : undefined}
+                      title={matchedCount === 0 ? "At least one reference or school-recorded email must match a student" : undefined}
                       onClick={(event) => {
                         if (!window.confirm(`Approve ${row.name} and link ${matchedCount} matching student${matchedCount === 1 ? "" : "s"}?`)) {
                           event.preventDefault();

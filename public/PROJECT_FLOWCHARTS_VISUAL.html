@@ -320,7 +320,7 @@
           The admin creates the official school and student records. New student records require sex, while each
           school-year enrollment records whether the student is new, a transferee, or returned. Age is derived from
           birthdate and legacy missing values display as Pending. New parents choose one active school and wait for its
-          administrator to approve a matching student reference. Approved parents only see students when both a
+          administrator to approve a matching student reference or school-recorded guardian email. Enrollment can connect an already active same-school Parent immediately; pending assignments wait for review. Approved parents only see students when both a
           <code>student_guardians</code> link and matching <code>parent_profiles.school_id</code> exist.
           One <strong>Add students</strong> chooser opens focused single-new,
           batch-new, or existing-student workflows. Enrolled students shows one
@@ -351,12 +351,12 @@ flowchart TD
   F --> G
   F1 --> G
 
-  G["Parent registers or logs in"] --> H["Choose one school and submit student_reference"]
+  G["Parent registers or logs in"] --> H["Choose school with optional reference or school-recorded email"]
   H --> I{"Matching student found inside assigned school?"}
-  I -->|Yes| J["Create student_guardians link"]
-  I -->|No| K["Parent stays active but has no linked student yet"]
+  I -->|Yes| J["School approves pending account and links matched students"]
+  I -->|No| K["Parent remains pending; school reviews or rejects"]
   J --> L["Parent dashboard shows linked student"]
-  K --> M["Parent can try link-by-reference later"]
+  K --> M["No dashboard access until approval"]
 
   L --> N["Parent views assigned fees"]
   N --> O["Parent records local test payment"]
@@ -623,7 +623,7 @@ flowchart TD
           <pre class="mermaid">
 flowchart TD
   A["Parent opens /parent/register"] --> B["Load active school choices"]
-  B --> C["Submit one school, guardian details, references, and password"]
+  B --> C["Submit one school, guardian details, optional references, and password"]
   C --> C2["Validate selected school is active on the server"]
   C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
@@ -632,7 +632,7 @@ flowchart TD
   G --> H["Save every submitted reference"]
   H --> I["Redirect to /parent/login with submission notice"]
   I --> J["School administrator reviews request"]
-  J --> K{"At least one same-school match?"}
+  J --> K{"Same-school reference or recorded email match?"}
   K -->|No| L["Wait for student record or reject"]
   K -->|Yes, approve| M["Link all matches and activate account"]
   J -->|Reject| N["Disable account and keep review history"]

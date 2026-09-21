@@ -59,7 +59,7 @@ test("school-only review is atomic and requires a same-school match", () => {
   assert.match(service, /LIMIT 1 FOR UPDATE/);
   assert.match(service, /await connection\.beginTransaction\(\)/);
   assert.match(service, /st\.school_id = rr\.school_id/);
-  assert.match(service, /if \(matches\.length === 0\)/);
+  assert.match(service, /if \(matches\.length === 0 && recordedAssignments\.length === 0\)/);
   assert.match(service, /linkParentToStudentByReference\(connection/);
   assert.match(service, /WHERE id = :parentUserId AND role = 'parent' AND status = :currentStatus/);
   assert.match(service, /INSERT INTO parent_registration_reviews/);

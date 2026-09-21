@@ -112,6 +112,11 @@ The bundle creates the complete current table structure without inserting accoun
    - New parent accounts remain pending until their school administrator approves a same-school student match. Existing account statuses and guardian links are not changed.
    - Safe to import more than once.
 
+23. Import `migrations/2026-09-21-enrollment-parent-email-links.sql` after the parent registration approval migration and before deploying enrollment email linking.
+   - Adds school-owned pending guardian email assignments without modifying existing student, parent, or financial records.
+   - Import into the selected production database; the migration does not use a hard-coded database name.
+   - Repeat imports preserve existing assignments through `CREATE TABLE IF NOT EXISTS`.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.

@@ -116,6 +116,9 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Restrict student creation/enrollment to `school_administrator` and `registrar`.
 - [x] Let school administrators and registrars correct school-scoped student details plus existing active-year grade, section, and student type from the exact Student Profile; keep historical placement and lifecycle statuses read-only.
 - [x] Link parent accounts to students using `student_reference`.
+- [x] Let enrollment record an optional guardian name, email, and relationship for each new student, connecting active same-school parents immediately or retaining a pending assignment for school approval.
+- [x] Let authorized school staff correct or cancel pending email assignments without changing existing guardian links.
+- [x] Permit parent registration without a reference only when the selected school recorded a pending guardian assignment for the same email; school approval still gates dashboard access.
 - [x] Allow parent registration to submit one or more student references.
 - [x] Show linked students on the parent dashboard from the database.
 - [x] Add a parent My students page for managing multiple linked students.

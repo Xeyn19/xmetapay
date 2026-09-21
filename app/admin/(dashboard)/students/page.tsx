@@ -4,10 +4,13 @@ import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminStudentPageData } from "@/lib/students/records";
 import { getAdminSchoolContext } from "@/lib/school/setup";
+import { listPendingGuardianEmails } from "@/lib/students/guardian-email-links";
+import { canManageStudents } from "@/lib/admin/permissions";
 
 import { AlertBanner, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
 import { StudentIntake } from "./student-intake";
 import { StudentsTable } from "./students-table";
+import { PendingGuardianEmails } from "./pending-guardian-emails";
 
 export default async function StudentsPage({ searchParams }: { searchParams: Promise<{ intake?: string | string[] }> }) {
   const session = await requireRole("admin");
@@ -17,6 +20,9 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
     searchParams,
     getAdminSchoolContext(session.userId),
   ]);
+  const pendingGuardians = schoolContext.schoolId && canManageStudents(schoolContext.staffRole)
+    ? await listPendingGuardianEmails(schoolContext.schoolId)
+    : [];
 
   return (
     <>
@@ -53,6 +59,12 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
           </p>
         </DashboardCard>
       </div>
+
+      {schoolContext.schoolId && canManageStudents(schoolContext.staffRole) ? (
+        <DashboardCard title="Pending parent email connections" icon={Users} className="mb-5">
+          <PendingGuardianEmails rows={pendingGuardians} />
+        </DashboardCard>
+      ) : null}
 
       <DashboardCard
         title={`Student registry - ${data.activeSchoolYearName ?? "School year pending"}`}

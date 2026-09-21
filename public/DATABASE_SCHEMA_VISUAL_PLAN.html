@@ -333,8 +333,8 @@
             </tr>
             <tr>
               <td>Students</td>
-              <td><code>students</code>, <code>student_guardians</code></td>
-              <td>Student profiles and parent-to-student links, including one parent linked to multiple students.</td>
+              <td><code>students</code>, <code>student_guardians</code>, <code>pending_student_guardians</code></td>
+              <td>Student profiles, school-recorded guardian emails pending registration or approval, and authorized parent-to-student links. Pending email assignments do not grant portal access.</td>
             </tr>
             <tr>
               <td>Enrollment</td>
@@ -393,8 +393,10 @@ erDiagram
   SCHOOLS ||--o{ PARENT_PROFILES : "owns parent accounts"
   USERS ||--o{ PARENT_REGISTRATION_REFERENCES : "submits references"
   USERS ||--o{ PARENT_REGISTRATION_REVIEWS : "has review history"
+  USERS ||--o{ PENDING_STUDENT_GUARDIANS : "records or claims email"
   SCHOOLS ||--o{ PARENT_REGISTRATION_REFERENCES : "scopes references"
   SCHOOLS ||--o{ PARENT_REGISTRATION_REVIEWS : "scopes reviews"
+  SCHOOLS ||--o{ PENDING_STUDENT_GUARDIANS : "owns guardian emails"
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
@@ -405,6 +407,7 @@ erDiagram
   SCHOOLS ||--o{ GRADE_LEVELS : "has"
   SCHOOLS ||--o{ SECTIONS : "has"
   SCHOOLS ||--o{ STUDENTS : "has"
+  STUDENTS ||--o{ PENDING_STUDENT_GUARDIANS : "awaits parent account"
   SCHOOLS ||--o{ FEE_TYPES : "defines"
   SCHOOLS ||--o{ PAYMENTS : "collects"
   SCHOOLS ||--o{ STORE_MERCHANTS : "has"
@@ -752,11 +755,11 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens register page"] --> B["Choose one active school and submit guardian details plus references"]
+  A["Parent opens register page"] --> B["Choose active school and submit guardian details plus optional references"]
   B --> C["Create pending parent user and school profile"]
   C --> D["Save every submitted reference"]
   D --> E["Show submitted status at parent login"]
-  E --> F["School administrator reviews same-school matches"]
+  E --> F["School administrator reviews same-school references or recorded email matches"]
   F --> G{"At least one match and approve?"}
   G -->|Yes| H["Link all matches and activate account"]
   G -->|No, reject| I["Record rejection and block login"]

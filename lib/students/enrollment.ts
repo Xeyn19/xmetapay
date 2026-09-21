@@ -3,6 +3,7 @@ import "server-only";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
 import { pool } from "@/lib/auth/db";
+import { parseGuardianEmailInput, recordGuardianEmail, type GuardianEmailInput } from "@/lib/students/guardian-email-links";
 
 const studentSexes = new Set(["male", "female"]);
 const studentTypes = new Set(["new", "transferee", "returned"]);
@@ -10,12 +11,15 @@ const studentTypes = new Set(["new", "transferee", "returned"]);
 export type StudentName = {
   firstName: string;
   lastName: string;
+  guardianLink: "none" | "pending" | "linked";
 };
 
 export type StudentBatchResult = {
   createdCount: number;
   duplicateRows: number[];
   invalidRows: number[];
+  linkedCount: number;
+  pendingGuardianCount: number;
 };
 
 export type ExistingEnrollmentBatchResult = {
@@ -40,9 +44,10 @@ export async function createStudentForActiveYear(adminUserId: number, formData: 
     await requireValidSection(connection, setup.schoolId, setup.schoolYearId, input.data.gradeLevelId, input.data.sectionId);
     const studentId = await insertStudent(connection, setup.schoolId, input.data);
     await insertEnrollment(connection, studentId, setup.schoolYearId, input.data);
+    const guardianLink = await recordGuardianEmail(connection, setup.schoolId, studentId, adminUserId, input.data.guardian);
     await connection.commit();
 
-    return { firstName: input.data.firstName, lastName: input.data.lastName };
+    return { firstName: input.data.firstName, lastName: input.data.lastName, guardianLink };
   } catch (error) {
     await connection.rollback().catch(() => undefined);
     throw error;
@@ -67,11 +72,20 @@ export async function createStudentsForActiveYear(adminUserId: number, formData:
     const invalidRows: number[] = [];
     const seenReferences = new Set<string>();
     let createdCount = 0;
+    let linkedCount = 0;
+    let pendingGuardianCount = 0;
 
     for (const [index, row] of input.data.entries()) {
       const rowNumber = index + 1;
 
       if (!validStudentInput(row)) {
+        invalidRows.push(rowNumber);
+        continue;
+      }
+
+      try {
+        row.guardian = parseGuardianEmailInput(row.guardianEmail, row.guardianName, row.guardianRelationship);
+      } catch {
         invalidRows.push(rowNumber);
         continue;
       }
@@ -93,6 +107,9 @@ export async function createStudentsForActiveYear(adminUserId: number, formData:
       try {
         const studentId = await insertStudent(connection, setup.schoolId, row);
         await insertEnrollment(connection, studentId, setup.schoolYearId, row);
+        const guardianLink = await recordGuardianEmail(connection, setup.schoolId, studentId, adminUserId, row.guardian);
+        if (guardianLink === "linked") linkedCount += 1;
+        if (guardianLink === "pending") pendingGuardianCount += 1;
         createdCount += 1;
       } catch (error) {
         if (isDuplicateEntry(error)) {
@@ -104,7 +121,7 @@ export async function createStudentsForActiveYear(adminUserId: number, formData:
     }
 
     await connection.commit();
-    return { createdCount, duplicateRows, invalidRows };
+    return { createdCount, duplicateRows, invalidRows, linkedCount, pendingGuardianCount };
   } catch (error) {
     await connection.rollback().catch(() => undefined);
     throw error;
@@ -181,6 +198,9 @@ export function isDuplicateEntry(error: unknown) {
 }
 
 function parseStudentForm(formData: FormData) {
+  const guardian = parseGuardianEmailInput(
+    formValue(formData, "guardianEmail"), formValue(formData, "guardianName"), formValue(formData, "guardianRelationship"),
+  );
   const data: StudentInput = {
     studentReference: formValue(formData, "studentReference"),
     firstName: formValue(formData, "firstName"),
@@ -191,6 +211,10 @@ function parseStudentForm(formData: FormData) {
     studentType: formValue(formData, "studentType"),
     gradeLevelId: Number(formValue(formData, "gradeLevelId")),
     sectionId: Number(formValue(formData, "sectionId")),
+    guardianEmail: guardian?.email ?? "",
+    guardianName: guardian?.name ?? "",
+    guardianRelationship: guardian?.relationship ?? "",
+    guardian,
   };
 
   return validStudentInput(data)
@@ -221,6 +245,10 @@ function parseBatchStudentsForm(formData: FormData) {
       studentType: stringProperty(item, "studentType"),
       gradeLevelId: numberProperty(item, "gradeLevelId"),
       sectionId: numberProperty(item, "sectionId"),
+      guardianEmail: stringProperty(item, "guardianEmail"),
+      guardianName: stringProperty(item, "guardianName"),
+      guardianRelationship: stringProperty(item, "guardianRelationship"),
+      guardian: null,
     })),
   };
 }
@@ -440,6 +468,10 @@ type StudentInput = EnrollmentPlacement & {
   lastName: string;
   birthdate: string | null;
   sex: string;
+  guardianEmail: string;
+  guardianName: string;
+  guardianRelationship: string;
+  guardian: GuardianEmailInput | null;
 };
 type AdminProfileSetupRow = RowDataPacket & { user_id: number; school_id: number | null; school_name: string };
 type SchoolMatchRow = RowDataPacket & { id: number };

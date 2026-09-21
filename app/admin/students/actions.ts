@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 
 import { getAdminStaffRole } from "@/lib/admin/access";
 import { canManageStudents } from "@/lib/admin/permissions";
+import { pool } from "@/lib/auth/db";
+import { getAdminSchoolContext } from "@/lib/school/setup";
+import { changePendingGuardianEmail, parseGuardianEmailInput } from "@/lib/students/guardian-email-links";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
 import {
   createStudentForActiveYear,
@@ -68,7 +71,7 @@ export async function createStudentAction(formData: FormData) {
     await setAuthFlashToast({
       role: "admin",
       title: "Student added",
-      description: `${student.firstName} ${student.lastName} is enrolled for the active school year.`,
+      description: `${student.firstName} ${student.lastName} is enrolled for the active school year. ${student.guardianLink === "linked" ? "The parent account is connected." : student.guardianLink === "pending" ? "The parent connection is waiting for registration and school approval." : ""}`.trim(),
     });
   } catch (error) {
     await setAuthFlashToast({
@@ -80,6 +83,35 @@ export async function createStudentAction(formData: FormData) {
     });
   }
 
+  redirect("/admin/students");
+}
+
+export async function changePendingGuardianEmailAction(formData: FormData) {
+  const session = await requireStudentManager("Your staff role cannot manage parent connections.");
+  const assignmentId = positiveInteger(formData.get("assignmentId"));
+  const intent = formValue(formData, "intent");
+  const context = await getAdminSchoolContext(session.userId);
+  let connection;
+  try {
+    if (!context.schoolId || !assignmentId || (intent !== "save" && intent !== "cancel")) {
+      throw new Error("Choose a valid pending parent connection.");
+    }
+    const guardian = intent === "cancel" ? null : parseGuardianEmailInput(
+      formValue(formData, "guardianEmail"), formValue(formData, "guardianName"), formValue(formData, "guardianRelationship"),
+    );
+    if (intent === "save" && !guardian) throw new Error("Enter a parent email, name, and relationship.");
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    const result = await changePendingGuardianEmail(connection, context.schoolId, assignmentId, guardian);
+    await connection.commit();
+    await setAuthFlashToast({ role: "admin", title: "Parent connection updated", description: result === "linked" ? "The active parent account is now connected." : result === "cancelled" ? "The pending connection was cancelled." : "The corrected email is waiting for registration and approval." });
+  } catch (error) {
+    if (connection) await connection.rollback().catch(() => undefined);
+    await setAuthFlashToast({ role: "admin", title: "Parent connection not updated", description: isDuplicateEntry(error) ? "This email is already recorded for the student." : messageForError(error) });
+  } finally {
+    connection?.release();
+  }
+  revalidatePath("/admin/students");
   redirect("/admin/students");
 }
 
@@ -146,6 +178,8 @@ async function requireStudentManager(message: string) {
 
 function batchSummary(result: StudentBatchResult) {
   const parts = [`${result.createdCount} student${result.createdCount === 1 ? "" : "s"} added.`];
+  if (result.linkedCount) parts.push(`${result.linkedCount} connected to existing parents.`);
+  if (result.pendingGuardianCount) parts.push(`${result.pendingGuardianCount} parent connection${result.pendingGuardianCount === 1 ? " is" : "s are"} waiting for registration and approval.`);
 
   if (result.duplicateRows.length > 0) {
     parts.push(`${result.duplicateRows.length} skipped because the reference already exists (row${result.duplicateRows.length === 1 ? "" : "s"} ${result.duplicateRows.join(", ")}).`);

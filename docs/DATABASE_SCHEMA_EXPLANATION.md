@@ -83,9 +83,9 @@ School setup is shared across staff accounts. If a registrar or finance officer 
 
 ### `parent_profiles`
 
-This stores parent-side profile details for users with the `parent` role. Parent registration requires one active school, guardian details, required phone number, relationship, and one or more student references. `parent_profiles.school_id` is the immutable school ownership boundary. The first submitted reference is stored in `parent_profiles.student_reference` and `parent_profiles.student_name` as a pending-link display label because those columns are required, but official student identity still comes from the school-created `students` records after linking.
+This stores parent-side profile details for users with the `parent` role. Parent registration requires one active school, guardian details, a phone number, and relationship. Student references are optional only if that school has already recorded a pending guardian assignment for the same email. `parent_profiles.school_id` is the immutable school ownership boundary. The first submitted reference, or an empty string for email-only registrations, stays in the required legacy reference and name columns. Official student identity still comes from school-created `students` records after linking.
 
-New parent accounts start with `users.status = 'pending'`, receive no session, and cannot use the Parent portal until their school administrator approves them. `parent_registration_references` stores every submitted reference for that one school; `parent_registration_reviews` records each approval, rejection, or reopening with the reviewer and time. Approval requires at least one same-school student match, creates guardian links for all matches, and activates the account in one transaction. Rejected accounts stay disabled and retain their request history. Existing active parents are not changed by the migration.
+New parent accounts start with `users.status = 'pending'`, receive no session, and cannot use the Parent portal until their school administrator approves them. `parent_registration_references` stores every submitted reference for that one school; `parent_registration_reviews` records each approval, rejection, or reopening with the reviewer and time. Approval requires at least one same-school reference or school-recorded email match, creates guardian links for all matches, and activates the account in one transaction. Rejected accounts stay disabled and retain their request history. Existing active parents are not changed by the migration.
 
 The one-school migration is additive and non-destructive. It backfills `school_id` only when existing guardian links or the saved pending reference identify exactly one school. Multi-school, ambiguous, or unmatched profiles remain nullable and receive an account-review screen; their guardian and financial history is not deleted. If an assigned school later becomes inactive, Parent historical reads remain available while new links and financial writes are rejected.
 
@@ -152,6 +152,8 @@ The exact admin Student Profile can correct the existing `students` name, refere
 ### `student_guardians`
 
 Links parent accounts to students.
+
+`pending_student_guardians` records a student's school, normalized parent email, guardian name and relationship, creator, and pending/linked/cancelled state. Enrollment saves it alongside the new student and active-year enrollment. An existing active same-school Parent is linked immediately; a Parent who registers later stays pending until the school's administrator approves the matching email or reference. Staff can correct or cancel only pending assignments. These rows never grant portal access themselves; `student_guardians` remains authoritative.
 
 Main purpose:
 

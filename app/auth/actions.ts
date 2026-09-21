@@ -60,6 +60,19 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
       await tryLinkAdminProfileToExistingSchool(connection, userResult.insertId, parsed.data.profile.schoolName);
     } else {
       await validateActiveRegistrationSchool(connection, parsed.data.profile.schoolId);
+      if (parsed.data.profile.studentReferences.length === 0) {
+        const [schoolMatches] = await connection.execute<RowDataPacket[]>(
+          `SELECT pg.id FROM pending_student_guardians pg
+           JOIN students st ON st.id = pg.student_id AND st.school_id = pg.school_id
+           WHERE pg.school_id = :schoolId AND pg.parent_email = :email AND pg.status = 'pending'
+           LIMIT 1`,
+          { schoolId: parsed.data.profile.schoolId, email: parsed.data.email },
+        );
+        if (schoolMatches.length === 0) {
+          await connection.rollback();
+          return { message: "Enter a student reference or ask your school to record your email during enrollment.", errors: { studentReferences: "No school-recorded parent email was found. Enter a student reference." } };
+        }
+      }
       await connection.execute(
         `INSERT INTO parent_profiles (user_id, school_id, student_name, student_reference, relationship)
          VALUES (:userId, :schoolId, :studentName, :studentReference, :relationship)`,
