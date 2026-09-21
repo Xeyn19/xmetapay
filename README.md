@@ -50,7 +50,7 @@ npm run test:e2e     # Run Playwright tests
 
 - The app uses Next.js 16, React 19, TypeScript, and Tailwind CSS.
 - Authentication, permissions, and data access remain role- and school-scoped.
-- New Parent accounts choose one active school and wait for school administrator approval; at least one submitted reference or school-recorded guardian email must match a student in that school. Existing active parent accounts keep their access, and unresolved legacy accounts remain preserved but blocked from portal operations.
+- New Parent accounts choose one active school. Signup shows a field alert and creates no account unless at least one submitted reference or school-recorded guardian email matches a student there. Matching registrations wait for school administrator approval before sign-in. Existing active parent accounts keep their access, and unresolved legacy accounts remain preserved but blocked from portal operations.
 - Student enrollment can record a guardian email. Existing active same-school Parent accounts link immediately; otherwise the school reviews the email match when the Parent registers. A reference is optional only when the school has a pending email assignment. Staff can correct or cancel pending assignments from Enrolled students.
 - End-to-end tests live in `e2e/`.
 - Codex project skills live in `.codex/skills/`.

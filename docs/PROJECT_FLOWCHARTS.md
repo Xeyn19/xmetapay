@@ -402,7 +402,7 @@ Database touchpoints:
 
 Implemented.
 
-During registration, the parent chooses one active school and may submit up to ten `student_reference` values. With none, the school must already have a pending email assignment for that Parent. The validated school is saved in `parent_profiles.school_id`, the first reference or an empty legacy value remains in the profile, and submitted references are stored in `parent_registration_references`. The account stays pending without a session or guardian link. The school administrator reviews same-school references and school-recorded email matches, approves only when at least one matches, or rejects; rejected requests can be reopened. Approval links every matching reference and pending email assignment and activates Parent login.
+During registration, the parent chooses one active school and may submit up to ten `student_reference` values. Signup requires at least one same-school submitted reference match or a pending email assignment for that Parent; otherwise a field alert appears and the account is rolled back. The validated school is saved in `parent_profiles.school_id`, the first reference or an empty legacy value remains in the profile, and submitted references are stored in `parent_registration_references`. The account stays pending without a session or guardian link. The school administrator rechecks same-school references and school-recorded email matches, approves only when at least one still matches, or rejects; rejected requests can be reopened. Approval links every matching reference and pending email assignment and activates Parent login.
 
 ```mermaid
 flowchart TD
@@ -413,12 +413,14 @@ flowchart TD
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
   F --> G["Insert pending parent user"]
-  G --> H["Insert parent_profiles row with school_id"]
+  G --> G2{"Same-school reference or recorded email match?"}
+  G2 -->|No| G3["Roll back account and show reference alert"]
+  G2 -->|Yes| H["Insert parent_profiles row with school_id"]
   H --> I["Save every submitted reference"]
   I --> J["Redirect to /parent/login with submission notice"]
   J --> K["School administrator reviews request"]
   K --> L{"Same-school reference or recorded email match?"}
-  L -->|No| M["Wait for student record or reject"]
+  L -->|No, match changed| M["Wait for student record or reject"]
   L -->|Yes, approve| N["Link all matches and activate account"]
   K -->|Reject| O["Disable account and keep review history"]
   O -->|Reopen| K

@@ -10,16 +10,16 @@ function loadGuardianService() {
   const compiled = ts.transpileModule(read("lib/students/guardian-email-links.ts"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  const module = { exports: {} };
+  const loadedModule = { exports: {} };
   vm.runInNewContext(compiled, {
-    module, exports: module.exports,
+    module: loadedModule, exports: loadedModule.exports,
     require: (name) => {
       if (name === "server-only") return {};
       if (name === "@/lib/auth/db") return { pool: {} };
       throw new Error(`Unexpected import: ${name}`);
     },
   });
-  return module.exports;
+  return loadedModule.exports;
 }
 
 test("enrollment email validation requires all guardian fields and normalizes address", () => {
@@ -104,7 +104,7 @@ test("registration and review retain pending access until school administrator a
   const review = read("lib/parents/registration-approval.ts");
   const actions = read("app/admin/students/actions.ts");
 
-  assert.match(auth, /schoolMatches\.length === 0/);
+  assert.match(auth, /hasParentRegistrationMatch\(/);
   assert.match(auth, /status: "pending"/);
   assert.match(review, /matches\.length === 0 && recordedAssignments\.length === 0/);
   assert.match(review, /applyGuardianAssignments\(connection, schoolId, request\.email, parentUserId\)/);

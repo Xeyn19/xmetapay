@@ -119,6 +119,7 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Let enrollment record an optional guardian name, email, and relationship for each new student, connecting active same-school parents immediately or retaining a pending assignment for school approval.
 - [x] Let authorized school staff correct or cancel pending email assignments without changing existing guardian links.
 - [x] Permit parent registration without a reference only when the selected school recorded a pending guardian assignment for the same email; school approval still gates dashboard access.
+- [x] Validate submitted parent references against the selected school's students at signup; show a field alert and create no account when neither a reference nor a school-recorded email matches.
 - [x] Allow parent registration to submit one or more student references.
 - [x] Show linked students on the parent dashboard from the database.
 - [x] Add a parent My students page for managing multiple linked students.
