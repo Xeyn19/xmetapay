@@ -6,6 +6,7 @@ import { getAdminStaffRole } from "@/lib/admin/access";
 import { pool } from "@/lib/auth/db";
 import { getAdminSchoolContext } from "@/lib/school/setup";
 import { linkParentToStudentByReference } from "@/lib/students/records";
+import { applyGuardianAssignments, getPendingGuardianAssignments } from "@/lib/students/guardian-email-links";
 
 export type ParentRegistrationRequest = {
   userId: number;
@@ -15,7 +16,7 @@ export type ParentRegistrationRequest = {
   relationship: string;
   submittedAt: string;
   status: "Pending approval" | "Approved" | "Rejected" | "Disabled";
-  references: Array<{ value: string; studentName: string | null }>;
+  references: Array<{ value: string; studentName: string | null; schoolRecorded?: boolean }>;
 };
 
 export type ReviewDecision = "approve" | "reject" | "reopen";
@@ -90,6 +91,31 @@ export async function getParentRegistrationRequests(adminUserId: number): Promis
     referencesByParent.set(reference.parent_user_id, parentReferences);
   }
 
+  const [recorded] = await pool.execute<RecordedGuardianRow[]>(
+    `SELECT u.id AS parent_user_id, st.student_reference, st.first_name, st.last_name
+     FROM pending_student_guardians pg
+     JOIN users u ON u.role = 'parent' AND u.email = pg.parent_email
+     JOIN parent_profiles pp ON pp.user_id = u.id AND pp.school_id = pg.school_id
+     JOIN students st ON st.id = pg.student_id AND st.school_id = pg.school_id
+     WHERE pg.school_id = :schoolId AND pg.status IN ('pending', 'linked')
+       AND (u.status = 'pending' OR EXISTS (
+         SELECT 1 FROM parent_registration_reviews pr WHERE pr.parent_user_id = u.id
+       ))
+     ORDER BY pg.id`,
+    { schoolId },
+  );
+  for (const item of recorded) {
+    const parentReferences = referencesByParent.get(item.parent_user_id) ?? [];
+    const existing = parentReferences.find((reference) => reference.value === item.student_reference);
+    if (existing) existing.schoolRecorded = true;
+    else parentReferences.push({
+      value: item.student_reference,
+      studentName: `${item.first_name} ${item.last_name}`,
+      schoolRecorded: true,
+    });
+    referencesByParent.set(item.parent_user_id, parentReferences);
+  }
+
   return requests.map((request) => ({
     userId: request.id,
     name: request.name,
@@ -123,7 +149,7 @@ export async function reviewParentRegistration(
   try {
     await connection.beginTransaction();
     const [rows] = await connection.execute<LockedRequestRow[]>(
-      `SELECT u.status, sc.status AS school_status
+      `SELECT u.status, u.email, sc.status AS school_status
        FROM users u
        JOIN parent_profiles pp ON pp.user_id = u.id
        JOIN schools sc ON sc.id = pp.school_id
@@ -156,6 +182,7 @@ export async function reviewParentRegistration(
     }
 
     if (decision === "approve") {
+      const recordedAssignments = await getPendingGuardianAssignments(connection, schoolId, request.email);
       const [matches] = await connection.execute<MatchedReferenceRow[]>(
         `SELECT rr.student_reference
          FROM parent_registration_references rr
@@ -165,8 +192,8 @@ export async function reviewParentRegistration(
          ORDER BY rr.id`,
         { parentUserId, schoolId },
       );
-      if (matches.length === 0) {
-        throw new ParentRegistrationReviewError("At least one submitted reference must match a student at this school.");
+      if (matches.length === 0 && recordedAssignments.length === 0) {
+        throw new ParentRegistrationReviewError("At least one reference or school-recorded parent email must match a student at this school.");
       }
 
       for (const match of matches) {
@@ -175,6 +202,7 @@ export async function reviewParentRegistration(
           throw new ParentRegistrationReviewError("The matched student could not be linked. Please try again.");
         }
       }
+      await applyGuardianAssignments(connection, schoolId, request.email, parentUserId);
     }
 
     const nextStatus = decision === "approve" ? "active" : decision === "reject" ? "disabled" : "pending";
@@ -246,7 +274,14 @@ type ReferenceRow = RowDataPacket & {
 
 type LockedRequestRow = RowDataPacket & {
   status: "active" | "pending" | "disabled";
+  email: string;
   school_status: "active" | "inactive";
+};
+type RecordedGuardianRow = RowDataPacket & {
+  parent_user_id: number;
+  student_reference: string;
+  first_name: string;
+  last_name: string;
 };
 
 type LatestReviewRow = RowDataPacket & { decision: "approved" | "rejected" | "reopened" };

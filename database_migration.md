@@ -23,5 +23,6 @@ This checklist records which migrations have been applied to production. ✅ mea
 - ✅ [2026-08-11-school-email-templates.sql](database/migrations/2026-08-11-school-email-templates.sql)
 - ✅ [2026-09-02-parent-single-school-scope.sql](database/migrations/2026-09-02-parent-single-school-scope.sql)
 - ⬜ [2026-09-19-parent-registration-approval.sql](database/migrations/2026-09-19-parent-registration-approval.sql)
+- ⬜ [2026-09-21-enrollment-parent-email-links.sql](database/migrations/2026-09-21-enrollment-parent-email-links.sql)
 
 Created: September 21, 2026

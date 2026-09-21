@@ -115,8 +115,8 @@ One parent profile per parent user.
 | `id` | Primary key |
 | `user_id` | Links to `users.id` |
 | `school_id` | Nullable immutable link to the one assigned `schools.id`; unresolved legacy profiles remain null |
-| `student_name` | Pending-link display label; parent registration stores the first submitted student reference here until an official student link exists |
-| `student_reference` | First student reference captured during registration; all submitted references are saved separately for review |
+| `student_name` | Pending-link display label; the first submitted reference, or empty for an email-only school match |
+| `student_reference` | First submitted reference, or empty for an email-only school match; all submitted references are saved separately |
 | `relationship` | Mother, father, or guardian |
 
 Parent registration validates an active school before inserting this profile. Existing databases use the idempotent `2026-09-02-parent-single-school-scope.sql` migration, which backfills only unambiguous single-school profiles and never deletes legacy guardian or financial records. A null assignment blocks Parent portal data and actions. An inactive assigned school permits historical reads but no new Parent writes.
@@ -240,7 +240,9 @@ CREATE TABLE students (
 
 #### `student_guardians`
 
-Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per parent. School administrator approval creates one row per matched submitted reference inside `parent_profiles.school_id`; later, the parent portal can add more children from that same school. The unique pair key keeps duplicate links from being created. Every Parent query also requires the student's school to equal the parent profile school, so a stale cross-school row grants no portal access.
+The `2026-09-21-enrollment-parent-email-links.sql` migration adds `pending_student_guardians`: one school-scoped assignment per student and normalized parent email, with guardian name, relationship, creator, optional linked parent, timestamps, and pending/linked/cancelled state. Single and batch new-student enrollment may record these fields. Active same-school parent accounts gain an idempotent `student_guardians` link in the enrollment transaction. Pending or future accounts gain access only after the school administrator approves a matching email or submitted reference; the assignment by itself confers no Parent access. Registrars may edit or cancel pending entries but cannot approve accounts. Fresh installations include the table in `full-schema-v1.sql` and the generated production bundle.
+
+Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per parent. School administrator approval creates one row per matched submitted reference or pending school-recorded email inside `parent_profiles.school_id`; later, the parent portal can add more children from that same school. The unique pair key keeps duplicate links from being created. Every Parent query also requires the student's school to equal the parent profile school, so a stale cross-school row grants no portal access.
 
 ```sql
 CREATE TABLE student_guardians (
@@ -767,6 +769,7 @@ erDiagram
   USERS ||--o| PARENT_PROFILES : "has parent profile"
   USERS ||--o{ PARENT_REGISTRATION_REFERENCES : "submits references"
   USERS ||--o{ PARENT_REGISTRATION_REVIEWS : "has review history"
+  USERS ||--o{ PENDING_STUDENT_GUARDIANS : "records or claims email"
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
@@ -774,10 +777,12 @@ erDiagram
   SCHOOLS ||--o{ SCHOOL_YEARS : "has"
   SCHOOLS ||--o{ PARENT_REGISTRATION_REFERENCES : "scopes references"
   SCHOOLS ||--o{ PARENT_REGISTRATION_REVIEWS : "scopes reviews"
+  SCHOOLS ||--o{ PENDING_STUDENT_GUARDIANS : "owns guardian emails"
   SCHOOLS ||--o{ ADMIN_PROFILES : "linked admins"
   SCHOOLS ||--o{ GRADE_LEVELS : "has"
   SCHOOLS ||--o{ SECTIONS : "has"
   SCHOOLS ||--o{ STUDENTS : "has"
+  STUDENTS ||--o{ PENDING_STUDENT_GUARDIANS : "awaits parent account"
   SCHOOLS ||--o{ FEE_TYPES : "defines"
   SCHOOLS ||--o{ PAYMENTS : "collects"
   SCHOOLS ||--o{ STORE_MERCHANTS : "has"
@@ -875,11 +880,11 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A["Parent opens register page"] --> B["Submit guardian details and one or more student references"]
+  A["Parent opens register page"] --> B["Choose school and submit guardian details with optional references"]
   B --> C["Create pending parent user and school profile"]
   C --> D["Save all submitted references"]
   D --> E["Show submitted status at parent login"]
-  E --> F["School administrator reviews same-school matches"]
+  E --> F["School administrator reviews same-school references or recorded email matches"]
   F --> G{"At least one match and approve?"}
   G -->|Yes| H["Link all matches, record review, activate account"]
   G -->|No, reject| I["Record rejection and block login"]

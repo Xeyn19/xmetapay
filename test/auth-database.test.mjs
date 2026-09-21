@@ -137,8 +137,8 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["confirmPassword", testCredentialInput],
   ]));
 
-  assert.equal(parentMissingReferences.ok, false);
-  assert.equal(parentMissingReferences.errors.studentReferences, "Add at least one student ID or reference.");
+  assert.equal(parentMissingReferences.ok, true);
+  assert.deepEqual(parentMissingReferences.data.profile.studentReferences, []);
 
   const parentWithoutStudentNames = parseRegisterForm("parent", new Map([
     ["guardianName", " Maria Santos "],
@@ -187,7 +187,7 @@ test("parent registration requires one school and renders multi-student referenc
   const parentRegister = readFileSync(parentRegisterPath, "utf8");
   const authUi = readFileSync(authUiPath, "utf8");
 
-  assert.match(parentRegister, /school must approve your registration before you can sign in/);
+  assert.match(parentRegister, /Approval is required before sign-in/);
   assert.match(parentRegister, /getActiveParentRegistrationSchools/);
   assert.match(parentRegister, /name: "schoolId"/);
   assert.match(parentRegister, /Select your school/);
@@ -198,7 +198,7 @@ test("parent registration requires one school and renders multi-student referenc
   assert.match(authUi, /name="studentReferences"/);
   assert.match(authUi, /Add another student/);
   assert.match(authUi, /Remove/);
-  assert.match(authUi, /Add all children you want connected to this parent account/);
+  assert.match(authUi, /If the school recorded your email during enrollment, you can leave this blank/);
   assert.match(authUi, /Up to 10 references\. Duplicates are ignored safely/);
   assert.match(authUi, /typeof option === "string" \? option : option\.value/);
 });

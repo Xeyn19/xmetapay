@@ -92,12 +92,12 @@ flowchart TD
   F --> G
   F1 --> G
 
-  G["Parent registers or logs in"] --> H["Parent selects assigned school and submits student_reference"]
+  G["Parent registers or logs in"] --> H["Choose school with optional reference or school-recorded email"]
   H --> I{"Matching student found inside assigned school?"}
-  I -->|Yes| J["Create student_guardians link"]
-  I -->|No| K["Parent stays active but has no linked student yet"]
+  I -->|Yes| J["School approves pending account and links matched students"]
+  I -->|No| K["Parent remains pending; school reviews or rejects"]
   J --> L["Parent dashboard shows linked student"]
-  K --> M["Parent can try link-by-reference later"]
+  K --> M["No dashboard access until approval"]
 
   L --> N["Parent views assigned fees"]
   N --> O["Parent records local test payment"]
@@ -339,6 +339,8 @@ Implemented.
 
 The school/admin side creates the official student record first. One `Add students` chooser opens focused workflows for one new student, multiple new students, or existing students. The Enrolled students page shows one contextual trigger, while other authorized Admin pages retain a header shortcut to that same chooser. New-student batches can apply shared grade, section, and student-type defaults before individual overrides; duplicate references and incomplete rows are identified before submission, while server validation remains authoritative. Existing students with no active-year enrollment are selected without re-entering names, birthdates, references, or parent links. Valid rows remain independent and duplicate enrollments are skipped safely.
 
+Single and batch new-student forms optionally collect a guardian name, email, and relationship. The school saves a pending assignment with the student; a matching active Parent in that school links immediately. A Parent who registers later may omit a reference when the school has recorded their email, but the account still needs school administrator approval before dashboard access. Staff may correct or cancel pending assignments on Enrolled students. The existing-student year placement flow preserves guardian identity and links.
+
 ```mermaid
 flowchart TD
   A["Admin opens /admin/students"] --> B{"School setup complete?"}
@@ -400,12 +402,12 @@ Database touchpoints:
 
 Implemented.
 
-During registration, the parent chooses one active school and submits up to ten `student_reference` values. The validated school is saved in `parent_profiles.school_id`, the first reference remains in the legacy profile field, and every reference is stored in `parent_registration_references`. The account stays pending without a session or guardian link. The school administrator reviews same-school matches, approves only when at least one matches, or rejects; rejected requests can be reopened. Approval links every matching reference and activates Parent login. Parents can add more children from the same school later.
+During registration, the parent chooses one active school and may submit up to ten `student_reference` values. With none, the school must already have a pending email assignment for that Parent. The validated school is saved in `parent_profiles.school_id`, the first reference or an empty legacy value remains in the profile, and submitted references are stored in `parent_registration_references`. The account stays pending without a session or guardian link. The school administrator reviews same-school references and school-recorded email matches, approves only when at least one matches, or rejects; rejected requests can be reopened. Approval links every matching reference and pending email assignment and activates Parent login.
 
 ```mermaid
 flowchart TD
   A["Parent opens /parent/register"] --> B["Load active school choices"]
-  B --> C["Submit one school, guardian details, references, and password"]
+  B --> C["Submit one school, guardian details, optional references, and password"]
   C --> C2["Validate selected school is active on the server"]
   C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
@@ -415,7 +417,7 @@ flowchart TD
   H --> I["Save every submitted reference"]
   I --> J["Redirect to /parent/login with submission notice"]
   J --> K["School administrator reviews request"]
-  K --> L{"At least one same-school match?"}
+  K --> L{"Same-school reference or recorded email match?"}
   L -->|No| M["Wait for student record or reject"]
   L -->|Yes, approve| N["Link all matches and activate account"]
   K -->|Reject| O["Disable account and keep review history"]
@@ -429,6 +431,7 @@ Database touchpoints:
 - `parent_profiles`
 - `parent_registration_references`
 - `parent_registration_reviews`
+- `pending_student_guardians`
 - `parent_registration_references`
 - `parent_registration_reviews`
 - `students`

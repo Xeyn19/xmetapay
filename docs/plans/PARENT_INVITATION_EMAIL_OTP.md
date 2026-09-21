@@ -4,11 +4,11 @@ Status: Deferred after the September 11, 2026 rollback of PR #147.
 
 This document preserves the intended school-issued Parent invitation workflow for a future implementation. It is a design reference, not a description of the currently active registration process.
 
-## Current Behavior After Rollback
+## Current Behavior
 
-- `/parent/register` lets a guardian choose one active school, enter guardian details, select Mother, Father, or Guardian, submit one or more student references, and create an active Parent account.
-- `parent_profiles.school_id` is validated and stored by the server. Every submitted student reference is matched only inside that school.
-- Matching students are linked through `student_guardians`. An unmatched reference does not prevent account creation, and the Parent can try again later from the dashboard, My students, or the empty Student profile state.
+- `/parent/register` lets a guardian choose one active school, enter details, and optionally submit student references. Without a reference, the school must have recorded a pending guardian assignment for the same email.
+- New Parent accounts remain pending until that school's administrator approves a same-school reference or school-recorded email match. Approval creates `student_guardians` links; an existing active same-school Parent can be linked as soon as the school records their email during enrollment.
+- A pending email assignment by itself never grants Parent portal access. Parents with active accounts can still link another same-school student by reference.
 - Parent registration does not send email and does not depend on Gmail or SMTP. SMTP remains required for password recovery and payment-reminder email delivery.
 
 ## Future Outcome

@@ -31,6 +31,10 @@ export function StudentEnrollmentForm({
 }) {
   const [gradeLevelId, setGradeLevelId] = useState("");
   const [sectionId, setSectionId] = useState("");
+  const [guardianName, setGuardianName] = useState("");
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [guardianRelationship, setGuardianRelationship] = useState("");
+  const guardianStarted = Boolean(guardianName || guardianEmail || guardianRelationship);
   const selectedGradeLevelId = Number(gradeLevelId);
   const filteredSectionOptions = useMemo(
     () => sectionOptions.filter((section) => section.gradeLevelId === selectedGradeLevelId),
@@ -113,6 +117,13 @@ export function StudentEnrollmentForm({
           ))}
         </select>
       </Field>
+      <div className="sm:col-span-2 lg:col-span-3 border-t border-black/10 pt-4">
+        <h3 className="text-sm font-bold text-[#0f1117]">Parent or guardian (optional)</h3>
+        <p className="mt-1 text-xs leading-5 text-[#5a6070]">A matching active same-school account connects now. Otherwise the school reviews the connection when this email registers.</p>
+      </div>
+      <Field label="Guardian name"><input name="guardianName" className={fieldControlClass} maxLength={120} autoComplete="name" placeholder="Maria Santos" value={guardianName} onChange={(event) => setGuardianName(event.target.value)} required={guardianStarted} /></Field>
+      <Field label="Parent email"><input name="guardianEmail" className={fieldControlClass} type="email" maxLength={150} autoComplete="email" placeholder="parent@example.com" value={guardianEmail} onChange={(event) => setGuardianEmail(event.target.value)} required={guardianStarted} /></Field>
+      <Field label="Relationship"><select name="guardianRelationship" className={fieldControlClass} value={guardianRelationship} onChange={(event) => setGuardianRelationship(event.target.value)} required={guardianStarted}><option value="">Choose relationship</option><option value="mother">Mother</option><option value="father">Father</option><option value="guardian">Guardian</option></select></Field>
       <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3 sm:justify-end">
         {onCancel ? (
           <AdminButton type="button" tone="outline" className="w-full sm:w-auto" onClick={onCancel}>

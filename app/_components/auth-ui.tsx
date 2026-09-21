@@ -349,7 +349,7 @@ function StudentReferencesField({ error }: { error?: string }) {
     <div className="sm:col-span-2">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <span className="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[var(--public-muted)] sm:text-xs sm:tracking-[0.12em]">
-          Student IDs or references
+          Student IDs or references <span className="font-semibold normal-case tracking-normal text-[var(--public-subtle)]">(optional if your school recorded your email)</span>
         </span>
         <span className="rounded-md bg-[#fbe9e7] px-2 py-1 text-[11px] font-bold text-[#bf360c]">
           {countLabel}
@@ -357,7 +357,7 @@ function StudentReferencesField({ error }: { error?: string }) {
       </div>
       <div className="public-panel rounded-lg border p-3 sm:p-4">
         <p className="max-w-2xl text-xs leading-5 text-[var(--public-muted)] sm:text-[13px] sm:leading-6">
-          Enter the student references from the school. Add all children you want connected to this parent account.
+          Enter student references if you have them. If the school recorded your email during enrollment, you can leave this blank and the school will review the connection.
         </p>
         <div className="mt-3 grid gap-2.5">
           {references.map((reference, index) => (
@@ -371,7 +371,6 @@ function StudentReferencesField({ error }: { error?: string }) {
                 value={reference}
                 onChange={(event) => updateReference(index, event.target.value)}
                 placeholder={index === 0 ? "BWA-001" : "Another student reference"}
-                required={index === 0}
                 aria-label={`Student reference ${index + 1}`}
                 aria-invalid={Boolean(error)}
                 className="public-field min-h-12 min-w-0 rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"

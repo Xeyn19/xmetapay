@@ -18,6 +18,9 @@ type StudentDraft = Defaults & {
   lastName: string;
   birthdate: string;
   sex: string;
+  guardianName: string;
+  guardianEmail: string;
+  guardianRelationship: string;
 };
 
 export function BulkStudentEnrollmentModal({
@@ -66,6 +69,9 @@ export function BulkStudentEnrollmentModal({
     studentType: row.studentType,
     gradeLevelId: row.gradeLevelId,
     sectionId: row.sectionId,
+    guardianName: row.guardianName,
+    guardianEmail: row.guardianEmail,
+    guardianRelationship: row.guardianRelationship,
   })), [rows]);
   const defaultSections = sectionOptions.filter((section) => section.gradeLevelId === Number(defaults.gradeLevelId));
   const defaultsReady = Boolean(defaults.studentType && defaults.gradeLevelId && defaults.sectionId);
@@ -146,6 +152,9 @@ export function BulkStudentEnrollmentModal({
                     <BatchField label="Student type" required><select value={row.studentType} onChange={(event) => updateRow(row.key, "studentType", event.target.value)} className={bulkFieldControlClass} aria-invalid={!row.studentType}><option value="">Choose type</option><option value="new">New</option><option value="transferee">Transferee</option><option value="returned">Returned</option></select></BatchField>
                     <BatchField label="Grade level" required><select value={row.gradeLevelId} onChange={(event) => updateGrade(row.key, event.target.value)} className={bulkFieldControlClass} disabled={!ready} aria-invalid={!row.gradeLevelId}><option value="">Choose grade</option>{gradeOptions.map((grade) => <option key={grade.id} value={grade.id}>{grade.name}</option>)}</select></BatchField>
                     <BatchField label="Section" required><select value={row.sectionId} onChange={(event) => updateRow(row.key, "sectionId", event.target.value)} className={bulkFieldControlClass} disabled={!ready || !row.gradeLevelId || filteredSections.length === 0} aria-invalid={!row.sectionId}><option value="">{!row.gradeLevelId ? "Choose grade first" : filteredSections.length ? "Choose section" : "No sections for this grade"}</option>{filteredSections.map((section) => <option key={section.id} value={section.id}>{section.label}</option>)}</select></BatchField>
+                    <BatchField label="Guardian name (optional)"><input value={row.guardianName} onChange={(event) => updateRow(row.key, "guardianName", event.target.value)} className={bulkFieldControlClass} maxLength={120} placeholder="Maria Santos" /></BatchField>
+                    <BatchField label="Parent email (optional)"><input value={row.guardianEmail} onChange={(event) => updateRow(row.key, "guardianEmail", event.target.value)} className={bulkFieldControlClass} maxLength={150} type="email" placeholder="parent@example.com" /></BatchField>
+                    <BatchField label="Relationship (if email entered)"><select value={row.guardianRelationship} onChange={(event) => updateRow(row.key, "guardianRelationship", event.target.value)} className={bulkFieldControlClass}><option value="">Choose relationship</option><option value="mother">Mother</option><option value="father">Father</option><option value="guardian">Guardian</option></select></BatchField>
                   </div>
                 </section>
               );
@@ -177,9 +186,11 @@ const bulkFieldControlClass =
   "min-h-12 min-w-0 w-full rounded-lg border border-[#3a445b] bg-[#0f1420] px-3 text-[13px] text-[#f4f6fb] [color-scheme:dark] outline-none transition placeholder:text-[#747f96] disabled:cursor-not-allowed disabled:border-[#2b3345] disabled:bg-[#111622] disabled:text-[#6f788a] focus:border-[#ff7043] focus:ring-3 focus:ring-[#ff7043]/15 aria-invalid:border-[#d99b2b]/70";
 
 function createDraft(defaults: Defaults): StudentDraft {
-  return { key: `${Date.now()}-${Math.random()}`, studentReference: "", firstName: "", middleName: "", lastName: "", birthdate: "", sex: "", ...defaults };
+  return { key: `${Date.now()}-${Math.random()}`, studentReference: "", firstName: "", middleName: "", lastName: "", birthdate: "", sex: "", guardianName: "", guardianEmail: "", guardianRelationship: "", ...defaults };
 }
 
 function rowComplete(row: StudentDraft) {
-  return Boolean(row.studentReference.trim() && row.firstName.trim() && row.lastName.trim() && row.sex && row.studentType && row.gradeLevelId && row.sectionId);
+  return Boolean(row.studentReference.trim() && row.firstName.trim() && row.lastName.trim() && row.sex && row.studentType && row.gradeLevelId && row.sectionId
+    && (!row.guardianName.trim() && !row.guardianEmail.trim() && !row.guardianRelationship
+      || row.guardianName.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.guardianEmail.trim()) && row.guardianRelationship));
 }

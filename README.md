@@ -29,6 +29,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 - Local XAMPP/phpMyAdmin setup follows the canonical import order in `database/README.md`.
 - Existing databases must import `database/migrations/2026-09-19-parent-registration-approval.sql` before using the new parent registration flow.
+- Before using enrollment parent email connections, import `database/migrations/2026-09-21-enrollment-parent-email-links.sql` after the approval migration. Both remain pending in the production migration checklist until actually imported.
 - For a new empty GoDaddy Hosted Database, use its **Import SQL** action with `utilities/database/xmetapay-production-schema.sql`; the same bundle can be imported into an explicitly selected empty cPanel database through phpMyAdmin.
 - The production bundle contains schema only and does not create or select the database, insert accounts or application records, or upgrade an existing live database.
 - Database runtime configuration prefers GoDaddy Hosted Database's injected `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`; local XAMPP development continues to use the corresponding `MYSQL_*` values from an ignored `.env` file.
@@ -49,9 +50,10 @@ npm run test:e2e     # Run Playwright tests
 
 - The app uses Next.js 16, React 19, TypeScript, and Tailwind CSS.
 - Authentication, permissions, and data access remain role- and school-scoped.
-- New Parent accounts choose one active school and wait for school administrator approval; at least one submitted student reference must match that school. Existing active parent accounts keep their access, and unresolved legacy accounts remain preserved but blocked from portal operations.
+- New Parent accounts choose one active school and wait for school administrator approval; at least one submitted reference or school-recorded guardian email must match a student in that school. Existing active parent accounts keep their access, and unresolved legacy accounts remain preserved but blocked from portal operations.
+- Student enrollment can record a guardian email. Existing active same-school Parent accounts link immediately; otherwise the school reviews the email match when the Parent registers. A reference is optional only when the school has a pending email assignment. Staff can correct or cancel pending assignments from Enrolled students.
 - End-to-end tests live in `e2e/`.
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
-Last updated: 2026-09-19
+Last updated: 2026-09-21
