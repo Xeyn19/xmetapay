@@ -28,6 +28,37 @@ export class ParentRegistrationReviewError extends Error {
   }
 }
 
+export async function hasParentRegistrationMatch(
+  connection: PoolConnection,
+  schoolId: number,
+  email: string,
+  references: string[],
+): Promise<boolean> {
+  const [recorded] = await connection.execute<RowDataPacket[]>(
+    `SELECT pg.id FROM pending_student_guardians pg
+     JOIN students st ON st.id = pg.student_id AND st.school_id = pg.school_id
+     WHERE pg.school_id = :schoolId AND pg.parent_email = :email AND pg.status = 'pending'
+     LIMIT 1`,
+    { schoolId, email },
+  );
+  if (recorded.length > 0) return true;
+  if (references.length === 0) return false;
+
+  const parameters: Record<string, number | string> = { schoolId };
+  const placeholders = references.map((reference, index) => {
+    const key = `reference${index}`;
+    parameters[key] = reference;
+    return `:${key}`;
+  });
+  const [matches] = await connection.execute<RowDataPacket[]>(
+    `SELECT st.id FROM students st
+     WHERE st.school_id = :schoolId AND st.student_reference IN (${placeholders.join(", ")})
+     LIMIT 1`,
+    parameters,
+  );
+  return matches.length > 0;
+}
+
 export async function saveParentRegistrationReferences(
   connection: PoolConnection,
   parentUserId: number,

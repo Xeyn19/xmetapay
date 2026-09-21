@@ -125,7 +125,7 @@ Parent registration validates an active school before inserting this profile. Ex
 
 `parent_registration_references` stores each submitted `(parent_user_id, school_id, student_reference)` with a unique parent/reference pair and school lookup index. `parent_registration_reviews` stores school-scoped `approved`, `rejected`, and `reopened` events with reviewer and creation time. Both tables reference users and schools; review history remains after a decision. The idempotent `2026-09-19-parent-registration-approval.sql` migration copies a legacy profile's first saved reference when its school is known without changing existing account statuses or guardian links.
 
-New registration inserts a pending user, parent profile, and every reference in one transaction. School administrator approval requires at least one same-school student match, links all matches, records the decision, and activates the user in one transaction. Rejection disables login; reopening returns only a rejected request to pending review. These decisions are school-wide and do not use the selected school year.
+New registration checks for at least one same-school submitted reference or pending school-recorded email match, then inserts a pending user, parent profile, and every reference in one transaction. A failed match rolls back the account and shows a reference alert. School administrator approval rechecks for at least one same-school student match, links all matches, records the decision, and activates the user in one transaction. Rejection disables login; reopening returns only a rejected request to pending review. These decisions are school-wide and do not use the selected school year.
 
 ## Full Practical MVP Schema
 

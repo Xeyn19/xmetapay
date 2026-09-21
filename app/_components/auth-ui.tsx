@@ -357,7 +357,7 @@ function StudentReferencesField({ error }: { error?: string }) {
       </div>
       <div className="public-panel rounded-lg border p-3 sm:p-4">
         <p className="max-w-2xl text-xs leading-5 text-[var(--public-muted)] sm:text-[13px] sm:leading-6">
-          Enter student references if you have them. If the school recorded your email during enrollment, you can leave this blank and the school will review the connection.
+          If you enter student references, at least one must match a student at your school. If the school recorded your email during enrollment, you can leave this blank and the school will review the connection.
         </p>
         <div className="mt-3 grid gap-2.5">
           {references.map((reference, index) => (
@@ -373,6 +373,7 @@ function StudentReferencesField({ error }: { error?: string }) {
                 placeholder={index === 0 ? "BWA-001" : "Another student reference"}
                 aria-label={`Student reference ${index + 1}`}
                 aria-invalid={Boolean(error)}
+                aria-describedby={error ? "student-references-error" : undefined}
                 className="public-field min-h-12 min-w-0 rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
               />
               {references.length > 1 ? (
@@ -401,7 +402,7 @@ function StudentReferencesField({ error }: { error?: string }) {
           </span>
         </div>
       </div>
-      {error ? <span className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">{error}</span> : null}
+      {error ? <span id="student-references-error" className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">{error}</span> : null}
     </div>
   );
 }

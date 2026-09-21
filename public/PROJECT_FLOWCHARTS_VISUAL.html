@@ -628,12 +628,14 @@ flowchart TD
   C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
-  F --> G["Insert pending parent user and school profile"]
-  G --> H["Save every submitted reference"]
+  F --> G["Insert pending parent user"]
+  G --> G2{"Same-school reference or recorded email match?"}
+  G2 -->|No| G3["Roll back account and show reference alert"]
+  G2 -->|Yes| H["Insert school profile and save every submitted reference"]
   H --> I["Redirect to /parent/login with submission notice"]
   I --> J["School administrator reviews request"]
   J --> K{"Same-school reference or recorded email match?"}
-  K -->|No| L["Wait for student record or reject"]
+  K -->|No, match changed| L["Wait for student record or reject"]
   K -->|Yes, approve| M["Link all matches and activate account"]
   J -->|Reject| N["Disable account and keep review history"]
   N -->|Reopen| J

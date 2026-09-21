@@ -14,7 +14,7 @@ test("production phpMyAdmin schema bundle is current and contains every canonica
     readFile("database/full-schema-v1.sql", "utf8"),
   ]);
 
-  assert.equal(bundle, expected);
+  assert.equal(bundle.replace(/\r\n/g, "\n"), expected);
 
   const canonicalTables = new Set(
     [

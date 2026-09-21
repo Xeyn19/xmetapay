@@ -324,7 +324,7 @@
             <tr>
               <td>Auth</td>
               <td><code>users</code>, <code>auth_sessions</code>, <code>password_reset_challenges</code>, <code>admin_profiles</code>, <code>parent_profiles</code>, <code>parent_registration_references</code>, <code>parent_registration_reviews</code></td>
-              <td>Company super admin login, school-scoped parent approval with saved student references and review history, portal registration/login, hashed OTP recovery challenges, DB-backed sessions, and account status.</td>
+              <td>Company super admin login, school-scoped parent signup match checks and approval with saved student references and review history, portal registration/login, hashed OTP recovery challenges, DB-backed sessions, and account status.</td>
             </tr>
             <tr>
               <td>School setup</td>
@@ -756,7 +756,9 @@ flowchart TD
           <pre class="mermaid">
 flowchart TD
   A["Parent opens register page"] --> B["Choose active school and submit guardian details plus optional references"]
-  B --> C["Create pending parent user and school profile"]
+  B --> B2{"Same-school reference or recorded email match?"}
+  B2 -->|No| B3["Show reference alert and create no account"]
+  B2 -->|Yes| C["Create pending parent user and school profile"]
   C --> D["Save every submitted reference"]
   D --> E["Show submitted status at parent login"]
   E --> F["School administrator reviews same-school references or recorded email matches"]
