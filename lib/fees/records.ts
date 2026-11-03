@@ -132,7 +132,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
       .sort()[0];
     const displayRows = rowsWithTerms.map(({ row, rawTerms }) => {
       const assignmentDueDate = row.due_date ? formatDate(row.due_date) : "Pending";
-      const terms = formatFeeTerms(rawTerms, assignmentDueDate);
+      const terms = formatFeeTerms(rawTerms);
       const balanceValue = Math.max(decimalValue(row.amount_due) - decimalValue(row.amount_paid), 0);
 
       return {
@@ -296,14 +296,14 @@ function feeTone(status: string, amountDue: number | string, amountPaid: number 
   return "red";
 }
 
-function formatFeeTerms(terms: ReturnType<typeof parseTuitionTermsBlob>, assignmentDueDate: string): ParentFeeTerm[] {
+function formatFeeTerms(terms: ReturnType<typeof parseTuitionTermsBlob>): ParentFeeTerm[] {
   return terms.map((term) => ({
     id: term.id,
     name: term.name,
     amountDue: money(term.amountDue),
     amountPaid: money(term.amountPaid),
     balance: money(term.balance),
-    dueDate: assignmentDueDate,
+    dueDate: term.dueDate ? formatDate(term.dueDate) : "Pending",
     status: labelForStatus(term.status),
     payable: term.payable,
     tone: feeTone(term.status, term.amountDue, term.amountPaid),

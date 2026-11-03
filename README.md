@@ -53,7 +53,10 @@ npm run test:e2e     # Run Playwright tests
 - New Parent accounts choose one active school. Signup shows a field alert and creates no account unless at least one submitted reference or school-recorded guardian email matches a student there. Matching registrations wait for school administrator approval before sign-in. Existing active parent accounts keep their access, and unresolved legacy accounts remain preserved but blocked from portal operations.
 - Student enrollment can record a guardian email. Existing active same-school Parent accounts link immediately; otherwise the school reviews the email match when the Parent registers. A reference is optional only when the school has a pending email assignment. Staff can correct or cancel pending assignments from Enrolled students.
 - End-to-end tests live in `e2e/`.
+- School administrators can now prepare K–12 and college academic periods, approve immutable package-based fee schedules, preview up to 500 student assessments, apply audited vouchers or discounts, and post one atomic batch. Guardians receive itemized Statements of Account and pay actual percentage-plan term dates.
+- Existing databases import `database/migrations/2026-11-03-tuition-assessment-workflow.sql` after the earlier dated migrations. New empty databases use the regenerated production schema bundle.
+- The local supervisor demo uses only synthetic `QA-` setup records: `node utilities/qa/seed-tuition-assessment-demo.mjs --admin=<local-admin-user-id>`. Add `--cleanup` to remove only unused records created by that utility.
 - Codex project skills live in `.codex/skills/`.
 - Sensitive values such as environment variables, tokens, credentials, customer data, and private operational details should not be documented in this README.
 
-Last updated: 2026-09-21
+Last updated: 2026-11-03

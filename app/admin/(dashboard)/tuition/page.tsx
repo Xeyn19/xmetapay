@@ -1,4 +1,5 @@
-import { Calculator, Receipt, Send } from "lucide-react";
+import Link from "next/link";
+import { Calculator, Plus, Receipt, Send } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
@@ -7,8 +8,6 @@ import { getAdminFeeSetupData } from "@/lib/fees/records";
 import { getAdminSchoolContext } from "@/lib/school/setup";
 import { getActiveSchoolEmailTemplates } from "@/lib/email/templates";
 import { builtInPaymentReminderTemplates } from "@/lib/email/template-contract";
-import { FeeAssignStudentsForm, FeeCreateTypeForm } from "@/app/admin/fees/fee-management-forms";
-import { OtherFeeActionModal } from "@/app/admin/(dashboard)/other-fees/other-fees-management-modal";
 import { PaymentReminderHistoryTable } from "./payment-reminder-history-table";
 import { PaymentReminderForm } from "./payment-reminder-form";
 
@@ -17,7 +16,7 @@ import { TuitionReportTable, type TuitionReportRow } from "./tuition-report-tabl
 
 export default async function TuitionPage() {
   const session = await requireRole("admin");
-  await requireAdminPageAccess(session.userId, "/admin/tuition");
+  const staffRole = await requireAdminPageAccess(session.userId, "/admin/tuition");
   const [data, feeSetup, schoolContext] = await Promise.all([
     getAdminTuitionPageRealData(session.userId),
     getAdminFeeSetupData(session.userId, "tuition"),
@@ -65,26 +64,7 @@ export default async function TuitionPage() {
         className="mb-[18px]"
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <OtherFeeActionModal
-              title={`Assign tuition fee - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
-              description="Choose one tuition fee, select enrolled students, then assign it safely."
-              triggerLabel="Assign fee"
-              triggerIcon="receipt"
-              triggerTone="dark"
-              size="wide"
-            >
-              <FeeAssignStudentsForm category="tuition" redirectPath="/admin/tuition" data={feeSetup} />
-            </OtherFeeActionModal>
-            <OtherFeeActionModal
-              title={`Add tuition fee type - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
-              description="Create reusable tuition fee types before assigning them to students."
-              triggerLabel="Add fee type"
-              triggerIcon="plus"
-              triggerTone="outline"
-              size="small"
-            >
-              <FeeCreateTypeForm category="tuition" redirectPath="/admin/tuition" data={feeSetup} />
-            </OtherFeeActionModal>
+            {staffRole === "school_administrator" ? <><Link href="/admin/tuition/assessments/new" className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-[#151826] px-4 text-[13px] font-semibold text-white focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30"><Receipt className="size-4" />Create assessments</Link><Link href="/admin/tuition/schedules" className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-black/15 bg-white px-4 text-[13px] font-semibold text-[#151826] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30"><Plus className="size-4" />Manage fee catalog</Link></> : null}
           </div>
         }
       >

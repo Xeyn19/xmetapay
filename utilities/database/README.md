@@ -16,3 +16,7 @@ The bundle deliberately contains no `CREATE DATABASE` or `USE xmetapay_db` state
 ## Maintenance
 
 `database/auth-schema.sql` and `database/full-schema-v1.sql` remain canonical. The committed production bundle is generated from those files by `generate-phpmyadmin-schema.mjs`; tests fail if it becomes stale or contains row-data statements. Regenerate it only after the canonical fresh schema has been updated and reviewed.
+
+## Existing database upgrade order
+
+Do not import the fresh-install bundle over a populated database. Back up the database, apply the dated migrations in chronological order, then apply `database/migrations/2026-11-03-tuition-assessment-workflow.sql`. The tuition migration uses `information_schema` guards, backfills only deterministic legacy assignment keys, and does not synthesize assessments from historical fees.

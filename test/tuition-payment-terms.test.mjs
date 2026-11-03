@@ -153,7 +153,7 @@ test("parent fee and payment helpers expose payable tuition terms through guardi
   assert.match(feeHelper, /Earliest unpaid fee deadline/);
   assert.match(feesTable, /Tuition payment terms/);
   assert.match(feesTable, /Visible now, not payable for this status/);
-  assert.match(paymentHelper, /source: "fee" \| "term"/);
+  assert.match(paymentHelper, /source: "fee" \| "term" \| "assessment_term"/);
   assert.match(paymentHelper, /getParentPayableTuitionTerms/);
   assert.match(terms, /JOIN tuition_payment_terms tpt/);
   assert.match(terms, /sfa\.due_date/);
@@ -161,7 +161,7 @@ test("parent fee and payment helpers expose payable tuition terms through guardi
   assert.doesNotMatch(paymentHelper, /tpt\.due_date <= CURRENT_DATE/);
   assert.doesNotMatch(terms, /tpt\.due_date <= CURRENT_DATE/);
   assert.match(paymentHelper, /NOT EXISTS \(/);
-  assert.match(paymentForm, /name=\{fee\.source === "term" \? "tuitionTermId" : "feeAssignmentId"\}/);
+  assert.match(paymentForm, /fee\.source === "assessment_term" \? "assessmentTermId"/);
 });
 
 test("parent payment action pays tuition terms and updates assignment totals", () => {

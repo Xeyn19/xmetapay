@@ -24,5 +24,31 @@ This checklist records which migrations have been applied to production. ✅ mea
 - ✅ [2026-09-02-parent-single-school-scope.sql](database/migrations/2026-09-02-parent-single-school-scope.sql)
 - ⬜ [2026-09-19-parent-registration-approval.sql](database/migrations/2026-09-19-parent-registration-approval.sql)
 - ⬜ [2026-09-21-enrollment-parent-email-links.sql](database/migrations/2026-09-21-enrollment-parent-email-links.sql)
+- ⬜ [2026-11-03-tuition-assessment-workflow.sql](database/migrations/2026-11-03-tuition-assessment-workflow.sql)
+
+## Tuition assessment migration notes
+
+Apply the pending migrations in chronological order. The tuition assessment migration must run after the September 19 and September 21 migrations.
+
+Before importing `2026-11-03-tuition-assessment-workflow.sql`:
+
+1. Create a recoverable production database backup.
+2. Confirm the September 19 and September 21 migrations completed successfully.
+3. Put financial writes into a maintenance window so fee assignments or payments cannot change during the import.
+4. Select the exact existing XMETA Pay database in phpMyAdmin; do not import the fresh-install production schema bundle over populated data.
+
+The migration is designed to be rerunnable. It preserves historical assignments, backfills their deterministic keys as `legacy-fee:{feeTypeId}`, and does not create synthetic assessments for old charges.
+
+After importing, verify that:
+
+- `schools.education_scope` exists and existing schools default to `basic`.
+- `student_fee_assignments.assignment_key` is populated and unique per student and school year.
+- Academic, fee-schedule, assessment, credit, and assessment-payment-term tables exist.
+- Existing fee assignments, tuition terms, payments, allocations, receipts, and reports still return their original records.
+- The application build matching this migration is deployed before administrators use the new assessment routes.
+
+Do not mark the migration as ✅ until the production import and verification checks are complete.
 
 Created: September 21, 2026
+
+Last updated: November 3, 2026

@@ -10,7 +10,7 @@ export type PaymentChannel = "cash" | "card" | "online_banking" | "gcash" | "may
 
 export type ParentPayableFee = {
   id: number;
-  source: "fee" | "term";
+  source: "fee" | "term" | "assessment_term";
   studentId: number;
   studentName: string;
   studentReference: string;
@@ -254,8 +254,11 @@ async function getParentPaymentHistoryRows(parentUserId: number, archiveScope: "
 }
 
 async function getParentPayableFees(parentUserId: number) {
-  const [termRows, feeRows] = await Promise.all([
+  const [termRows, assessmentTermRows, feeRows] = await Promise.all([
     getParentPayableTuitionTerms(parentUserId),
+    pool.execute<ParentPayableFeeRow[]>(`SELECT apt.id,apt.amount_due,apt.amount_paid,apt.due_date,apt.status,CONCAT(fs.name,' - ',apt.name) fee_name,'tuition' category,st.id student_id,st.student_reference,st.first_name,st.middle_name,st.last_name
+      FROM assessment_payment_terms apt JOIN student_assessments sa ON sa.id=apt.student_assessment_id JOIN fee_schedules fs ON fs.id=sa.fee_schedule_id JOIN students st ON st.id=sa.student_id JOIN student_guardians sg ON sg.student_id=st.id AND sg.parent_user_id=:parentUserId JOIN parent_profiles pp_scope ON pp_scope.user_id=sg.parent_user_id AND pp_scope.school_id=st.school_id
+      WHERE apt.status IN ('open','partial') AND apt.amount_due>apt.amount_paid ORDER BY st.last_name,apt.due_date`,{parentUserId}),
     pool.execute<ParentPayableFeeRow[]>(
     `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
        ft.name AS fee_name, ft.category,
@@ -269,6 +272,7 @@ async function getParentPayableFees(parentUserId: number) {
      WHERE sg.parent_user_id = :parentUserId
        AND sfa.status IN ('open', 'partial')
        AND sfa.amount_due > sfa.amount_paid
+       AND (sfa.student_assessment_id IS NULL OR EXISTS (SELECT 1 FROM fee_schedule_items assessment_item WHERE assessment_item.id=sfa.fee_schedule_item_id AND assessment_item.payment_timing='upfront'))
        AND NOT EXISTS (
          SELECT 1
          FROM tuition_payment_terms tpt
@@ -280,9 +284,10 @@ async function getParentPayableFees(parentUserId: number) {
     ),
   ]);
   const terms = termRows.map((row) => payableRow(row, "term" as const, `${row.fee_name} - ${row.term_name}`));
+  const assessmentTerms = assessmentTermRows[0].map((row) => payableRow(row, "assessment_term" as const, row.fee_name));
   const fees = feeRows[0].map((row) => payableRow(row, "fee" as const, row.fee_name));
 
-  return [...terms, ...fees];
+  return [...assessmentTerms, ...terms, ...fees];
 }
 
 function payableRow(
