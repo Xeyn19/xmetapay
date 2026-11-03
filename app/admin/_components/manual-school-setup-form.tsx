@@ -7,6 +7,7 @@ import { saveSchoolSetupAction } from "@/app/admin/school-setup/actions";
 import { AdminButton, Field, fieldControlClass } from "@/app/admin/_components/admin-ui";
 import { cn } from "@/lib/utils";
 import type { AdminSchoolSetupFormData } from "@/lib/school/setup";
+import type { EducationScope } from "@/lib/school/academic-offerings";
 
 type GradeRow = {
   id: string;
@@ -40,6 +41,7 @@ export function ManualSchoolSetupForm({
       status: year.status,
     })),
   );
+  const [educationScope, setEducationScope] = useState<EducationScope>(initialData.educationScope);
   const [grades, setGrades] = useState<GradeRow[]>(
     initialData.grades.map((grade, index) => ({
       id: `grade-${index}-${grade.name || "new"}`,
@@ -162,12 +164,13 @@ export function ManualSchoolSetupForm({
       <input type="hidden" name="gradeSetup" value={gradeSetup} />
       <input type="hidden" name="sectionSchoolYearId" value={selectedSetupSchoolYearId} />
       <input type="hidden" name="redirectTo" value={redirectTo} />
+      <input type="hidden" name="educationScope" value={educationScope} />
 
       <section className="overflow-hidden rounded-xl border border-black/[0.07] bg-white">
         <div className="border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
           <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">School</h2>
         </div>
-        <div className="grid gap-3 p-[18px] md:grid-cols-[1fr_220px]">
+        <div className="grid gap-3 p-[18px] md:grid-cols-2 lg:grid-cols-[1fr_220px_300px]">
           <Field label="School name" required>
             <input
               name="schoolName"
@@ -185,6 +188,13 @@ export function ManualSchoolSetupForm({
               className={fieldControlClass}
               placeholder="SCHOOL-CODE"
             />
+          </Field>
+          <Field label="Academic offering" required>
+            <select value={educationScope} onChange={(event) => setEducationScope(event.target.value as EducationScope)} className={fieldControlClass}>
+              <option value="basic">Basic Education only (K–12)</option>
+              <option value="higher">Higher Education only (College)</option>
+              <option value="both">Both K–12 and College</option>
+            </select>
           </Field>
         </div>
       </section>
@@ -266,7 +276,9 @@ export function ManualSchoolSetupForm({
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-xl border border-black/[0.07] bg-white">
+      {educationScope === "higher" ? <section className="rounded-xl border border-status-info-foreground/20 bg-status-info-bg p-4 text-sm text-status-info-foreground"><strong>Next: College academic setup</strong><p className="mt-1 leading-5">After saving the school and its active year, add college programs, academic periods, and sections from School Setup. Grades are not required for a College-only school.</p></section> : null}
+
+      {educationScope !== "higher" ? <section className="overflow-hidden rounded-xl border border-black/[0.07] bg-white">
         <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-[18px]">
           <div>
             <h2 className="text-[13px] font-bold leading-5 text-[#0f1117]">Grades and sections</h2>
@@ -370,7 +382,7 @@ export function ManualSchoolSetupForm({
             Add grade level
           </AdminButton>
         </div>
-      </section>
+      </section> : null}
 
       <div className="flex flex-col-reverse gap-2 min-[420px]:flex-row min-[420px]:justify-end">
         <AdminButton type="submit" tone="primary">

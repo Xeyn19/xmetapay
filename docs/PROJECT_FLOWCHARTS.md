@@ -35,6 +35,26 @@ Implemented:
 - Full schema import through `database/full-schema-v1.sql`.
 - Schema-only production import for a new empty GoDaddy Hosted Database or cPanel/phpMyAdmin database through `utilities/database/xmetapay-production-schema.sql`.
 - Manual school setup by `school_administrator`.
+- Unified academic offering setup for Basic Education, Higher Education, or both, with independent readiness and safe scope narrowing.
+
+## Unified Philippine academic setup
+
+```mermaid
+flowchart TD
+  A[School administrator opens School setup] --> B{Academic offering}
+  B -->|Basic| C[Manage K–12 grades and sections]
+  B -->|Higher| D[Manage college programs periods and sections]
+  B -->|Both| C
+  B -->|Both| D
+  C --> E{Required track ready?}
+  D --> E
+  E -->|No| F[Show actionable setup needed status]
+  E -->|Yes| G[Allow scope-aware school-year activation]
+  H[Upcoming college year] --> I[Prepare periods and sections]
+  J[Closed college year] --> K[Historical read-only view]
+```
+
+Changing the offering never deletes records. Expansion is allowed; narrowing is rejected when the removed track still has academic, enrollment, tuition, or assessment records.
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Company super admin approval for new school admin registrations.
 - Company super admin monitoring for school admin accounts.

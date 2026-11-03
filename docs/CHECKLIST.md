@@ -99,6 +99,10 @@ Done when: the full schema can be imported locally or into a new empty cPanel da
 - [x] Create grade levels and sections from the admin side or a safe local seed script.
 - [x] Replace hard-coded school year/dashboard school labels with database reads.
 - [x] Restrict school setup to `school_administrator`.
+- [x] Let administrators choose Basic Education, Higher Education, or Both without deleting academic history.
+- [x] Show independent K–12 and College readiness cards in the School setup hub.
+- [x] Move college program, period, section, and placement management into School setup with active/upcoming/closed year behavior.
+- [x] Make school-year activation validate the selected academic offering: K–12, College, or both structures.
 - [x] Redirect new school administrators to setup-only onboarding before showing the real dashboard.
 
 Done when: the admin dashboard can load school setup data from MySQL, switch admin views by school year, keep new operational records in the active year, prepare target-year enrollments through manual rollover, and activate the next school year when ready.

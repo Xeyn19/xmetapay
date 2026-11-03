@@ -24,7 +24,7 @@ export default async function AdminSchoolSetupOnboardingPage() {
     redirect("/admin/dashboard");
   }
 
-  if (schoolContext.databaseReady) {
+  if (schoolContext.schoolId && schoolContext.activeSchoolYear) {
     redirect("/admin/dashboard");
   }
 
@@ -67,7 +67,7 @@ export default async function AdminSchoolSetupOnboardingPage() {
               Set up school
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5a6070]">
-              Add school years, choose the active year, then add grades and sections before opening the dashboard.
+              Choose whether the school offers Basic Education, College, or both. Add an active school year, then complete the academic structure for each selected offering.
             </p>
           </div>
 

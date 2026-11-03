@@ -76,6 +76,10 @@ Ask a school administrator to complete school setup first.
 
 School setup is school-wide, not per staff account. After the school administrator saves setup, XMETA EDU links other unlinked `admin_profiles` with the same exact `school_name` to the same `schools.id`. New registrar and finance accounts also try to join the existing school context during registration. That means a registrar should not need to repeat setup when the school administrator already completed it for the same school name.
 
+The school administrator chooses one academic offering: **Basic Education only**, **Higher Education only**, or **Both**. Scope may be expanded at any time. Narrowing is rejected when it would hide an academic track that already owns grades, programs, periods, sections, enrollments, tuition packages, or assessments. No scope change deletes or rewrites historical records.
+
+Readiness is track-specific. Basic Education requires an active school year with grades and K–12 sections. Higher Education requires an active school year with an active program/year structure, college period, and college section. A mixed school is ready only when both tracks are ready. College-only administrators are never forced to create K–12 grades or sections.
+
 For the MVP, this matching uses the exact school name from admin registration. A future production improvement should use a school invite code or required school code during staff registration so staff can join the correct school even when two schools have similar names.
 
 ## School-Year Viewing Rule

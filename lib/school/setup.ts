@@ -9,6 +9,7 @@ import {
   normalizeAdminStaffRole,
   type AdminStaffRole,
 } from "@/lib/admin/permissions";
+import { getSchoolAcademicReadiness, type AcademicTrackReadiness, type EducationScope } from "@/lib/school/academic-offerings";
 
 export type AdminSchoolContext = {
   adminName: string;
@@ -29,6 +30,8 @@ export type AdminSchoolContext = {
   schoolYears: AdminSchoolYearOption[];
   gradeLevelCount: number;
   sectionCount: number;
+  educationScope: EducationScope;
+  academicTracks: AcademicTrackReadiness;
   databaseReady: boolean;
   warning: string | null;
 };
@@ -44,6 +47,7 @@ export type AdminSchoolYearOption = {
 export type AdminSchoolSetupFormData = {
   schoolName: string;
   schoolCode: string;
+  educationScope: EducationScope;
   selectedSetupSchoolYearId: number | null;
   selectedSetupSchoolYearName: string | null;
   schoolYears: Array<{
@@ -63,6 +67,8 @@ export type AdminSchoolSetupOverview = {
   schoolName: string;
   schoolCode: string;
   schoolStatus: "active" | "inactive" | "pending";
+  educationScope: EducationScope;
+  academicTracks: AcademicTrackReadiness;
   warning: string | null;
   kpis: Array<{
     label: string;
@@ -77,6 +83,9 @@ export type AdminSchoolSetupOverview = {
     endsOn: string;
     status: "upcoming" | "active" | "closed";
     sectionCount: number;
+    collegePeriodCount: number;
+    collegeSectionCount: number;
+    collegeProgramYearCount: number;
     enrollmentCount: number;
     feeTypeCount: number;
   }>;
@@ -174,6 +183,8 @@ const fallbackContext: AdminSchoolContext = {
   schoolYears: [],
   gradeLevelCount: 0,
   sectionCount: 0,
+  educationScope: "basic",
+  academicTracks: emptyAcademicTracks(),
   databaseReady: false,
   warning: "Import the full schema and create school setup records.",
 };
@@ -203,6 +214,7 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
       countSections(school.id),
     ]);
     const selectedSchoolYear = await resolveSelectedSchoolYear(schoolYears, activeSchoolYear);
+    const academics = await getSchoolAcademicReadiness(school.id, activeSchoolYear?.id ?? null);
 
     return {
       ...baseContext,
@@ -215,8 +227,10 @@ export async function getAdminSchoolContext(userId: number): Promise<AdminSchool
       schoolYears,
       gradeLevelCount,
       sectionCount,
-      databaseReady: Boolean(activeSchoolYear && gradeLevelCount > 0 && sectionCount > 0),
-      warning: setupWarning(profile.staff_role, activeSchoolYear, gradeLevelCount, sectionCount),
+      educationScope: academics.educationScope,
+      academicTracks: academics.tracks,
+      databaseReady: Boolean(activeSchoolYear && academics.ready),
+      warning: scopeSetupWarning(profile.staff_role, activeSchoolYear, academics.educationScope, academics.tracks),
     };
   } catch (error) {
     if (missingSchoolSetupTables(error)) {
@@ -267,6 +281,7 @@ export async function getResolvedAdminSchoolSetup(userId: number): Promise<Resol
       countGradeLevels(school.id),
       countSections(school.id),
     ]);
+    const academics = await getSchoolAcademicReadiness(school.id, activeSchoolYear?.id ?? null);
 
     return {
       schoolId: school.id,
@@ -274,7 +289,7 @@ export async function getResolvedAdminSchoolSetup(userId: number): Promise<Resol
       schoolYearName: activeSchoolYear?.name ?? null,
       gradeLevelCount,
       sectionCount,
-      warning: setupWarning(profile.staff_role, activeSchoolYear, gradeLevelCount, sectionCount),
+      warning: scopeSetupWarning(profile.staff_role, activeSchoolYear, academics.educationScope, academics.tracks),
     };
   } catch (error) {
     return {
@@ -310,6 +325,7 @@ export async function getResolvedAdminSchoolViewSetup(userId: number): Promise<R
       countGradeLevels(school.id),
       countSections(school.id),
     ]);
+    const academics = await getSchoolAcademicReadiness(school.id, activeSchoolYear?.id ?? null);
     const selectedSchoolYear = await resolveSelectedSchoolYear(schoolYears, activeSchoolYear);
 
     return {
@@ -322,7 +338,7 @@ export async function getResolvedAdminSchoolViewSetup(userId: number): Promise<R
       selectedSchoolYearIsActive: Boolean(selectedSchoolYear && selectedSchoolYear.id === activeSchoolYear?.id),
       gradeLevelCount,
       sectionCount,
-      warning: setupWarning(profile.staff_role, activeSchoolYear, gradeLevelCount, sectionCount),
+      warning: scopeSetupWarning(profile.staff_role, activeSchoolYear, academics.educationScope, academics.tracks),
     };
   } catch (error) {
     return emptyViewSetup(
@@ -376,23 +392,24 @@ export async function getAdminSchoolSetupOverview(userId: number): Promise<Admin
       return emptySetupOverview(profile.school_name, setupMissingSchoolWarning(profile.staff_role));
     }
 
-    const [schoolYears, activeSchoolYear, gradeLevelCount, sectionCount] = await Promise.all([
+    const [schoolYears, activeSchoolYear, gradeLevelCount] = await Promise.all([
       getSchoolYearOverviewRows(school.id),
       getActiveSchoolYear(school.id),
       countGradeLevels(school.id),
-      countSections(school.id),
     ]);
-    const activeYearGrades = activeSchoolYear ? await getGradeSectionRows(school.id, activeSchoolYear.id) : [];
+    const [activeYearGrades, academics] = await Promise.all([activeSchoolYear ? getGradeSectionRows(school.id, activeSchoolYear.id) : [], getSchoolAcademicReadiness(school.id, activeSchoolYear?.id ?? null)]);
     const upcomingCount = schoolYears.filter((year) => year.status === "upcoming").length;
     const activeYearSections = activeYearGrades.reduce((total, grade) => total + grade.sections.filter(Boolean).length, 0);
     const warning = schoolYears.length === 0
       ? "Add at least one school year."
-      : setupWarning(profile.staff_role, activeSchoolYear, gradeLevelCount, sectionCount);
+      : scopeSetupWarning(profile.staff_role, activeSchoolYear, academics.educationScope, academics.tracks);
 
     return {
       schoolName: school.name,
       schoolCode: school.code,
       schoolStatus: school.status,
+      educationScope: academics.educationScope,
+      academicTracks: academics.tracks,
       warning,
       kpis: [
         {
@@ -462,6 +479,7 @@ export async function getAdminSchoolSetupFormData(
     return {
       schoolName,
       schoolCode,
+      educationScope: school?.education_scope ?? "basic",
       selectedSetupSchoolYearId: selectedSetupYear?.id ?? null,
       selectedSetupSchoolYearName: selectedSetupYear?.name ?? null,
       schoolYears: schoolYears.length > 0
@@ -594,7 +612,7 @@ async function tryGetAdminProfileOnly(userId: number) {
 
 async function getSchoolById(schoolId: number) {
   const [rows] = await pool.execute<SchoolRow[]>(
-    `SELECT id, name, code, status
+    `SELECT id, name, code, status, education_scope
      FROM schools
      WHERE id = :schoolId
      LIMIT 1`,
@@ -606,7 +624,7 @@ async function getSchoolById(schoolId: number) {
 
 async function getSchoolByName(schoolName: string) {
   const [rows] = await pool.execute<SchoolRow[]>(
-    `SELECT id, name, code, status
+    `SELECT id, name, code, status, education_scope
      FROM schools
      WHERE name = :schoolName
      ORDER BY status = 'active' DESC, id ASC
@@ -681,11 +699,17 @@ async function getSchoolYearOverviewRows(schoolId: number) {
   const [rows] = await pool.execute<Array<SchoolYearRow & {
     status: "upcoming" | "active" | "closed";
     section_count: number;
+    college_period_count: number;
+    college_section_count: number;
+    college_program_year_count: number;
     enrollment_count: number;
     fee_type_count: number;
   }>>(
     `SELECT sy.id, sy.name, sy.starts_on, sy.ends_on, sy.status,
             COUNT(DISTINCT sec.id) AS section_count,
+            (SELECT COUNT(*) FROM academic_periods ap WHERE ap.school_id = sy.school_id AND ap.school_year_id = sy.id) AS college_period_count,
+            (SELECT COUNT(*) FROM college_sections cs JOIN academic_periods ap ON ap.id = cs.academic_period_id WHERE cs.school_id = sy.school_id AND ap.school_year_id = sy.id) AS college_section_count,
+            (SELECT COUNT(*) FROM program_year_levels pyl JOIN academic_programs pr ON pr.id = pyl.program_id WHERE pr.school_id = sy.school_id AND pr.status = 'active') AS college_program_year_count,
             COUNT(DISTINCT e.id) AS enrollment_count,
             COUNT(DISTINCT ft.id) AS fee_type_count
      FROM school_years sy
@@ -705,6 +729,9 @@ async function getSchoolYearOverviewRows(schoolId: number) {
     endsOn: formatDate(row.ends_on),
     status: normalizeSchoolYearStatus(row.status),
     sectionCount: Number(row.section_count ?? 0),
+    collegePeriodCount: Number(row.college_period_count ?? 0),
+    collegeSectionCount: Number(row.college_section_count ?? 0),
+    collegeProgramYearCount: Number(row.college_program_year_count ?? 0),
     enrollmentCount: Number(row.enrollment_count ?? 0),
     feeTypeCount: Number(row.fee_type_count ?? 0),
   }));
@@ -734,35 +761,18 @@ function setupMissingSchoolWarning(staffRole: string) {
     : "Ask a school administrator to set up this school first.";
 }
 
-function setupWarning(
-  staffRole: string,
-  activeSchoolYear: Awaited<ReturnType<typeof getActiveSchoolYear>>,
-  gradeLevelCount: number,
-  sectionCount: number,
-) {
+function scopeSetupWarning(staffRole: string, activeSchoolYear: Awaited<ReturnType<typeof getActiveSchoolYear>>, scope: EducationScope, tracks: AcademicTrackReadiness) {
   const missing: string[] = [];
+  if (!activeSchoolYear) missing.push("an active school year");
+  if ((scope === "basic" || scope === "both") && !tracks.basic.ready) missing.push("Basic Education grades and sections");
+  if ((scope === "higher" || scope === "both") && !tracks.higher.ready) missing.push("College programs, periods, and sections");
+  if (!missing.length) return null;
+  const message = missing.join(" and ");
+  return normalizeAdminStaffRole(staffRole) === "school_administrator" ? `Complete school setup by adding ${message}.` : `Ask a school administrator to complete ${message}.`;
+}
 
-  if (!activeSchoolYear) {
-    missing.push("an active school year");
-  }
-
-  if (gradeLevelCount === 0) {
-    missing.push("grade levels");
-  }
-
-  if (sectionCount === 0) {
-    missing.push("sections");
-  }
-
-  if (missing.length === 0) {
-    return null;
-  }
-
-  const missingText = missing.join(", ");
-
-  return normalizeAdminStaffRole(staffRole) === "school_administrator"
-    ? `Complete school setup by adding ${missingText}.`
-    : `Ask a school administrator to complete ${missingText}.`;
+function emptyAcademicTracks(): AcademicTrackReadiness {
+  return { basic: { ready:false,gradeLevels:0,sections:0,enrollments:0 }, higher: { ready:false,programs:0,yearLevels:0,periods:0,sections:0,enrollments:0 } };
 }
 
 function contextFromProfile(profile: AdminProfileRow): AdminSchoolContext {
@@ -782,6 +792,8 @@ function contextFromProfile(profile: AdminProfileRow): AdminSchoolContext {
     schoolYears: [],
     gradeLevelCount: 0,
     sectionCount: 0,
+    educationScope: "basic",
+    academicTracks: emptyAcademicTracks(),
     databaseReady: false,
     warning: null,
   };
@@ -894,6 +906,7 @@ function emptySetupFormData(schoolName: string): AdminSchoolSetupFormData {
   return {
     schoolName,
     schoolCode: schoolCodeFor(schoolName),
+    educationScope: "basic",
     selectedSetupSchoolYearId: null,
     selectedSetupSchoolYearName: null,
     schoolYears: [{ id: null, name: "", startsOn: "", endsOn: "", status: "active" }],
@@ -1014,6 +1027,8 @@ function emptySetupOverview(schoolName: string, warning: string | null): AdminSc
     schoolName,
     schoolCode: schoolCodeFor(schoolName),
     schoolStatus: "pending",
+    educationScope: "basic",
+    academicTracks: emptyAcademicTracks(),
     warning,
     kpis: [
       { label: "School years", value: "0", note: "Add at least one school year", tone: "red" },
@@ -1063,6 +1078,7 @@ type SchoolRow = RowDataPacket & {
   name: string;
   code: string;
   status: "active" | "inactive";
+  education_scope: EducationScope;
 };
 
 type SchoolYearRow = RowDataPacket & {

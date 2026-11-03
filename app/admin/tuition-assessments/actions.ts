@@ -6,17 +6,12 @@ import { randomUUID } from "node:crypto";
 import { pool } from "@/lib/auth/db";
 import { requireRole } from "@/lib/auth/session";
 import {
-  activateAcademicPeriod,
   archiveFeeSchedule,
   approveFeeSchedule,
   AssessmentWorkflowError,
-  createAcademicPeriod,
-  createAcademicProgram,
-  createCollegeSection,
   createCreditType,
   createFeeSchedule,
   cloneFeeSchedule,
-  enrollCollegeStudent,
   postAssessmentBatch,
   previewAssessment,
   requireAssessmentAdmin,
@@ -74,12 +69,7 @@ export async function tuitionSetupAction(_previous: AssessmentActionState, formD
     const context = await requireAssessmentAdmin(session.userId);
     await connection.beginTransaction();
     const intent = text(formData, "intent");
-    if (intent === "create-period") await createAcademicPeriod(connection, { ...context, name: text(formData, "name"), periodType: text(formData, "periodType"), startsOn: text(formData, "startsOn"), endsOn: text(formData, "endsOn") });
-    else if (intent === "activate-period") await activateAcademicPeriod(connection, { ...context, periodId: integer(formData, "periodId") });
-    else if (intent === "create-program") await createAcademicProgram(connection, { schoolId: context.schoolId, code: text(formData, "code"), name: text(formData, "name"), levelCount: integer(formData, "levelCount") });
-    else if (intent === "create-section") await createCollegeSection(connection,{schoolId:context.schoolId,periodId:integer(formData,"periodId"),levelId:integer(formData,"levelId"),name:text(formData,"name")});
-    else if (intent === "enroll-college") await enrollCollegeStudent(connection,{...context,studentId:integer(formData,"studentId"),periodId:integer(formData,"periodId"),levelId:integer(formData,"levelId"),sectionId:optionalInteger(formData,"sectionId")});
-    else if (intent === "create-credit") await createCreditType(connection, { schoolId: context.schoolId, userId: session.userId, code: text(formData, "code"), name: text(formData, "name"), sourceKind: text(formData, "sourceKind"), requiresReference: formData.get("requiresReference") === "on", maxAmount: optionalDecimal(formData, "maxAmount"), maxPercent: optionalDecimal(formData, "maxPercent") });
+    if (intent === "create-credit") await createCreditType(connection, { schoolId: context.schoolId, userId: session.userId, code: text(formData, "code"), name: text(formData, "name"), sourceKind: text(formData, "sourceKind"), requiresReference: formData.get("requiresReference") === "on", maxAmount: optionalDecimal(formData, "maxAmount"), maxPercent: optionalDecimal(formData, "maxPercent") });
     else if (intent === "approve-schedule") await approveFeeSchedule(connection, { ...context, userId: session.userId, scheduleId: integer(formData, "scheduleId") });
     else if(intent === "clone-schedule") await cloneFeeSchedule(connection,{...context,userId:session.userId,scheduleId:integer(formData,"scheduleId")});
     else if(intent === "archive-schedule") await archiveFeeSchedule(connection,{...context,scheduleId:integer(formData,"scheduleId")});

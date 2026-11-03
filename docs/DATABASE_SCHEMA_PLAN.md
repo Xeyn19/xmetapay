@@ -6,6 +6,7 @@ XMETA EDU uses one MySQL database for three connected access areas:
 
 - Company super admin: XMETA EDU monitoring for schools, school admin account access, and read-only aggregate school population profiles.
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
+- School setup supports Basic Education, Higher Education, or both through the existing `schools.education_scope` contract; no additional migration is required for the unified hub.
 - Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
 Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
@@ -960,6 +961,8 @@ Runtime database configuration prefers the GoDaddy Hosted Database variables `DB
 - Add full SQL migrations only after reviewing this plan and confirming the app screens that should become database-backed first.
 - Provision production databases and backups through the hosting provider; the fresh-schema bundle does not create databases, seed accounts, export data, upgrade live records, or perform automatic backups.
 # Implemented tuition assessment extension
+
+The same extension supplies the college academic tables consumed by the unified School Setup hub. Programs remain school-owned, periods belong to a school year, sections belong to a period and program-year level, and college enrollment is restricted to the active school year and active period. Upcoming years may be prepared; closed years are read-only.
 
 - School scope: `basic`, `higher`, or `both`.
 - Academic ownership: school → year → period → college enrollment.
