@@ -66,4 +66,9 @@ test("tuition UI exposes assessment-first controls and accessible pending feedba
   assert.match(forms, /Required/);
   assert.match(forms, /Optional/);
   assert.match(forms, /Select all shown/);
+  assert.match(forms, /text-foreground/);
+  assert.match(forms, /text-muted-foreground/);
+  assert.match(forms, /border-input bg-background/);
+  assert.doesNotMatch(forms, /font-semibold text-\[#151826\]/);
+  assert.doesNotMatch(forms, /font-semibold text-\[#252936\]/);
 });

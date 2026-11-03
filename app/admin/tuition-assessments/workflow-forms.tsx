@@ -8,27 +8,27 @@ import { assessmentWizardAction, tuitionSetupAction } from "./actions";
 import type { AssessmentActionState, AssessmentWorkspace } from "@/lib/fees/assessment-workflow";
 
 const initialState: AssessmentActionState = { status: "idle" };
-const field = "min-h-12 w-full rounded-xl border border-black/15 bg-white px-3 text-sm text-[#151826] outline-none transition placeholder:text-[#8b909d] focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15";
+const field = "min-h-12 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/20";
 const button = "inline-flex min-h-11 items-center justify-center rounded-xl bg-[#e64a19] px-4 text-sm font-semibold text-white transition hover:bg-[#c93e13] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30";
-const secondaryButton = "inline-flex min-h-11 items-center justify-center rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-[#151826] transition hover:bg-black/[0.04] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25";
+const secondaryButton = "inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold text-card-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25";
 
 function Result({ state }: { state: AssessmentActionState }) {
   if (state.status === "idle") return null;
   return <div role={state.status === "error" ? "alert" : "status"} className={`rounded-xl border p-4 text-sm ${state.status === "error" ? "border-red-200 bg-red-50 text-red-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}><strong>{state.title}</strong>{state.message ? <p className="mt-1 leading-5">{state.message}</p> : null}</div>;
 }
 
-function Help({ children }: { children: ReactNode }) { return <span className="block text-xs font-normal leading-5 text-[#666b78]">{children}</span>; }
-function Required() { return <span className="text-xs font-normal text-[#b42318]">Required</span>; }
-function Optional() { return <span className="text-xs font-normal text-[#777d89]">Optional</span>; }
+function Help({ children }: { children: ReactNode }) { return <span className="block text-xs font-normal leading-5 text-muted-foreground">{children}</span>; }
+function Required() { return <span className="text-xs font-normal text-destructive">Required</span>; }
+function Optional() { return <span className="text-xs font-normal text-muted-foreground">Optional</span>; }
 
 function FieldLabel({ title, required, help, children }: { title: string; required?: boolean; help: ReactNode; children: ReactNode }) {
-  return <label className="grid content-start gap-1.5 text-sm font-semibold text-[#252936]"><span className="flex items-center justify-between gap-3">{title}{required ? <Required /> : <Optional />}</span>{children}<Help>{help}</Help></label>;
+  return <label className="grid content-start gap-1.5 text-sm font-semibold text-foreground"><span className="flex items-center justify-between gap-3">{title}{required ? <Required /> : <Optional />}</span>{children}<Help>{help}</Help></label>;
 }
 
 function Guide({ children }: { children: ReactNode }) { return <div className="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950"><Info className="mt-0.5 size-4 shrink-0" /><div>{children}</div></div>; }
 
 function SectionHeading({ number, title, description }: { number?: number; title: string; description: string }) {
-  return <div className="flex items-start gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#151826] text-sm font-bold text-white">{number ?? <ChevronRight className="size-4" />}</span><div><h2 className="font-semibold text-[#151826]">{title}</h2><p className="mt-0.5 max-w-3xl text-sm leading-5 text-[#666b78]">{description}</p></div></div>;
+  return <div className="flex items-start gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground text-sm font-bold text-background">{number ?? <ChevronRight className="size-4" />}</span><div><h2 className="font-semibold text-foreground">{title}</h2><p className="mt-0.5 max-w-3xl text-sm leading-5 text-muted-foreground">{description}</p></div></div>;
 }
 
 export function AssessmentWizard({ workspace }: { workspace: AssessmentWorkspace }) {
@@ -45,18 +45,18 @@ export function AssessmentWizard({ workspace }: { workspace: AssessmentWorkspace
     <Result state={state} />
     <Guide><strong>How this works:</strong> choose an approved tuition package, select the students, add a voucher or discount only when applicable, then preview. Nothing is charged until you press the final <strong>Post assessments</strong> button.</Guide>
 
-    <section className="space-y-4 rounded-xl border border-black/10 bg-white p-4 sm:p-5">
+    <section className="space-y-4 rounded-xl border border-border bg-card p-4 text-card-foreground sm:p-5">
       <SectionHeading number={1} title="Choose the approved tuition package" description="This determines the tuition, mandatory fees, due dates, and payment plan that will be assigned." />
       <FieldLabel title="Tuition package" required help="Example: Grade 7 Tuition 2026–2027 or BSIT Year 1 – First Semester."><select name="scheduleId" required value={scheduleId} onChange={event => { setScheduleId(event.target.value); setSelectedIds([]); }} className={field}><option value="">Select an approved package…</option>{workspace.schedules.filter(item => item.status === "approved").map(item => <option key={item.id} value={item.id}>{item.name} · {item.period} · {new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(item.grossAmount)}</option>)}</select></FieldLabel>
       {!workspace.schedules.some(item => item.status === "approved") ? <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">No approved package yet. Create and approve one in <Link href="/admin/tuition/schedules" className="font-semibold underline">Manage fee catalog</Link>.</p> : null}
     </section>
 
-    <section className="space-y-4 rounded-xl border border-black/10 bg-white p-4 sm:p-5">
+    <section className="space-y-4 rounded-xl border border-border bg-card p-4 text-card-foreground sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3"><SectionHeading number={2} title="Select students to assess" description="Only students who match the package’s grade or college program/year are shown." /><span className="rounded-lg bg-black/[0.05] px-3 py-2 text-sm font-semibold">{selectedIds.length} selected</span></div>
       {!scheduleId ? <p className="rounded-lg border border-dashed border-black/15 p-4 text-sm text-[#666b78]">Choose a tuition package first to show eligible students.</p> : <fieldset><legend className="sr-only">Students to assess</legend><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-[#666b78]">Maximum 500 students per batch.</p><button type="button" className={secondaryButton} onClick={() => setSelectedIds(allVisibleSelected ? [] : students.map(student => student.id))}>{allVisibleSelected ? "Clear selection" : "Select all shown"}</button></div><div className="grid max-h-80 gap-2 overflow-auto rounded-xl border border-black/10 p-2 sm:grid-cols-2 lg:grid-cols-3">{students.map(student => <label key={student.id} className={`flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition ${selectedIds.includes(student.id) ? "border-[#e64a19] bg-[#fff5f1]" : "border-black/10 hover:bg-black/[0.025]"}`}><input type="checkbox" name="studentIds" value={student.id} checked={selectedIds.includes(student.id)} onChange={() => toggleStudent(student.id)} className="mt-0.5 size-4 accent-[#e64a19]" /><span><strong className="block">{student.name}</strong><span className="text-xs leading-5 text-[#666b78]">{student.meta}</span></span></label>)}</div></fieldset>}
     </section>
 
-    <section className="space-y-4 rounded-xl border border-black/10 bg-white p-4 sm:p-5">
+    <section className="space-y-4 rounded-xl border border-border bg-card p-4 text-card-foreground sm:p-5">
       <SectionHeading number={3} title="Apply a voucher, scholarship, or discount" description="Skip this section when every selected student will pay the full package amount." />
       <div className="grid gap-4 lg:grid-cols-3"><FieldLabel title="Type of financial assistance" help="Choose the approved source, such as DepEd Voucher, ESC, school scholarship, or authorized adjustment."><select name="creditTypeId" className={field}><option value="">None — charge the full amount</option>{workspace.creditTypes.map(item => <option key={item.id} value={item.id}>{item.name} ({item.code})</option>)}</select></FieldLabel><FieldLabel title="Amount deducted per student" help="Enter the same deduction for each selected student. Example: 5000 for ₱5,000."><div className="relative"><PhilippinePeso className="pointer-events-none absolute left-3 top-4 size-4 text-[#777d89]" /><input name="creditAmount" aria-label="Amount deducted per student" type="number" min="0" step="0.01" defaultValue="0" className={`${field} pl-9`} /></div></FieldLabel><FieldLabel title="Voucher or approval reference" help="Required only when the selected assistance type asks for proof. Example: QVR-2026-00123."><input name="creditReference" className={field} placeholder="Enter reference number" /></FieldLabel></div>
     </section>
