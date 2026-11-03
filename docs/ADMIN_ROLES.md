@@ -68,13 +68,19 @@ School administrators and registrars can record optional guardian emails during 
 
 The first real school account should be a `school_administrator`, but it still requires company super admin approval before it can sign in.
 
-Only a school administrator can complete `Set up school records`. After approval, the new school administrator uses a guided, combined setup-only onboarding screen. Ongoing management is split for clarity: `/admin/school-setup` is the overview hub, school details and year metadata use focused modals, `/admin/school-setup/years/[yearId]` manages one year's grade/section structure, and `/admin/school-setup/rollover` handles reviewed student placement. Activation stays on the overview as a separate confirmation. If a registrar or finance officer signs in before setup is complete, they should see:
+Only a school administrator can complete `Set up school records`. After approval, the administrator uses a resumable five-step onboarding wizard at `/admin/onboarding/school-setup`: School profile, School year, Basic Education, College, and Review. Each Continue action saves the completed step; irrelevant academic tracks are marked **Not required**, and **Save and exit** safely signs the administrator out after saving. Ongoing management is split for clarity: `/admin/school-setup` is the overview hub, school details and year metadata use focused modals, `/admin/school-setup/years/[yearId]` manages one year's grade/section structure, and `/admin/school-setup/rollover` handles reviewed student placement. Activation stays on the overview as a separate confirmation. If a registrar or finance officer signs in before setup is complete, they should see:
 
 ```text
 Ask a school administrator to complete school setup first.
 ```
 
 School setup is school-wide, not per staff account. After the school administrator saves setup, XMETA EDU links other unlinked `admin_profiles` with the same exact `school_name` to the same `schools.id`. New registrar and finance accounts also try to join the existing school context during registration. That means a registrar should not need to repeat setup when the school administrator already completed it for the same school name.
+
+The school administrator chooses one academic offering: **Basic Education only**, **Higher Education only**, or **Both**. Scope may be expanded at any time. Narrowing is rejected when it would hide an academic track that already owns grades, programs, periods, sections, enrollments, tuition packages, or assessments. No scope change deletes or rewrites historical records.
+
+Readiness is track-specific. Basic Education requires an active school year with grades and K–12 sections. Higher Education requires an active school year with an active program/year structure, college period, and college section. A mixed school is ready only when both tracks are ready. College-only administrators are never forced to create K–12 grades or sections.
+
+Basic Education onboarding offers selectable Philippine level groups—Kindergarten, Elementary Grades 1–6, Junior High School Grades 7–10, and Senior High School Grades 11–12—and prefills one editable `Section A` for every selected grade. College onboarding creates one active semester/trimester/summer/custom period and lets the administrator add multiple programs, each with one to six year levels and one or more year-level sections. Student enrollment happens only after onboarding.
 
 For the MVP, this matching uses the exact school name from admin registration. A future production improvement should use a school invite code or required school code during staff registration so staff can join the correct school even when two schools have similar names.
 

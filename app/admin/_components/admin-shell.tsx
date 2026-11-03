@@ -54,9 +54,7 @@ export function AdminShell({
   const redirectTo = `${pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`;
   const setupIncomplete = !schoolContext.schoolId
     || !schoolContext.databaseReady
-    || !schoolContext.activeSchoolYear
-    || schoolContext.gradeLevelCount === 0
-    || schoolContext.sectionCount === 0;
+    || !schoolContext.activeSchoolYear;
   const visibleNavSections = filterAdminNavSectionsForStaffRole(navSections, schoolContext.staffRole);
   const canManageSetup = canManageSchoolSetup(schoolContext.staffRole);
   const canAddStudents = canUseAdminHeaderAction(schoolContext.staffRole, "add_student");

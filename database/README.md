@@ -14,6 +14,8 @@ Schema import does not configure the runtime connection. GoDaddy Hosted Database
 
 The bundle creates the complete current table structure without inserting accounts or application data. It omits `CREATE DATABASE` and `USE xmetapay_db`, so the hosting provider keeps control of the target database. Do not import this fresh-install bundle over an existing live database as a replacement for reviewed migrations. See `utilities/database/README.md` for the safe import steps.
 
+The guided Philippine School Setup onboarding adds no database migration. It saves resumable progress to the existing school, active-year, K–12, and college academic tables. Existing installations only need the tuition-assessment migration below when its college tables have not yet been imported.
+
 ## Import Order
 
 1. Import `auth-schema.sql` first.

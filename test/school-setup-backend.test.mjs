@@ -132,7 +132,8 @@ test("admin manual school setup action is protected and saves submitted records"
   assert.match(action, /targetYear\.status !== "upcoming"/);
   assert.match(action, /countSchoolYearsWithName/);
   assert.match(action, /Rename duplicate school years before activating one\./);
-  assert.match(action, /Add sections for \$\{targetYear\.name\} before activating it\./);
+  assert.match(action, /Add K–12 sections for \$\{targetYear\.name\} before activating it\./);
+  assert.match(action, /Add a college period, program year level, and college section/);
   assert.match(action, /SET status = 'closed'/);
   assert.match(action, /SET status = 'active'/);
   assert.match(action, /cookieStore\.set\(adminSchoolYearCookieName, String\(targetYear\.id\)/);
@@ -210,9 +211,9 @@ test("school setup uses an overview hub with focused management workflows", () =
   assert.match(page, /\{ label: "Actions" \}/);
   assert.match(page, /duplicateName=\{duplicateYearNames\.has\(year\.name\.toLowerCase\(\)\)\}/);
   assert.match(page, /@\/app\/admin\/_components\/school-year-activation-control/);
-  assert.match(page, /Active year structure/);
+  assert.match(page, /K–12 active year structure/);
   assert.match(page, /Manage structure/);
-  assert.match(page, /Prepare next year/);
+  assert.match(page, /Prepare K–12 rollover/);
   assert.match(page, /EditSchoolDetailsModal/);
   assert.match(page, /AddSchoolYearModal/);
   assert.doesNotMatch(page, /ManualSchoolSetupForm/);
@@ -242,13 +243,12 @@ test("school setup uses an overview hub with focused management workflows", () =
 
   assert.match(onboardingPage, /await requireRole\("admin"\)/);
   assert.match(onboardingPage, /logoutAction\.bind\(null, "admin"\)/);
-  assert.match(onboardingPage, /getAdminSchoolContext\(session\.userId\)/);
-  assert.match(onboardingPage, /getAdminSchoolSetupFormData\(session\.userId\)/);
+  assert.match(onboardingPage, /getSchoolOnboardingState\(session\.userId\)/);
   assert.match(onboardingPage, /canManageSchoolSetup\(staffRole\)/);
-  assert.match(onboardingPage, /redirect\("\/admin\/dashboard"\)/);
-  assert.match(onboardingPage, /Add school years, choose the active year, then add grades and sections before opening the dashboard\./);
+  assert.match(onboardingPage, /GuidedSchoolSetupWizard/);
+  assert.match(onboardingPage, /GuidedSchoolSetupWizard/);
   assert.match(onboardingPage, /Sign out/);
-  assert.match(onboardingPage, /redirectTo="\/admin\/onboarding\/school-setup"/);
+  assert.doesNotMatch(onboardingPage, /schoolContext\.databaseReady/);
 
   assert.match(form, /"use client";/);
   assert.match(form, /saveSchoolSetupAction/);
@@ -280,7 +280,7 @@ test("school setup uses an overview hub with focused management workflows", () =
   assert.match(activationControl, /This will close the current active year\. New records will use this year\./);
   assert.match(activationControl, /duplicateName/);
   assert.match(activationControl, /Rename duplicate school years first so activation is clear\./);
-  assert.match(activationControl, /Add sections for \{year\.name\} before activating it\./);
+  assert.match(activationControl, /Add K–12 sections for \$\{year\.name\} before activating it\./);
   assert.match(activationControl, /name="schoolYearId"/);
   assert.match(activationControl, /Activate \{year\.name\}/);
 

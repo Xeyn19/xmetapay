@@ -6,6 +6,7 @@ XMETA EDU uses one MySQL database for three connected access areas:
 
 - Company super admin: XMETA EDU monitoring for schools, school admin account access, and read-only aggregate school population profiles.
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
+- School setup supports Basic Education, Higher Education, or both through the existing `schools.education_scope` contract; the unified hub and resumable five-step onboarding wizard require no additional migration.
 - Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
 Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
@@ -132,6 +133,8 @@ New registration checks for at least one same-school submitted reference or pend
 The following tables extend the current auth schema into the full dashboard and parent portal data model.
 
 ### School Setup
+
+First-time school administrators complete School profile, School year, Basic Education, College, and Review steps. Each required step writes idempotently to the existing school-owned tables; skipped tracks create no placeholder records. The wizard derives resume position and final completion from the same active-year and per-track readiness queries used by the administrator layout, so no draft/status table is required.
 
 #### `schools`
 
@@ -829,13 +832,13 @@ flowchart TD
   C --> D["Redirect to admin login with approval message"]
   D --> E["Company super admin approves account"]
   E --> F["Admin logs in"]
-  F --> G["Redirect to setup-only onboarding"]
+  F --> G["Redirect to resumable five-step onboarding"]
   G --> H{"School setup complete?"}
   H -->|Yes| I["Use linked school context"]
   H -->|No| J{"staff_role is school_administrator?"}
   J -->|No| K["Ask a school administrator to complete setup"]
-  J -->|Yes| L["Complete school setup form"]
-  L --> M["Save school, school years, one active year, grades, and sections"]
+  J -->|Yes| L["Save required profile, year, Basic, and/or College steps"]
+  L --> M["Save required steps to existing school and academic tables"]
   M --> N["Link same-school admin profiles to schools.id"]
   N --> I
 ```
@@ -960,6 +963,8 @@ Runtime database configuration prefers the GoDaddy Hosted Database variables `DB
 - Add full SQL migrations only after reviewing this plan and confirming the app screens that should become database-backed first.
 - Provision production databases and backups through the hosting provider; the fresh-schema bundle does not create databases, seed accounts, export data, upgrade live records, or perform automatic backups.
 # Implemented tuition assessment extension
+
+The same extension supplies the college academic tables consumed by the unified School Setup hub. Programs remain school-owned, periods belong to a school year, sections belong to a period and program-year level, and college enrollment is restricted to the active school year and active period. Upcoming years may be prepared; closed years are read-only.
 
 - School scope: `basic`, `higher`, or `both`.
 - Academic ownership: school → year → period → college enrollment.

@@ -21,7 +21,10 @@ Date: __________  Supervisor: __________  Tester: __________  Build/commit: ____
 
 ## College walkthrough
 
-1. Open **School setup → College academic setup**. Confirm `QA-BSIT`, four year levels, and `QA-First Semester`; activate the period.
+1. Open **School setup** and choose **Higher Education only** or **Both K–12 and College** under **Academic offerings**.
+2. Confirm the College track card reports its independent readiness, then open **Manage college academics**.
+3. Use the school-year selector. Confirm an upcoming year allows period/section preparation, while a closed year is read-only.
+4. Confirm `QA-BSIT`, four year levels, and `QA-First Semester`; only activate the period when its school year is active.
 2. Enroll a synthetic college student in the active period using an existing local student record and the program/year setup.
 3. Create and approve a college package targeted to that program/year and period.
 4. Preview and post. Expected: students from other periods or year levels are excluded; the guardian statement names the period and package.

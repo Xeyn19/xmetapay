@@ -15,6 +15,7 @@ import {
   RolloverValidationError,
 } from "@/lib/enrollment/rollover";
 import { adminSchoolYearCookieName } from "@/lib/school/setup";
+import { activateCollegePeriod, createCollegeAcademicSection, createCollegePeriod, createCollegeProgram, enrollCollegeAcademicStudent, getCollegeAcademicSetupData, SchoolAcademicError, updateSchoolEducationScope, type EducationScope } from "@/lib/school/academic-offerings";
 
 type SetupGradeInput = {
   name: string;
@@ -37,6 +38,7 @@ type SetupSchoolYearInput = {
 type SetupInput = {
   schoolName: string;
   schoolCode: string;
+  educationScope: EducationScope;
   sectionSchoolYearId: number | null;
   schoolYears: SetupSchoolYearInput[];
   grades: SetupGradeInput[];
@@ -95,8 +97,10 @@ export async function saveSchoolSetupAction(formData: FormData) {
       input.data.sectionSchoolYearId,
       schoolYearId,
     );
-    const gradeLevelIds = await ensureGradeLevels(connection, schoolId, input.data.grades);
-    await ensureSections(connection, schoolId, sectionSchoolYearId, input.data.grades, gradeLevelIds);
+    if (input.data.educationScope !== "higher") {
+      const gradeLevelIds = await ensureGradeLevels(connection, schoolId, input.data.grades);
+      await ensureSections(connection, schoolId, sectionSchoolYearId, input.data.grades, gradeLevelIds);
+    }
 
     await connection.commit();
     const cookieStore = await cookies();
@@ -180,6 +184,51 @@ export async function updateSchoolDetailsAction(formData: FormData) {
   }
 
   redirect("/admin/school-setup");
+}
+
+export async function updateSchoolEducationScopeAction(formData: FormData) {
+  const session = await requireRole("admin");
+  const staffRole = await getAdminStaffRole(session.userId);
+  const educationScope = textValue(formData, "educationScope") as EducationScope;
+  if (!canManageSchoolSetup(staffRole) || !["basic","higher","both"].includes(educationScope)) {
+    await setupActionToast("Academic offerings not saved", "Only the school administrator can choose a valid school offering.");
+    redirect("/admin/school-setup");
+  }
+  let connection: PoolConnection | null = null;
+  try {
+    connection = await pool.getConnection(); await connection.beginTransaction();
+    const profile = await getAdminProfileForUpdate(connection, session.userId);
+    if (!profile?.school_id) throw new SchoolAcademicError("Complete school setup first.");
+    await updateSchoolEducationScope(connection, profile.school_id, educationScope);
+    await connection.commit(); revalidateAdminSchoolYearPaths(); revalidatePath("/admin/school-setup/academics");
+    await setupActionToast("Academic offerings saved", educationScope === "both" ? "Basic Education and Higher Education setup are now available." : `${educationScope === "basic" ? "Basic Education" : "Higher Education"} setup is now available.`);
+  } catch (error) {
+    await connection?.rollback().catch(() => undefined);
+    await setupActionToast("Academic offerings not saved", error instanceof SchoolAcademicError ? error.message : "Unable to update the school offering.");
+  } finally { connection?.release(); }
+  redirect("/admin/school-setup");
+}
+
+export type CollegeAcademicActionState = { status:"idle"|"error"|"success"; title?:string; message?:string };
+export async function collegeAcademicSetupAction(_previous:CollegeAcademicActionState, formData:FormData):Promise<CollegeAcademicActionState> {
+  const session=await requireRole("admin"); const staffRole=await getAdminStaffRole(session.userId);
+  if(!canManageSchoolSetup(staffRole)) return {status:"error",title:"Not allowed",message:"Only the school administrator can manage college academics."};
+  const schoolYearId=positiveIntegerValue(formData,"schoolYearId");
+  if(!schoolYearId) return {status:"error",title:"School year required",message:"Choose an active or upcoming school year."};
+  const workspace=await getCollegeAcademicSetupData(session.userId,schoolYearId);
+  if(!workspace.schoolId||!workspace.selectedYear||workspace.educationScope==="basic") return {status:"error",title:"College setup unavailable",message:"Enable Higher Education in Academic offerings first."};
+  let connection:PoolConnection|null=null;
+  try { connection=await pool.getConnection(); await connection.beginTransaction(); const intent=textValue(formData,"intent");
+    if(intent==="create-period") await createCollegePeriod(connection,{schoolId:workspace.schoolId,schoolYearId,name:textValue(formData,"name"),periodType:textValue(formData,"periodType"),startsOn:textValue(formData,"startsOn"),endsOn:textValue(formData,"endsOn")});
+    else if(intent==="create-program") await createCollegeProgram(connection,{schoolId:workspace.schoolId,code:normalizeCode(textValue(formData,"code")),name:normalizeLabel(textValue(formData,"name")),levelCount:Number(textValue(formData,"levelCount"))});
+    else if(intent==="create-section") await createCollegeAcademicSection(connection,{schoolId:workspace.schoolId,schoolYearId,periodId:positiveIntegerValue(formData,"periodId")??0,levelId:positiveIntegerValue(formData,"levelId")??0,name:normalizeLabel(textValue(formData,"name"))});
+    else if(intent==="activate-period") await activateCollegePeriod(connection,{schoolId:workspace.schoolId,schoolYearId,periodId:positiveIntegerValue(formData,"periodId")??0});
+    else if(intent==="enroll-college") await enrollCollegeAcademicStudent(connection,{schoolId:workspace.schoolId,schoolYearId,studentId:positiveIntegerValue(formData,"studentId")??0,periodId:positiveIntegerValue(formData,"periodId")??0,levelId:positiveIntegerValue(formData,"levelId")??0,sectionId:positiveIntegerValue(formData,"sectionId")});
+    else throw new SchoolAcademicError("Choose a valid college setup action.");
+    await connection.commit(); revalidatePath("/admin/school-setup"); revalidatePath("/admin/school-setup/academics"); revalidatePath("/admin/tuition/schedules");
+    return {status:"success",title:"College setup saved",message:"The selected school year's college structure is up to date."};
+  } catch(error) { await connection?.rollback().catch(()=>undefined); return {status:"error",title:"College setup not saved",message:error instanceof SchoolAcademicError?error.message:"Check for duplicate names and confirm MySQL is available."}; }
+  finally { connection?.release(); }
 }
 
 export async function createSchoolYearAction(formData: FormData) {
@@ -377,10 +426,31 @@ export async function activateSchoolYearAction(formData: FormData) {
       throw new ActivationValidationError("Rename duplicate school years before activating one.");
     }
 
-    const sectionCount = await countSectionsForSchoolYear(connection, profile.school_id, targetYear.id);
+    const [scopeRows] = await connection.execute<Array<RowDataPacket & { education_scope: EducationScope }>>(
+      "SELECT education_scope FROM schools WHERE id = :schoolId LIMIT 1 FOR UPDATE",
+      { schoolId: profile.school_id },
+    );
+    const educationScope = scopeRows[0]?.education_scope ?? "basic";
 
-    if (sectionCount === 0) {
-      throw new ActivationValidationError(`Add sections for ${targetYear.name} before activating it.`);
+    if (educationScope !== "higher") {
+      const sectionCount = await countSectionsForSchoolYear(connection, profile.school_id, targetYear.id);
+      if (sectionCount === 0) {
+        throw new ActivationValidationError(`Add K–12 sections for ${targetYear.name} before activating it.`);
+      }
+    }
+
+    if (educationScope !== "basic") {
+      const [collegeRows] = await connection.execute<Array<RowDataPacket & { periods: number; program_years: number; sections: number }>>(
+        `SELECT
+          (SELECT COUNT(*) FROM academic_periods WHERE school_id = :schoolId AND school_year_id = :yearId) AS periods,
+          (SELECT COUNT(*) FROM program_year_levels pyl JOIN academic_programs pr ON pr.id = pyl.program_id WHERE pr.school_id = :schoolId AND pr.status = 'active') AS program_years,
+          (SELECT COUNT(*) FROM college_sections cs JOIN academic_periods ap ON ap.id = cs.academic_period_id WHERE cs.school_id = :schoolId AND ap.school_year_id = :yearId) AS sections`,
+        { schoolId: profile.school_id, yearId: targetYear.id },
+      );
+      const college = collegeRows[0];
+      if (!college || Number(college.periods) === 0 || Number(college.program_years) === 0 || Number(college.sections) === 0) {
+        throw new ActivationValidationError(`Add a college period, program year level, and college section for ${targetYear.name} before activating it.`);
+      }
     }
 
     await getActiveSchoolYearForUpdate(connection, profile.school_id);
@@ -529,8 +599,9 @@ function parseSchoolSetupForm(formData: FormData) {
   const schoolYears = parseSchoolYearSetup(textValue(formData, "schoolYearSetup"));
   const sectionSchoolYearId = positiveIntegerValue(formData, "sectionSchoolYearId");
   const grades = parseGradeSetup(textValue(formData, "gradeSetup"));
+  const educationScope = textValue(formData, "educationScope") as EducationScope;
 
-  if (!schoolName || !schoolCode) {
+  if (!schoolName || !schoolCode || !["basic","higher","both"].includes(educationScope)) {
     return { ok: false as const, message: "Complete the school name and code." };
   }
 
@@ -550,11 +621,11 @@ function parseSchoolSetupForm(formData: FormData) {
     return { ok: false as const, message: "Each school year end date must be after its start date." };
   }
 
-  if (grades.length === 0) {
+  if (educationScope !== "higher" && grades.length === 0) {
     return { ok: false as const, message: "Add at least one grade level." };
   }
 
-  if (grades.some((grade) => grade.sections.length === 0)) {
+  if (educationScope !== "higher" && grades.some((grade) => grade.sections.length === 0)) {
     return { ok: false as const, message: "Every grade level needs at least one section." };
   }
 
@@ -563,6 +634,7 @@ function parseSchoolSetupForm(formData: FormData) {
     data: {
       schoolName,
       schoolCode,
+      educationScope,
       sectionSchoolYearId,
       schoolYears,
       grades,
@@ -707,12 +779,13 @@ async function ensureSchool(connection: PoolConnection, profile: AdminProfileRow
   if (existingSchool) {
     await connection.execute(
       `UPDATE schools
-       SET name = :name, code = :code, status = 'active'
+       SET name = :name, code = :code, education_scope = :educationScope, status = 'active'
        WHERE id = :schoolId`,
       {
         schoolId: existingSchool.id,
         name: input.schoolName,
         code: input.schoolCode,
+        educationScope: input.educationScope,
       },
     );
 
@@ -720,14 +793,16 @@ async function ensureSchool(connection: PoolConnection, profile: AdminProfileRow
   }
 
   const [result] = await connection.execute<ResultSetHeader>(
-    `INSERT INTO schools (name, code, status)
-     VALUES (:name, :code, 'active')
+    `INSERT INTO schools (name, code, education_scope, status)
+     VALUES (:name, :code, :educationScope, 'active')
      ON DUPLICATE KEY UPDATE
        name = VALUES(name),
+       education_scope = VALUES(education_scope),
        status = VALUES(status),
        id = LAST_INSERT_ID(id)`,
     {
       name: input.schoolName,
+      educationScope: input.educationScope,
       code: input.schoolCode || schoolCodeFor(input.schoolName, userId),
     },
   );

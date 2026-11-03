@@ -6,6 +6,7 @@ XMETA EDU is a Next.js school-fintech application for parent payments, student a
 
 - Parent flows for school-reviewed registration, one-school account access, same-school linked students, fee and payment history, tuition payments, receipts, allowance wallets, and student profiles.
 - School Admin workflows for school setup, enrollment, parent registration approval, student and parent records, tuition, collections, school-owned payment-reminder email templates, other fees, allowance, store transactions, and financial reports.
+- Unified Philippine academic setup for Basic Education only, Higher Education only, or integrated K–12 and College schools, with a resumable five-step onboarding wizard, independent readiness checks, and focused ongoing editors.
 - Company Super Admin workflows for registration review, school-admin account management, school population summaries, and branded account exports.
 - Role-aware email OTP password recovery using the configured SMTP service.
 - Browser-remembered Light and Dark themes across public pages and dashboards, with Dark as the first-visit default and contrast-safe controls in both modes.
@@ -55,6 +56,7 @@ npm run test:e2e     # Run Playwright tests
 - End-to-end tests live in `e2e/`.
 - School administrators can prepare K–12 and college academic periods, approve immutable package-based fee schedules, and use a package-first assessment roster that shows only matching grades or college program/year/period placements. Eligible students remain unchecked until selected; already-assessed students are separated before the atomic preview and posting flow. Guardians receive itemized Statements of Account and pay actual percentage-plan term dates.
 - The package-first roster refinement uses the existing tuition assessment schema and requires no additional migration beyond `2026-11-03-tuition-assessment-workflow.sql`.
+- The unified School Setup and guided-onboarding refinements require no new migration. The wizard saves the school profile, active year, selected Philippine K–12 levels/sections, and an initial college period with multiple programs, program-specific year levels, and sections through existing `schools.education_scope` and academic tables.
 - Existing databases import `database/migrations/2026-11-03-tuition-assessment-workflow.sql` after the earlier dated migrations. New empty databases use the regenerated production schema bundle.
 - The local supervisor demo uses only synthetic `QA-` setup records: `node utilities/qa/seed-tuition-assessment-demo.mjs --admin=<local-admin-user-id>`. Add `--cleanup` to remove only unused records created by that utility.
 - Codex project skills live in `.codex/skills/`.
