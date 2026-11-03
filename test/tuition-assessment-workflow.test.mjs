@@ -71,4 +71,8 @@ test("tuition UI exposes assessment-first controls and accessible pending feedba
   assert.match(forms, /border-input bg-background/);
   assert.doesNotMatch(forms, /font-semibold text-\[#151826\]/);
   assert.doesNotMatch(forms, /font-semibold text-\[#252936\]/);
+  assert.match(forms, /Does your school offer a voucher, scholarship, or discount/);
+  assert.match(forms, /DepEd Senior High School Voucher/);
+  assert.match(forms, /Educational Service Contracting Subsidy/);
+  assert.match(forms, /if both limits are blank/);
 });
