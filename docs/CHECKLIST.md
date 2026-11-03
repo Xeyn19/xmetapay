@@ -263,6 +263,9 @@ Run these checks after every backend phase:
 - [x] Preserve legacy fees and correct legacy installment due-date rendering.
 - [x] Add guardian Statements of Account and assessment-term payment allocation.
 - [x] Add local-only `QA-` demo utility and supervisor QA guide.
+- [x] Filter the assessment roster by the approved package's exact grade or college program/year/period targets.
+- [x] Group eligible students, separate already-assessed students, and keep manual selection explicit.
+- [x] Use theme-safe tuition actions, roster controls, summaries, and preview states in light and dark modes.
 - [ ] Import the migration into the supervisor's disposable local database.
 - [ ] Complete and sign `docs/qa/TUITION_ASSESSMENT_SUPERVISOR_QA.md`.
 

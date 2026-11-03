@@ -36,8 +36,8 @@ export type AssessmentWorkspace = {
   ready: boolean;
   warning: string | null;
   schoolYearName: string | null;
-  schedules: Array<{ id: number; name: string; audience: AcademicAudience; period: string; grossAmount: number; itemCount: number; status: string; paymentPlanId:number|null }>;
-  students: Array<{ id: number; name: string; meta: string; audience: AcademicAudience; targetId: number }>;
+  schedules: Array<{ id: number; name: string; audience: AcademicAudience; periodId: number | null; period: string; grossAmount: number; itemCount: number; status: string; paymentPlanId:number|null; targetIds: number[]; targetLabels: string[] }>;
+  students: Array<{ id: number; name: string; reference: string; meta: string; groupLabel: string; audience: AcademicAudience; targetId: number; periodId: number | null; assessedScheduleIds: number[] }>;
   creditTypes: Array<{ id: number; code: string; name: string; requiresReference: boolean; maxAmount: number | null; maxPercent: number | null }>;
   grades: Array<{ id: number; name: string }>;
   programs: Array<{ id: number; name: string; levels: Array<{ id: number; name: string }> }>;
@@ -66,20 +66,22 @@ export async function requireAssessmentAdmin(userId: number) {
 export async function getAssessmentWorkspace(userId: number): Promise<AssessmentWorkspace> {
   try {
     const context = await requireAssessmentAdmin(userId);
-    const [scheduleRows, studentRows, creditRows, gradeRows, programRows, periodRows, allStudentRows, sectionRows] = await Promise.all([
-      pool.execute<ScheduleOptionRow[]>(`SELECT fs.id, fs.name, fs.education_level, COALESCE(ap.name, 'Full school year') period_name, fs.status,
+    const [scheduleRows, studentRows, creditRows, gradeRows, programRows, periodRows, allStudentRows, sectionRows, gradeTargetRows, programTargetRows, assessedRows] = await Promise.all([
+      pool.execute<ScheduleOptionRow[]>(`SELECT fs.id, fs.name, fs.education_level, fs.academic_period_id, COALESCE(ap.name, 'Full school year') period_name, fs.status,
           COUNT(DISTINCT fsi.id) item_count, COALESCE(SUM(fsi.amount),0) gross_amount, MAX(fspp.payment_plan_template_id) payment_plan_id
         FROM fee_schedules fs LEFT JOIN academic_periods ap ON ap.id=fs.academic_period_id LEFT JOIN fee_schedule_items fsi ON fsi.fee_schedule_id=fs.id LEFT JOIN fee_schedule_payment_plans fspp ON fspp.fee_schedule_id=fs.id AND fspp.is_default=TRUE
-        WHERE fs.school_id=:schoolId AND fs.school_year_id=:schoolYearId GROUP BY fs.id,fs.name,fs.education_level,ap.name,fs.status ORDER BY fs.created_at DESC`, context),
+        WHERE fs.school_id=:schoolId AND fs.school_year_id=:schoolYearId GROUP BY fs.id,fs.name,fs.education_level,fs.academic_period_id,ap.name,fs.status ORDER BY fs.created_at DESC`, context),
       pool.execute<StudentOptionRow[]>(`SELECT st.id, CONCAT_WS(' ',st.first_name,NULLIF(st.middle_name,''),st.last_name) student_name,
-          CONCAT(gl.name,' - ',COALESCE(sec.name,'No section'),' - ',st.student_reference) meta, 'basic' audience, e.grade_level_id target_id
+          st.student_reference, CONCAT(gl.name,' · ',COALESCE(sec.name,'No section'),' · ',st.student_reference) meta,
+          CONCAT(gl.name,' · ',COALESCE(sec.name,'No section')) group_label, 'basic' audience, e.grade_level_id target_id, NULL period_id
         FROM students st JOIN enrollments e ON e.student_id=st.id AND e.school_year_id=:schoolYearId AND e.status='enrolled'
         JOIN grade_levels gl ON gl.id=e.grade_level_id LEFT JOIN sections sec ON sec.id=e.section_id WHERE st.school_id=:schoolId
         UNION ALL
         SELECT st.id, CONCAT_WS(' ',st.first_name,NULLIF(st.middle_name,''),st.last_name),
-          CONCAT(ap.code,' - ',pyl.name,' - ',prd.name,' - ',st.student_reference), 'higher', ce.program_year_level_id
+          st.student_reference, CONCAT(ap.code,' · ',pyl.name,' · ',COALESCE(cs.name,'No section'),' · ',prd.name,' · ',st.student_reference),
+          CONCAT(ap.code,' · ',pyl.name,' · ',COALESCE(cs.name,'No section')), 'higher', ce.program_year_level_id, ce.academic_period_id
         FROM students st JOIN college_enrollments ce ON ce.student_id=st.id AND ce.school_year_id=:schoolYearId AND ce.status='enrolled'
-        JOIN academic_programs ap ON ap.id=ce.program_id JOIN program_year_levels pyl ON pyl.id=ce.program_year_level_id JOIN academic_periods prd ON prd.id=ce.academic_period_id AND prd.status='active'
+        JOIN academic_programs ap ON ap.id=ce.program_id JOIN program_year_levels pyl ON pyl.id=ce.program_year_level_id JOIN academic_periods prd ON prd.id=ce.academic_period_id AND prd.status='active' LEFT JOIN college_sections cs ON cs.id=ce.college_section_id
         WHERE st.school_id=:schoolId ORDER BY student_name`, context),
       pool.execute<CreditTypeRow[]>(`SELECT id,code,name,requires_reference,max_amount,max_percent FROM assessment_credit_types WHERE school_id=:schoolId AND status='active' ORDER BY name`, context),
       pool.execute<NameRow[]>(`SELECT id,name FROM grade_levels WHERE school_id=:schoolId ORDER BY sort_order,name`, context),
@@ -87,6 +89,9 @@ export async function getAssessmentWorkspace(userId: number): Promise<Assessment
       pool.execute<PeriodRow[]>(`SELECT id,name,status,DATE_FORMAT(starts_on,'%Y-%m-%d') starts_on,DATE_FORMAT(ends_on,'%Y-%m-%d') ends_on FROM academic_periods WHERE school_id=:schoolId AND school_year_id=:schoolYearId ORDER BY sort_order,id`, context),
       pool.execute<AllStudentRow[]>(`SELECT id,CONCAT_WS(' ',first_name,NULLIF(middle_name,''),last_name) name,student_reference FROM students WHERE school_id=:schoolId AND status='active' ORDER BY last_name,first_name`,context),
       pool.execute<CollegeSectionRow[]>(`SELECT cs.id,cs.name,ap.name period_name,pyl.name level_name FROM college_sections cs JOIN academic_periods ap ON ap.id=cs.academic_period_id JOIN program_year_levels pyl ON pyl.id=cs.program_year_level_id WHERE cs.school_id=:schoolId AND ap.school_year_id=:schoolYearId ORDER BY ap.sort_order,pyl.level_number,cs.name`,context),
+      pool.execute<ScheduleTargetRow[]>(`SELECT fsgt.fee_schedule_id schedule_id,gl.id target_id,gl.name target_label FROM fee_schedule_grade_targets fsgt JOIN fee_schedules fs ON fs.id=fsgt.fee_schedule_id JOIN grade_levels gl ON gl.id=fsgt.grade_level_id WHERE fs.school_id=:schoolId AND fs.school_year_id=:schoolYearId ORDER BY gl.sort_order,gl.name`,context),
+      pool.execute<ScheduleTargetRow[]>(`SELECT fspt.fee_schedule_id schedule_id,pyl.id target_id,CONCAT(ap.code,' · ',pyl.name) target_label FROM fee_schedule_program_targets fspt JOIN fee_schedules fs ON fs.id=fspt.fee_schedule_id JOIN program_year_levels pyl ON pyl.id=fspt.program_year_level_id JOIN academic_programs ap ON ap.id=pyl.program_id WHERE fs.school_id=:schoolId AND fs.school_year_id=:schoolYearId ORDER BY ap.name,pyl.level_number`,context),
+      pool.execute<AssessedScheduleRow[]>(`SELECT sa.student_id,sa.fee_schedule_id FROM student_assessments sa JOIN fee_schedules fs ON fs.id=sa.fee_schedule_id WHERE fs.school_id=:schoolId AND fs.school_year_id=:schoolYearId AND sa.status<>'cancelled'`,context),
     ]);
     const programs = new Map<number, AssessmentWorkspace["programs"][number]>();
     for (const row of programRows[0]) {
@@ -94,9 +99,22 @@ export async function getAssessmentWorkspace(userId: number): Promise<Assessment
       if (row.level_id) item.levels.push({ id: row.level_id, name: row.level_name });
       programs.set(row.program_id, item);
     }
+    const targets = new Map<number, { ids: number[]; labels: string[] }>();
+    for (const row of [...gradeTargetRows[0], ...programTargetRows[0]]) {
+      const item = targets.get(row.schedule_id) ?? { ids: [], labels: [] };
+      item.ids.push(Number(row.target_id));
+      item.labels.push(row.target_label);
+      targets.set(row.schedule_id, item);
+    }
+    const assessedByStudent = new Map<number, number[]>();
+    for (const row of assessedRows[0]) {
+      const scheduleIds = assessedByStudent.get(row.student_id) ?? [];
+      scheduleIds.push(row.fee_schedule_id);
+      assessedByStudent.set(row.student_id, scheduleIds);
+    }
     return { ready: true, warning: null, schoolYearName: context.schoolYearName,
-      schedules: scheduleRows[0].map(r=>({id:r.id,name:r.name,audience:r.education_level,period:r.period_name,grossAmount:Number(r.gross_amount),itemCount:Number(r.item_count),status:r.status,paymentPlanId:r.payment_plan_id?Number(r.payment_plan_id):null})),
-      students: studentRows[0].map(r=>({id:r.id,name:r.student_name,meta:r.meta,audience:r.audience,targetId:r.target_id})),
+      schedules: scheduleRows[0].map(r=>({id:r.id,name:r.name,audience:r.education_level,periodId:r.academic_period_id?Number(r.academic_period_id):null,period:r.period_name,grossAmount:Number(r.gross_amount),itemCount:Number(r.item_count),status:r.status,paymentPlanId:r.payment_plan_id?Number(r.payment_plan_id):null,targetIds:targets.get(r.id)?.ids??[],targetLabels:targets.get(r.id)?.labels??[]})),
+      students: studentRows[0].map(r=>({id:r.id,name:r.student_name,reference:r.student_reference,meta:r.meta,groupLabel:r.group_label,audience:r.audience,targetId:Number(r.target_id),periodId:r.period_id?Number(r.period_id):null,assessedScheduleIds:assessedByStudent.get(r.id)??[]})),
       creditTypes: creditRows[0].map(r=>({id:r.id,code:r.code,name:r.name,requiresReference:Boolean(r.requires_reference),maxAmount:r.max_amount==null?null:Number(r.max_amount),maxPercent:r.max_percent==null?null:Number(r.max_percent)})),
       grades: gradeRows[0], programs:[...programs.values()], periods:periodRows[0].map(r=>({id:r.id,name:r.name,status:r.status,startsOn:r.starts_on,endsOn:r.ends_on})),allStudents:allStudentRows[0].map(r=>({id:r.id,name:r.name,reference:r.student_reference})),collegeSections:sectionRows[0].map(r=>({id:r.id,name:r.name,periodName:r.period_name,levelName:r.level_name})) };
   } catch (error) {
@@ -229,8 +247,9 @@ export async function archiveFeeSchedule(connection:PoolConnection,p:{schoolId:n
 function hash(v:string){return createHash('sha256').update(v).digest('hex');} function money(v:number){return Math.round(v*100)/100;} export function formatMoney(v:number){return new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(v);}
 
 type PreviewParams={schoolId:number;schoolYearId:number;scheduleId:number;studentIds:number[];creditTypeId:number|null;creditAmount:number;creditReference:string;paymentPlanId:number|null};
-type ScheduleOptionRow=RowDataPacket&{id:number;name:string;education_level:AcademicAudience;period_name:string;status:string;item_count:number|string;gross_amount:number|string;payment_plan_id:number|null};
-type StudentOptionRow=RowDataPacket&{id:number;student_name:string;meta:string;audience:AcademicAudience;target_id:number}; type CreditTypeRow=RowDataPacket&{id:number;code:string;name:string;requires_reference:number;max_amount:number|string|null;max_percent:number|string|null};
+type ScheduleOptionRow=RowDataPacket&{id:number;name:string;education_level:AcademicAudience;academic_period_id:number|null;period_name:string;status:string;item_count:number|string;gross_amount:number|string;payment_plan_id:number|null};
+type StudentOptionRow=RowDataPacket&{id:number;student_name:string;student_reference:string;meta:string;group_label:string;audience:AcademicAudience;target_id:number;period_id:number|null}; type CreditTypeRow=RowDataPacket&{id:number;code:string;name:string;requires_reference:number;max_amount:number|string|null;max_percent:number|string|null};
+type ScheduleTargetRow=RowDataPacket&{schedule_id:number;target_id:number;target_label:string};type AssessedScheduleRow=RowDataPacket&{student_id:number;fee_schedule_id:number};
 type NameRow=RowDataPacket&{id:number;name:string};type ProgramLevelRow=RowDataPacket&{program_id:number;program_name:string;level_id:number|null;level_name:string};type PeriodRow=RowDataPacket&{id:number;name:string;status:string;starts_on:string;ends_on:string};
 type AllStudentRow=RowDataPacket&{id:number;name:string;student_reference:string};type CollegeSectionRow=RowDataPacket&{id:number;name:string;period_name:string;level_name:string};
 type ScheduleRow=RowDataPacket&{id:number;academic_period_id:number|null;updated_at:Date|string};type ScheduleItemRow=RowDataPacket&{id:number;fee_type_id:number;fee_name:string;amount:number|string;payment_timing:'upfront'|'installment';due_date:Date|string|null};type LockedSchedule=ScheduleRow&{items:ScheduleItemRow[]};
