@@ -502,3 +502,8 @@ Do not commit:
 - Authentication secrets.
 
 Use this schema first for local development and testing. After importing the SQL files, verify that registration, login, logout, protected dashboard redirects, and phpMyAdmin table creation still work.
+# Tuition assessment domain (2026-11-03)
+
+`academic_periods`, `academic_programs`, `program_year_levels`, `college_sections`, and `college_enrollments` add period-specific higher-education placement without rewriting K–12 history. Versioned `fee_schedules` target either grades or program year levels. Approved item amounts are copied into `student_fee_assignments`, including immutable name, gross, credit, and net snapshots.
+
+`assessment_batches` owns the idempotency token and preview fingerprint. `student_assessments`, credit/allocation tables, and assessment term/allocation tables preserve an auditable bridge to the existing authoritative payment, allocation, receipt, and fee-assignment ledgers. Legacy assignments remain standalone and use `legacy-fee:{feeTypeId}` assignment keys.

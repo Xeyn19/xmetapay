@@ -18,14 +18,15 @@ export async function createParentPaymentAction(formData: FormData) {
   const session = await requireRole("parent");
   const feeAssignmentIds = selectedFeeIds(formData);
   const tuitionTermIds = selectedTermIds(formData);
+  const assessmentTermIds = selectedAssessmentTermIds(formData);
   const channel = paymentChannel(formData);
 
-  if (feeAssignmentIds.length === 0 && tuitionTermIds.length === 0) {
+  if (feeAssignmentIds.length === 0 && tuitionTermIds.length === 0 && assessmentTermIds.length === 0) {
     await toast("Payment not recorded", "Select at least one payable fee.");
     redirect("/parent/pay-tuition");
   }
 
-  if (feeAssignmentIds.length > 0 && tuitionTermIds.length > 0) {
+  if ([feeAssignmentIds.length, tuitionTermIds.length, assessmentTermIds.length].filter(Boolean).length > 1) {
     await toast("Payment not recorded", "Pay tuition terms separately from regular fee balances.");
     redirect("/parent/pay-tuition");
   }
@@ -43,7 +44,9 @@ export async function createParentPaymentAction(formData: FormData) {
     await connection.beginTransaction();
     await requireParentSchoolScope(session.userId, { forWrite: true, executor: connection });
 
-    if (tuitionTermIds.length > 0) {
+    if (assessmentTermIds.length > 0) {
+      receiptId = await applyAssessmentTermPayment(connection, session.userId, assessmentTermIds, channel);
+    } else if (tuitionTermIds.length > 0) {
       receiptId = await applyTuitionTermPayment(connection, {
         parentUserId: session.userId,
         tuitionTermIds,
@@ -207,6 +210,23 @@ function selectedTermIds(formData: FormData) {
     .filter((value) => Number.isInteger(value) && value > 0);
 
   return [...new Set(ids)].slice(0, 25);
+}
+
+function selectedAssessmentTermIds(formData: FormData) {
+  return [...new Set(formData.getAll("assessmentTermId").map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0))].slice(0, 25);
+}
+
+async function applyAssessmentTermPayment(connection:PoolConnection,parentUserId:number,termIds:number[],channel:PaymentChannel){
+  const placeholders=termIds.map((_,index)=>`:term${index}`).join(",");
+  const params=Object.fromEntries(termIds.map((id,index)=>[`term${index}`,id]));
+  const [terms]=await connection.execute<Array<RowDataPacket&{id:number;student_assessment_id:number;amount_due:number|string;amount_paid:number|string;student_id:number;school_id:number;school_year_id:number}>>(`SELECT apt.id,apt.student_assessment_id,apt.amount_due,apt.amount_paid,st.id student_id,st.school_id,ab.school_year_id FROM assessment_payment_terms apt JOIN student_assessments sa ON sa.id=apt.student_assessment_id JOIN assessment_batches ab ON ab.id=sa.assessment_batch_id JOIN students st ON st.id=sa.student_id JOIN student_guardians sg ON sg.student_id=st.id AND sg.parent_user_id=:parentUserId WHERE apt.id IN (${placeholders}) AND apt.status IN ('open','partial') AND apt.amount_due>apt.amount_paid FOR UPDATE`,{parentUserId,...params});
+  if(terms.length!==termIds.length)throw new PaymentValidationError("Some assessment terms are no longer payable. Refresh and try again.");
+  if(new Set(terms.map(term=>term.student_id)).size!==1)throw new PaymentValidationError("Pay one student's assessment terms at a time.");
+  if(new Set(terms.map(term=>`${term.school_id}:${term.school_year_id}`)).size!==1)throw new PaymentValidationError("Selected terms must belong to one school year.");
+  const total=roundMoney(terms.reduce((sum,term)=>sum+decimalValue(term.amount_due)-decimalValue(term.amount_paid),0));
+  const [payment]=await connection.execute<ResultSetHeader>(`INSERT INTO payments (school_id,school_year_id,payer_user_id,student_id,reference_number,channel,amount,status,paid_at) VALUES (:schoolId,:yearId,:payer,:studentId,:reference,:channel,:amount,'paid',NOW())`,{schoolId:terms[0].school_id,yearId:terms[0].school_year_id,payer:parentUserId,studentId:terms[0].student_id,reference:makeReferenceNumber("PAY"),channel,amount:total});
+  for(const term of terms){const amount=roundMoney(decimalValue(term.amount_due)-decimalValue(term.amount_paid));await connection.execute(`INSERT INTO payment_assessment_term_allocations (payment_id,assessment_payment_term_id,amount) VALUES (:paymentId,:termId,:amount)`,{paymentId:payment.insertId,termId:term.id,amount});const [lines]=await connection.execute<Array<RowDataPacket&{id:number;amount_due:number|string;amount_paid:number|string}>>(`SELECT sfa.id,sfa.amount_due,sfa.amount_paid FROM student_fee_assignments sfa JOIN fee_schedule_items fsi ON fsi.id=sfa.fee_schedule_item_id WHERE sfa.student_assessment_id=:assessmentId AND fsi.payment_timing='installment' AND sfa.amount_due>sfa.amount_paid ORDER BY sfa.id FOR UPDATE`,{assessmentId:term.student_assessment_id});const available=lines.reduce((sum,line)=>sum+decimalValue(line.amount_due)-decimalValue(line.amount_paid),0);let used=0;for(let index=0;index<lines.length;index++){const balance=decimalValue(lines[index].amount_due)-decimalValue(lines[index].amount_paid);const allocation=index===lines.length-1?roundMoney(amount-used):roundMoney(amount*balance/available);if(allocation<=0)continue;used=roundMoney(used+allocation);await connection.execute(`INSERT INTO payment_allocations (payment_id,student_fee_assignment_id,amount) VALUES (:paymentId,:lineId,:amount)`,{paymentId:payment.insertId,lineId:lines[index].id,amount:allocation});await connection.execute(`UPDATE student_fee_assignments SET amount_paid=LEAST(amount_due,amount_paid+:amount),status=CASE WHEN amount_paid+:amount>=amount_due THEN 'paid' ELSE 'partial' END WHERE id=:lineId`,{lineId:lines[index].id,amount:allocation});}await connection.execute(`UPDATE assessment_payment_terms SET amount_paid=LEAST(amount_due,amount_paid+:amount),status=CASE WHEN amount_paid+:amount>=amount_due THEN 'paid' ELSE 'partial' END WHERE id=:termId`,{termId:term.id,amount});}
+  const [receipt]=await connection.execute<ResultSetHeader>(`INSERT INTO receipts (payment_id,receipt_number) VALUES (:paymentId,:receipt)`,{paymentId:payment.insertId,receipt:makeReferenceNumber("RCT")});return receipt.insertId;
 }
 
 function paymentChannel(formData: FormData) {

@@ -147,3 +147,6 @@ finance_officer
 ```
 
 No database schema change is needed for role permissions because the role column already exists.
+# Tuition assessment permissions
+
+Only `school_administrator` may configure college academics, create or approve fee schedules, apply credits, preview populations, or post assessment batches. Finance retains existing read-only tuition reporting. Registrar and company super administrator accounts cannot invoke the new write actions. Every Server Action re-resolves the acting user's school and active school year; client-supplied ownership is never trusted.

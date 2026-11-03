@@ -3,13 +3,15 @@ import { CreditCard, Receipt } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { getParentFeePageData } from "@/lib/fees/records";
+import { getParentAssessmentStatements } from "@/lib/fees/assessment-workflow";
 
 import { MetricCard, MetricGrid, ParentAlert, ParentButton, ParentCard } from "../../_components/parent-ui";
 import { ParentFeesTable } from "./fees-table";
+import { AssessmentStatements } from "./assessment-statements";
 
 export default async function FeesPage() {
   const session = await requireRole("parent");
-  const data = await getParentFeePageData(session.userId);
+  const [data, statements] = await Promise.all([getParentFeePageData(session.userId), getParentAssessmentStatements(session.userId)]);
 
   return (
     <>
@@ -19,6 +21,7 @@ export default async function FeesPage() {
           <MetricCard key={metric.label} metric={metric} />
         ))}
       </MetricGrid>
+      <AssessmentStatements statements={statements} />
       <ParentCard
         title="Fee summary"
         icon={Receipt}

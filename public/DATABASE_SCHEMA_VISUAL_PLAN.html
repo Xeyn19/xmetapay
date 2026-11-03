@@ -930,5 +930,10 @@ flowchart LR
         );
       });
     </script>
+    <section class="diagram-card" style="margin:24px" aria-labelledby="tuition-schema-title">
+      <h2 id="tuition-schema-title">Tuition assessment schema extension</h2>
+      <p><strong>Academic:</strong> schools → academic periods/programs/year levels → college enrollments. <strong>Pricing:</strong> fee schedules → targets/items/payment plans. <strong>Ledger:</strong> assessment batches → student assessments → assignment snapshots, credits, terms, payment allocations, and receipts.</p>
+      <p>Legacy fee assignments remain standalone; deterministic assignment keys allow the same college fee in different academic periods without rewriting history.</p>
+    </section>
   </body>
 </html>

@@ -139,7 +139,7 @@ export async function assignStudentFeeAction(
     }
 
     const insertValues = studentIds
-      .map((_, index) => `(:assignStudentId${index}, :feeTypeId, :schoolYearId, :amountDue, 0.00, :dueDate, 'open')`)
+      .map((_, index) => `(:assignStudentId${index}, :feeTypeId, :schoolYearId, CONCAT('legacy-fee:', :feeTypeId), :amountDue, 0.00, :dueDate, 'open')`)
       .join(", ");
     const insertParams = {
       ...namedValues("assignStudentId", studentIds),
@@ -149,7 +149,7 @@ export async function assignStudentFeeAction(
       dueDate,
     };
     const [result] = await connection.execute<ResultSetHeader>(
-      `INSERT IGNORE INTO student_fee_assignments (student_id, fee_type_id, school_year_id, amount_due, amount_paid, due_date, status)
+      `INSERT IGNORE INTO student_fee_assignments (student_id, fee_type_id, school_year_id, assignment_key, amount_due, amount_paid, due_date, status)
        VALUES ${insertValues}`,
       insertParams,
     );

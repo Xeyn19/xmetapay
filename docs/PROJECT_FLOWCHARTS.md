@@ -888,3 +888,19 @@ Use this testing order when checking the project manually in XAMPP:
 - Do not commit real parent, student, school, payment, or credential data.
 - Keep passwords stored only as `password_hash` in the database.
 - Keep this document as a planning and explanation guide, not a seed-data file.
+# Tuition assessment workflow
+
+```mermaid
+flowchart LR
+  A[Academic setup] --> S[Draft fee schedule]
+  S -->|School admin approves| P[Immutable approved version]
+  P --> V[Select students and credits]
+  V --> R[Preview totals and fingerprint]
+  R -->|Revalidate under locks| B[Atomic assessment batch]
+  B --> G[Guardian Statement of Account]
+  G --> T[Pay assessment term]
+  T --> L[Proportional fee-line allocations]
+  L --> C[Receipt and updated balance]
+```
+
+K–12 targets grades; college targets program year levels within the active academic period. Optional/ad hoc Other fees continue through their existing workflow.

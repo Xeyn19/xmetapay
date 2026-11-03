@@ -959,3 +959,11 @@ Runtime database configuration prefers the GoDaddy Hosted Database variables `DB
 - Do not commit real parent, student, school, payment, or credential data.
 - Add full SQL migrations only after reviewing this plan and confirming the app screens that should become database-backed first.
 - Provision production databases and backups through the hosting provider; the fresh-schema bundle does not create databases, seed accounts, export data, upgrade live records, or perform automatic backups.
+# Implemented tuition assessment extension
+
+- School scope: `basic`, `higher`, or `both`.
+- Academic ownership: school → year → period → college enrollment.
+- Schedule lifecycle: draft → approved → archived; approved records are immutable in application actions.
+- Posting: preview fingerprint + transaction locks + unique submission-token hash.
+- Money: immutable gross charge, separately allocated credits, compatible net `amount_due`, percentage terms, and payment allocations to underlying lines.
+- Migration: `database/migrations/2026-11-03-tuition-assessment-workflow.sql` for existing installations; `database/full-schema-v1.sql` for fresh installs.

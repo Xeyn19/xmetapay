@@ -111,17 +111,11 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(forms, /No \{label\} types yet/);
 
   assert.match(tuitionPage, /getAdminFeeSetupData\(session\.userId, "tuition"\)/);
-  assert.match(tuitionPage, /OtherFeeActionModal/);
-  assert.match(tuitionPage, /triggerLabel="Assign fee"/);
-  assert.match(tuitionPage, /triggerLabel="Add fee type"/);
-  assert.match(tuitionPage, /triggerIcon="receipt"/);
-  assert.match(tuitionPage, /triggerIcon="plus"/);
-  assert.doesNotMatch(tuitionPage, /triggerIcon=\{Receipt\}/);
-  assert.doesNotMatch(tuitionPage, /triggerIcon=\{Plus\}/);
-  assert.match(tuitionPage, /triggerTone="dark"/);
-  assert.match(tuitionPage, /triggerTone="outline"/);
-  assert.match(tuitionPage, /<FeeAssignStudentsForm category="tuition" redirectPath="\/admin\/tuition" data=\{feeSetup\} \/>/);
-  assert.match(tuitionPage, /<FeeCreateTypeForm category="tuition" redirectPath="\/admin\/tuition" data=\{feeSetup\} \/>/);
+  assert.match(tuitionPage, /Create assessments/);
+  assert.match(tuitionPage, /Manage fee catalog/);
+  assert.match(tuitionPage, /staffRole === "school_administrator"/);
+  assert.doesNotMatch(tuitionPage, /<FeeAssignStudentsForm category="tuition"/);
+  assert.doesNotMatch(tuitionPage, /<FeeCreateTypeForm category="tuition"/);
   assert.doesNotMatch(tuitionPage, /<FeeManagementForms category="tuition"/);
   assert.doesNotMatch(tuitionPage, /Tuition setup/);
   assert.match(tuitionPage, /TuitionReportTable/);
@@ -235,8 +229,8 @@ test("admin dashboard omits fee assignment management while dedicated finance pa
   assert.match(dashboard, /RecentPaymentsTable rows=\{payments\}/);
   assert.doesNotMatch(dashboard, /getAdminFeeSetupData|DashboardFeeAssignmentActions|triggerLabel="Assign fee"|triggerLabel="Add fee type"/);
   assert.doesNotMatch(dashboardRecentTables, /Recent fee assignments|RecentFeeAssignmentsTable/);
-  assert.match(tuitionPage, /triggerLabel="Assign fee"/);
-  assert.match(tuitionPage, /triggerLabel="Add fee type"/);
+  assert.match(tuitionPage, /Create assessments/);
+  assert.match(tuitionPage, /Manage fee catalog/);
   assert.match(otherFeesPage, /triggerLabel="Assign fee"/);
   assert.match(otherFeesPage, /triggerLabel="Add fee type"/);
 });

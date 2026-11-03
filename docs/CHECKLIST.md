@@ -255,6 +255,18 @@ Run these checks after every backend phase:
 
 ## Git Checklist Before Pushing
 
+## Tuition Assessment Release
+
+- [x] Add K–12 and college academic/schedule/assessment schema.
+- [x] Restrict management and posting to school administrators.
+- [x] Add preview fingerprint, transaction revalidation, and idempotent submission token.
+- [x] Preserve legacy fees and correct legacy installment due-date rendering.
+- [x] Add guardian Statements of Account and assessment-term payment allocation.
+- [x] Add local-only `QA-` demo utility and supervisor QA guide.
+- [ ] Import the migration into the supervisor's disposable local database.
+- [ ] Complete and sign `docs/qa/TUITION_ASSESSMENT_SUPERVISOR_QA.md`.
+
+
 - [ ] Run `git status --short`.
 - [ ] Confirm no local environment file is staged.
 - [ ] Confirm no database export file is staged.

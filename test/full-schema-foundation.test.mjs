@@ -46,7 +46,7 @@ test("full MVP schema preserves the planned keys and auth relationships", () => 
     "UNIQUE KEY uq_students_school_reference (school_id, student_reference)",
     "UNIQUE KEY uq_student_guardians_pair (student_id, parent_user_id)",
     "UNIQUE KEY uq_enrollments_student_year (student_id, school_year_id)",
-    "UNIQUE KEY uq_student_fee_assignments_student_fee_year (student_id, fee_type_id, school_year_id)",
+    "UNIQUE KEY uq_student_fee_assignments_identity (student_id, school_year_id, assignment_key)",
     "UNIQUE KEY uq_payments_reference_number (reference_number)",
     "UNIQUE KEY uq_receipts_number (receipt_number)",
     "UNIQUE KEY uq_wallets_student (student_id)",

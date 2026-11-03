@@ -68,7 +68,7 @@ export function ParentPaymentForm({ rows }: { rows: ParentPayableFee[] }) {
                 <span className="flex min-w-0 items-center gap-3">
                   <input
                     type="checkbox"
-                    name={fee.source === "term" ? "tuitionTermId" : "feeAssignmentId"}
+                    name={fee.source === "term" ? "tuitionTermId" : fee.source === "assessment_term" ? "assessmentTermId" : "feeAssignmentId"}
                     value={fee.id}
                     checked={selected.has(selectedKey)}
                     disabled={disabled}
