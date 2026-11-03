@@ -967,3 +967,4 @@ Runtime database configuration prefers the GoDaddy Hosted Database variables `DB
 - Posting: preview fingerprint + transaction locks + unique submission-token hash.
 - Money: immutable gross charge, separately allocated credits, compatible net `amount_due`, percentage terms, and payment allocations to underlying lines.
 - Migration: `database/migrations/2026-11-03-tuition-assessment-workflow.sql` for existing installations; `database/full-schema-v1.sql` for fresh installs.
+- Package-first roster UX: reads existing schedule target, enrollment, academic-period, and student-assessment relationships; it adds no tables, columns, indexes, or follow-up migration.

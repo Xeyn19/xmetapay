@@ -64,7 +64,7 @@ export default async function TuitionPage() {
         className="mb-[18px]"
         action={
           <div className="flex flex-wrap items-center gap-2">
-            {staffRole === "school_administrator" ? <><Link href="/admin/tuition/assessments/new" className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-[#151826] px-4 text-[13px] font-semibold text-white focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30"><Receipt className="size-4" />Create assessments</Link><Link href="/admin/tuition/schedules" className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-black/15 bg-white px-4 text-[13px] font-semibold text-[#151826] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30"><Plus className="size-4" />Manage fee catalog</Link></> : null}
+            {staffRole === "school_administrator" ? <><Link href="/admin/tuition/assessments/new" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"><Receipt className="size-4" />Create assessments</Link><Link href="/admin/tuition/schedules" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-border bg-background px-4 text-[13px] font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"><Plus className="size-4" />Tuition packages &amp; setup</Link></> : null}
           </div>
         }
       >

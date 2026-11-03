@@ -11,12 +11,13 @@ Date: __________  Supervisor: __________  Tester: __________  Build/commit: ____
 
 ## K–12 walkthrough
 
-1. Open **Tuition → Manage fee catalog**. Create a K–12 draft for one grade: tuition ₱20,000; mandatory fee ₱2,000; 100% term inside the active school year.
+1. Open **Tuition → Tuition packages & setup**. Create a K–12 draft for Grade 7: tuition ₱20,000; mandatory fee ₱2,000; 100% term inside the active school year.
 2. Approve it. Expected: status changes to approved; another approved schedule for the same grade/year is rejected.
-3. Open **Create assessments**, choose two matching students, and apply a ₱5,000 `QA-VOUCHER` credit with a reference.
+3. Open **Create assessments** and select the Grade 7 package. Confirm the package summary names Grade 7, only Grade 7 candidates appear, students remain unchecked, and students from Grades 2–6 are absent. Search or filter a section, choose two matching students, and apply a ₱5,000 `QA-VOUCHER` credit with a reference.
 4. Preview. Expected per student: gross ₱22,000; credit ₱5,000; net ₱17,000. Batch totals for two: gross ₱44,000; credits ₱10,000; net ₱34,000.
 5. Post. Expected: exact **Post 2 assessments** confirmation, one batch reference, no partial writes.
 6. Submit the same token again. Expected: original batch result, no duplicate charges.
+7. Reopen the same package. Expected: posted students appear under **Already assessed** and cannot be selected again.
 
 ## College walkthrough
 
@@ -24,6 +25,7 @@ Date: __________  Supervisor: __________  Tester: __________  Build/commit: ____
 2. Enroll a synthetic college student in the active period using an existing local student record and the program/year setup.
 3. Create and approve a college package targeted to that program/year and period.
 4. Preview and post. Expected: students from other periods or year levels are excluded; the guardian statement names the period and package.
+5. Change the package or selection after preview. Expected: the old review is invalidated and a new preview is required.
 
 ## Guardian and payment checks
 
@@ -43,7 +45,7 @@ Date: __________  Supervisor: __________  Tester: __________  Build/commit: ____
 
 ## Accessibility and responsive checks
 
-At widths 320, 375, 768, and 1440 px: no horizontal page overflow; all controls are at least 44 px high; keyboard focus is visible; errors use an alert announcement; pending/success use status announcements; dialogs trap focus and restore it when closed.
+At widths 320, 375, 768, and 1440 px: no horizontal page overflow; tuition actions and secondary text remain readable in light and dark modes; roster search, group filter, and bulk controls wrap cleanly; all controls are at least 44 px high; keyboard focus is visible; errors use an alert announcement; pending/success use status announcements.
 
 | Width | K–12 wizard | College setup | Guardian statement | Pass/notes |
 |---:|---|---|---|---|

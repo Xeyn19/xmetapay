@@ -112,7 +112,7 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
 
   assert.match(tuitionPage, /getAdminFeeSetupData\(session\.userId, "tuition"\)/);
   assert.match(tuitionPage, /Create assessments/);
-  assert.match(tuitionPage, /Manage fee catalog/);
+  assert.match(tuitionPage, /Tuition packages &amp; setup/);
   assert.match(tuitionPage, /staffRole === "school_administrator"/);
   assert.doesNotMatch(tuitionPage, /<FeeAssignStudentsForm category="tuition"/);
   assert.doesNotMatch(tuitionPage, /<FeeCreateTypeForm category="tuition"/);
@@ -230,7 +230,7 @@ test("admin dashboard omits fee assignment management while dedicated finance pa
   assert.doesNotMatch(dashboard, /getAdminFeeSetupData|DashboardFeeAssignmentActions|triggerLabel="Assign fee"|triggerLabel="Add fee type"/);
   assert.doesNotMatch(dashboardRecentTables, /Recent fee assignments|RecentFeeAssignmentsTable/);
   assert.match(tuitionPage, /Create assessments/);
-  assert.match(tuitionPage, /Manage fee catalog/);
+  assert.match(tuitionPage, /Tuition packages &amp; setup/);
   assert.match(otherFeesPage, /triggerLabel="Assign fee"/);
   assert.match(otherFeesPage, /triggerLabel="Add fee type"/);
 });

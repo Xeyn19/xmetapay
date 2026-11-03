@@ -894,8 +894,11 @@ Use this testing order when checking the project manually in XAMPP:
 flowchart LR
   A[Academic setup] --> S[Draft fee schedule]
   S -->|School admin approves| P[Immutable approved version]
-  P --> V[Select students and credits]
-  V --> R[Preview totals and fingerprint]
+  P --> E[Resolve exact grade or program/year/period roster]
+  E --> V[Search, group, and manually select eligible students]
+  E --> D[Show already-assessed students as read-only]
+  V --> X[Apply optional credit]
+  X --> R[Preview totals and fingerprint]
   R -->|Revalidate under locks| B[Atomic assessment batch]
   B --> G[Guardian Statement of Account]
   G --> T[Pay assessment term]
@@ -903,4 +906,4 @@ flowchart LR
   L --> C[Receipt and updated balance]
 ```
 
-K–12 targets grades; college targets program year levels within the active academic period. Optional/ad hoc Other fees continue through their existing workflow.
+K–12 packages expose only students in their selected grade targets. College packages additionally require the matching program year level and active academic period. The preview and posting helpers revalidate the population, so a stale browser selection cannot bypass ownership or eligibility rules. Optional/ad hoc Other fees continue through their existing workflow.

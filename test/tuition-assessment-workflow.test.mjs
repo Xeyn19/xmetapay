@@ -56,7 +56,9 @@ test("legacy parent tuition terms render their actual term due date", async () =
 test("tuition UI exposes assessment-first controls and accessible pending feedback", async () => {
   const [page, forms] = await Promise.all([readFile("app/admin/(dashboard)/tuition/page.tsx", "utf8"), readFile("app/admin/tuition-assessments/workflow-forms.tsx", "utf8")]);
   assert.match(page, /Create assessments/);
-  assert.match(page, /Manage fee catalog/);
+  assert.match(page, /Tuition packages &amp; setup/);
+  assert.match(page, /bg-primary/);
+  assert.match(page, /bg-background/);
   assert.match(forms, /useActionState/);
   assert.match(forms, /role=\{state\.status === "error" \? "alert" : "status"\}/);
   assert.match(forms, /min-h-11/);
@@ -65,7 +67,15 @@ test("tuition UI exposes assessment-first controls and accessible pending feedba
   assert.match(forms, /Amount deducted per student/);
   assert.match(forms, /Required/);
   assert.match(forms, /Optional/);
-  assert.match(forms, /Select all shown/);
+  assert.match(forms, /Select all visible/);
+  assert.match(forms, /K–12 packages/);
+  assert.match(forms, /College packages/);
+  assert.match(forms, /Selected package summary/);
+  assert.match(forms, /Already assessed/);
+  assert.match(forms, /No matching students found/);
+  assert.match(forms, /student\.targetId/);
+  assert.match(forms, /student\.periodId === selectedSchedule\.periodId/);
+  assert.match(forms, /dirtyAfterPreview/);
   assert.match(forms, /text-foreground/);
   assert.match(forms, /text-muted-foreground/);
   assert.match(forms, /border-input bg-background/);
@@ -75,4 +85,15 @@ test("tuition UI exposes assessment-first controls and accessible pending feedba
   assert.match(forms, /DepEd Senior High School Voucher/);
   assert.match(forms, /Educational Service Contracting Subsidy/);
   assert.match(forms, /if both limits are blank/);
+});
+
+test("assessment workspace exposes exact package targets, groups, periods, and duplicates", async () => {
+  const domain = await readFile("lib/fees/assessment-workflow.ts", "utf8");
+  assert.match(domain, /fee_schedule_grade_targets/);
+  assert.match(domain, /fee_schedule_program_targets/);
+  assert.match(domain, /targetIds:targets\.get\(r\.id\)\?\.ids/);
+  assert.match(domain, /assessedScheduleIds:assessedByStudent\.get\(r\.id\)/);
+  assert.match(domain, /prd\.status='active'/);
+  assert.match(domain, /ce\.academic_period_id/);
+  assert.match(domain, /sa\.status<>'cancelled'/);
 });

@@ -9,5 +9,5 @@ import { AlertBanner } from "@/app/admin/_components/admin-ui";
 export default async function TuitionSchedulesPage() {
   const session = await requireRole("admin");
   const workspace = await getAssessmentWorkspace(session.userId);
-  return <><div className="mb-4"><Link href="/admin/tuition" className="text-sm font-medium text-[#e64a19]">← Tuition</Link><h1 className="mt-2 text-2xl font-semibold">Manage fee catalog</h1><p className="mt-1 text-sm text-[#666b78]">Create versioned tuition packages and approve them before assessment. Approved versions are immutable.</p></div>{workspace.warning ? <AlertBanner tone="warn" icon={Receipt}>{workspace.warning}</AlertBanner> : null}<ScheduleManager workspace={workspace} /></>;
+  return <><div className="mb-4"><Link href="/admin/tuition" className="text-sm font-medium text-[#e64a19]">← Tuition</Link><h1 className="mt-2 text-2xl font-semibold">Tuition packages &amp; setup</h1><p className="mt-1 text-sm text-muted-foreground">Create versioned tuition packages and approve them before assessment. Approved versions are immutable.</p></div>{workspace.warning ? <AlertBanner tone="warn" icon={Receipt}>{workspace.warning}</AlertBanner> : null}<ScheduleManager workspace={workspace} /></>;
 }

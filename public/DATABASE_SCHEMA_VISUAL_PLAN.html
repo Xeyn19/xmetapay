@@ -934,6 +934,7 @@ flowchart LR
       <h2 id="tuition-schema-title">Tuition assessment schema extension</h2>
       <p><strong>Academic:</strong> schools → academic periods/programs/year levels → college enrollments. <strong>Pricing:</strong> fee schedules → targets/items/payment plans. <strong>Ledger:</strong> assessment batches → student assessments → assignment snapshots, credits, terms, payment allocations, and receipts.</p>
       <p>Legacy fee assignments remain standalone; deterministic assignment keys allow the same college fee in different academic periods without rewriting history.</p>
+      <p><strong>Roster UX:</strong> existing schedule-target and enrollment relationships resolve the eligible grouped roster; existing non-cancelled student assessments identify read-only duplicates. No additional schema or migration is required.</p>
     </section>
   </body>
 </html>
