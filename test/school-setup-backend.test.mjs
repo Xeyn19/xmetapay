@@ -243,13 +243,12 @@ test("school setup uses an overview hub with focused management workflows", () =
 
   assert.match(onboardingPage, /await requireRole\("admin"\)/);
   assert.match(onboardingPage, /logoutAction\.bind\(null, "admin"\)/);
-  assert.match(onboardingPage, /getAdminSchoolContext\(session\.userId\)/);
-  assert.match(onboardingPage, /getAdminSchoolSetupFormData\(session\.userId\)/);
+  assert.match(onboardingPage, /getSchoolOnboardingState\(session\.userId\)/);
   assert.match(onboardingPage, /canManageSchoolSetup\(staffRole\)/);
-  assert.match(onboardingPage, /redirect\("\/admin\/dashboard"\)/);
-  assert.match(onboardingPage, /Choose whether the school offers Basic Education, College, or both/);
+  assert.match(onboardingPage, /GuidedSchoolSetupWizard/);
+  assert.match(onboardingPage, /GuidedSchoolSetupWizard/);
   assert.match(onboardingPage, /Sign out/);
-  assert.match(onboardingPage, /redirectTo="\/admin\/onboarding\/school-setup"/);
+  assert.doesNotMatch(onboardingPage, /schoolContext\.databaseReady/);
 
   assert.match(form, /"use client";/);
   assert.match(form, /saveSchoolSetupAction/);

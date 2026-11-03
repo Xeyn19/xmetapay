@@ -34,7 +34,7 @@ Implemented:
 - Provider-aware MySQL connection through injected GoDaddy Hosted Database `DB_*` values in production and ignored local `MYSQL_*` values for XAMPP.
 - Full schema import through `database/full-schema-v1.sql`.
 - Schema-only production import for a new empty GoDaddy Hosted Database or cPanel/phpMyAdmin database through `utilities/database/xmetapay-production-schema.sql`.
-- Manual school setup by `school_administrator`.
+- Resumable five-step school setup onboarding by `school_administrator`.
 - Unified academic offering setup for Basic Education, Higher Education, or both, with independent readiness and safe scope narrowing.
 
 ## Unified Philippine academic setup
@@ -221,7 +221,7 @@ flowchart TD
   O -->|Yes and active| Q["Create DB-backed session and HttpOnly cookie"]
   Q --> R{"School setup complete?"}
   R -->|No, school_administrator| S["Redirect to /admin/onboarding/school-setup"]
-  S --> T["Complete setup-only onboarding form"]
+  S --> T["Resume first incomplete guided setup step"]
   T --> U["Redirect to /admin/dashboard"]
   R -->|Yes| U
 ```
@@ -231,11 +231,11 @@ Database touchpoints:
 - `users`
 - `admin_profiles`
 
-### 2. Manual School Setup
+### 2. Guided Philippine School Setup
 
 Implemented.
 
-After the admin logs in, the staff profile should be linked to a real school record. First-time onboarding remains one guided form: confirm the school, add one or more school years, choose exactly one active year, then add initial grades and sections. Ongoing management uses a concise hub at `/admin/school-setup`; focused modals update school/year metadata, `/admin/school-setup/years/[yearId]` manages one year's structure, and `/admin/school-setup/rollover` handles reviewed promotion. Activation remains a separate confirmation on the hub. Registrar and finance officer accounts share the same school context through `admin_profiles.school_id`.
+After approval, a school administrator completes a resumable five-step flow: School profile, School year, Basic Education, College, and Review. The selected education scope controls which track step is required. Basic Education uses selectable Philippine level groups with editable grade and section rows; College creates the first active period plus one or more programs, their year levels, and their sections. Every Continue action saves one transaction-safe step, while final readiness is derived from the existing academic records. Ongoing management uses `/admin/school-setup`, `/admin/school-setup/years/[yearId]`, `/admin/school-setup/academics`, and `/admin/school-setup/rollover`. Registrar and finance officer accounts share the school context but cannot write setup.
 
 ```mermaid
 flowchart TD
@@ -247,17 +247,15 @@ flowchart TD
   D -->|No| F{"staff_role is school_administrator?"}
   F -->|No| G["Show ask school administrator message"]
   F -->|Yes| H["Redirect to setup-only onboarding screen"]
-  H --> I["Admin completes setup-only onboarding form"]
-  I --> J["Require admin session and school_administrator role"]
-  J --> K["Admin confirms school name and code"]
-  K --> L["Admin adds one or more school years"]
-  L --> M["Admin chooses exactly one active year"]
-  M --> N["Admin adds grade levels"]
-  N --> O["Admin adds sections for the selected setup year"]
-  O --> P["Save schools, school_years, grade_levels, sections"]
-  P --> Q["Update same-school admin_profiles.school_id"]
-  Q --> R["Redirect back to dashboard"]
-  R --> S["Admin opens School setup overview hub"]
+  H --> I["Admin resumes first incomplete wizard step"]
+  I --> J["Save profile and exactly one active school year"]
+  J --> K{"Academic offering?"}
+  K -->|Basic or Both| L["Select PH K–12 levels and editable sections"]
+  K -->|Higher or Both| M["Create active period, multiple programs/year levels, and sections"]
+  L --> N["Review scope-aware readiness"]
+  M --> N
+  N --> O["Finish and open dashboard"]
+  O --> S["Admin opens School setup overview hub"]
   S --> T["Edit school or year metadata in focused modals"]
   T --> U["Open selected-year structure page"]
   U --> V["Open dedicated rollover page when needed"]

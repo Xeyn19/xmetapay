@@ -28,7 +28,7 @@ This checklist records which migrations have been applied to production. ✅ mea
 
 ## Tuition assessment migration notes
 
-The Unified Philippine School Academic Setup feature does **not** add another SQL file. It uses `schools.education_scope` and the college academic tables already created by `2026-11-03-tuition-assessment-workflow.sql`. If that migration is already marked applied in your database, deploy the application changes only. If it is still pending, import the three pending migrations above in chronological order.
+The Unified Philippine School Academic Setup and its resumable five-step onboarding wizard do **not** add another SQL file. They use `schools.education_scope`, existing K–12 tables, and the college academic tables already created by `2026-11-03-tuition-assessment-workflow.sql`. If that migration is already marked applied in your database, deploy the application changes only. If it is still pending, import the three pending migrations above in chronological order.
 
 Apply the pending migrations in chronological order. The tuition assessment migration must run after the September 19 and September 21 migrations.
 

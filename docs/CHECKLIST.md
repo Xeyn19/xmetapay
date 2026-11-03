@@ -89,7 +89,10 @@ Done when: the full schema can be imported locally or into a new empty cPanel da
 - [x] Support one or many school years with exactly one active school year.
 - [x] Add an overview-first School setup hub with school health, all-year counts, compact active-year structure, and focused quick actions.
 - [x] Move selected-year grade/section management to `/admin/school-setup/years/[yearId]` and reviewed rollover to `/admin/school-setup/rollover`.
-- [x] Use focused modals for school identity and school-year metadata while preserving the combined first-time onboarding form.
+- [x] Use focused modals for ongoing school identity and school-year management while replacing first-time setup with a resumable five-step wizard.
+- [x] Save onboarding progress per step and resume at the first incomplete scope-aware requirement.
+- [x] Offer Philippine Kindergarten, Elementary, Junior High, and Senior High presets with editable `Section A` defaults.
+- [x] Let College-only and mixed schools create their first period plus multiple programs, program-specific year levels, and multiple sections during onboarding.
 - [x] Add an admin school-year selector for viewing historical/upcoming year data.
 - [x] Add school-year stamps to payments, wallet transactions, store transactions, and notification logs.
 - [x] Let School setup edit grade/section structure for a selected school year.
@@ -103,7 +106,7 @@ Done when: the full schema can be imported locally or into a new empty cPanel da
 - [x] Show independent K–12 and College readiness cards in the School setup hub.
 - [x] Move college program, period, section, and placement management into School setup with active/upcoming/closed year behavior.
 - [x] Make school-year activation validate the selected academic offering: K–12, College, or both structures.
-- [x] Redirect new school administrators to setup-only onboarding before showing the real dashboard.
+- [x] Redirect new school administrators to setup-only onboarding until every selected academic track is ready.
 
 Done when: the admin dashboard can load school setup data from MySQL, switch admin views by school year, keep new operational records in the active year, prepare target-year enrollments through manual rollover, and activate the next school year when ready.
 

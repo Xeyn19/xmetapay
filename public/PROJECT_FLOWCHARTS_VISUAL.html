@@ -461,14 +461,14 @@ flowchart TD
   O -->|Yes and active| Q["Create DB-backed session and HttpOnly cookie"]
   Q --> R{"School setup complete?"}
   R -->|No, school_administrator| S["Redirect to /admin/onboarding/school-setup"]
-  S --> T["Complete setup-only onboarding form"]
+  S --> T["Resume first incomplete guided setup step"]
   T --> U["Redirect to /admin/dashboard"]
   R -->|Yes| U
           </pre>
         </div>
 
-        <h3>Manual School Setup</h3>
-        <p>Implemented: first-time onboarding stays guided and combined. Ongoing management uses a concise School setup hub, focused school/year modals, a selected-year structure page, and a dedicated rollover page.</p>
+        <h3>Guided Philippine School Setup</h3>
+        <p>Implemented: first-time onboarding is a resumable five-step wizard for School profile, School year, Basic Education, College, and Review. The selected offering controls required steps; ongoing management uses the School setup hub and focused academic editors.</p>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="manual-school-setup.svg">Download SVG</button>
@@ -483,16 +483,14 @@ flowchart TD
   D -->|No| F{"staff_role is school_administrator?"}
   F -->|No| G["Show ask school administrator message"]
   F -->|Yes| H["Redirect to setup-only onboarding screen"]
-  H --> I["Admin completes setup-only onboarding form"]
-  I --> J["Require admin session and school_administrator role"]
-  J --> K["Admin confirms school name and code"]
-  K --> L["Admin adds one or more school years"]
-  L --> M["Admin chooses exactly one active year"]
-  M --> N["Admin adds grade levels"]
-  N --> O["Admin adds sections for the selected setup year"]
-  O --> P["Save schools, school_years, grade_levels, sections"]
-  P --> Q["Update same-school admin_profiles.school_id"]
-  Q --> R["Redirect back to dashboard"]
+  H --> I["Admin resumes first incomplete wizard step"]
+  I --> J["Save profile and exactly one active school year"]
+  J --> K{"Academic offering?"}
+  K -->|Basic or Both| L["Select PH K–12 levels and editable sections"]
+  K -->|Higher or Both| M["Create active period, multiple programs/year levels, and sections"]
+  L --> N["Review scope-aware readiness"]
+  M --> N
+  N --> R["Finish and open dashboard"]
   R --> S["Admin opens School setup overview hub"]
   S --> T["Edit school or year metadata in focused modals"]
   T --> U["Open selected-year structure page"]

@@ -329,7 +329,7 @@
             <tr>
               <td>Unified Basic Education / Higher Education / Both school setup</td>
               <td><code>schools</code>, <code>school_years</code>, <code>grade_levels</code>, <code>sections</code></td>
-              <td>School structure with one or many school years and one active year. An overview hub, focused metadata modals, selected-year structure page, dedicated rollover page, and aggregate company school profile reuse this schema; activation closes the previous active year.</td>
+              <td>School structure with one or many school years and one active year. A resumable five-step onboarding wizard, overview hub, focused academic editors, rollover page, and company school profile reuse this schema; no onboarding-status table or follow-up migration is required.</td>
             </tr>
             <tr>
               <td>Students</td>
@@ -685,13 +685,13 @@ flowchart TD
   C --> D["Redirect to admin login with approval message"]
   D --> E["Company super admin approves account"]
   E --> F["Admin logs in"]
-  F --> G["Redirect to setup-only onboarding"]
+  F --> G["Redirect to resumable five-step onboarding"]
   G --> H{"School setup complete?"}
   H -->|Yes| I["Use linked school context"]
   H -->|No| J{"staff_role is school_administrator?"}
   J -->|No| K["Ask a school administrator to complete setup"]
-  J -->|Yes| L["Complete school setup form"]
-  L --> M["Save school, school years, one active year, grades, and sections"]
+  J -->|Yes| L["Save required profile, year, Basic, and/or College steps"]
+  L --> M["Write to existing school and academic tables"]
   M --> N["Link same-school admin profiles to schools.id"]
   N --> I
           </pre>
@@ -934,7 +934,7 @@ flowchart LR
       <h2 id="tuition-schema-title">Tuition assessment schema extension</h2>
       <p><strong>Academic:</strong> schools → academic periods/programs/year levels → college enrollments. <strong>Pricing:</strong> fee schedules → targets/items/payment plans. <strong>Ledger:</strong> assessment batches → student assessments → assignment snapshots, credits, terms, payment allocations, and receipts.</p>
       <p>Legacy fee assignments remain standalone; deterministic assignment keys allow the same college fee in different academic periods without rewriting history.</p>
-      <p><strong>Roster UX:</strong> existing schedule-target and enrollment relationships resolve the eligible grouped roster; existing non-cancelled student assessments identify read-only duplicates. No additional schema or migration is required.</p>
+      <p><strong>Roster and onboarding UX:</strong> existing schedule-target and enrollment relationships resolve the eligible tuition roster. Guided school setup saves progress directly to existing school, school-year, K–12, and college academic records; no onboarding-status table or additional migration is required.</p>
     </section>
   </body>
 </html>

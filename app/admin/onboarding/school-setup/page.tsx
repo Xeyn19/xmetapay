@@ -4,19 +4,18 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/app/_components/brand-logo";
 import { FlashToast } from "@/app/_components/flash-toast";
 import { logoutAction } from "@/app/auth/actions";
-import { ManualSchoolSetupForm } from "@/app/admin/_components/manual-school-setup-form";
+import { GuidedSchoolSetupWizard } from "@/app/admin/_components/guided-school-setup-wizard";
 import { getAdminStaffRole } from "@/lib/admin/access";
 import { canManageSchoolSetup } from "@/lib/admin/permissions";
 import { consumeAuthFlashToast, requireRole } from "@/lib/auth/session";
 import { PRODUCT_NAME } from "@/lib/brand";
-import { getAdminSchoolContext, getAdminSchoolSetupFormData } from "@/lib/school/setup";
+import { getSchoolOnboardingState } from "@/lib/school/onboarding";
 
 export default async function AdminSchoolSetupOnboardingPage() {
   const session = await requireRole("admin");
-  const [staffRole, schoolContext, initialData, toast] = await Promise.all([
+  const [staffRole, onboardingState, toast] = await Promise.all([
     getAdminStaffRole(session.userId),
-    getAdminSchoolContext(session.userId),
-    getAdminSchoolSetupFormData(session.userId),
+    getSchoolOnboardingState(session.userId),
     consumeAuthFlashToast("admin"),
   ]);
 
@@ -24,35 +23,31 @@ export default async function AdminSchoolSetupOnboardingPage() {
     redirect("/admin/dashboard");
   }
 
-  if (schoolContext.schoolId && schoolContext.activeSchoolYear) {
-    redirect("/admin/dashboard");
-  }
-
   const logout = logoutAction.bind(null, "admin");
 
   return (
-    <main className="min-h-[100svh] overflow-x-hidden bg-[#f7f8fa] px-4 py-5 text-[#0f1117] sm:px-6 lg:px-8">
+    <main className="dashboard-theme min-h-[100svh] overflow-x-hidden bg-background px-3 py-4 text-foreground sm:px-6 sm:py-5 lg:px-8">
       <FlashToast toast={toast} />
-      <div className="mx-auto grid w-full max-w-5xl gap-5">
-        <header className="flex flex-col gap-4 rounded-xl border border-black/[0.07] bg-white px-4 py-4 shadow-sm min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between sm:px-5">
+      <div className="mx-auto grid w-full max-w-7xl gap-5">
+        <header className="flex flex-col gap-4 rounded-xl border border-border bg-card px-4 py-4 shadow-sm min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <BrandLogo />
             <div className="min-w-0">
-              <p className="text-sm font-bold tracking-[-0.02em]">{PRODUCT_NAME}</p>
-              <p className="truncate text-[12px] leading-5 text-[#5a6070]">
+              <p className="text-sm font-bold tracking-[-0.02em] text-foreground">{PRODUCT_NAME}</p>
+              <p className="truncate text-[12px] leading-5 text-muted-foreground">
                 School setup onboarding
               </p>
             </div>
           </div>
           <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center">
-            <div className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#e64a19]/20 bg-[#fff7ed] px-3 text-[12px] font-semibold text-[#bf360c]">
+            <div className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-primary/20 bg-accent px-3 text-[12px] font-semibold text-accent-foreground">
               <CheckCircle2 className="size-4" />
-              Step 1 of 1
+              Guided setup · Step {onboardingState.currentStep} of 5
             </div>
             <form action={logout}>
               <button
                 type="submit"
-                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-[12px] font-semibold text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-[12px] font-semibold text-muted-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25"
               >
                 <LogOut className="size-4" />
                 Sign out
@@ -61,23 +56,13 @@ export default async function AdminSchoolSetupOnboardingPage() {
           </div>
         </header>
 
-        <section className="rounded-xl border border-black/[0.07] bg-white shadow-sm">
-          <div className="border-b border-black/[0.07] px-4 py-5 sm:px-5">
-            <h1 className="text-2xl font-bold tracking-[-0.03em] text-[#0f1117] sm:text-3xl">
-              Set up school
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5a6070]">
-              Choose whether the school offers Basic Education, College, or both. Add an active school year, then complete the academic structure for each selected offering.
-            </p>
+        {onboardingState.warning ? (
+          <div role="alert" className="rounded-lg border border-status-warning-foreground/25 bg-status-warning-bg px-4 py-3 text-sm text-status-warning-foreground">
+            {onboardingState.warning}
           </div>
+        ) : null}
 
-          <div className="grid gap-4 bg-[#f7f8fa] px-4 py-5 sm:px-5">
-            <ManualSchoolSetupForm
-              initialData={initialData}
-              redirectTo="/admin/onboarding/school-setup"
-            />
-          </div>
-        </section>
+        <GuidedSchoolSetupWizard initialState={onboardingState} />
       </div>
     </main>
   );
