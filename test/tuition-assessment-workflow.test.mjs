@@ -60,4 +60,10 @@ test("tuition UI exposes assessment-first controls and accessible pending feedba
   assert.match(forms, /useActionState/);
   assert.match(forms, /role=\{state\.status === "error" \? "alert" : "status"\}/);
   assert.match(forms, /min-h-11/);
+  assert.match(forms, /Recommended order:/);
+  assert.match(forms, /Tuition amount per student/);
+  assert.match(forms, /Amount deducted per student/);
+  assert.match(forms, /Required/);
+  assert.match(forms, /Optional/);
+  assert.match(forms, /Select all shown/);
 });

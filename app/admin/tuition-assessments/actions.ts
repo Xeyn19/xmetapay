@@ -104,10 +104,11 @@ export async function tuitionSetupAction(_previous: AssessmentActionState, formD
 }
 
 function text(data: FormData, key: string) { return String(data.get(key) ?? "").trim(); }
-function integer(data: FormData, key: string) { const value = Number.parseInt(text(data, key), 10); if (!Number.isInteger(value) || value <= 0) throw new AssessmentWorkflowError(`Select a valid ${key}.`); return value; }
+const fieldNames: Record<string,string> = { scheduleId:"tuition package", periodId:"academic period", levelId:"program and year level", studentId:"student", sectionId:"college section" };
+function integer(data: FormData, key: string) { const value = Number.parseInt(text(data, key), 10); if (!Number.isInteger(value) || value <= 0) throw new AssessmentWorkflowError(`Please select a valid ${fieldNames[key] ?? key}.`); return value; }
 function integers(data: FormData, key: string) { return data.getAll(key).map(value => Number.parseInt(String(value), 10)).filter(value => Number.isInteger(value) && value > 0); }
 function optionalInteger(data: FormData, key: string) { const value = Number.parseInt(text(data, key), 10); return Number.isInteger(value) && value > 0 ? value : null; }
-function decimal(data: FormData, key: string) { const value = Number(text(data, key) || 0); if (!Number.isFinite(value) || value < 0) throw new AssessmentWorkflowError(`Enter a valid ${key}.`); return Math.round(value * 100) / 100; }
+function decimal(data: FormData, key: string) { const value = Number(text(data, key) || 0); if (!Number.isFinite(value) || value < 0) throw new AssessmentWorkflowError(`Please enter a valid non-negative amount for ${key === "creditAmount" ? "the deduction" : "this field"}.`); return Math.round(value * 100) / 100; }
 function planTerms(data:FormData){const names=data.getAll("termNames").map(String),percentages=data.getAll("termPercentages").map(Number),dates=data.getAll("termDates").map(String);return names.map((name,index)=>({name:name.trim(),percentage:percentages[index],date:(dates[index]??"").trim()})).filter(term=>term.name||term.date||Number.isFinite(term.percentage)&&term.percentage>0);}
 function optionalDecimal(data: FormData, key: string) { return text(data, key) ? decimal(data, key) : null; }
 function revalidateFinancialPaths() { ["/admin/tuition", "/admin/collections", "/parent/fees", "/parent/pay-tuition"].forEach(path => revalidatePath(path)); }
