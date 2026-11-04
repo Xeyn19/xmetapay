@@ -91,7 +91,8 @@ Done when: the full schema can be imported locally or into a new empty cPanel da
 - [x] Move selected-year grade/section management to `/admin/school-setup/years/[yearId]` and reviewed rollover to `/admin/school-setup/rollover`.
 - [x] Use focused modals for ongoing school identity and school-year management while replacing first-time setup with a resumable five-step wizard.
 - [x] Save onboarding progress per step and resume at the first incomplete scope-aware requirement.
-- [x] Offer Philippine Kindergarten, Elementary, Junior High, and Senior High presets with editable `Section A` defaults.
+- [x] Offer Philippine Kindergarten, Elementary, Junior High, and Senior High presets with editable section defaults.
+- [x] Configure Grade 11 and Grade 12 separately for Strengthened SHS tracks or transitional legacy tracks/strands, with sections under each actual school offering.
 - [x] Let College-only and mixed schools create their first period plus multiple programs, program-specific year levels, and multiple sections during onboarding.
 - [x] Add an admin school-year selector for viewing historical/upcoming year data.
 - [x] Add school-year stamps to payments, wallet transactions, store transactions, and notification logs.

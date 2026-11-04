@@ -83,7 +83,7 @@ School setup is shared across staff accounts. If a registrar or finance officer 
 
 `schools.education_scope` defines whether a school operates Basic Education (`basic`), Higher Education (`higher`), or both (`both`). Legacy installations continue to default to `basic`. The unified School Setup feature adds no table or column: it uses this existing field plus `academic_programs`, `program_year_levels`, `academic_periods`, `college_sections`, and `college_enrollments` from the tuition-assessment migration. Tuition package creation reads and locks this school-owned scope before accepting grade or program targets, so the finance workflow cannot create a package for an offering the school has not enabled. Target bulk selection and the collapsible installment editor are client-side form refinements and add no schema. Scope changes never delete academic or financial history, and server validation blocks unsafe narrowing while records remain on the track being removed.
 
-The guided setup wizard also adds no persistence objects. Progress is derived from and saved directly to the existing school profile, active `school_years` row, `grade_levels`/`sections`, and college academic tables. Each step uses a transaction, ownership validation, row locks, and existing unique keys for safe retries. Completion is derived from scope-aware readiness rather than an onboarding-status column.
+The guided setup wizard does not add an onboarding-status table. Progress is derived from and saved directly to the school profile, active `school_years` row, academic structures, and college tables. The Senior High refinement adds `senior_high_offerings`, because curriculum/pathway identity cannot safely be encoded in a section name. Each offering belongs to one school, school year, and Grade 11 or Grade 12 grade level and records `legacy` or `strengthened` plus `track` or `strand`. `sections.senior_high_offering_id` is nullable so existing and non-SHS sections remain compatible.
 
 ### `parent_profiles`
 
@@ -136,6 +136,11 @@ Main purpose:
 - Connect a school year, grade level, and section name.
 - Support class lists and enrollment grouping.
 - Prevent duplicate section names within the same grade and year.
+- Optionally link a Grade 11/12 section to its school-year-specific Senior High offering.
+
+### `senior_high_offerings`
+
+Stores the actual Senior High pathways offered for one grade and school year. Strengthened SHS rows use the Academic or Technical-Professional track; transitional legacy rows may use STEM, ABM, HUMSS, GAS, TVL, Sports, or Arts and Design. The table is intentionally grade-specific because Grade 11 and Grade 12 can use different curricula during implementation transition. Existing sections remain valid with a null offering link.
 
 ## Student And Guardian Tables
 

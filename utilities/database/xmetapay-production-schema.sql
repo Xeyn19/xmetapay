@@ -341,18 +341,41 @@ CREATE TABLE IF NOT EXISTS grade_levels (
   CONSTRAINT fk_grade_levels_school FOREIGN KEY (school_id) REFERENCES schools(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS senior_high_offerings (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  school_id BIGINT UNSIGNED NOT NULL,
+  school_year_id BIGINT UNSIGNED NOT NULL,
+  grade_level_id BIGINT UNSIGNED NOT NULL,
+  curriculum_version ENUM('legacy', 'strengthened') NOT NULL,
+  offering_type ENUM('track', 'strand') NOT NULL,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_senior_high_offerings_year_grade_code (school_year_id, grade_level_id, code),
+  KEY idx_senior_high_offerings_school_year (school_id, school_year_id),
+  CONSTRAINT fk_senior_high_offerings_school FOREIGN KEY (school_id) REFERENCES schools(id),
+  CONSTRAINT fk_senior_high_offerings_year FOREIGN KEY (school_year_id) REFERENCES school_years(id),
+  CONSTRAINT fk_senior_high_offerings_grade FOREIGN KEY (grade_level_id) REFERENCES grade_levels(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS sections (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   school_id BIGINT UNSIGNED NOT NULL,
   school_year_id BIGINT UNSIGNED NOT NULL,
   grade_level_id BIGINT UNSIGNED NOT NULL,
+  senior_high_offering_id BIGINT UNSIGNED NULL,
   name VARCHAR(60) NOT NULL,
 
   UNIQUE KEY uq_sections_year_grade_name (school_year_id, grade_level_id, name),
   KEY idx_sections_school_year (school_id, school_year_id),
+  KEY idx_sections_senior_high_offering (senior_high_offering_id),
   CONSTRAINT fk_sections_school FOREIGN KEY (school_id) REFERENCES schools(id),
   CONSTRAINT fk_sections_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id),
-  CONSTRAINT fk_sections_grade_level FOREIGN KEY (grade_level_id) REFERENCES grade_levels(id)
+  CONSTRAINT fk_sections_grade_level FOREIGN KEY (grade_level_id) REFERENCES grade_levels(id),
+  CONSTRAINT fk_sections_senior_high_offering FOREIGN KEY (senior_high_offering_id) REFERENCES senior_high_offerings(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS students (

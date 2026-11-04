@@ -468,7 +468,7 @@ flowchart TD
         </div>
 
         <h3>Guided Philippine School Setup</h3>
-        <p>Implemented: first-time onboarding is a resumable five-step wizard for School profile, School year, Basic Education, College, and Review. The selected offering controls required steps; ongoing management uses the School setup hub and focused academic editors.</p>
+        <p>Implemented: first-time onboarding is a resumable five-step wizard for School profile, School year, Basic Education, College, and Review. Grade 11 and Grade 12 separately choose the Strengthened SHS track or transitional legacy tracks/strands before sections are created. The selected school offering controls required steps; ongoing management uses the School setup hub and focused academic editors.</p>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="manual-school-setup.svg">Download SVG</button>
@@ -486,9 +486,10 @@ flowchart TD
   H --> I["Admin resumes first incomplete wizard step"]
   I --> J["Save profile and exactly one active school year"]
   J --> K{"Academic offering?"}
-  K -->|Basic or Both| L["Select PH K–12 levels and editable sections"]
+  K -->|Basic or Both| L["Select PH K–12 levels"]
+  L --> L2["For Grade 11/12 choose curriculum, offered tracks or legacy strands, and sections"]
   K -->|Higher or Both| M["Create active period, multiple programs/year levels, and sections"]
-  L --> N["Review scope-aware readiness"]
+  L2 --> N["Review scope-aware readiness"]
   M --> N
   N --> R["Finish and open dashboard"]
   R --> S["Admin opens School setup overview hub"]

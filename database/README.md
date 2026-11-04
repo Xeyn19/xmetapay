@@ -14,7 +14,7 @@ Schema import does not configure the runtime connection. GoDaddy Hosted Database
 
 The bundle creates the complete current table structure without inserting accounts or application data. It omits `CREATE DATABASE` and `USE xmetapay_db`, so the hosting provider keeps control of the target database. Do not import this fresh-install bundle over an existing live database as a replacement for reviewed migrations. See `utilities/database/README.md` for the safe import steps.
 
-The guided Philippine School Setup onboarding adds no database migration. It saves resumable progress to the existing school, active-year, K–12, and college academic tables. Existing installations only need the tuition-assessment migration below when its college tables have not yet been imported.
+The guided Philippine School Setup saves resumable progress to school, active-year, K–12, and college academic tables. The transition-aware Senior High refinement adds one additive migration so Grade 11 and Grade 12 sections can belong to the correct Strengthened SHS track or legacy strand for that school year.
 
 ## Import Order
 
@@ -118,6 +118,15 @@ The guided Philippine School Setup onboarding adds no database migration. It sav
    - Adds school-owned pending guardian email assignments without modifying existing student, parent, or financial records.
    - Import into the selected production database; the migration does not use a hard-coded database name.
    - Repeat imports preserve existing assignments through `CREATE TABLE IF NOT EXISTS`.
+
+24. Import `migrations/2026-11-03-tuition-assessment-workflow.sql` before enabling college academics or assessment workflows.
+   - Adds `schools.education_scope`, college academic structures, tuition schedules, assessment batches, credits, and assessment-level payment plans.
+   - Preserves legacy fee assignments, terms, payments, receipts, and reports.
+
+25. Import `migrations/2026-11-04-senior-high-offerings.sql` before using the revised Senior High onboarding step.
+   - Adds school-year and grade-specific Strengthened SHS track or legacy strand records.
+   - Adds a nullable offering link to `sections`; existing sections remain valid and are not rewritten.
+   - Safe to rerun through `information_schema` guards.
 
 ## Temporary Super Admin Seed
 

@@ -26,11 +26,17 @@ import {
   type OnboardingStepResult,
 } from "@/app/admin/onboarding/school-setup/actions";
 import type { EducationScope } from "@/lib/school/academic-offerings";
-import type { SchoolOnboardingState } from "@/lib/school/onboarding";
+import type {
+  SchoolOnboardingState,
+  SeniorHighCurriculumVersion,
+  SeniorHighOfferingType,
+} from "@/lib/school/onboarding";
 import { cn } from "@/lib/utils";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 type GradeDraft = { id: string; name: string; sections: string[] };
+type SeniorHighOfferingDraft = { id: string; code: string; name: string; offeringType: SeniorHighOfferingType; sections: string[] };
+type SeniorHighGradeDraft = { gradeName: string; curriculumVersion: SeniorHighCurriculumVersion; offerings: SeniorHighOfferingDraft[] };
 type CollegeSectionDraft = { id: string; levelNumber: number; name: string };
 type CollegeProgramDraft = { id: string; code: string; name: string; levelCount: number; sections: CollegeSectionDraft[] };
 
@@ -46,7 +52,22 @@ const phLevelGroups = [
   { id: "kindergarten", label: "Kindergarten", detail: "Pre-school level in the Philippine K–12 system.", grades: ["Kindergarten"] },
   { id: "elementary", label: "Elementary (Grades 1–6)", detail: "Primary education level.", grades: Array.from({ length: 6 }, (_, index) => `Grade ${index + 1}`) },
   { id: "junior", label: "Junior High School (Grades 7–10)", detail: "Secondary education before Senior High School.", grades: Array.from({ length: 4 }, (_, index) => `Grade ${index + 7}`) },
-  { id: "senior", label: "Senior High School (Grades 11–12)", detail: "The final two years of Basic Education.", grades: ["Grade 11", "Grade 12"] },
+  { id: "senior", label: "Senior High School (Grades 11–12)", detail: "Set the curriculum, offered tracks or legacy strands, and sections for each grade.", grades: ["Grade 11", "Grade 12"] },
+] as const;
+
+const strengthenedOfferings = [
+  { code: "ACADEMIC", name: "Academic Track", offeringType: "track" as const },
+  { code: "TECHPRO", name: "Technical-Professional Track", offeringType: "track" as const },
+] as const;
+
+const legacyOfferings = [
+  { code: "STEM", name: "Science, Technology, Engineering, and Mathematics (STEM)", offeringType: "strand" as const },
+  { code: "ABM", name: "Accountancy, Business, and Management (ABM)", offeringType: "strand" as const },
+  { code: "HUMSS", name: "Humanities and Social Sciences (HUMSS)", offeringType: "strand" as const },
+  { code: "GAS", name: "General Academic Strand (GAS)", offeringType: "strand" as const },
+  { code: "TVL", name: "Technical-Vocational-Livelihood (TVL) Track", offeringType: "track" as const },
+  { code: "SPORTS", name: "Sports Track", offeringType: "track" as const },
+  { code: "ARTS-DESIGN", name: "Arts and Design Track", offeringType: "track" as const },
 ] as const;
 
 const inputClass = "min-h-12 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-3 focus:ring-primary/15";
@@ -76,6 +97,21 @@ export function GuidedSchoolSetupWizard({ initialState }: { initialState: School
     name: grade.name,
     sections: grade.sections.length ? grade.sections : ["Section A"],
   })));
+  const [seniorHigh, setSeniorHigh] = useState<SeniorHighGradeDraft[]>(() => {
+    if (initialState.seniorHigh.length) return initialState.seniorHigh.map((grade) => ({
+      gradeName: grade.gradeName,
+      curriculumVersion: grade.curriculumVersion,
+      offerings: grade.offerings.map((offering, offeringIndex) => ({
+        id: `saved-shs-${grade.gradeName}-${offeringIndex}`,
+        ...offering,
+      })),
+    }));
+    const gradeNames = new Set(initialState.grades.map((grade) => grade.name));
+    const defaults: SeniorHighGradeDraft[] = [];
+    if (gradeNames.has("Grade 11")) defaults.push({ gradeName: "Grade 11", curriculumVersion: defaultSeniorHighCurriculum("Grade 11", initialState.activeYear?.startsOn), offerings: [] });
+    if (gradeNames.has("Grade 12")) defaults.push({ gradeName: "Grade 12", curriculumVersion: defaultSeniorHighCurriculum("Grade 12", initialState.activeYear?.startsOn), offerings: [] });
+    return defaults;
+  });
   const [periodType, setPeriodType] = useState<"semester" | "trimester" | "summer" | "custom">(initialState.college.period?.type ?? "semester");
   const [periodName, setPeriodName] = useState(initialState.college.period?.name ?? "First Semester");
   const [periodStartsOn, setPeriodStartsOn] = useState(initialState.college.period?.startsOn ?? initialState.activeYear?.startsOn ?? "");
@@ -110,7 +146,9 @@ export function GuidedSchoolSetupWizard({ initialState }: { initialState: School
   const selectedGroups = useMemo(() => new Set(phLevelGroups.filter((group) => (
     group.grades.every((gradeName) => grades.some((grade) => grade.name === gradeName))
   )).map((group) => group.id)), [grades]);
-  const totalSections = grades.reduce((sum, grade) => sum + grade.sections.filter(Boolean).length, 0);
+  const seniorHighSections = seniorHigh.reduce((sum, grade) => sum + grade.offerings.reduce((offeringSum, offering) => offeringSum + offering.sections.filter(Boolean).length, 0), 0);
+  const totalSections = grades.reduce((sum, grade) => sum + (/^Grade (11|12)$/i.test(grade.name) ? 0 : grade.sections.filter(Boolean).length), 0) + seniorHighSections;
+  const standardGradeEntries = grades.map((grade, index) => ({ grade, index })).filter(({ grade }) => !/^Grade (11|12)$/i.test(grade.name));
   const scopeHasBasic = educationScope !== "higher";
   const scopeHasCollege = educationScope !== "basic";
   const progress = Math.round(((currentStep - 1) / 4) * 100);
@@ -123,11 +161,72 @@ export function GuidedSchoolSetupWizard({ initialState }: { initialState: School
   function toggleGroup(groupId: (typeof phLevelGroups)[number]["id"]) {
     const group = phLevelGroups.find((item) => item.id === groupId);
     if (!group) return;
+    const removing = selectedGroups.has(groupId);
+    if (groupId === "senior") {
+      setSeniorHigh(removing ? [] : [
+        { gradeName: "Grade 11", curriculumVersion: defaultSeniorHighCurriculum("Grade 11", yearStartsOn), offerings: [] },
+        { gradeName: "Grade 12", curriculumVersion: defaultSeniorHighCurriculum("Grade 12", yearStartsOn), offerings: [] },
+      ]);
+    }
     setGrades((current) => {
-      if (selectedGroups.has(groupId)) return current.filter((grade) => !group.grades.includes(grade.name as never));
+      if (removing) return current.filter((grade) => !group.grades.includes(grade.name as never));
       const existing = new Set(current.map((grade) => grade.name));
-      return [...current, ...group.grades.filter((name) => !existing.has(name)).map((name) => ({ id: `${groupId}-${name}`, name, sections: ["Section A"] }))];
+      return [...current, ...group.grades.filter((name) => !existing.has(name)).map((name) => ({ id: `${groupId}-${name}`, name, sections: groupId === "senior" ? [] : ["Section A"] }))];
     });
+  }
+
+  function setSeniorHighCurriculum(gradeName: string, curriculumVersion: SeniorHighCurriculumVersion) {
+    setSeniorHigh((current) => current.map((grade) => grade.gradeName === gradeName
+      ? { gradeName, curriculumVersion, offerings: [] }
+      : grade));
+  }
+
+  function toggleSeniorHighOffering(gradeName: string, preset: { code: string; name: string; offeringType: SeniorHighOfferingType }) {
+    setSeniorHigh((current) => current.map((grade) => {
+      if (grade.gradeName !== gradeName) return grade;
+      const exists = grade.offerings.some((offering) => offering.code === preset.code);
+      if (exists) return { ...grade, offerings: grade.offerings.filter((offering) => offering.code !== preset.code) };
+      const existingUnassignedSections = grades.find((item) => item.name === gradeName)?.sections.filter(Boolean) ?? [];
+      return {
+        ...grade,
+        offerings: [...grade.offerings, {
+          id: `${gradeName}-${preset.code}-${Date.now()}`,
+          code: preset.code,
+          name: preset.name,
+          offeringType: preset.offeringType,
+          sections: grade.offerings.length === 0 && existingUnassignedSections.length
+            ? existingUnassignedSections
+            : [`${preset.code} - Section A`],
+        }],
+      };
+    }));
+  }
+
+  function updateSeniorHighSection(gradeName: string, offeringId: string, sectionIndex: number, value: string) {
+    setSeniorHigh((current) => current.map((grade) => grade.gradeName === gradeName ? {
+      ...grade,
+      offerings: grade.offerings.map((offering) => offering.id === offeringId ? {
+        ...offering,
+        sections: offering.sections.map((section, index) => index === sectionIndex ? value : section),
+      } : offering),
+    } : grade));
+  }
+
+  function addSeniorHighSection(gradeName: string, offeringId: string) {
+    setSeniorHigh((current) => current.map((grade) => grade.gradeName === gradeName ? {
+      ...grade,
+      offerings: grade.offerings.map((offering) => offering.id === offeringId ? { ...offering, sections: [...offering.sections, ""] } : offering),
+    } : grade));
+  }
+
+  function removeSeniorHighSection(gradeName: string, offeringId: string, sectionIndex: number) {
+    setSeniorHigh((current) => current.map((grade) => grade.gradeName === gradeName ? {
+      ...grade,
+      offerings: grade.offerings.map((offering) => offering.id === offeringId && offering.sections.length > 1 ? {
+        ...offering,
+        sections: offering.sections.filter((_, index) => index !== sectionIndex),
+      } : offering),
+    } : grade));
   }
 
   function updateGrade(index: number, value: string) {
@@ -243,6 +342,7 @@ export function GuidedSchoolSetupWizard({ initialState }: { initialState: School
         <form action={formAction} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           <input type="hidden" name="step" value={currentStep} />
           <input type="hidden" name="grades" value={JSON.stringify(grades.map(({ name, sections }) => ({ name, sections })))} />
+          <input type="hidden" name="seniorHigh" value={JSON.stringify(seniorHigh.map(({ gradeName, curriculumVersion, offerings }) => ({ gradeName, curriculumVersion, offerings: offerings.map(({ code, name, offeringType, sections }) => ({ code, name, offeringType, sections })) })))} />
           <input type="hidden" name="collegePrograms" value={JSON.stringify(collegePrograms.map(({ code, name, levelCount, sections }) => ({ code, name, levelCount, sections: sections.map(({ levelNumber, name: sectionName }) => ({ levelNumber, name: sectionName })) })))} />
           <div className="border-b border-border px-4 py-5 sm:px-6">
             <StepHeading step={currentStep} />
@@ -313,21 +413,31 @@ export function GuidedSchoolSetupWizard({ initialState }: { initialState: School
                     );
                   })}
                 </div>
-                {grades.length ? (
+                {standardGradeEntries.length ? (
                   <div className="overflow-hidden rounded-lg border border-border">
                     <div className="grid grid-cols-[minmax(110px,180px)_1fr] gap-3 bg-muted px-3 py-2 text-xs font-bold text-muted-foreground sm:px-4"><span>Grade level</span><span>Sections for the active year</span></div>
-                    <GradeRows grades={grades.slice(0, 3)} offset={0} onGrade={updateGrade} onSection={updateSection} onAddSection={addSection} onRemoveSection={removeSection} />
-                    {grades.length > 3 ? (
+                    <GradeRows entries={standardGradeEntries.slice(0, 3)} onGrade={updateGrade} onSection={updateSection} onAddSection={addSection} onRemoveSection={removeSection} />
+                    {standardGradeEntries.length > 3 ? (
                       <details className="border-t border-border">
-                        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-4 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25">{grades.length - 3} more grade levels <ChevronDown className="size-4" /></summary>
-                        <GradeRows grades={grades.slice(3)} offset={3} onGrade={updateGrade} onSection={updateSection} onAddSection={addSection} onRemoveSection={removeSection} />
+                        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-4 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25">{standardGradeEntries.length - 3} more grade levels <ChevronDown className="size-4" /></summary>
+                        <GradeRows entries={standardGradeEntries.slice(3)} onGrade={updateGrade} onSection={updateSection} onAddSection={addSection} onRemoveSection={removeSection} />
                       </details>
                     ) : null}
                   </div>
-                ) : (
+                ) : !selectedGroups.has("senior") ? (
                   <div className="rounded-lg border border-dashed border-border bg-muted px-4 py-8 text-center text-sm text-muted-foreground">Select at least one Philippine education level to prepare its grades and sections.</div>
-                )}
-                <div className="rounded-lg border border-status-info-foreground/20 bg-status-info-bg p-3 text-xs leading-5 text-status-info-foreground"><Info className="mr-2 inline size-4" />Grade labels stay in the school catalog. Sections belong to the active school year.</div>
+                ) : null}
+                {selectedGroups.has("senior") ? (
+                  <SeniorHighSetup
+                    grades={seniorHigh}
+                    onCurriculum={setSeniorHighCurriculum}
+                    onToggleOffering={toggleSeniorHighOffering}
+                    onSection={updateSeniorHighSection}
+                    onAddSection={addSeniorHighSection}
+                    onRemoveSection={removeSeniorHighSection}
+                  />
+                ) : null}
+                <div className="rounded-lg border border-status-info-foreground/20 bg-status-info-bg p-3 text-xs leading-5 text-status-info-foreground"><Info className="mr-2 inline size-4" />Grade labels stay in the school catalog. Sections and Senior High offerings belong to the active school year.</div>
               </>
             ) : null}
 
@@ -398,7 +508,7 @@ export function GuidedSchoolSetupWizard({ initialState }: { initialState: School
               <div className="grid gap-4">
                 <ReviewCard title="School profile" onEdit={() => setCurrentStep(1)} rows={[["School", schoolName], ["Code", schoolCode], ["Offering", scopeLabel(educationScope)]]} />
                 <ReviewCard title="Active school year" onEdit={() => setCurrentStep(2)} rows={[["School year", yearName || "Incomplete"], ["Dates", yearStartsOn && yearEndsOn ? `${yearStartsOn} to ${yearEndsOn}` : "Incomplete"]]} />
-                {scopeHasBasic ? <ReviewCard title="Basic Education" onEdit={() => setCurrentStep(3)} rows={[["Grade levels", String(grades.length)], ["Sections", String(totalSections)], ["Selected levels", [...selectedGroups].map((id) => phLevelGroups.find((group) => group.id === id)?.label).filter(Boolean).join(", ") || "Incomplete"]]} /> : <SkippedCard title="Basic Education" />}
+                {scopeHasBasic ? <ReviewCard title="Basic Education" onEdit={() => setCurrentStep(3)} rows={[["Grade levels", String(grades.length)], ["Sections", String(totalSections)], ["Selected levels", [...selectedGroups].map((id) => phLevelGroups.find((group) => group.id === id)?.label).filter(Boolean).join(", ") || "Incomplete"], ["Senior High offerings", seniorHigh.length ? seniorHigh.map((grade) => `${grade.gradeName}: ${grade.offerings.map((offering) => offering.code).join(", ") || "Incomplete"}`).join(" · ") : "Not selected"]]} /> : <SkippedCard title="Basic Education" />}
                 {scopeHasCollege ? <ReviewCard title="Higher Education" onEdit={() => setCurrentStep(4)} rows={[["Period", periodName || "Incomplete"], ["Programs", collegePrograms.filter((program) => program.code.trim() && program.name.trim()).map((program) => `${program.code} — ${program.name}`).join(", ") || "Incomplete"], ["Program count", String(collegePrograms.length)], ["Sections", String(collegePrograms.reduce((total, program) => total + program.sections.filter((section) => section.name.trim()).length, 0))]]} /> : <SkippedCard title="Higher Education" />}
                 <div className="rounded-lg border border-status-success-foreground/20 bg-status-success-bg p-4 text-sm text-status-success-foreground"><strong>Ready to finish?</strong><p className="mt-1">After confirmation, you can add students, additional structures, and tuition packages from the administrator dashboard.</p></div>
               </div>
@@ -458,8 +568,67 @@ function OfferingCard({ value, selected, onSelect, title, detail, icon: Icon }: 
   return <label className={cn("relative flex min-h-36 cursor-pointer flex-col rounded-xl border p-4 transition focus-within:ring-3 focus-within:ring-primary/25", selected ? "border-primary bg-accent" : "border-border bg-card hover:bg-muted/60")}><input type="radio" checked={selected} onChange={() => onSelect(value)} className="sr-only" /><span className={cn("mb-3 grid size-10 place-items-center rounded-lg", selected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")}><Icon className="size-5" /></span><strong className="text-sm text-foreground">{title}</strong><span className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</span><span className="absolute right-3 top-3">{selected ? <CheckCircle2 className="size-5 text-primary" /> : <Circle className="size-5 text-muted-foreground" />}</span></label>;
 }
 
-function GradeRows({ grades, offset, onGrade, onSection, onAddSection, onRemoveSection }: { grades: GradeDraft[]; offset: number; onGrade: (index: number, value: string) => void; onSection: (grade: number, section: number, value: string) => void; onAddSection: (grade: number) => void; onRemoveSection: (grade: number, section: number) => void }) {
-  return <div className="divide-y divide-border">{grades.map((grade, localIndex) => { const gradeIndex = offset + localIndex; return <div key={grade.id} className="grid gap-3 px-3 py-3 sm:grid-cols-[minmax(110px,180px)_1fr] sm:px-4"><input aria-label={`Grade level ${gradeIndex + 1}`} value={grade.name} onChange={(event) => onGrade(gradeIndex, event.target.value)} className={cn(inputClass, "min-h-11")} /> <div className="grid gap-2">{grade.sections.map((section, sectionIndex) => <div key={`${grade.id}-${sectionIndex}`} className="flex min-w-0 gap-2"><input aria-label={`${grade.name} section ${sectionIndex + 1}`} value={section} onChange={(event) => onSection(gradeIndex, sectionIndex, event.target.value)} className={cn(inputClass, "min-h-11 min-w-0 flex-1")} /><button type="button" aria-label={`Remove ${grade.name} section ${sectionIndex + 1}`} disabled={grade.sections.length === 1} onClick={() => onRemoveSection(gradeIndex, sectionIndex)} className={cn(secondaryButton, "size-11 shrink-0 px-0")}><Trash2 className="size-4" /></button></div>)}<button type="button" onClick={() => onAddSection(gradeIndex)} className="inline-flex min-h-11 items-center gap-2 justify-self-start px-1 text-xs font-semibold text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25"><Plus className="size-4" />Add section</button></div></div>; })}</div>;
+function GradeRows({ entries, onGrade, onSection, onAddSection, onRemoveSection }: { entries: Array<{ grade: GradeDraft; index: number }>; onGrade: (index: number, value: string) => void; onSection: (grade: number, section: number, value: string) => void; onAddSection: (grade: number) => void; onRemoveSection: (grade: number, section: number) => void }) {
+  return <div className="divide-y divide-border">{entries.map(({ grade, index: gradeIndex }) => <div key={grade.id} className="grid gap-3 px-3 py-3 sm:grid-cols-[minmax(110px,180px)_1fr] sm:px-4"><input aria-label={`Grade level ${gradeIndex + 1}`} value={grade.name} onChange={(event) => onGrade(gradeIndex, event.target.value)} className={cn(inputClass, "min-h-11")} /> <div className="grid gap-2">{grade.sections.map((section, sectionIndex) => <div key={`${grade.id}-${sectionIndex}`} className="flex min-w-0 gap-2"><input aria-label={`${grade.name} section ${sectionIndex + 1}`} value={section} onChange={(event) => onSection(gradeIndex, sectionIndex, event.target.value)} className={cn(inputClass, "min-h-11 min-w-0 flex-1")} /><button type="button" aria-label={`Remove ${grade.name} section ${sectionIndex + 1}`} disabled={grade.sections.length === 1} onClick={() => onRemoveSection(gradeIndex, sectionIndex)} className={cn(secondaryButton, "size-11 shrink-0 px-0")}><Trash2 className="size-4" /></button></div>)}<button type="button" onClick={() => onAddSection(gradeIndex)} className="inline-flex min-h-11 items-center gap-2 justify-self-start px-1 text-xs font-semibold text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25"><Plus className="size-4" />Add section</button></div></div>)}</div>;
+}
+
+function SeniorHighSetup({ grades, onCurriculum, onToggleOffering, onSection, onAddSection, onRemoveSection }: {
+  grades: SeniorHighGradeDraft[];
+  onCurriculum: (gradeName: string, curriculum: SeniorHighCurriculumVersion) => void;
+  onToggleOffering: (gradeName: string, preset: { code: string; name: string; offeringType: SeniorHighOfferingType }) => void;
+  onSection: (gradeName: string, offeringId: string, sectionIndex: number, value: string) => void;
+  onAddSection: (gradeName: string, offeringId: string) => void;
+  onRemoveSection: (gradeName: string, offeringId: string, sectionIndex: number) => void;
+}) {
+  return <section className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+    <div>
+      <h2 className="text-base font-bold text-foreground">Senior High School curriculum and offerings</h2>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">Configure Grade 11 and Grade 12 separately. During the current transition, they may use different curricula.</p>
+    </div>
+    <div className="rounded-lg border border-status-info-foreground/20 bg-status-info-bg p-3 text-sm leading-6 text-status-info-foreground">
+      <strong>For SY 2026–2027:</strong> incoming Grade 11 uses the Strengthened SHS Curriculum. Grade 12 generally remains under the legacy curriculum, except participating pilot schools. Strengthened SHS uses tracks—not fixed strands.
+    </div>
+    {grades.map((grade) => {
+      const presets = grade.curriculumVersion === "strengthened" ? strengthenedOfferings : legacyOfferings;
+      return <section key={grade.gradeName} className="overflow-hidden rounded-lg border border-border">
+        <div className="grid gap-3 border-b border-border bg-muted/50 p-4 md:grid-cols-[1fr_minmax(230px,320px)] md:items-end">
+          <div><h3 className="font-bold text-foreground">{grade.gradeName}</h3><p className="mt-1 text-xs leading-5 text-muted-foreground">Choose the curriculum actually used by this grade for the active school year.</p></div>
+          <Field label={`Curriculum for ${grade.gradeName}`} required>
+            <select aria-label={`Curriculum for ${grade.gradeName}`} value={grade.curriculumVersion} onChange={(event) => onCurriculum(grade.gradeName, event.target.value as SeniorHighCurriculumVersion)} className={inputClass}>
+              <option value="strengthened">Strengthened SHS Curriculum</option>
+              <option value="legacy">Legacy SHS Curriculum</option>
+            </select>
+          </Field>
+        </div>
+        <div className="grid gap-4 p-4">
+          <fieldset className="grid gap-2">
+            <legend className="text-sm font-bold text-foreground">What does your school offer for {grade.gradeName}? <span className="text-destructive">*</span></legend>
+            <p className="text-xs leading-5 text-muted-foreground">Select only the tracks or legacy strands your school can actually deliver.</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {presets.map((preset) => {
+                const checked = grade.offerings.some((offering) => offering.code === preset.code);
+                return <label key={preset.code} className={cn("flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5", checked ? "border-primary bg-accent" : "border-border bg-card hover:bg-muted/60")}>
+                  <input type="checkbox" checked={checked} onChange={() => onToggleOffering(grade.gradeName, preset)} className="mt-0.5 size-5 accent-primary" />
+                  <span className="min-w-0"><strong className="block text-sm text-foreground">{preset.code}</strong><span className="block text-xs leading-5 text-muted-foreground">{preset.name}</span></span>
+                </label>;
+              })}
+            </div>
+          </fieldset>
+          {grade.offerings.length ? <div className="grid gap-3 border-t border-border pt-4">
+            <h4 className="text-sm font-bold text-foreground">Sections by Senior High offering</h4>
+            {grade.offerings.map((offering) => <div key={offering.id} className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
+              <div><strong className="text-sm text-foreground">{offering.code}</strong><span className="ml-2 text-xs text-muted-foreground">{offering.name}</span></div>
+              {offering.sections.map((section, sectionIndex) => <div key={`${offering.id}-${sectionIndex}`} className="flex min-w-0 gap-2">
+                <input aria-label={`${grade.gradeName} ${offering.code} section ${sectionIndex + 1}`} value={section} onChange={(event) => onSection(grade.gradeName, offering.id, sectionIndex, event.target.value)} className={cn(inputClass, "min-w-0 flex-1")} placeholder="Example: Section A" />
+                <button type="button" aria-label={`Remove ${offering.code} section ${sectionIndex + 1}`} disabled={offering.sections.length === 1} onClick={() => onRemoveSection(grade.gradeName, offering.id, sectionIndex)} className={cn(secondaryButton, "size-12 shrink-0 px-0")}><Trash2 className="size-4" /></button>
+              </div>)}
+              <button type="button" onClick={() => onAddSection(grade.gradeName, offering.id)} className="inline-flex min-h-11 items-center gap-2 justify-self-start px-1 text-xs font-semibold text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25"><Plus className="size-4" />Add section to {offering.code}</button>
+            </div>)}
+          </div> : <div className="rounded-lg border border-dashed border-border bg-muted px-4 py-5 text-center text-sm text-muted-foreground">Select at least one offered {grade.curriculumVersion === "strengthened" ? "track" : "strand"} for {grade.gradeName}.</div>}
+        </div>
+      </section>;
+    })}
+  </section>;
 }
 
 function NumberedSection({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
@@ -500,4 +669,11 @@ function suggestSchoolCode(schoolName: string) {
     .map((word) => word[0])
     .join("")
     .slice(0, 12) || "SCHOOL";
+}
+
+function defaultSeniorHighCurriculum(gradeName: "Grade 11" | "Grade 12", schoolYearStartsOn?: string): SeniorHighCurriculumVersion {
+  const startYear = Number(schoolYearStartsOn?.slice(0, 4));
+  if (!Number.isInteger(startYear)) return gradeName === "Grade 11" ? "strengthened" : "legacy";
+  if (gradeName === "Grade 11") return startYear >= 2026 ? "strengthened" : "legacy";
+  return startYear >= 2027 ? "strengthened" : "legacy";
 }

@@ -55,6 +55,7 @@ export async function saveOnboardingStepAction(
     } else if (step === 3) {
       await saveBasicEducationStep(session.userId, {
         grades: parseGrades(textValue(formData, "grades")),
+        seniorHigh: parseSeniorHigh(textValue(formData, "seniorHigh")),
       });
     } else if (step === 4) {
       await saveCollegeInitialStep(session.userId, {
@@ -97,6 +98,31 @@ export async function saveOnboardingStepAction(
     if (typeof error === "object" && error !== null && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")) throw error;
     console.error("[school-onboarding:save]", error instanceof Error ? error.message : error);
     return { status: "error", message: "School setup could not be saved. Confirm MySQL/XAMPP is running and try again." };
+  }
+}
+
+function parseSeniorHigh(value: string): BasicEducationSetupDraft["seniorHigh"] {
+  try {
+    const parsed = JSON.parse(value) as Array<{
+      gradeName?: unknown;
+      curriculumVersion?: unknown;
+      offerings?: unknown;
+    }>;
+    return parsed.map((grade) => ({
+      gradeName: String(grade.gradeName ?? ""),
+      curriculumVersion: String(grade.curriculumVersion ?? "") as BasicEducationSetupDraft["seniorHigh"][number]["curriculumVersion"],
+      offerings: Array.isArray(grade.offerings) ? grade.offerings.map((offering) => {
+        const item = offering as { code?: unknown; name?: unknown; offeringType?: unknown; sections?: unknown };
+        return {
+          code: String(item.code ?? ""),
+          name: String(item.name ?? ""),
+          offeringType: String(item.offeringType ?? "") as BasicEducationSetupDraft["seniorHigh"][number]["offerings"][number]["offeringType"],
+          sections: Array.isArray(item.sections) ? item.sections.map(String) : [],
+        };
+      }) : [],
+    }));
+  } catch {
+    return [];
   }
 }
 
