@@ -26,9 +26,26 @@ test("Basic Education uses selectable Philippine level groups and editable Secti
   for (const label of ["Kindergarten", "Elementary (Grades 1–6)", "Junior High School (Grades 7–10)", "Senior High School (Grades 11–12)"]) {
     assert.match(wizard, new RegExp(label.replace(/[–()]/g, ".")));
   }
-  assert.match(wizard, /sections: \["Section A"\]/);
+  assert.match(wizard, /groupId === "senior" \? \[\] : \["Section A"\]/);
   assert.match(wizard, /Add section/);
   assert.match(read("lib/school/onboarding.ts"), /Every selected grade needs at least one section/);
+});
+
+test("Senior High setup supports the strengthened curriculum and transitional legacy strands", () => {
+  const wizard = read("app/admin/_components/guided-school-setup-wizard.tsx");
+  const helper = read("lib/school/onboarding.ts");
+  const actions = read("app/admin/onboarding/school-setup/actions.ts");
+
+  assert.match(wizard, /Strengthened SHS Curriculum/);
+  assert.match(wizard, /Legacy SHS Curriculum/);
+  assert.match(wizard, /Technical-Professional Track/);
+  for (const code of ["STEM", "ABM", "HUMSS", "GAS", "TVL"]) assert.match(wizard, new RegExp(code));
+  assert.match(wizard, /Strengthened SHS uses tracks—not fixed strands/);
+  assert.match(wizard, /Sections by/);
+  assert.match(actions, /parseSeniorHigh/);
+  assert.match(helper, /senior_high_offerings/);
+  assert.match(helper, /Choose at least one offered track or strand/);
+  assert.match(helper, /senior_high_offering_id/);
 });
 
 test("onboarding actions authenticate, authorize, save per step, and keep retries idempotent", () => {
@@ -57,7 +74,7 @@ test("onboarding actions authenticate, authorize, save per step, and keep retrie
   assert.match(helper, /Program code .* is listed more than once/);
 });
 
-test("guided onboarding requires no new schema or migration", () => {
+test("guided onboarding uses existing academic tables plus the additive Senior High schema", () => {
   const helper = read("lib/school/onboarding.ts");
   assert.doesNotMatch(helper, /ALTER TABLE|CREATE TABLE/);
   assert.match(helper, /FROM schools/);
@@ -65,4 +82,19 @@ test("guided onboarding requires no new schema or migration", () => {
   assert.match(helper, /grade_levels/);
   assert.match(helper, /academic_programs/);
   assert.match(helper, /academic_periods/);
+  assert.match(helper, /senior_high_offerings/);
+  assert.match(helper, /senior_high_offering_id/);
+});
+
+test("Senior High migration is additive, guarded, and represented in the fresh schema", () => {
+  const migration = read("database/migrations/2026-11-04-senior-high-offerings.sql");
+  const schema = read("database/full-schema-v1.sql");
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS senior_high_offerings/);
+  assert.match(migration, /information_schema\.COLUMNS/);
+  assert.match(migration, /information_schema\.STATISTICS/);
+  assert.match(migration, /information_schema\.TABLE_CONSTRAINTS/);
+  assert.match(migration, /senior_high_offering_id/);
+  assert.match(schema, /curriculum_version ENUM\('legacy', 'strengthened'\)/);
+  assert.match(schema, /offering_type ENUM\('track', 'strand'\)/);
+  assert.match(schema, /fk_sections_senior_high_offering/);
 });

@@ -235,7 +235,7 @@ Database touchpoints:
 
 Implemented.
 
-After approval, a school administrator completes a resumable five-step flow: School profile, School year, Basic Education, College, and Review. The selected education scope controls which track step is required. Basic Education uses selectable Philippine level groups with editable grade and section rows; College creates the first active period plus one or more programs, their year levels, and their sections. Every Continue action saves one transaction-safe step, while final readiness is derived from the existing academic records. Ongoing management uses `/admin/school-setup`, `/admin/school-setup/years/[yearId]`, `/admin/school-setup/academics`, and `/admin/school-setup/rollover`. Registrar and finance officer accounts share the school context but cannot write setup.
+After approval, a school administrator completes a resumable five-step flow: School profile, School year, Basic Education, College, and Review. The selected education scope controls which track step is required. Basic Education uses selectable Philippine level groups; Grade 11 and Grade 12 are configured separately with a Strengthened SHS track or transitional legacy track/strand, then sections are created under the offerings the school actually provides. College creates the first active period plus one or more programs, their year levels, and their sections. Every Continue action saves one transaction-safe step, while final readiness is derived from academic records. Ongoing management uses `/admin/school-setup`, `/admin/school-setup/years/[yearId]`, `/admin/school-setup/academics`, and `/admin/school-setup/rollover`. Registrar and finance officer accounts share the school context but cannot write setup.
 
 ```mermaid
 flowchart TD
@@ -250,9 +250,10 @@ flowchart TD
   H --> I["Admin resumes first incomplete wizard step"]
   I --> J["Save profile and exactly one active school year"]
   J --> K{"Academic offering?"}
-  K -->|Basic or Both| L["Select PH K–12 levels and editable sections"]
+  K -->|Basic or Both| L["Select PH K–12 levels"]
+  L --> L2["For Grade 11/12 choose curriculum, offered tracks or legacy strands, and sections"]
   K -->|Higher or Both| M["Create active period, multiple programs/year levels, and sections"]
-  L --> N["Review scope-aware readiness"]
+  L2 --> N["Review scope-aware readiness"]
   M --> N
   N --> O["Finish and open dashboard"]
   O --> S["Admin opens School setup overview hub"]
@@ -270,6 +271,7 @@ Database touchpoints:
 - `schools`
 - `school_years`
 - `grade_levels`
+- `senior_high_offerings`
 - `sections`
 
 ### 3. Admin School-Year View Context

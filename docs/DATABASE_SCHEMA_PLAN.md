@@ -6,7 +6,7 @@ XMETA EDU uses one MySQL database for three connected access areas:
 
 - Company super admin: XMETA EDU monitoring for schools, school admin account access, and read-only aggregate school population profiles.
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
-- School setup supports Basic Education, Higher Education, or both through the existing `schools.education_scope` contract; tuition schedule creation uses the same field as its server-enforced audience boundary. Target Select all/Clear and the collapsed optional installment editor change only the form experience. The unified hub, resumable five-step onboarding wizard, tuition alignment, and these form refinements require no additional migration.
+- School setup supports Basic Education, Higher Education, or both through `schools.education_scope`; tuition schedule creation uses the same server-enforced audience boundary. Senior High offerings are modeled per grade and school year so Strengthened SHS tracks and transitional legacy strands remain distinct. The additive `2026-11-04-senior-high-offerings.sql` migration preserves existing sections through a nullable relationship.
 - Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
 Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
@@ -134,7 +134,7 @@ The following tables extend the current auth schema into the full dashboard and 
 
 ### School Setup
 
-First-time school administrators complete School profile, School year, Basic Education, College, and Review steps. Each required step writes idempotently to the existing school-owned tables; skipped tracks create no placeholder records. The wizard derives resume position and final completion from the same active-year and per-track readiness queries used by the administrator layout, so no draft/status table is required.
+First-time school administrators complete School profile, School year, Basic Education, College, and Review steps. Each required step writes idempotently to school-owned tables; skipped tracks create no placeholder records. Senior High selection creates grade/year offerings and associates each section with its actual track or legacy strand. The wizard derives resume position and final completion from active-year and per-track readiness, so no draft/status table is required.
 
 #### `schools`
 
@@ -971,5 +971,5 @@ The same extension supplies the college academic tables consumed by the unified 
 - Schedule lifecycle: draft → approved → archived; approved records are immutable in application actions.
 - Posting: preview fingerprint + transaction locks + unique submission-token hash.
 - Money: immutable gross charge, separately allocated credits, compatible net `amount_due`, percentage terms, and payment allocations to underlying lines.
-- Migration: `database/migrations/2026-11-03-tuition-assessment-workflow.sql` for existing installations; `database/full-schema-v1.sql` for fresh installs.
+- Migrations for existing installations: `database/migrations/2026-11-03-tuition-assessment-workflow.sql`, followed by `database/migrations/2026-11-04-senior-high-offerings.sql`; `database/full-schema-v1.sql` remains the fresh-install source.
 - Package-first roster UX: reads existing schedule target, enrollment, academic-period, and student-assessment relationships; it adds no tables, columns, indexes, or follow-up migration.

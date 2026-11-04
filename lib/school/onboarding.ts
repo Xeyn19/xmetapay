@@ -24,6 +24,21 @@ export type SchoolYearDraft = {
 
 export type BasicEducationSetupDraft = {
   grades: Array<{ name: string; sections: string[] }>;
+  seniorHigh: SeniorHighGradeSetupDraft[];
+};
+
+export type SeniorHighCurriculumVersion = "legacy" | "strengthened";
+export type SeniorHighOfferingType = "track" | "strand";
+
+export type SeniorHighGradeSetupDraft = {
+  gradeName: string;
+  curriculumVersion: SeniorHighCurriculumVersion;
+  offerings: Array<{
+    code: string;
+    name: string;
+    offeringType: SeniorHighOfferingType;
+    sections: string[];
+  }>;
 };
 
 export type CollegeInitialSetupDraft = {
@@ -46,6 +61,7 @@ export type SchoolOnboardingState = {
   educationScope: EducationScope;
   activeYear: { id: number; name: string; startsOn: string; endsOn: string } | null;
   grades: Array<{ name: string; sections: string[] }>;
+  seniorHigh: SeniorHighGradeSetupDraft[];
   college: {
     period: { name: string; type: CollegeInitialSetupDraft["periodType"]; startsOn: string; endsOn: string } | null;
     programs: Array<{
@@ -123,15 +139,25 @@ export async function getSchoolOnboardingState(userId: number): Promise<SchoolOn
     const activeYear = year ? { id: year.id, name: year.name, startsOn: year.starts_on, endsOn: year.ends_on } : null;
     const [gradeRows, periodRows, programRows, sectionRows] = await Promise.all([
       activeYear
-        ? pool.execute<Array<RowDataPacket & { grade_name: string; section_name: string | null }>>(
-            `SELECT gl.name AS grade_name, sec.name AS section_name
+        ? pool.execute<Array<RowDataPacket & {
+            grade_name: string;
+            section_name: string | null;
+            curriculum_version: SeniorHighCurriculumVersion | null;
+            offering_type: SeniorHighOfferingType | null;
+            offering_code: string | null;
+            offering_name: string | null;
+          }>>(
+            `SELECT gl.name AS grade_name, sec.name AS section_name,
+                    sho.curriculum_version, sho.offering_type,
+                    sho.code AS offering_code, sho.name AS offering_name
              FROM grade_levels gl
              LEFT JOIN sections sec ON sec.grade_level_id = gl.id AND sec.school_year_id = :yearId
+             LEFT JOIN senior_high_offerings sho ON sho.id = sec.senior_high_offering_id
              WHERE gl.school_id = :schoolId
-             ORDER BY gl.sort_order, gl.name, sec.name`,
+             ORDER BY gl.sort_order, gl.name, sho.sort_order, sho.name, sec.name`,
             { schoolId, yearId: activeYear.id },
           )
-        : Promise.resolve([[]] as unknown as [Array<RowDataPacket & { grade_name: string; section_name: string | null }>, unknown]),
+        : Promise.resolve([[]] as unknown as [Array<RowDataPacket>, unknown]),
       activeYear
         ? pool.execute<Array<RowDataPacket & { name: string; period_type: CollegeInitialSetupDraft["periodType"]; starts_on: string; ends_on: string }>>(
             `SELECT name, period_type, DATE_FORMAT(starts_on, '%Y-%m-%d') starts_on,
@@ -166,10 +192,30 @@ export async function getSchoolOnboardingState(userId: number): Promise<SchoolOn
     ]);
 
     const grades = new Map<string, string[]>();
+    const seniorHigh = new Map<string, SeniorHighGradeSetupDraft>();
     for (const row of gradeRows[0]) {
       const sections = grades.get(row.grade_name) ?? [];
       if (row.section_name) sections.push(row.section_name);
       grades.set(row.grade_name, sections);
+      if (row.offering_code && row.offering_name && row.curriculum_version && row.offering_type) {
+        const grade: SeniorHighGradeSetupDraft = seniorHigh.get(row.grade_name) ?? {
+          gradeName: row.grade_name,
+          curriculumVersion: row.curriculum_version,
+          offerings: [],
+        };
+        let offering = grade.offerings.find((item) => item.code === row.offering_code);
+        if (!offering) {
+          offering = {
+            code: row.offering_code,
+            name: row.offering_name,
+            offeringType: row.offering_type,
+            sections: [],
+          };
+          grade.offerings.push(offering);
+        }
+        if (row.section_name) offering.sections.push(row.section_name);
+        seniorHigh.set(row.grade_name, grade);
+      }
     }
     const academics = await getSchoolAcademicReadiness(schoolId, activeYear?.id ?? null);
     const scope = profile.education_scope ?? "basic";
@@ -195,6 +241,7 @@ export async function getSchoolOnboardingState(userId: number): Promise<SchoolOn
       educationScope: scope,
       activeYear,
       grades: [...grades].map(([name, sections]) => ({ name, sections })),
+      seniorHigh: [...seniorHigh.values()],
       college: {
         period: period ? { name: period.name, type: period.period_type, startsOn: period.starts_on, endsOn: period.ends_on } : null,
         programs: programRows[0].map((program) => ({
@@ -309,8 +356,30 @@ export async function saveSchoolYearStep(userId: number, draft: SchoolYearDraft)
 
 export async function saveBasicEducationStep(userId: number, draft: BasicEducationSetupDraft) {
   const grades = normalizeGrades(draft.grades);
+  const seniorHigh = normalizeSeniorHigh(draft.seniorHigh);
   if (!grades.length) throw new SchoolOnboardingError("Choose at least one Philippine education level.", "grades");
-  if (grades.some((grade) => !grade.sections.length)) throw new SchoolOnboardingError("Every selected grade needs at least one section.", "grades");
+  const seniorHighNames = new Set(seniorHigh.map((grade) => grade.gradeName.toLowerCase()));
+  if (grades.some((grade) => !seniorHighNames.has(grade.name.toLowerCase()) && !grade.sections.length)) {
+    throw new SchoolOnboardingError("Every selected grade needs at least one section.", "grades");
+  }
+  for (const grade of seniorHigh) {
+    if (!grades.some((item) => item.name.toLowerCase() === grade.gradeName.toLowerCase())) {
+      throw new SchoolOnboardingError(`${grade.gradeName} is not selected.`, "seniorHigh");
+    }
+    if (!grade.offerings.length) throw new SchoolOnboardingError(`Choose at least one offered track or strand for ${grade.gradeName}.`, "seniorHigh");
+    if (grade.offerings.some((offering) => !offering.sections.length)) {
+      throw new SchoolOnboardingError(`Every ${grade.gradeName} offering needs at least one section.`, "seniorHigh");
+    }
+    const sectionNames = grade.offerings.flatMap((offering) => offering.sections.map((section) => section.toLowerCase()));
+    if (new Set(sectionNames).size !== sectionNames.length) {
+      throw new SchoolOnboardingError(`Section names must be unique across ${grade.gradeName} offerings. Example: STEM - Section A and ABM - Section A.`, "seniorHigh");
+    }
+  }
+  for (const grade of grades.filter((item) => /^grade\s+(11|12)$/i.test(item.name))) {
+    if (!seniorHighNames.has(grade.name.toLowerCase())) {
+      throw new SchoolOnboardingError(`Choose the curriculum and offered tracks or strands for ${grade.name}.`, "seniorHigh");
+    }
+  }
 
   return withTransaction(async (connection) => {
     const context = await lockSchoolContext(connection, userId);
@@ -323,6 +392,40 @@ export async function saveBasicEducationStep(userId: number, draft: BasicEducati
         { schoolId: context.school_id, name: grade.name, sortOrder: index + 1 },
       );
       const gradeLevelId = Number(result.insertId);
+      const seniorHighGrade = seniorHigh.find((item) => item.gradeName.toLowerCase() === grade.name.toLowerCase());
+      if (seniorHighGrade) {
+        for (const [offeringIndex, offering] of seniorHighGrade.offerings.entries()) {
+          const [offeringResult] = await connection.execute<ResultSetHeader>(
+            `INSERT INTO senior_high_offerings
+               (school_id, school_year_id, grade_level_id, curriculum_version, offering_type, code, name, sort_order)
+             VALUES
+               (:schoolId, :yearId, :gradeLevelId, :curriculumVersion, :offeringType, :code, :name, :sortOrder)
+             ON DUPLICATE KEY UPDATE curriculum_version = VALUES(curriculum_version),
+               offering_type = VALUES(offering_type), name = VALUES(name), sort_order = VALUES(sort_order),
+               id = LAST_INSERT_ID(id)`,
+            {
+              schoolId: context.school_id,
+              yearId: context.school_year_id,
+              gradeLevelId,
+              curriculumVersion: seniorHighGrade.curriculumVersion,
+              offeringType: offering.offeringType,
+              code: offering.code,
+              name: offering.name,
+              sortOrder: offeringIndex + 1,
+            },
+          );
+          const offeringId = Number(offeringResult.insertId);
+          for (const section of offering.sections) {
+            await connection.execute(
+              `INSERT INTO sections (school_id, school_year_id, grade_level_id, senior_high_offering_id, name)
+               VALUES (:schoolId, :yearId, :gradeLevelId, :offeringId, :section)
+               ON DUPLICATE KEY UPDATE senior_high_offering_id = VALUES(senior_high_offering_id), school_id = VALUES(school_id)`,
+              { schoolId: context.school_id, yearId: context.school_year_id, gradeLevelId, offeringId, section },
+            );
+          }
+        }
+        continue;
+      }
       for (const section of grade.sections) {
         await connection.execute(
           `INSERT INTO sections (school_id, school_year_id, grade_level_id, name)
@@ -458,6 +561,34 @@ function normalizeGrades(grades: BasicEducationSetupDraft["grades"]) {
   });
 }
 
+function normalizeSeniorHigh(grades: BasicEducationSetupDraft["seniorHigh"]): SeniorHighGradeSetupDraft[] {
+  const seenGrades = new Set<string>();
+  return grades.flatMap((grade) => {
+    const gradeName = normalizeLabel(grade.gradeName, 60);
+    const gradeKey = gradeName.toLowerCase();
+    if (!/^grade\s+(11|12)$/i.test(gradeName) || seenGrades.has(gradeKey)) return [];
+    seenGrades.add(gradeKey);
+    if (!(["legacy", "strengthened"] as const).includes(grade.curriculumVersion)) {
+      throw new SchoolOnboardingError(`Choose a valid curriculum for ${gradeName}.`, "seniorHigh");
+    }
+    const seenOfferings = new Set<string>();
+    const offerings = grade.offerings.flatMap((offering) => {
+      const code = normalizeCode(offering.code).slice(0, 40);
+      const name = normalizeLabel(offering.name, 120);
+      const key = code.toLowerCase();
+      if (!code || !name || seenOfferings.has(key)) return [];
+      seenOfferings.add(key);
+      const offeringType: SeniorHighOfferingType = offering.offeringType === "track" ? "track" : "strand";
+      if (grade.curriculumVersion === "strengthened" && offeringType !== "track") {
+        throw new SchoolOnboardingError("Strengthened SHS offerings must be tracks, not legacy strands.", "seniorHigh");
+      }
+      const sections = [...new Set(offering.sections.map((section) => normalizeLabel(section, 60)).filter(Boolean))];
+      return [{ code, name, offeringType, sections }];
+    });
+    return [{ gradeName, curriculumVersion: grade.curriculumVersion, offerings }];
+  });
+}
+
 function normalizeCollegePrograms(programs: CollegeInitialSetupDraft["programs"]) {
   const seenCodes = new Set<string>();
   return programs.map((program) => {
@@ -495,6 +626,7 @@ function emptyOnboardingState(schoolName: string): SchoolOnboardingState {
     educationScope: "basic",
     activeYear: null,
     grades: [],
+    seniorHigh: [],
     college: { period: null, programs: [] },
     readiness: { profile: false, schoolYear: false, basic: false, college: true, complete: false },
     counts: { gradeLevels: 0, basicSections: 0, programs: 0, yearLevels: 0, periods: 0, collegeSections: 0 },

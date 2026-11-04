@@ -25,12 +25,34 @@ This checklist records which migrations have been applied to production. ✅ mea
 - ⬜ [2026-09-19-parent-registration-approval.sql](database/migrations/2026-09-19-parent-registration-approval.sql)
 - ⬜ [2026-09-21-enrollment-parent-email-links.sql](database/migrations/2026-09-21-enrollment-parent-email-links.sql)
 - ⬜ [2026-11-03-tuition-assessment-workflow.sql](database/migrations/2026-11-03-tuition-assessment-workflow.sql)
+- ⬜ [2026-11-04-senior-high-offerings.sql](database/migrations/2026-11-04-senior-high-offerings.sql)
 
-## Tuition assessment migration notes
+## Tuition assessment and Senior High migration notes
 
-The Unified Philippine School Academic Setup and its resumable five-step onboarding wizard do **not** add another SQL file. They use `schools.education_scope`, existing K–12 tables, and the college academic tables already created by `2026-11-03-tuition-assessment-workflow.sql`. If that migration is already marked applied in your database, deploy the application changes only. If it is still pending, import the three pending migrations above in chronological order.
+The transition-aware Senior High setup adds `2026-11-04-senior-high-offerings.sql`. Import it after the tuition-assessment migration. It creates school-year/grade offerings and a nullable section relationship; existing K–12 sections and enrollments are preserved.
 
-Apply the pending migrations in chronological order. The tuition assessment migration must run after the September 19 and September 21 migrations.
+### SQL to import for this feature
+
+For an **existing database** that already has the tuition-assessment tables, import only:
+
+```text
+database/migrations/2026-11-04-senior-high-offerings.sql
+```
+
+If `2026-11-03-tuition-assessment-workflow.sql` is still pending, import these in order:
+
+1. `database/migrations/2026-11-03-tuition-assessment-workflow.sql`
+2. `database/migrations/2026-11-04-senior-high-offerings.sql`
+
+For a **new empty database**, do not import the individual migration. Import the regenerated schema-only bundle:
+
+```text
+utilities/database/xmetapay-production-schema.sql
+```
+
+The Senior High migration is additive and rerunnable. It does not delete, rename, or automatically reclassify existing Grade 11/12 sections. Existing sections keep a null offering link until the administrator assigns them to a configured Senior High offering.
+
+Apply the pending migrations in chronological order. The tuition assessment migration must run after the September 19 and September 21 migrations, and the Senior High migration must run after tuition assessment.
 
 Before importing `2026-11-03-tuition-assessment-workflow.sql`:
 
@@ -48,9 +70,11 @@ After importing, verify that:
 - Academic, fee-schedule, assessment, credit, and assessment-payment-term tables exist.
 - Existing fee assignments, tuition terms, payments, allocations, receipts, and reports still return their original records.
 - The application build matching this migration is deployed before administrators use the new assessment routes.
+- `senior_high_offerings` exists and `sections.senior_high_offering_id` is nullable for legacy compatibility.
+- Grade 11 and Grade 12 setup can save Strengthened SHS tracks or legacy tracks/strands with their own sections.
 
 Do not mark the migration as ✅ until the production import and verification checks are complete.
 
 Created: September 21, 2026
 
-Last updated: November 3, 2026
+Last updated: November 4, 2026
