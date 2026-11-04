@@ -134,7 +134,7 @@ The following tables extend the current auth schema into the full dashboard and 
 
 ### School Setup
 
-First-time school administrators complete School profile, School year, Basic Education, College, and Review steps. Each required step writes idempotently to school-owned tables; skipped tracks create no placeholder records. Senior High selection creates grade/year offerings and associates each section with its actual track or legacy strand. The wizard derives resume position and final completion from active-year and per-track readiness, so no draft/status table is required. The protected Admin layout reuses this readiness on every login and dashboard request; incomplete school administrators resume onboarding until their selected scope is ready. No new migration is required.
+First-time school administrators complete School profile, School year, Basic Education, College, and Review steps. Each required step writes idempotently to school-owned tables; skipped tracks create no placeholder records. Basic Education common-section templates are expanded client-side into the existing grade-specific payload, while exceptions remain ordinary grade sections. Senior High selection creates grade/year offerings and associates each section with its actual track or legacy strand. The wizard derives resume position and final completion from active-year and per-track readiness, so no draft/status table is required. The protected Admin layout reuses this readiness on every login and dashboard request; incomplete school administrators resume onboarding until their selected scope is ready. The compact onboarding refinement adds no migration.
 
 #### `schools`
 

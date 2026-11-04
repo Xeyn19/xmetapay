@@ -43,6 +43,53 @@ test("Basic Education uses selectable Philippine level groups and editable Secti
   assert.match(read("lib/school/onboarding.ts"), /Every selected grade needs at least one section/);
 });
 
+test("Basic Education onboarding uses compact task panels and bulk level controls", () => {
+  const wizard = read("app/admin/_components/guided-school-setup-wizard.tsx");
+  for (const title of ["Choose education levels", "Set up sections", "Configure Senior High School"]) {
+    assert.match(wizard, new RegExp(title));
+  }
+  assert.match(wizard, /function BasicTaskPanel/);
+  assert.match(wizard, /aria-expanded=\{open\}/);
+  assert.match(wizard, /firstIncompleteBasicPanel/);
+  assert.match(wizard, /openBasicPanels\.has\("levels"\)/);
+  assert.match(wizard, /new Set\(current\)\.add\(panel\)/);
+  assert.match(wizard, /openBasicPanelAndScroll/);
+  assert.match(wizard, /Select all K–12 levels/);
+  assert.match(wizard, /Clear selection/);
+  assert.match(wizard, /seniorSelected \? \(/);
+});
+
+test("standard grade sections support common templates and isolated per-grade customization", () => {
+  const wizard = read("app/admin/_components/guided-school-setup-wizard.tsx");
+  assert.match(wizard, /Fill once, apply to every grade/);
+  assert.match(wizard, /function updateCommonSection/);
+  assert.match(wizard, /indexes\.has\(index\)/);
+  assert.match(wizard, /Customize individual grades/);
+  assert.match(wizard, /Use same sections for all/);
+  assert.match(wizard, /gradeNamesReadOnly/);
+  assert.match(wizard, /JSON\.stringify\(grades\.map\(\(\{ name, sections \}\)/);
+});
+
+test("Senior High panels expose curriculum-specific offerings and local incomplete guidance", () => {
+  const wizard = read("app/admin/_components/guided-school-setup-wizard.tsx");
+  assert.match(wizard, /Why can Grade 11 and Grade 12 differ/);
+  assert.match(wizard, /grade\.curriculumVersion === "strengthened" \? strengthenedOfferings : legacyOfferings/);
+  assert.match(wizard, /Needs offerings/);
+  assert.match(wizard, /before continuing/);
+  assert.match(wizard, /seniorHighGradeComplete/);
+});
+
+test("onboarding keeps responsive progress, sticky actions, and field-directed error recovery", () => {
+  const page = read("app/admin/onboarding/school-setup/page.tsx");
+  const wizard = read("app/admin/_components/guided-school-setup-wizard.tsx");
+  assert.match(page, /max-w-\[1480px\]/);
+  assert.match(wizard, /md:hidden/);
+  assert.match(wizard, /hidden overflow-x-auto pb-1 md:block/);
+  assert.match(wizard, /sticky bottom-0/);
+  assert.match(wizard, /result\.field === "seniorHigh"/);
+  assert.match(wizard, /scrollIntoView/);
+});
+
 test("Senior High setup supports the strengthened curriculum and transitional legacy strands", () => {
   const wizard = read("app/admin/_components/guided-school-setup-wizard.tsx");
   const helper = read("lib/school/onboarding.ts");
