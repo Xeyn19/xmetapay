@@ -28,7 +28,7 @@ export default async function AdminSchoolSetupOnboardingPage() {
   return (
     <main className="dashboard-theme min-h-[100svh] overflow-x-hidden bg-background px-3 py-4 text-foreground sm:px-6 sm:py-5 lg:px-8">
       <FlashToast toast={toast} />
-      <div className="mx-auto grid w-full max-w-7xl gap-5">
+      <div className="mx-auto grid w-full max-w-[1480px] gap-5">
         <header className="flex flex-col gap-4 rounded-xl border border-border bg-card px-4 py-4 shadow-sm min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <BrandLogo />
