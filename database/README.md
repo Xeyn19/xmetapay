@@ -128,6 +128,11 @@ The guided Philippine School Setup saves resumable progress to school, active-ye
    - Adds a nullable offering link to `sections`; existing sections remain valid and are not rewritten.
    - Safe to rerun through `information_schema` guards.
 
+26. Import `migrations/2026-11-04-parent-student-claim-requests.sql` before enabling Parent-dashboard student connection requests.
+   - Adds the school-scoped, auditable approval queue used when no matching school-recorded guardian email exists.
+   - Parent registration school inference itself reuses existing student, school, and registration tables.
+   - Safe to rerun through `CREATE TABLE IF NOT EXISTS`; it does not rewrite existing guardian links or financial history.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.
@@ -140,7 +145,7 @@ After importing both files:
 
 1. Confirm all tables appear in phpMyAdmin.
 2. Register a test admin account.
-3. Register a test parent account by choosing one active school and linking a student reference from that school.
+3. Register a test Parent with an exact student reference, first name, and last name; confirm the server infers the school and the account waits for administrator approval.
 4. Log in and log out from both portals.
 5. Confirm protected admin and parent dashboards still redirect after logout.
 6. Request and complete one local OTP password reset after SMTP is configured.

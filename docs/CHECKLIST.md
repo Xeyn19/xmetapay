@@ -10,8 +10,8 @@ Admin role reference: `ADMIN_ROLES.md`
 
 - [x] Admin/school registration works.
 - [x] Parent registration works.
-- [x] Parent registration requires one active school and stores the immutable school assignment in `parent_profiles.school_id`.
-- [x] Save every submitted parent student reference; hold new parent accounts in `pending` until a school administrator reviews them.
+- [x] Parent registration infers one active school from exact student reference, first name, and last name claims, then stores the immutable assignment in `parent_profiles.school_id` without exposing a school dropdown.
+- [x] Save every verified parent student reference; hold new Parent accounts in `pending` until the inferred school's administrator reviews them.
 - [x] Show school-scoped parent registration requests with Approve, Reject, and Reopen actions; require one same-school student match for approval.
 - [x] Show distinct parent sign-in alerts for pending approval and rejection while keeping existing active accounts available.
 - [x] Admin/school login works.
@@ -45,6 +45,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Admin dashboard pages use MySQL-backed reads where tables exist, with honest pending/empty states where feature data is not created yet.
 - [x] School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - [x] Student, enrollment, and guardian-linking backend is implemented.
+- [x] Existing Parents request additional same-school connections with exact identity details; matching school-recorded guardian email links immediately, otherwise the school administrator approves or rejects an auditable request.
 - [x] Parent local test payments, fee allocations, receipts, and payment history are implemented.
 - [x] Parent local wallet top-up and wallet transaction history are implemented.
 - [x] Store spending backend is implemented through admin/finance local test purchase recording.
@@ -126,9 +127,9 @@ Done when: the admin dashboard can load school setup data from MySQL, switch adm
 - [x] Link parent accounts to students using `student_reference`.
 - [x] Let enrollment record an optional guardian name, email, and relationship for each new student, connecting active same-school parents immediately or retaining a pending assignment for school approval.
 - [x] Let authorized school staff correct or cancel pending email assignments without changing existing guardian links.
-- [x] Permit parent registration without a reference only when the selected school recorded a pending guardian assignment for the same email; school approval still gates dashboard access.
+- [x] Permit Parent registration without student identity details only when exactly one active school recorded a pending guardian assignment for the same email; school approval still gates dashboard access.
 - [x] Validate submitted parent references against the selected school's students at signup; show a field alert and create no account when neither a reference nor a school-recorded email matches.
-- [x] Allow parent registration to submit one or more student references.
+- [x] Allow Parent registration to submit one to ten exact student reference, first-name, and last-name claims from one inferred school.
 - [x] Show linked students on the parent dashboard from the database.
 - [x] Add a parent My students page for managing multiple linked students.
 - [x] Handle duplicate parent-student links with a friendly already-linked message.

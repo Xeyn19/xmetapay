@@ -294,7 +294,7 @@
             role-specific <code>admin_profiles</code> and
             <code>parent_profiles</code>, plus one secure
             <code>password_reset_challenges</code> row per user. Admin profiles link to
-            <code>schools.id</code> after manual setup. Parent profiles require one active-school selection for new registrations and retain nullable unresolved legacy rows without deleting history. New school admin
+            <code>schools.id</code> after manual setup. Parent registration infers one active school from exact student reference and name claims instead of exposing a school selector; parent profiles retain nullable unresolved legacy rows without deleting history. New school admin
             users start with <code>users.status = pending</code> until the
             company super admin approves or rejects them. Admins and parents
             have role-specific registration routes; company super admins use
@@ -324,7 +324,7 @@
             <tr>
               <td>Auth</td>
               <td><code>users</code>, <code>auth_sessions</code>, <code>password_reset_challenges</code>, <code>admin_profiles</code>, <code>parent_profiles</code>, <code>parent_registration_references</code>, <code>parent_registration_reviews</code></td>
-              <td>Company super admin login, school-scoped parent signup match checks and approval with saved student references and review history, portal registration/login, hashed OTP recovery challenges, DB-backed sessions, and account status.</td>
+              <td>Company super admin login, privately inferred school-scoped Parent signup and approval with canonical student references and review history, portal registration/login, hashed OTP recovery challenges, DB-backed sessions, and account status.</td>
             </tr>
             <tr>
               <td>Unified Basic Education / Higher Education / Both school setup</td>
@@ -333,8 +333,8 @@
             </tr>
             <tr>
               <td>Students</td>
-              <td><code>students</code>, <code>student_guardians</code>, <code>pending_student_guardians</code></td>
-              <td>Student profiles, school-recorded guardian emails pending registration or approval, and authorized parent-to-student links. Pending email assignments do not grant portal access.</td>
+              <td><code>students</code>, <code>student_guardians</code>, <code>pending_student_guardians</code>, <code>parent_student_link_requests</code></td>
+              <td>Student profiles, school-recorded guardian emails, auditable Parent dashboard connection requests, and authorized parent-to-student links. Pending assignments and requests do not grant portal access.</td>
             </tr>
             <tr>
               <td>Enrollment</td>
@@ -397,6 +397,7 @@ erDiagram
   SCHOOLS ||--o{ PARENT_REGISTRATION_REFERENCES : "scopes references"
   SCHOOLS ||--o{ PARENT_REGISTRATION_REVIEWS : "scopes reviews"
   SCHOOLS ||--o{ PENDING_STUDENT_GUARDIANS : "owns guardian emails"
+  SCHOOLS ||--o{ PARENT_STUDENT_LINK_REQUESTS : "reviews connection claims"
   USERS ||--o{ STUDENT_GUARDIANS : "parent account links"
   USERS ||--o{ PAYMENTS : "pays"
   USERS ||--o{ NOTIFICATION_LOGS : "receives"
@@ -755,8 +756,9 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens register page"] --> B["Choose active school and submit guardian details plus optional references"]
-  B --> B2{"Same-school reference or recorded email match?"}
+  A["Parent opens register page"] --> B["Submit guardian details plus exact student reference and name"]
+  B --> B1["Server infers one active school; optional school code resolves ambiguity"]
+  B1 --> B2{"Same-school reference or recorded email match?"}
   B2 -->|No| B3["Show reference alert and create no account"]
   B2 -->|Yes| C["Create pending parent user and school profile"]
   C --> D["Save every submitted reference"]

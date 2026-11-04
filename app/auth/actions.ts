@@ -8,8 +8,8 @@ import { createSession, deleteSession, setAuthFlashToast, type PortalRole } from
 import { hashPassword, verifyPassword } from "@/lib/auth/password.mjs";
 import { parseLoginForm, parseRegisterForm } from "@/lib/auth/validation.mjs";
 import { PRODUCT_NAME } from "@/lib/brand";
-import { ParentSchoolScopeError, validateActiveRegistrationSchool } from "@/lib/parents/school-scope";
-import { hasParentRegistrationMatch, saveParentRegistrationReferences } from "@/lib/parents/registration-approval";
+import { saveParentRegistrationReferences } from "@/lib/parents/registration-approval";
+import { resolveRegistrationStudentClaims, StudentClaimError } from "@/lib/parents/student-claims";
 
 export type AuthFormState = {
   message: string;
@@ -33,6 +33,14 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
     const passwordHash = await hashPassword(parsed.data.password);
     connection = await pool.getConnection();
     await connection.beginTransaction();
+    const parentResolution = role === "parent"
+      ? await resolveRegistrationStudentClaims(
+          connection,
+          parsed.data.email,
+          parsed.data.profile.studentClaims,
+          parsed.data.profile.schoolCode,
+        )
+      : null;
 
     const [userResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO users (role, name, email, phone, password_hash, status)
@@ -59,25 +67,15 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
       );
       await tryLinkAdminProfileToExistingSchool(connection, userResult.insertId, parsed.data.profile.schoolName);
     } else {
-      await validateActiveRegistrationSchool(connection, parsed.data.profile.schoolId);
-      const references = parsed.data.profile.studentReferences;
-      const hasMatch = await hasParentRegistrationMatch(
-        connection, parsed.data.profile.schoolId, parsed.data.email, references,
-      );
-      if (!hasMatch) {
-        await connection.rollback();
-        return references.length === 0
-          ? { message: "Enter a student reference or ask your school to record your email during enrollment.", errors: { studentReferences: "No school-recorded parent email was found. Enter a student reference." } }
-          : { message: "We could not verify a student at the selected school. Check your school and student references, or ask the school to record your email during enrollment.", errors: { studentReferences: "At least one reference must match a student at this school." } };
-      }
+      if (!parentResolution) throw new StudentClaimError("We could not verify the student details.", "not_found");
       await connection.execute(
         `INSERT INTO parent_profiles (user_id, school_id, student_name, student_reference, relationship)
          VALUES (:userId, :schoolId, :studentName, :studentReference, :relationship)`,
         {
           userId: userResult.insertId,
-          schoolId: parsed.data.profile.schoolId,
-          studentName: parsed.data.profile.studentName,
-          studentReference: parsed.data.profile.studentReference,
+          schoolId: parentResolution.schoolId,
+          studentName: parentResolution.references[0] ?? "",
+          studentReference: parentResolution.references[0] ?? "",
           relationship: parsed.data.profile.relationship,
         },
       );
@@ -85,8 +83,8 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
       await saveParentRegistrationReferences(
         connection,
         userResult.insertId,
-        parsed.data.profile.schoolId,
-        parsed.data.profile.studentReferences ?? [parsed.data.profile.studentReference],
+        parentResolution.schoolId,
+        parentResolution.references,
       );
     }
 
@@ -113,8 +111,15 @@ export async function registerAction(role: PortalRole, _state: AuthFormState = i
 
     return duplicateAccount(error)
       ? { message: "An account already exists for this portal using that email or phone." }
-      : error instanceof ParentSchoolScopeError
-        ? { message: error.message, errors: { schoolId: error.message } }
+      : error instanceof StudentClaimError
+        ? {
+            message: error.reason === "ambiguous"
+              ? "More information is needed to identify the school. Enter the school code and try again."
+              : error.message,
+            errors: error.reason === "ambiguous"
+              ? { schoolCode: "Enter the official school code shown on the student’s school records." }
+              : { studentClaims: "Check the student reference and official first and last name." },
+          }
         : { message: databaseFailureMessage("create the account") };
   } finally {
     connection?.release();

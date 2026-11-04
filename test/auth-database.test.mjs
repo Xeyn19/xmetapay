@@ -94,10 +94,15 @@ test("auth validation normalizes role-specific registration payloads", async () 
   parentForm.append("guardianName", " Maria Santos ");
   parentForm.append("email", "PARENT@EMAIL.COM");
   parentForm.append("phone", "0917 000 0000");
-  parentForm.append("schoolId", "7");
   parentForm.append("studentReferences", "BWA-001");
+  parentForm.append("studentFirstNames", "Juan");
+  parentForm.append("studentLastNames", "Santos");
   parentForm.append("studentReferences", " BWA-002 ");
+  parentForm.append("studentFirstNames", "Maria");
+  parentForm.append("studentLastNames", "Santos");
   parentForm.append("studentReferences", "bwa-001");
+  parentForm.append("studentFirstNames", "juan");
+  parentForm.append("studentLastNames", "santos");
   parentForm.append("relationship", "Mother");
   parentForm.append("password", testCredentialInput);
   parentForm.append("confirmPassword", testCredentialInput);
@@ -106,18 +111,22 @@ test("auth validation normalizes role-specific registration payloads", async () 
   assert.equal(parent.ok, true);
   assert.equal(parent.data.name, "Maria Santos");
   assert.equal(parent.data.phone, "0917 000 0000");
-  assert.equal(parent.data.profile.schoolId, 7);
   assert.equal(parent.data.profile.studentName, "BWA-001");
   assert.equal(parent.data.profile.studentReference, "BWA-001");
   assert.deepEqual(parent.data.profile.studentReferences, ["BWA-001", "BWA-002"]);
+  assert.deepEqual(parent.data.profile.studentClaims, [
+    { reference: "BWA-001", firstName: "Juan", lastName: "Santos" },
+    { reference: "BWA-002", firstName: "Maria", lastName: "Santos" },
+  ]);
   assert.equal(parent.data.profile.relationship, "mother");
 
   const parentMissingPhone = parseRegisterForm("parent", new Map([
     ["guardianName", " Maria Santos "],
     ["email", "parent2@email.com"],
     ["phone", ""],
-    ["schoolId", "7"],
-    ["studentReference", "BWA-002"],
+    ["studentReferences", "BWA-002"],
+    ["studentFirstNames", "Juan"],
+    ["studentLastNames", "Santos"],
     ["relationship", "Guardian"],
     ["password", testCredentialInput],
     ["confirmPassword", testCredentialInput],
@@ -130,8 +139,6 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["guardianName", " Maria Santos "],
     ["email", "parent4@email.com"],
     ["phone", "0999 111 2222"],
-    ["schoolId", "7"],
-    ["studentReference", ""],
     ["relationship", "Guardian"],
     ["password", testCredentialInput],
     ["confirmPassword", testCredentialInput],
@@ -144,15 +151,14 @@ test("auth validation normalizes role-specific registration payloads", async () 
     ["guardianName", " Maria Santos "],
     ["email", "parent3@email.com"],
     ["phone", "0999 111 2222"],
-    ["schoolId", "7"],
-    ["studentReference", "BWA-003"],
+    ["studentReferences", "BWA-003"],
     ["relationship", "Mother"],
     ["password", testCredentialInput],
     ["confirmPassword", testCredentialInput],
   ]));
 
-  assert.equal(parentWithoutStudentNames.ok, true);
-  assert.equal(parentWithoutStudentNames.data.profile.studentName, "BWA-003");
+  assert.equal(parentWithoutStudentNames.ok, false);
+  assert.match(parentWithoutStudentNames.errors.studentClaims, /Complete the reference/);
 
   const adminPhoneLogin = parseLoginForm("admin", new Map([
     ["email", " 0917 000 0000 "],
@@ -183,23 +189,26 @@ test("auth validation normalizes role-specific registration payloads", async () 
   });
 });
 
-test("parent registration requires one school and renders multi-student reference controls", () => {
+test("parent registration infers one school and renders exact student identity controls", () => {
   const parentRegister = readFileSync(parentRegisterPath, "utf8");
   const authUi = readFileSync(authUiPath, "utf8");
 
-  assert.match(parentRegister, /Approval is required before sign-in/);
-  assert.match(parentRegister, /getActiveParentRegistrationSchools/);
-  assert.match(parentRegister, /name: "schoolId"/);
-  assert.match(parentRegister, /Select your school/);
-  assert.match(parentRegister, /name: "studentReferences"/);
-  assert.match(parentRegister, /type: "studentReferences"/);
-  assert.doesNotMatch(parentRegister, /name: "studentReference"/);
-  assert.match(authUi, /function StudentReferencesField/);
+  assert.match(parentRegister, /review the connection before sign-in/);
+  assert.doesNotMatch(parentRegister, /getActiveParentRegistrationSchools/);
+  assert.doesNotMatch(parentRegister, /name: "schoolId"/);
+  assert.doesNotMatch(parentRegister, /Select your school/);
+  assert.match(parentRegister, /name: "studentClaims"/);
+  assert.match(parentRegister, /type: "studentClaims"/);
+  assert.match(parentRegister, /name: "schoolCode"/);
+  assert.match(parentRegister, /type: "schoolCodeWhenNeeded"/);
+  assert.match(authUi, /function StudentClaimsField/);
+  assert.match(authUi, /field\.type === "schoolCodeWhenNeeded" && !error/);
   assert.match(authUi, /name="studentReferences"/);
+  assert.match(authUi, /name="studentFirstNames"/);
+  assert.match(authUi, /name="studentLastNames"/);
   assert.match(authUi, /Add another student/);
   assert.match(authUi, /Remove/);
-  assert.match(authUi, /If the school recorded your email during enrollment, you can leave this blank/);
-  assert.match(authUi, /Up to 10 references\. Duplicates are ignored safely/);
-  assert.match(authUi, /typeof option === "string" \? option : option\.value/);
+  assert.match(authUi, /reference and official first and last name/);
+  assert.match(authUi, /Up to 10 students/);
 });
 

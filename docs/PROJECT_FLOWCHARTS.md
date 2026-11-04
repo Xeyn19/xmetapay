@@ -112,7 +112,7 @@ flowchart TD
   F --> G
   F1 --> G
 
-  G["Parent registers or logs in"] --> H["Choose school with optional reference or school-recorded email"]
+  G["Parent registers or logs in"] --> H["Submit exact student reference and name; server infers school"]
   H --> I{"Matching student found inside assigned school?"}
   I -->|Yes| J["School approves pending account and links matched students"]
   I -->|No| K["Parent remains pending; school reviews or rejects"]
@@ -422,13 +422,12 @@ Database touchpoints:
 
 Implemented.
 
-During registration, the parent chooses one active school and may submit up to ten `student_reference` values. Signup requires at least one same-school submitted reference match or a pending email assignment for that Parent; otherwise a field alert appears and the account is rolled back. The validated school is saved in `parent_profiles.school_id`, the first reference or an empty legacy value remains in the profile, and submitted references are stored in `parent_registration_references`. The account stays pending without a session or guardian link. The school administrator rechecks same-school references and school-recorded email matches, approves only when at least one still matches, or rejects; rejected requests can be reopened. Approval links every matching reference and pending email assignment and activates Parent login.
+During registration, the Parent may submit up to ten exact student claims containing `student_reference`, first name, and last name. The server matches them across active schools without exposing a school directory, requires every claim to resolve to one school, and requests the official school code only if otherwise ambiguous. A single-school pending email assignment also supports email-only resolution. The inferred school is saved in `parent_profiles.school_id`, and canonical references are stored in `parent_registration_references`. The account stays pending without a session or guardian link. That school's administrator rechecks same-school references and school-recorded email matches, approves only when at least one still matches, or rejects; rejected registrations can be reopened. Approval links every matching reference and pending email assignment and activates Parent login.
 
 ```mermaid
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Load active school choices"]
-  B --> C["Submit one school, guardian details, optional references, and password"]
-  C --> C2["Validate selected school is active on the server"]
+  A["Parent opens /parent/register"] --> C["Submit guardian details, exact student identities, and password"]
+  C --> C2["Infer one active school; use school code only for ambiguity"]
   C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
@@ -493,22 +492,27 @@ Database touchpoints:
 - `grade_levels`
 - `sections`
 
-### 3. Parent Add Another Student By Reference
+### 3. Parent Request Another Student Connection
 
 Implemented.
 
-After approval, if another submitted reference was unmatched or the parent has another child at the school, the parent can add a `student_reference` from the dashboard or `/parent/students` once the school record exists.
+After approval, the Parent can enter another child's exact student reference, first name, and last name from the dashboard or `/parent/students`. The server searches only the Parent's immutable school and never displays search results. A matching school-recorded guardian email creates the link immediately; otherwise an auditable request waits for that school's administrator on `/admin/parents`.
 
 ```mermaid
 flowchart TD
-  A["Parent opens dashboard or /parent/students"] --> B["Parent enters student_reference"]
+  A["Parent opens dashboard or /parent/students"] --> B["Parent enters reference, first name, and last name"]
   B --> C["Require parent session"]
   C --> D["Resolve assigned active school"]
-  D --> E["Search school_id plus student_reference"]
+  D --> E["Exact-match school_id, reference, and official name"]
   E --> F{"Matching student exists?"}
   F -->|No| G["Show friendly not found message"]
   F -->|Already linked| H["Show Student already linked message"]
-  F -->|Yes| I["Create student_guardians link"]
+  F -->|Yes| F2{"School-recorded guardian email matches?"}
+  F2 -->|Yes| I["Create student_guardians link immediately"]
+  F2 -->|No| I2["Create pending parent_student_link_requests row"]
+  I2 --> I3["School administrator approves or rejects"]
+  I3 -->|Approve| I
+  I3 -->|Reject| G
   I --> J["Reload dashboard or My students page"]
   J --> K["All same-school linked students remain visible"]
 ```
@@ -523,15 +527,18 @@ Database touchpoints:
 
 Implemented.
 
-The parent does not own a student just because they typed a reference. Access requires both the guardian link and the immutable parent-school assignment. One parent can have many linked students only within that school.
+The Parent does not own a student just because they submitted identity details or created a pending request. Access requires both the authoritative guardian link and the immutable Parent-school assignment. One Parent can have many linked students only within that school.
 
 ```mermaid
 flowchart TD
   A["Admin creates official student"] --> B["students.student_reference exists"]
-  B --> C["Parent submits assigned school and student_reference"]
-  C --> D{"Reference exists in parent_profiles.school_id?"}
+  B --> C["Parent submits exact reference and name"]
+  C --> D{"Exact student exists in parent_profiles.school_id?"}
   D -->|No| E["No access link is created"]
-  D -->|Yes| F["Create student_guardians row"]
+  D -->|Yes| D2{"Recorded guardian email matches?"}
+  D2 -->|Yes| F["Create student_guardians row"]
+  D2 -->|No| F2["Wait for school administrator approval"]
+  F2 --> F
   F --> G["Parent can read that student"]
   G --> H["Parent dashboard filters by parent_user_id and school_id"]
   H --> I["Only same-school linked students are returned"]

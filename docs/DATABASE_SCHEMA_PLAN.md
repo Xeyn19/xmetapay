@@ -120,13 +120,13 @@ One parent profile per parent user.
 | `student_reference` | First submitted reference, or empty for an email-only school match; all submitted references are saved separately |
 | `relationship` | Mother, father, or guardian |
 
-Parent registration validates an active school before inserting this profile. Existing databases use the idempotent `2026-09-02-parent-single-school-scope.sql` migration, which backfills only unambiguous single-school profiles and never deletes legacy guardian or financial records. A null assignment blocks Parent portal data and actions. An inactive assigned school permits historical reads but no new Parent writes.
+Parent registration infers one active school from exact student reference and first/last-name claims before inserting this profile; it does not accept a browser-selected school ID. Existing databases use the idempotent `2026-09-02-parent-single-school-scope.sql` migration, which backfills only unambiguous single-school profiles and never deletes legacy guardian or financial records. A null assignment blocks Parent portal data and actions. An inactive assigned school permits historical reads but no new Parent writes.
 
 ### Parent registration review tables
 
 `parent_registration_references` stores each submitted `(parent_user_id, school_id, student_reference)` with a unique parent/reference pair and school lookup index. `parent_registration_reviews` stores school-scoped `approved`, `rejected`, and `reopened` events with reviewer and creation time. Both tables reference users and schools; review history remains after a decision. The idempotent `2026-09-19-parent-registration-approval.sql` migration copies a legacy profile's first saved reference when its school is known without changing existing account statuses or guardian links.
 
-New registration checks for at least one same-school submitted reference or pending school-recorded email match, then inserts a pending user, parent profile, and every reference in one transaction. A failed match rolls back the account and shows a reference alert. School administrator approval rechecks for at least one same-school student match, links all matches, records the decision, and activates the user in one transaction. Rejection disables login; reopening returns only a rejected request to pending review. These decisions are school-wide and do not use the selected school year.
+New registration resolves exact student reference, first name, and last name claims across active schools, requires all matches to belong to one school, then inserts a pending user, parent profile, and every canonical reference in one transaction. A single-school pending guardian-email assignment supports email-only resolution. A failed or cross-school match rolls back the account and shows a privacy-safe alert; an optional official school code resolves otherwise ambiguous identities. School administrator approval rechecks the same-school references or recorded-email assignment, links all matches, records the decision, and activates the user in one transaction. Rejection disables login; reopening returns only a rejected request to pending review. These decisions are school-wide and do not use the selected school year.
 
 ## Full Practical MVP Schema
 
@@ -245,7 +245,11 @@ CREATE TABLE students (
 
 The `2026-09-21-enrollment-parent-email-links.sql` migration adds `pending_student_guardians`: one school-scoped assignment per student and normalized parent email, with guardian name, relationship, creator, optional linked parent, timestamps, and pending/linked/cancelled state. Single and batch new-student enrollment may record these fields. Active same-school parent accounts gain an idempotent `student_guardians` link in the enrollment transaction. Pending or future accounts gain access only after the school administrator approves a matching email or submitted reference; the assignment by itself confers no Parent access. Registrars may edit or cancel pending entries but cannot approve accounts. Fresh installations include the table in `full-schema-v1.sql` and the generated production bundle.
 
-Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per parent. School administrator approval creates one row per matched submitted reference or pending school-recorded email inside `parent_profiles.school_id`; later, the parent portal can add more children from that same school. The unique pair key keeps duplicate links from being created. Every Parent query also requires the student's school to equal the parent profile school, so a stale cross-school row grants no portal access.
+Links parent accounts to students. This supports multiple guardians per student and multiple same-school students per parent. School administrator registration approval creates one row per matched reference or pending school-recorded email inside `parent_profiles.school_id`. Later, the Parent portal accepts the student's exact reference and official name: a matching school-recorded guardian email links immediately, otherwise `parent_student_link_requests` records a pending school-administrator review. The unique guardian pair key keeps duplicate links from being created. Every Parent query also requires the student's school to equal the parent profile school, so a stale cross-school row grants no portal access.
+
+#### `parent_student_link_requests`
+
+Stores the auditable dashboard claim queue added by `2026-11-04-parent-student-claim-requests.sql`. Each Parent/student pair has one status (`pending`, `approved`, or `rejected`), immutable identity snapshots, the school boundary, optional reviewer, and review time. Only a school administrator from that school can review it. Approval creates the `student_guardians` link transactionally; a request never grants access by itself.
 
 ```sql
 CREATE TABLE student_guardians (
@@ -753,6 +757,7 @@ Use indexes based on the screens and workflows in the app.
 | Enrollment dashboard | `enrollments(school_year_id, status)` |
 | Grade/section lists | `enrollments(grade_level_id, section_id)` |
 | Parent linked students | `student_guardians(parent_user_id)` |
+| Parent connection review queue | `parent_student_link_requests(school_id, status, created_at)` and unique `(parent_user_id, student_id)` |
 | Student guardian list | `student_guardians(student_id, is_primary)` |
 | Fee summary | `student_fee_assignments(student_id, status, due_date)` plus parent-specific `parent_fee_summary_archives(parent_user_id, archived_at, deleted_at, student_fee_assignment_id)` |
 | Tuition report | `student_fee_assignments(school_year_id, status, due_date)` |
@@ -781,6 +786,7 @@ erDiagram
   SCHOOLS ||--o{ PARENT_REGISTRATION_REFERENCES : "scopes references"
   SCHOOLS ||--o{ PARENT_REGISTRATION_REVIEWS : "scopes reviews"
   SCHOOLS ||--o{ PENDING_STUDENT_GUARDIANS : "owns guardian emails"
+  SCHOOLS ||--o{ PARENT_STUDENT_LINK_REQUESTS : "reviews connection claims"
   SCHOOLS ||--o{ ADMIN_PROFILES : "linked admins"
   SCHOOLS ||--o{ GRADE_LEVELS : "has"
   SCHOOLS ||--o{ SECTIONS : "has"
@@ -883,8 +889,9 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A["Parent opens register page"] --> B["Choose school and submit guardian details with optional references"]
-  B --> C["Create pending parent user and school profile"]
+  A["Parent opens register page"] --> B["Submit guardian details plus exact student reference and name"]
+  B --> B2["Server infers one active school; optional school code resolves ambiguity"]
+  B2 --> C["Create pending parent user and school profile"]
   C --> D["Save all submitted references"]
   D --> E["Show submitted status at parent login"]
   E --> F["School administrator reviews same-school references or recorded email matches"]
@@ -971,5 +978,5 @@ The same extension supplies the college academic tables consumed by the unified 
 - Schedule lifecycle: draft → approved → archived; approved records are immutable in application actions.
 - Posting: preview fingerprint + transaction locks + unique submission-token hash.
 - Money: immutable gross charge, separately allocated credits, compatible net `amount_due`, percentage terms, and payment allocations to underlying lines.
-- Migrations for existing installations: `database/migrations/2026-11-03-tuition-assessment-workflow.sql`, followed by `database/migrations/2026-11-04-senior-high-offerings.sql`; `database/full-schema-v1.sql` remains the fresh-install source.
+- Migrations for existing installations: `database/migrations/2026-11-03-tuition-assessment-workflow.sql`, followed by `database/migrations/2026-11-04-senior-high-offerings.sql`; Parent dashboard connection review additionally requires `database/migrations/2026-11-04-parent-student-claim-requests.sql`. `database/full-schema-v1.sql` remains the fresh-install source.
 - Package-first roster UX: reads existing schedule target, enrollment, academic-period, and student-assessment relationships; it adds no tables, columns, indexes, or follow-up migration.

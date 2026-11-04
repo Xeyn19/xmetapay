@@ -319,8 +319,7 @@
         <p>
           The admin creates the official school and student records. New student records require sex, while each
           school-year enrollment records whether the student is new, a transferee, or returned. Age is derived from
-          birthdate and legacy missing values display as Pending. New parents choose one active school and wait for its
-          administrator to approve a matching student reference or school-recorded guardian email. Enrollment can connect an already active same-school Parent immediately; pending assignments wait for review. Approved parents only see students when both a
+          birthdate and legacy missing values display as Pending. New Parents submit exact student reference and name details; the server infers one active school without exposing a school directory, then that school's administrator reviews the registration. Enrollment can connect an already active same-school Parent immediately when the recorded guardian email matches; otherwise the dashboard claim waits for review. Approved parents only see students when both a
           <code>student_guardians</code> link and matching <code>parent_profiles.school_id</code> exist.
           One <strong>Add students</strong> chooser opens focused single-new,
           batch-new, or existing-student workflows. Enrolled students shows one
@@ -351,7 +350,7 @@ flowchart TD
   F --> G
   F1 --> G
 
-  G["Parent registers or logs in"] --> H["Choose school with optional reference or school-recorded email"]
+  G["Parent registers or logs in"] --> H["Submit exact student reference and name; server infers school"]
   H --> I{"Matching student found inside assigned school?"}
   I -->|Yes| J["School approves pending account and links matched students"]
   I -->|No| K["Parent remains pending; school reviews or rejects"]
@@ -621,9 +620,8 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens /parent/register"] --> B["Load active school choices"]
-  B --> C["Submit one school, guardian details, optional references, and password"]
-  C --> C2["Validate selected school is active on the server"]
+  A["Parent opens /parent/register"] --> C["Submit guardian details, exact student identities, and password"]
+  C --> C2["Infer one active school; use school code only for ambiguity"]
   C2 --> D{"Email or phone already used for parent role?"}
   D -->|Yes| E["Show duplicate account error"]
   D -->|No| F["Hash password"]
@@ -667,21 +665,26 @@ flowchart TD
           </pre>
         </div>
 
-        <h3>Parent Add Another Student By Reference</h3>
+        <h3>Parent Request Another Student Connection</h3>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="parent-manual-link-by-reference.svg">Download SVG</button>
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens dashboard or /parent/students"] --> B["Parent enters student_reference"]
+  A["Parent opens dashboard or /parent/students"] --> B["Parent enters reference, first name, and last name"]
   B --> C["Require parent session"]
   C --> D["Resolve assigned active school"]
-  D --> E["Search school_id plus student_reference"]
+  D --> E["Exact-match school, reference, and official name"]
   E --> F{"Matching student exists?"}
   F -->|No| G["Show friendly not found message"]
   F -->|Already linked| H["Show Student already linked message"]
-  F -->|Yes| I["Create student_guardians link"]
+  F -->|Yes| F2{"School-recorded guardian email matches?"}
+  F2 -->|Yes| I["Create student_guardians link"]
+  F2 -->|No| I2["Create pending connection request"]
+  I2 --> I3["School administrator approves or rejects"]
+  I3 -->|Approve| I
+  I3 -->|Reject| G
   I --> J["Reload dashboard or My students page"]
   J --> K["All same-school linked students remain visible"]
           </pre>
@@ -699,10 +702,13 @@ flowchart TD
           <pre class="mermaid">
 flowchart TD
   A["Admin creates official student"] --> B["students.student_reference exists"]
-  B --> C["Parent submits assigned school and student_reference"]
-  C --> D{"Reference exists in parent_profiles.school_id?"}
+  B --> C["Parent submits exact reference and name"]
+  C --> D{"Exact student exists in parent_profiles.school_id?"}
   D -->|No| E["No access link is created"]
-  D -->|Yes| F["Create student_guardians row"]
+  D -->|Yes| D2{"Recorded guardian email matches?"}
+  D2 -->|Yes| F["Create student_guardians row"]
+  D2 -->|No| F2["Wait for school administrator approval"]
+  F2 --> F
   F --> G["Parent can read that student"]
   G --> H["Filter by parent_user_id and school_id"]
   H --> I["Only same-school linked students are returned"]

@@ -24,24 +24,23 @@ test("parent school migration is idempotent and preserves every existing record"
   assert.doesNotMatch(migration, /\bDROP\s+TABLE\b/i);
 });
 
-test("registration validates and stores one active school before student linking", () => {
+test("registration infers and stores one active school before review", () => {
   const validation = read("lib/auth/validation.mjs");
   const authAction = read("app/auth/actions.ts");
   const registerPage = read("app/parent/register/page.tsx");
   const authUi = read("app/_components/auth-ui.tsx");
 
-  assert.match(validation, /const schoolId = positiveInteger\(value\(formData, "schoolId"\)\)/);
-  assert.match(validation, /errors\.schoolId = "Choose your school\."/);
-  assert.match(authAction, /validateActiveRegistrationSchool\(connection, parsed\.data\.profile\.schoolId\)/);
+  assert.match(validation, /const studentClaims = studentClaimValues\(formData\)/);
+  assert.match(validation, /Complete the reference, first name, and last name/);
+  assert.match(authAction, /resolveRegistrationStudentClaims\(/);
   assert.match(authAction, /INSERT INTO parent_profiles \(user_id, school_id/);
   assert.ok(
-    authAction.indexOf("validateActiveRegistrationSchool")
+    authAction.indexOf("resolveRegistrationStudentClaims")
       < authAction.indexOf("INSERT INTO parent_profiles (user_id, school_id"),
   );
-  assert.match(registerPage, /getActiveParentRegistrationSchools/);
-  assert.match(registerPage, /await connection\(\)/);
-  assert.match(registerPage, /Parent registration unavailable/);
-  assert.match(authUi, /type FieldOption = string \| \{ label: string; value: string \}/);
+  assert.doesNotMatch(registerPage, /getActiveParentRegistrationSchools/);
+  assert.match(registerPage, /type: "studentClaims"/);
+  assert.match(authUi, /function StudentClaimsField/);
 });
 
 test("parent school helper is the immutable server-only write boundary", () => {

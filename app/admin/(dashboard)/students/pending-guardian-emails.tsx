@@ -3,7 +3,7 @@ import { changePendingGuardianEmailAction } from "@/app/admin/students/actions";
 
 export function PendingGuardianEmails({ rows }: { rows: PendingGuardianRow[] | null }) {
   if (rows === null) return <p className="text-xs text-[#9a5b00]">Import the enrollment parent email migration before managing connections.</p>;
-  if (!rows.length) return <p className="text-xs text-[#5a6070]">No parent email connections are waiting.</p>;
+  if (!rows.length) return <p className="text-xs text-muted-foreground">No school-recorded guardian email connections are waiting.</p>;
   return (
     <div className="space-y-3">
       <p className="text-xs leading-5 text-[#5a6070]">Correct an email before approval or cancel an incorrect connection. Showing the most recent 100.</p>
