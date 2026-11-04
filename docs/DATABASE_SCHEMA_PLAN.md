@@ -6,7 +6,7 @@ XMETA EDU uses one MySQL database for three connected access areas:
 
 - Company super admin: XMETA EDU monitoring for schools, school admin account access, and read-only aggregate school population profiles.
 - Admin/school portal: school setup, student records, parent directory, tuition, collections, allowance, store transactions, and reports.
-- School setup supports Basic Education, Higher Education, or both through the existing `schools.education_scope` contract; the unified hub and resumable five-step onboarding wizard require no additional migration.
+- School setup supports Basic Education, Higher Education, or both through the existing `schools.education_scope` contract; tuition schedule creation uses the same field as its server-enforced audience boundary. The unified hub, resumable five-step onboarding wizard, and tuition alignment require no additional migration.
 - Parent portal: registration, student linking by reference, linked enrolled student access, fee viewing, tuition payment, receipts, payment history, wallet top-up, dashboard wallet activity, selected student wallet activity, and full wallet/store-spending history.
 
 Related role guide: `ADMIN_ROLES.md` explains the company `super_admin` role plus the `school_administrator`, `registrar`, and `finance_officer` permissions used by the admin/school portal.
