@@ -20,24 +20,30 @@ export default async function ParentStudentsPage() {
         ) : (
           <ParentCard title="My students" icon={Users}>
             <ParentAlert>
-              Add your first student reference from the school to connect this parent account.
+          Submit your child’s official student details. The school must approve the connection before records appear here.
             </ParentAlert>
           </ParentCard>
         )}
       </section>
 
       <ParentCard title={hasLinkedStudents ? "Add another student" : "Add student reference"} icon={Plus} className="self-start">
-        <p className="mb-4 text-[13px] leading-6 text-[#6b6b6b]">
-          Use the student reference from the school. You can add more than one child to this parent account.
+        <p className="mb-4 text-[13px] leading-6 text-muted-foreground">
+          Enter the exact reference and official name. We search only your assigned school and never display student search results.
         </p>
         <form action={linkParentStudentAction} className="grid gap-3">
           <input type="hidden" name="redirectTo" value="/parent/students" />
           <ParentField label="Student reference" required>
             <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
           </ParentField>
+          <ParentField label="Student first name" required>
+            <input name="studentFirstName" className={parentControlClass} placeholder="Juan Miguel" required />
+          </ParentField>
+          <ParentField label="Student last name" required>
+            <input name="studentLastName" className={parentControlClass} placeholder="Santos" required />
+          </ParentField>
           <ParentButton type="submit" tone="primary" className="w-full">
             <Plus className="size-4" />
-            {hasLinkedStudents ? "Add another student" : "Link student"}
+            {hasLinkedStudents ? "Request another connection" : "Request connection"}
           </ParentButton>
         </form>
       </ParentCard>

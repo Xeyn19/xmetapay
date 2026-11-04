@@ -148,17 +148,19 @@ test("student intake exposes one chooser for all scalable enrollment workflows",
   assert.match(singleModal, /StudentEnrollmentForm/);
 });
 
-test("parent student link action is protected and links by student reference", () => {
+test("parent student claim action is protected and requests a verified connection", () => {
   assert.equal(existsSync(parentStudentLinkActionsPath), true);
   const action = readFileSync(parentStudentLinkActionsPath, "utf8");
 
   assert.match(action, /"use server";/);
   assert.match(action, /export async function linkParentStudentAction\(formData: FormData\)/);
   assert.match(action, /await requireRole\("parent"\)/);
-  assert.match(action, /linkParentToStudentByReference/);
+  assert.match(action, /requestParentStudentLink/);
+  assert.match(action, /studentFirstName/);
+  assert.match(action, /studentLastName/);
   assert.match(action, /safeRedirectPath/);
   assert.match(action, /redirect\(redirectTo\)/);
-  assert.match(action, /Student already linked/);
+  assert.match(action, /Approval requested/);
   assert.match(action, /already connected to your parent portal/);
   assert.match(action, /path === "\/parent\/students"/);
   assert.match(action, /return "\/parent\/dashboard"/);
@@ -172,7 +174,7 @@ test("parent registration saves submitted references for school review before li
   assert.match(authActions, /tryLinkAdminProfileToExistingSchool/);
   assert.match(authActions, /UPDATE admin_profiles ap\s+SET ap\.school_id = \(/);
   assert.match(authActions, /missingFullSchema/);
-  assert.match(authActions, /parsed\.data\.profile\.studentReferences \?\? \[parsed\.data\.profile\.studentReference\]/);
+  assert.match(authActions, /parentResolution\.references/);
   assert.doesNotMatch(authActions, /await linkParentToStudentByReference\(/);
 });
 
@@ -202,7 +204,9 @@ test("admin and parent pages use database helpers instead of mock student arrays
   assert.match(parentDashboard, /linkParentStudentAction/);
   assert.match(parentDashboard, /<form action=\{linkParentStudentAction\}/);
   assert.match(parentDashboard, /href=\{student\.profileHref\}/);
-  assert.match(parentDashboard, /Use the student reference from the school\. You can add more than one child\./);
+  assert.match(parentDashboard, /Use the exact reference and official name/);
+  assert.match(parentDashboard, /name="studentFirstName"/);
+  assert.match(parentDashboard, /name="studentLastName"/);
   assert.match(parentDashboard, /href="\/parent\/students"/);
   assert.doesNotMatch(parentDashboard, /href="\/parent\/student-profile"/);
   assert.doesNotMatch(parentDashboard, /children|dashboardMetrics|outstandingFees|recentActivity/);
@@ -266,7 +270,9 @@ test("parent My students page manages multiple linked students", () => {
   assert.match(parentStudentsPage, /getParentDashboardData\(session\.userId\)/);
   assert.match(parentStudentsPage, /StudentProfileSelector/);
   assert.match(parentStudentsPage, /Add another student/);
-  assert.match(parentStudentsPage, /Use the student reference from the school\. You can add more than one child to this parent account\./);
+  assert.match(parentStudentsPage, /Enter the exact reference and official name/);
+  assert.match(parentStudentsPage, /name="studentFirstName"/);
+  assert.match(parentStudentsPage, /name="studentLastName"/);
   assert.match(parentStudentsPage, /name="redirectTo" value="\/parent\/students"/);
   assert.match(helper, /SELECT COUNT\(\*\) AS total FROM student_guardians WHERE student_id = :studentId AND parent_user_id = :parentUserId/);
   assert.match(helper, /return "already_linked" as const/);
@@ -391,7 +397,7 @@ test("backend checklist tracks completed student and guardian linking slice", ()
   assert.match(checklist, /- \[x\] Add backend helpers for `students` and `student_guardians`\./);
   assert.match(checklist, /- \[x\] Create an admin flow for adding or listing students\./);
   assert.match(checklist, /- \[x\] Link parent accounts to students using `student_reference`\./);
-  assert.match(checklist, /- \[x\] Allow parent registration to submit one or more student references\./);
+  assert.match(checklist, /- \[x\] Allow Parent registration to submit one to ten exact student reference, first-name, and last-name claims from one inferred school\./);
   assert.match(checklist, /- \[x\] Show linked students on the parent dashboard from the database\./);
   assert.match(checklist, /- \[x\] Add a parent My students page for managing multiple linked students\./);
   assert.match(checklist, /- \[x\] Handle duplicate parent-student links with a friendly already-linked message\./);

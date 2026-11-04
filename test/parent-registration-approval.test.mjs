@@ -11,27 +11,30 @@ function parentForm(references) {
   form.set("guardianName", "Sample Guardian");
   form.set("email", "guardian@example.test");
   form.set("phone", "09170000000");
-  form.set("schoolId", "12");
   form.set("relationship", "Mother");
   form.set("password", "example-password");
   form.set("confirmPassword", "example-password");
-  references.forEach((reference) => form.append("studentReferences", reference));
+  references.forEach((reference, index) => {
+    form.append("studentReferences", reference);
+    form.append("studentFirstNames", `First${index}`);
+    form.append("studentLastNames", "Student");
+  });
   return form;
 }
 
 test("parent registration preserves multiple distinct references and bounds submissions", () => {
   const valid = parseRegisterForm("parent", parentForm([" A-1 ", "a-1", "B-2"]));
   assert.equal(valid.ok, true);
-  assert.deepEqual(valid.data.profile.studentReferences, ["A-1", "B-2"]);
+  assert.deepEqual(valid.data.profile.studentReferences, ["A-1", "a-1", "B-2"]);
   assert.equal(valid.data.profile.studentReference, "A-1");
 
   const tooMany = parseRegisterForm("parent", parentForm(Array.from({ length: 11 }, (_, index) => `R-${index}`)));
   assert.equal(tooMany.ok, false);
-  assert.match(tooMany.errors.studentReferences, /no more than 10/);
+  assert.match(tooMany.errors.studentClaims, /no more than 10/);
 
   const tooLong = parseRegisterForm("parent", parentForm(["x".repeat(61)]));
   assert.equal(tooLong.ok, false);
-  assert.match(tooLong.errors.studentReferences, /60 characters/);
+  assert.match(tooLong.errors.studentClaims, /maximum length/);
 });
 
 test("signup waits for school review and login distinguishes pending from rejected", () => {
@@ -81,4 +84,25 @@ test("migration preserves existing parent access and stores review history", () 
   assert.match(migration, /INSERT IGNORE INTO parent_registration_references/);
   assert.doesNotMatch(migration, /UPDATE\s+users\s+SET\s+status/i);
   assert.doesNotMatch(migration, /DELETE\s+FROM\s+student_guardians/i);
+});
+
+test("student connection request migration is additive and auditable", () => {
+  const migration = read("database/migrations/2026-11-04-parent-student-claim-requests.sql");
+  const fullSchema = read("database/full-schema-v1.sql");
+  const service = read("lib/parents/student-claims.ts");
+  const adminPage = read("app/admin/(dashboard)/parents/page.tsx");
+  const studentsPage = read("app/admin/(dashboard)/students/page.tsx");
+
+  for (const sql of [migration, fullSchema]) {
+    assert.match(sql, /CREATE TABLE IF NOT EXISTS parent_student_link_requests/);
+    assert.match(sql, /UNIQUE KEY uq_parent_student_link_request \(parent_user_id, student_id\)/);
+    assert.match(sql, /reviewer_user_id BIGINT UNSIGNED NULL/);
+  }
+  assert.doesNotMatch(migration, /\bDELETE\s+FROM\b|\bTRUNCATE\b|\bDROP TABLE\b/i);
+  assert.match(service, /parent_email = :email AND status = 'pending'/);
+  assert.match(service, /INSERT INTO parent_student_link_requests/);
+  assert.match(service, /reviewParentStudentLinkRequest/);
+  assert.match(adminPage, /StudentLinkRequestsTable/);
+  assert.match(studentsPage, /Parent connection review/);
+  assert.match(studentsPage, /StudentLinkRequestsTable rows=\{pendingLinkRequests\} returnTo="\/admin\/students"/);
 });

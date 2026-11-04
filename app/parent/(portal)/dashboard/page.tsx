@@ -27,7 +27,7 @@ export default async function ParentDashboardPage() {
     <>
       {!hasLinkedStudents ? (
         <ParentAlert>
-          Link your parent portal to a student reference from the school registrar.
+          Submit your child’s official student details. The school will review the connection before records appear here.
         </ParentAlert>
       ) : null}
 
@@ -66,14 +66,18 @@ export default async function ParentDashboardPage() {
                   <ParentField label="Add another student" required>
                     <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
                   </ParentField>
-                  <p className="mt-2 text-xs leading-5 text-[#6b6b6b]">
-                    Use the student reference from the school. You can add more than one child.
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <ParentField label="Student first name" required><input name="studentFirstName" className={parentControlClass} placeholder="Juan Miguel" required /></ParentField>
+                    <ParentField label="Student last name" required><input name="studentLastName" className={parentControlClass} placeholder="Santos" required /></ParentField>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    Use the exact reference and official name. A school-recorded guardian email can connect immediately; otherwise approval is required.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <ParentButton type="submit" tone="primary" className="w-full min-[420px]:w-auto">
                     <Plus className="size-4" />
-                    Add another student
+                    Request connection
                   </ParentButton>
                   <Link href="/parent/students" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
                     Manage students
@@ -87,13 +91,17 @@ export default async function ParentDashboardPage() {
                 <ParentField label="Student reference" required>
                   <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
                 </ParentField>
-                <p className="mt-2 text-xs leading-5 text-[#6b6b6b]">
-                  Use the student reference from the school. You can add more than one child.
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <ParentField label="Student first name" required><input name="studentFirstName" className={parentControlClass} placeholder="Juan Miguel" required /></ParentField>
+                  <ParentField label="Student last name" required><input name="studentLastName" className={parentControlClass} placeholder="Santos" required /></ParentField>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  The school reviews this connection before student records become available.
                 </p>
               </div>
               <ParentButton type="submit" tone="primary">
                 <Plus className="size-4" />
-                Link student
+                Request connection
               </ParentButton>
             </form>
           )}

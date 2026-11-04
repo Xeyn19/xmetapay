@@ -4,58 +4,82 @@ import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 
-function loadMatchHelper() {
-  const compiled = ts.transpileModule(readFileSync("lib/parents/registration-approval.ts", "utf8"), {
+function loadClaimHelper() {
+  const compiled = ts.transpileModule(readFileSync("lib/parents/student-claims.ts", "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const loadedModule = { exports: {} };
   vm.runInNewContext(compiled, {
-    module: loadedModule, exports: loadedModule.exports,
+    module: loadedModule,
+    exports: loadedModule.exports,
     require: (name) => {
       if (name === "server-only") return {};
       if (name === "@/lib/auth/db") return { pool: {} };
       if (name === "@/lib/admin/access") return {};
+      if (name === "@/lib/parents/school-scope") return {};
       if (name === "@/lib/school/setup") return {};
       if (name === "@/lib/students/records") return {};
-      if (name === "@/lib/students/guardian-email-links") return {};
       throw new Error(`Unexpected import: ${name}`);
     },
   });
-  return loadedModule.exports.hasParentRegistrationMatch;
+  return loadedModule.exports;
 }
 
-test("signup rejects missing and unmatched references unless this school recorded the email", async () => {
-  const hasMatch = loadMatchHelper();
+test("registration resolves exact reference and name claims without asking for a school", async () => {
+  const { resolveRegistrationStudentClaims, StudentClaimError } = loadClaimHelper();
+  const rows = [
+    { id: 10, school_id: 12, student_reference: "A-1", first_name: "Ana", last_name: "Cruz" },
+    { id: 11, school_id: 12, student_reference: "B-2", first_name: "Ben", last_name: "Cruz" },
+  ];
   const calls = [];
-  const connection = (recorded, validReferences) => ({
-    async execute(sql, values) {
-      calls.push({ sql, values });
-      if (sql.includes("FROM pending_student_guardians")) return [recorded ? [{ id: 1 }] : []];
-      if (sql.includes("FROM students st")) {
-        assert.match(sql, /st\.school_id = :schoolId/);
-        assert.equal(values.schoolId, 12);
-        return [Object.entries(values).some(([key, value]) => key.startsWith("reference") && validReferences.includes(value))
-          ? [{ id: 10 }] : []];
-      }
-      throw new Error("Unexpected query");
-    },
-  });
+  const connection = { async execute(sql, values) { calls.push({ sql, values }); return [rows]; } };
+  const result = await resolveRegistrationStudentClaims(connection, "parent@example.test", [
+    { reference: "a-1", firstName: "ana", lastName: "cruz" },
+    { reference: "B-2", firstName: "Ben", lastName: "Cruz" },
+  ]);
 
-  assert.equal(await hasMatch(connection(false, []), 12, "parent@example.test", []), false);
-  assert.equal(await hasMatch(connection(false, []), 12, "parent@example.test", ["WRONG"]), false);
-  assert.equal(await hasMatch(connection(false, ["RIGHT"]), 12, "parent@example.test", ["WRONG", "RIGHT"]), true);
-  assert.equal(await hasMatch(connection(true, []), 12, "parent@example.test", []), true);
-  assert.equal(await hasMatch(connection(true, []), 12, "parent@example.test", ["WRONG"]), true);
-  assert.equal(calls.every(({ values }) => values.schoolId === 12), true);
-  assert.equal(calls.filter(({ sql }) => sql.includes("FROM students st")).length, 2);
+  assert.equal(result.schoolId, 12);
+  assert.deepEqual(Array.from(result.references), ["A-1", "B-2"]);
+  assert.match(calls[0].sql, /JOIN schools sc ON sc\.id = st\.school_id AND sc\.status = 'active'/);
+  assert.match(calls[0].sql, /LOWER\(TRIM\(st\.first_name\)\)/);
+  assert.doesNotMatch(calls[0].sql, /st\.school_id = :schoolId/);
+
+  await assert.rejects(
+    () => resolveRegistrationStudentClaims({ execute: async () => [[]] }, "parent@example.test", [
+      { reference: "WRONG", firstName: "Ana", lastName: "Cruz" },
+    ]),
+    (error) => error instanceof StudentClaimError && error.reason === "not_found",
+  );
 });
 
-test("signup returns a reference field alert and rolls back an unmatched account", () => {
+test("registration rejects mixed schools and accepts an optional school code", async () => {
+  const { resolveRegistrationStudentClaims, StudentClaimError } = loadClaimHelper();
+  const rows = [
+    { id: 10, school_id: 12, student_reference: "A-1", first_name: "Ana", last_name: "Cruz" },
+    { id: 20, school_id: 13, student_reference: "B-2", first_name: "Ben", last_name: "Cruz" },
+  ];
+  await assert.rejects(
+    () => resolveRegistrationStudentClaims({ execute: async () => [rows] }, "parent@example.test", [
+      { reference: "A-1", firstName: "Ana", lastName: "Cruz" },
+      { reference: "B-2", firstName: "Ben", lastName: "Cruz" },
+    ]),
+    (error) => error instanceof StudentClaimError && error.reason === "different_schools",
+  );
+
+  let captured;
+  await resolveRegistrationStudentClaims({ async execute(sql, values) { captured = { sql, values }; return [[rows[0]]]; } },
+    "parent@example.test", [{ reference: "A-1", firstName: "Ana", lastName: "Cruz" }], "ABC");
+  assert.match(captured.sql, /LOWER\(sc\.code\) = LOWER\(:schoolCode\)/);
+  assert.equal(captured.values.schoolCode, "ABC");
+});
+
+test("signup reports privacy-safe claim errors and rolls back an unmatched account", () => {
   const auth = readFileSync("app/auth/actions.ts", "utf8");
   const form = readFileSync("app/_components/auth-ui.tsx", "utf8");
-  assert.match(auth, /hasParentRegistrationMatch\(/);
-  assert.match(auth, /if \(!hasMatch\) \{\s*await connection\.rollback\(\)/);
-  assert.match(auth, /At least one reference must match a student at this school/);
-  assert.match(form, /aria-describedby=\{error \? "student-references-error"/);
+  assert.match(auth, /resolveRegistrationStudentClaims\(/);
+  assert.match(auth, /error instanceof StudentClaimError/);
+  assert.match(auth, /We could not verify the student details/);
+  assert.match(auth, /await connection\.rollback\(\)/);
+  assert.match(form, /id="student-claims-error"/);
   assert.match(form, /role=\{state\.tone === "info" \? "status" : "alert"\}/);
 });

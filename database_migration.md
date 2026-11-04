@@ -26,6 +26,7 @@ This checklist records which migrations have been applied to production. ✅ mea
 - ⬜ [2026-09-21-enrollment-parent-email-links.sql](database/migrations/2026-09-21-enrollment-parent-email-links.sql)
 - ⬜ [2026-11-03-tuition-assessment-workflow.sql](database/migrations/2026-11-03-tuition-assessment-workflow.sql)
 - ⬜ [2026-11-04-senior-high-offerings.sql](database/migrations/2026-11-04-senior-high-offerings.sql)
+- ⬜ [2026-11-04-parent-student-claim-requests.sql](database/migrations/2026-11-04-parent-student-claim-requests.sql)
 
 ## Tuition assessment and Senior High migration notes
 
@@ -52,7 +53,33 @@ utilities/database/xmetapay-production-schema.sql
 
 The Senior High migration is additive and rerunnable. It does not delete, rename, or automatically reclassify existing Grade 11/12 sections. Existing sections keep a null offering link until the administrator assigns them to a configured Senior High offering.
 
-Apply the pending migrations in chronological order. The tuition assessment migration must run after the September 19 and September 21 migrations, and the Senior High migration must run after tuition assessment.
+## Parent student claim and connection-request migration
+
+### SQL to import for this feature
+
+For an **existing database** where the September Parent migrations are already applied, import only:
+
+```text
+database/migrations/2026-11-04-parent-student-claim-requests.sql
+```
+
+If the required Parent migrations are still pending, import these files into the **same existing database** in this order:
+
+1. `database/migrations/2026-09-19-parent-registration-approval.sql`
+2. `database/migrations/2026-09-21-enrollment-parent-email-links.sql`
+3. `database/migrations/2026-11-04-parent-student-claim-requests.sql`
+
+For a **new empty database**, do not import these migrations individually. Import the regenerated schema-only bundle instead:
+
+```text
+utilities/database/xmetapay-production-schema.sql
+```
+
+The Parent claim migration adds only `parent_student_link_requests`, the auditable approval queue used when an active Parent requests another student connection and the school has not already recorded the Parent email for that student. Parent registration now infers the school from the exact student reference, first name, and last name; that registration refinement reuses existing tables. The migration is additive, rerunnable, and does not modify existing Parent, student, guardian, financial, or historical rows.
+
+After importing, confirm that `parent_student_link_requests` appears in phpMyAdmin. Keep the checklist entry marked ⬜ until the actual target database has been imported and verified; then change only that entry to ✅.
+
+Apply the pending migrations in chronological order. The tuition assessment migration must run after the September 19 and September 21 migrations, the Senior High migration must run after tuition assessment, and the Parent claim-request migration must run before deploying the new Parent dashboard connection form.
 
 Before importing `2026-11-03-tuition-assessment-workflow.sql`:
 
@@ -72,6 +99,7 @@ After importing, verify that:
 - The application build matching this migration is deployed before administrators use the new assessment routes.
 - `senior_high_offerings` exists and `sections.senior_high_offering_id` is nullable for legacy compatibility.
 - Grade 11 and Grade 12 setup can save Strengthened SHS tracks or legacy tracks/strands with their own sections.
+- `parent_student_link_requests` exists, and a non-email-matched Parent dashboard claim appears for the correct school administrator without creating a `student_guardians` row before approval.
 
 Do not mark the migration as ✅ until the production import and verification checks are complete.
 

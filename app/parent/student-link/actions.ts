@@ -2,35 +2,38 @@
 
 import { redirect } from "next/navigation";
 
-import { pool } from "@/lib/auth/db";
 import { requireRole, setAuthFlashToast } from "@/lib/auth/session";
-import { linkParentToStudentByReference } from "@/lib/students/records";
+import { requestParentStudentLink, StudentClaimError } from "@/lib/parents/student-claims";
 
 export async function linkParentStudentAction(formData: FormData) {
   const session = await requireRole("parent");
   const studentReference = value(formData, "studentReference");
+  const firstName = value(formData, "studentFirstName");
+  const lastName = value(formData, "studentLastName");
   const redirectTo = safeRedirectPath(value(formData, "redirectTo"));
 
   try {
-    const result = await linkParentToStudentByReference(pool, session.userId, studentReference);
+    const result = await requestParentStudentLink(session.userId, { reference: studentReference, firstName, lastName });
 
     await setAuthFlashToast({
       role: "parent",
       title: titleForResult(result),
       description: descriptionForResult(result),
     });
-  } catch {
+  } catch (error) {
     await setAuthFlashToast({
       role: "parent",
       title: "Student not linked",
-      description: "Check that MySQL/XAMPP is running and try again.",
+      description: error instanceof StudentClaimError
+        ? error.message
+        : "Check that MySQL/XAMPP is running and try again.",
     });
   }
 
   redirect(redirectTo);
 }
 
-function descriptionForResult(result: Awaited<ReturnType<typeof linkParentToStudentByReference>>) {
+function descriptionForResult(result: Awaited<ReturnType<typeof requestParentStudentLink>>) {
   if (result === "linked") {
     return "Your parent portal is now connected to that student record.";
   }
@@ -38,23 +41,12 @@ function descriptionForResult(result: Awaited<ReturnType<typeof linkParentToStud
   if (result === "already_linked") {
     return "That student is already connected to your parent portal.";
   }
-
-  if (result === "school_unassigned") {
-    return "Your parent account is not assigned to one school. Contact support before linking students.";
-  }
-
-  if (result === "school_inactive") {
-    return "This school is inactive. Existing history remains available, but new student links are disabled.";
-  }
-
-  if (result === "missing_profile") {
-    return "Your parent profile was not found. Please register again or contact the school.";
-  }
-
-  return "No student record was found for that reference yet.";
+  if (result === "pending") return "Your request was sent to the school administrator for approval.";
+  if (result === "rejected") return "This connection request was not approved. Contact the school for help.";
+  return "The student connection was verified using the guardian email recorded by the school.";
 }
 
-function titleForResult(result: Awaited<ReturnType<typeof linkParentToStudentByReference>>) {
+function titleForResult(result: Awaited<ReturnType<typeof requestParentStudentLink>>) {
   if (result === "linked") {
     return "Student linked";
   }
@@ -62,8 +54,8 @@ function titleForResult(result: Awaited<ReturnType<typeof linkParentToStudentByR
   if (result === "already_linked") {
     return "Student already linked";
   }
-
-  return "Student not linked";
+  if (result === "pending") return "Approval requested";
+  return "Request not approved";
 }
 
 function safeRedirectPath(path: string) {

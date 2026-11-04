@@ -104,7 +104,7 @@ test("registration and review retain pending access until school administrator a
   const review = read("lib/parents/registration-approval.ts");
   const actions = read("app/admin/students/actions.ts");
 
-  assert.match(auth, /hasParentRegistrationMatch\(/);
+  assert.match(auth, /resolveRegistrationStudentClaims\(/);
   assert.match(auth, /status: "pending"/);
   assert.match(review, /matches\.length === 0 && recordedAssignments\.length === 0/);
   assert.match(review, /applyGuardianAssignments\(connection, schoolId, request\.email, parentUserId\)/);

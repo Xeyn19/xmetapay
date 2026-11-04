@@ -87,7 +87,7 @@ The guided setup wizard does not add an onboarding-status table. Progress is der
 
 ### `parent_profiles`
 
-This stores parent-side profile details for users with the `parent` role. Parent registration requires one active school, guardian details, a phone number, and relationship. Signup requires at least one submitted reference that matches a student at that school or a pending guardian assignment for the same email; a failed match shows a field alert and rolls back the new account. `parent_profiles.school_id` is the immutable school ownership boundary. The first submitted reference, or an empty string for email-only registrations, stays in the required legacy reference and name columns. Official student identity still comes from school-created `students` records after linking.
+This stores parent-side profile details for users with the `parent` role. Parent registration collects guardian details plus exact student reference, first-name, and last-name claims instead of a school selection. The server privately resolves those claims across active schools, requires every match to identify one school, and may use an optional official school code to disambiguate. A single-school pending guardian-email assignment can also resolve an email-only registration. A failed match shows a privacy-safe field alert and rolls back the new account. `parent_profiles.school_id` remains the immutable school ownership boundary. Official student identity still comes from school-created `students` records after linking.
 
 New parent accounts start with `users.status = 'pending'`, receive no session, and cannot use the Parent portal until their school administrator approves them. `parent_registration_references` stores every submitted reference for that one school; `parent_registration_reviews` records each approval, rejection, or reopening with the reviewer and time. Approval requires at least one same-school reference or school-recorded email match, creates guardian links for all matches, and activates the account in one transaction. Rejected accounts stay disabled and retain their request history. Existing active parents are not changed by the migration.
 
@@ -162,7 +162,9 @@ The exact admin Student Profile can correct the existing `students` name, refere
 
 Links parent accounts to students.
 
-`pending_student_guardians` records a student's school, normalized parent email, guardian name and relationship, creator, and pending/linked/cancelled state. Enrollment saves it alongside the new student and active-year enrollment. An existing active same-school Parent is linked immediately; a Parent who registers later stays pending until the school's administrator approves the matching email or reference. Staff can correct or cancel only pending assignments. These rows never grant portal access themselves; `student_guardians` remains authoritative.
+`pending_student_guardians` records a student's school, normalized parent email, guardian name and relationship, creator, and pending/linked/cancelled state. Enrollment saves it alongside the new student and active-year enrollment. An existing active same-school Parent is linked immediately when that Parent submits the student's exact reference and name; a Parent who registers later still waits for school registration approval. Staff can correct or cancel only pending assignments. These rows never grant portal access themselves; `student_guardians` remains authoritative.
+
+`parent_student_link_requests` stores one auditable request per Parent/student pair when an active Parent supplies exact identity details but no matching school-recorded guardian email exists. It snapshots the student reference/name and relationship, remains `pending` until the school administrator approves or rejects it, and records the reviewer and time. Approval creates the authoritative `student_guardians` row in the same transaction. The idempotent `2026-11-04-parent-student-claim-requests.sql` migration adds this queue without rewriting existing access or financial history.
 
 Main purpose:
 
@@ -466,7 +468,7 @@ The schema supports this practical backend flow:
 2. A school record is created and linked to school setup records.
 3. Admin creates one or many school years, chooses one active year, then creates grade levels and selected-year sections.
 4. Admin opens the unified Add students chooser, then creates one student, creates a validated batch using optional shared class defaults, or enrolls existing students. Each valid new student still receives an independent master record.
-5. Parent registers for one school, then its administrator approves at least one same-school student match before `student_guardians` links and Parent login are enabled.
+5. Parent submits exact student identity details, the server infers one school, then that school's administrator approves at least one same-school match before `student_guardians` links and Parent login are enabled.
 6. Admin enrolls students for the active school year.
 7. When a school year changes, the school administrator reviews suggested promote/repeat placements and the system creates target-year `enrollments` without duplicating `students`.
 8. When the upcoming year is ready, the school administrator activates it; the previous active year becomes closed.

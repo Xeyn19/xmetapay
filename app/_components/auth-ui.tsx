@@ -267,8 +267,12 @@ function AuthField({
 }) {
   const required = field.required ?? true;
 
-  if (field.type === "studentReferences") {
-    return <StudentReferencesField error={error} />;
+  if (field.type === "studentClaims") {
+    return <StudentClaimsField error={error} />;
+  }
+
+  if (field.type === "schoolCodeWhenNeeded" && !error) {
+    return null;
   }
 
   return (
@@ -328,83 +332,50 @@ function AuthField({
   );
 }
 
-function StudentReferencesField({ error }: { error?: string }) {
-  const [references, setReferences] = useState([""]);
-  const maxReferences = 10;
-  const countLabel = `${references.length} ${references.length === 1 ? "student" : "students"}`;
+function StudentClaimsField({ error }: { error?: string }) {
+  const [claims, setClaims] = useState([{ reference: "", firstName: "", lastName: "" }]);
+  const maxClaims = 10;
+  const countLabel = `${claims.length} ${claims.length === 1 ? "student" : "students"}`;
 
-  function updateReference(index: number, value: string) {
-    setReferences((current) => current.map((reference, itemIndex) => (itemIndex === index ? value : reference)));
-  }
-
-  function addReference() {
-    setReferences((current) => current.length < maxReferences ? [...current, ""] : current);
-  }
-
-  function removeReference(index: number) {
-    setReferences((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  function updateClaim(index: number, field: "reference" | "firstName" | "lastName", value: string) {
+    setClaims((current) => current.map((claim, itemIndex) => itemIndex === index ? { ...claim, [field]: value } : claim));
   }
 
   return (
     <div className="sm:col-span-2">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <span className="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[var(--public-muted)] sm:text-xs sm:tracking-[0.12em]">
-          Student IDs or references <span className="font-semibold normal-case tracking-normal text-[var(--public-subtle)]">(optional if your school recorded your email)</span>
+          Student verification <span className="font-semibold normal-case tracking-normal text-[var(--public-subtle)]">(optional if the school recorded your email)</span>
         </span>
-        <span className="rounded-md bg-[#fbe9e7] px-2 py-1 text-[11px] font-bold text-[#bf360c]">
-          {countLabel}
-        </span>
+        <span className="rounded-md bg-[#fbe9e7] px-2 py-1 text-[11px] font-bold text-[#bf360c]">{countLabel}</span>
       </div>
       <div className="public-panel rounded-lg border p-3 sm:p-4">
         <p className="max-w-2xl text-xs leading-5 text-[var(--public-muted)] sm:text-[13px] sm:leading-6">
-          If you enter student references, at least one must match a student at your school. If the school recorded your email during enrollment, you can leave this blank and the school will review the connection.
+          Enter each student’s reference and official first and last name. We identify the school privately; the school still approves access.
         </p>
-        <div className="mt-3 grid gap-2.5">
-          {references.map((reference, index) => (
-            <div key={index} className="grid gap-2 min-[560px]:grid-cols-[2rem_minmax(0,1fr)_auto] min-[560px]:items-center">
-              <span className="hidden size-8 items-center justify-center rounded-lg bg-[var(--public-field)] text-xs font-bold text-[var(--public-muted)] min-[560px]:inline-flex">
-                {index + 1}
-              </span>
-              <input
-                name="studentReferences"
-                type="text"
-                value={reference}
-                onChange={(event) => updateReference(index, event.target.value)}
-                placeholder={index === 0 ? "BWA-001" : "Another student reference"}
-                aria-label={`Student reference ${index + 1}`}
-                aria-invalid={Boolean(error)}
-                aria-describedby={error ? "student-references-error" : undefined}
-                className="public-field min-h-12 min-w-0 rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10"
-              />
-              {references.length > 1 ? (
-                <button
-                  type="button"
-                  onClick={() => removeReference(index)}
-                  className="public-secondary-action min-h-11 rounded-lg px-3 text-sm font-bold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 min-[560px]:min-h-12"
-                >
-                  Remove
-                </button>
-              ) : null}
+        <div className="mt-3 grid gap-3">
+          {claims.map((claim, index) => (
+            <div key={index} className="grid gap-2 rounded-lg border border-[var(--public-divider)] p-3 min-[700px]:grid-cols-[2rem_minmax(150px,0.9fr)_minmax(140px,1fr)_minmax(140px,1fr)_auto] min-[700px]:items-end">
+              <span className="hidden size-8 items-center justify-center rounded-lg bg-[var(--public-field)] text-xs font-bold text-[var(--public-muted)] min-[700px]:inline-flex">{index + 1}</span>
+              <ClaimInput label="Student reference" name="studentReferences" value={claim.reference} placeholder="BWA-001" index={index} error={error} onChange={(value) => updateClaim(index, "reference", value)} />
+              <ClaimInput label="First name" name="studentFirstNames" value={claim.firstName} placeholder="Juan Miguel" index={index} error={error} onChange={(value) => updateClaim(index, "firstName", value)} />
+              <ClaimInput label="Last name" name="studentLastNames" value={claim.lastName} placeholder="Santos" index={index} error={error} onChange={(value) => updateClaim(index, "lastName", value)} />
+              {claims.length > 1 ? <button type="button" onClick={() => setClaims((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="public-secondary-action min-h-11 rounded-lg px-3 text-sm font-bold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 min-[700px]:min-h-12">Remove</button> : null}
             </div>
           ))}
         </div>
         <div className="mt-3 flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
-          <button
-            type="button"
-            onClick={addReference}
-            disabled={references.length >= maxReferences}
-            className="min-h-11 rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[var(--public-link)] transition hover:bg-[#e64a19]/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Add another student
-          </button>
-          <span className="text-xs leading-5 text-[var(--public-muted)]">
-            Up to 10 references. Duplicates are ignored safely.
-          </span>
+          <button type="button" onClick={() => setClaims((current) => current.length < maxClaims ? [...current, { reference: "", firstName: "", lastName: "" }] : current)} disabled={claims.length >= maxClaims} className="min-h-11 rounded-lg border border-[#ff7043]/35 bg-[#e64a19]/10 px-3 text-sm font-bold text-[var(--public-link)] transition hover:bg-[#e64a19]/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ff7043]/20 disabled:cursor-not-allowed disabled:opacity-50">Add another student</button>
+          <span className="text-xs leading-5 text-[var(--public-muted)]">Up to 10 students. Duplicate entries are ignored safely.</span>
         </div>
       </div>
-      {error ? <span id="student-references-error" className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">{error}</span> : null}
+      {error ? <span id="student-claims-error" className="mt-1.5 block text-xs font-semibold text-[var(--public-error-text)]">{error}</span> : null}
     </div>
   );
+}
+
+function ClaimInput({ label, name, value, placeholder, index, error, onChange }: { label: string; name: string; value: string; placeholder: string; index: number; error?: string; onChange: (value: string) => void }) {
+  return <label className="grid min-w-0 gap-1"><span className="text-[11px] font-bold text-[var(--public-muted)]">{label}</span><input name={name} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} aria-label={`${label} ${index + 1}`} aria-invalid={Boolean(error)} aria-describedby={error ? "student-claims-error" : undefined} className="public-field min-h-12 min-w-0 rounded-lg border px-3 py-2 text-sm outline-none transition focus:border-[#ff7043] focus:ring-4 focus:ring-[#ff7043]/10" /></label>;
 }
 
 export function PortalCard({

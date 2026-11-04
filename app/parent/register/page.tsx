@@ -1,27 +1,14 @@
-import { connection } from "next/server";
-
 import { AuthForm, PortalAuthLayout } from "../../_components/auth-ui";
-import { getActiveParentRegistrationSchools } from "@/lib/parents/school-scope";
 
-export default async function ParentRegisterPage() {
-  await connection();
-  const schools = await getActiveParentRegistrationSchools().catch(() => []);
-
+export default function ParentRegisterPage() {
   return (
     <PortalAuthLayout portal="parent" mode="register">
-      {schools.length > 0 ? <AuthForm
+      <AuthForm
         portal="parent"
         mode="register"
         title="Create parent account"
-        subtitle="Choose your school and enter your children's references if you have them. Your school can also match the email it recorded during enrollment. Approval is required before sign-in."
+        subtitle="Enter your child’s official student details. We’ll identify the school securely, then the school will review the connection before sign-in."
         fields={[
-          {
-            label: "School",
-            name: "schoolId",
-            placeholder: "Select your school",
-            options: schools,
-            spanFull: true,
-          },
           {
             label: "Guardian name",
             name: "guardianName",
@@ -46,10 +33,18 @@ export default async function ParentRegisterPage() {
             options: ["Mother", "Father", "Guardian"],
           },
           {
-            label: "Student ID or reference",
-            name: "studentReferences",
-            type: "studentReferences",
+            label: "Students",
+            name: "studentClaims",
+            type: "studentClaims",
             placeholder: "BWA-001",
+            spanFull: true,
+          },
+          {
+            label: "Official school code",
+            name: "schoolCode",
+            type: "schoolCodeWhenNeeded",
+            placeholder: "Enter the code shown on the school record",
+            required: false,
             spanFull: true,
           },
           {
@@ -65,15 +60,7 @@ export default async function ParentRegisterPage() {
             placeholder: "Confirm your password",
           },
         ]}
-      /> : (
-        <div className="text-center">
-          <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[#e64a19]">Family access</p>
-          <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-[var(--public-text)]">Parent registration unavailable</h1>
-          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[var(--public-muted)]">
-            No active schools are accepting parent registrations yet. Ask your school administrator to complete school setup.
-          </p>
-        </div>
-      )}
+      />
     </PortalAuthLayout>
   );
 }
