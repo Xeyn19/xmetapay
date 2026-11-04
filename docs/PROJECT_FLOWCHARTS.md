@@ -219,7 +219,7 @@ flowchart TD
   O -->|Pending| P2["Show waiting for XMETA EDU approval"]
   O -->|Disabled| P3["Show not approved or disabled message"]
   O -->|Yes and active| Q["Create DB-backed session and HttpOnly cookie"]
-  Q --> R{"School setup complete?"}
+  Q --> R{"Active year and selected academic tracks ready?"}
   R -->|No, school_administrator| S["Redirect to /admin/onboarding/school-setup"]
   S --> T["Resume first incomplete guided setup step"]
   T --> U["Redirect to /admin/dashboard"]
@@ -235,7 +235,7 @@ Database touchpoints:
 
 Implemented.
 
-After approval, a school administrator completes a resumable five-step flow: School profile, School year, Basic Education, College, and Review. The selected education scope controls which track step is required. Basic Education uses selectable Philippine level groups; Grade 11 and Grade 12 are configured separately with a Strengthened SHS track or transitional legacy track/strand, then sections are created under the offerings the school actually provides. College creates the first active period plus one or more programs, their year levels, and their sections. Every Continue action saves one transaction-safe step, while final readiness is derived from academic records. Ongoing management uses `/admin/school-setup`, `/admin/school-setup/years/[yearId]`, `/admin/school-setup/academics`, and `/admin/school-setup/rollover`. Registrar and finance officer accounts share the school context but cannot write setup.
+After approval, a school administrator completes a resumable five-step flow: School profile, School year, Basic Education, College, and Review. The selected education scope controls which track step is required. Basic Education uses selectable Philippine level groups; Grade 11 and Grade 12 are configured separately with a Strengthened SHS track or transitional legacy track/strand, then sections are created under the offerings the school actually provides. College creates the first active period plus one or more programs, their year levels, and their sections. Every Continue action saves one transaction-safe step, while final readiness is derived from academic records. Every later login and protected dashboard request checks that same active-year and per-track readiness; incomplete school administrators return to the first unfinished onboarding step. Ongoing management uses `/admin/school-setup`, `/admin/school-setup/years/[yearId]`, `/admin/school-setup/academics`, and `/admin/school-setup/rollover`. Registrar and finance officer accounts share the school context but cannot write setup.
 
 ```mermaid
 flowchart TD

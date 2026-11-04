@@ -7,6 +7,7 @@ XMETA EDU is a Next.js school-fintech application for parent payments, student a
 - Parent flows for school-reviewed registration, one-school account access, same-school linked students, fee and payment history, tuition payments, receipts, allowance wallets, and student profiles.
 - School Admin workflows for school setup, enrollment, parent registration approval, student and parent records, tuition, collections, school-owned payment-reminder email templates, other fees, allowance, store transactions, and financial reports.
 - Unified Philippine academic setup for Basic Education only, Higher Education only, or integrated K–12 and College schools, with a resumable five-step onboarding wizard, independent readiness checks, focused ongoing editors, and transition-aware Senior High tracks/legacy strands by grade and school year.
+- A school administrator cannot enter the normal Admin dashboard until the active year and every selected academic track are ready; later logins resume the first incomplete onboarding step automatically.
 - Company Super Admin workflows for registration review, school-admin account management, school population summaries, and branded account exports.
 - Role-aware email OTP password recovery using the configured SMTP service.
 - Browser-remembered Light and Dark themes across public pages and dashboards, with Dark as the first-visit default and contrast-safe controls in both modes.

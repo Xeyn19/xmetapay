@@ -13,8 +13,7 @@ export default async function AdminDashboardLayout({
 }>) {
   const session = await requireRole("admin");
   const schoolContext = await getAdminSchoolContext(session.userId);
-  const setupIncomplete = !schoolContext.schoolId
-    || !schoolContext.activeSchoolYear;
+  const setupIncomplete = !schoolContext.databaseReady;
 
   if (setupIncomplete && canManageSchoolSetup(schoolContext.staffRole)) {
     redirect("/admin/onboarding/school-setup");
