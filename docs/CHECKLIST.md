@@ -147,6 +147,7 @@ Done when: admins can manage students and parents can add or view multiple same-
 - [x] Add parent-specific Fee summary archive/restore for settled fees without changing financial records or another guardian's view.
 - [x] Add irreversible parent-specific removal for archived settled Fee summary rows while preserving authoritative financial records and metrics.
 - [x] Make School Setup academic offering authoritative for tuition packages: Basic-only exposes K–12, College-only exposes College, and Both exposes either with server-side enforcement.
+- [x] Add tuition-target Select all/Clear controls and collapse the optional installment-plan editor until an administrator opens it.
 
 Done when: admin and parent fee screens show real balances from MySQL.
 
