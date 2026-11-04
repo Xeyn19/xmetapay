@@ -910,8 +910,10 @@ Use this testing order when checking the project manually in XAMPP:
 
 ```mermaid
 flowchart LR
-  A[Academic setup] --> S[Draft fee schedule]
-  S -->|School admin approves| P[Immutable approved version]
+  A[School Setup academic offering] --> O{Basic, Higher, or Both}
+  O --> S[Show only enabled grade or program/year/period targets]
+  S --> F[Draft fee schedule]
+  F -->|Server revalidates scope and School Setup ownership| P[Immutable approved version]
   P --> E[Resolve exact grade or program/year/period roster]
   E --> V[Search, group, and manually select eligible students]
   E --> D[Show already-assessed students as read-only]
@@ -924,4 +926,4 @@ flowchart LR
   L --> C[Receipt and updated balance]
 ```
 
-K–12 packages expose only students in their selected grade targets. College packages additionally require the matching program year level and active academic period. The preview and posting helpers revalidate the population, so a stale browser selection cannot bypass ownership or eligibility rules. Optional/ad hoc Other fees continue through their existing workflow.
+`schools.education_scope` is the shared source of truth between School Setup and tuition: Basic-only schools see only K–12 targeting, College-only schools see only College targeting, and mixed schools may choose either. K–12 packages expose only students in their selected grade targets. College packages additionally require the matching program year level and active academic period. Package creation locks and revalidates the current school scope, while preview and posting revalidate the population, so a stale or manipulated browser request cannot bypass ownership or eligibility rules. Optional/ad hoc Other fees continue through their existing workflow.

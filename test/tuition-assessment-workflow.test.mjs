@@ -97,3 +97,21 @@ test("assessment workspace exposes exact package targets, groups, periods, and d
   assert.match(domain, /ce\.academic_period_id/);
   assert.match(domain, /sa\.status<>'cancelled'/);
 });
+
+test("school academic offering is authoritative for tuition setup and assessment", async () => {
+  const [domain, forms] = await Promise.all([
+    readFile("lib/fees/assessment-workflow.ts", "utf8"),
+    readFile("app/admin/tuition-assessments/workflow-forms.tsx", "utf8"),
+  ]);
+  assert.match(domain, /getSchoolAcademicReadiness/);
+  assert.match(domain, /educationScope: academics\.educationScope/);
+  assert.match(domain, /enabledAudiences\.includes\(r\.education_level\)/);
+  assert.match(domain, /SELECT education_scope FROM schools WHERE id=:schoolId LIMIT 1 FOR UPDATE/);
+  assert.match(domain, /currentScope==='both'\|\|currentScope===p\.audience/);
+  assert.match(domain, /s\.education_scope='both' OR s\.education_scope=fs\.education_level/);
+  assert.doesNotMatch(forms, /Connected to School Setup:/);
+  assert.match(forms, /workspace\.educationScope === "both"/);
+  assert.match(forms, /type="hidden" name="audience" value=\{audience\}/);
+  assert.match(forms, /Complete School Setup first/);
+  assert.match(forms, /openCollegePeriods/);
+});
