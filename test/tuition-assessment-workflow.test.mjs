@@ -114,4 +114,10 @@ test("school academic offering is authoritative for tuition setup and assessment
   assert.match(forms, /type="hidden" name="audience" value=\{audience\}/);
   assert.match(forms, /Complete School Setup first/);
   assert.match(forms, /openCollegePeriods/);
+  assert.match(forms, /Select all/);
+  assert.match(forms, /setSelectedTargetIds\(targetOptions\.map/);
+  assert.match(forms, /selectedTargetIds\.length.*of.*availableTargets.*selected/);
+  assert.match(forms, /<details className="group rounded-xl border border-border bg-card text-card-foreground">/);
+  assert.match(forms, /Optional\. Open this only when families may pay the package in scheduled parts/);
+  assert.match(forms, /group-open:rotate-90/);
 });
