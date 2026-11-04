@@ -21,6 +21,18 @@ test("guided onboarding exposes the five accessible Philippine school setup step
   assert.match(wizard, /focus-visible:ring-primary/);
 });
 
+test("incomplete school administrators resume onboarding before dashboard access", () => {
+  const layout = read("app/admin/(dashboard)/layout.tsx");
+  const setup = read("lib/school/setup.ts");
+
+  assert.match(layout, /const setupIncomplete = !schoolContext\.databaseReady/);
+  assert.match(layout, /setupIncomplete && canManageSchoolSetup\(schoolContext\.staffRole\)/);
+  assert.match(layout, /redirect\("\/admin\/onboarding\/school-setup"\)/);
+  assert.doesNotMatch(layout, /!schoolContext\.activeSchoolYear/);
+  assert.match(setup, /databaseReady: Boolean\(activeSchoolYear && academics\.ready\)/);
+  assert.match(setup, /getSchoolAcademicReadiness\(school\.id, activeSchoolYear\?\.id \?\? null\)/);
+});
+
 test("Basic Education uses selectable Philippine level groups and editable Section A defaults", () => {
   const wizard = read("app/admin/_components/guided-school-setup-wizard.tsx");
   for (const label of ["Kindergarten", "Elementary (Grades 1–6)", "Junior High School (Grades 7–10)", "Senior High School (Grades 11–12)"]) {

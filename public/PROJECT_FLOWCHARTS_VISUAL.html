@@ -458,7 +458,7 @@ flowchart TD
   O -->|Pending| P2["Show waiting for XMETA EDU approval"]
   O -->|Disabled| P3["Show not approved or disabled message"]
   O -->|Yes and active| Q["Create DB-backed session and HttpOnly cookie"]
-  Q --> R{"School setup complete?"}
+  Q --> R{"Active year and selected academic tracks ready?"}
   R -->|No, school_administrator| S["Redirect to /admin/onboarding/school-setup"]
   S --> T["Resume first incomplete guided setup step"]
   T --> U["Redirect to /admin/dashboard"]
@@ -467,7 +467,7 @@ flowchart TD
         </div>
 
         <h3>Guided Philippine School Setup</h3>
-        <p>Implemented: first-time onboarding is a resumable five-step wizard for School profile, School year, Basic Education, College, and Review. Grade 11 and Grade 12 separately choose the Strengthened SHS track or transitional legacy tracks/strands before sections are created. The selected school offering controls required steps; ongoing management uses the School setup hub and focused academic editors.</p>
+        <p>Implemented: first-time onboarding is a resumable five-step wizard for School profile, School year, Basic Education, College, and Review. Grade 11 and Grade 12 separately choose the Strengthened SHS track or transitional legacy tracks/strands before sections are created. The selected school offering controls required steps. Every later login and protected dashboard request checks the same active-year and track readiness, returning incomplete school administrators to the first unfinished step; ongoing management uses the School setup hub and focused academic editors.</p>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="manual-school-setup.svg">Download SVG</button>

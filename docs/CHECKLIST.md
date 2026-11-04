@@ -108,7 +108,7 @@ Done when: the full schema can be imported locally or into a new empty cPanel da
 - [x] Show independent K–12 and College readiness cards in the School setup hub.
 - [x] Move college program, period, section, and placement management into School setup with active/upcoming/closed year behavior.
 - [x] Make school-year activation validate the selected academic offering: K–12, College, or both structures.
-- [x] Redirect new school administrators to setup-only onboarding until every selected academic track is ready.
+- [x] Redirect school administrators to setup-only onboarding on every login and protected dashboard request until the active year and every selected academic track are ready.
 
 Done when: the admin dashboard can load school setup data from MySQL, switch admin views by school year, keep new operational records in the active year, prepare target-year enrollments through manual rollover, and activate the next school year when ready.
 

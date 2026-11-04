@@ -329,7 +329,7 @@
             <tr>
               <td>Unified Basic Education / Higher Education / Both school setup</td>
               <td><code>schools</code>, <code>school_years</code>, <code>grade_levels</code>, <code>senior_high_offerings</code>, <code>sections</code></td>
-              <td>School structure with one or many school years and one active year. Senior High offerings distinguish Strengthened SHS tracks from transitional legacy strands by grade and year; the nullable section link preserves existing records. The resumable wizard derives progress without an onboarding-status table.</td>
+              <td>School structure with one or many school years and one active year. Senior High offerings distinguish Strengthened SHS tracks from transitional legacy strands by grade and year; the nullable section link preserves existing records. The resumable wizard derives progress without an onboarding-status table, and the protected Admin layout rechecks the same scope-aware readiness on every login and dashboard request.</td>
             </tr>
             <tr>
               <td>Students</td>
@@ -687,7 +687,7 @@ flowchart TD
   D --> E["Company super admin approves account"]
   E --> F["Admin logs in"]
   F --> G["Redirect to resumable five-step onboarding"]
-  G --> H{"School setup complete?"}
+  G --> H{"Active year and selected academic tracks ready?"}
   H -->|Yes| I["Use linked school context"]
   H -->|No| J{"staff_role is school_administrator?"}
   J -->|No| K["Ask a school administrator to complete setup"]
@@ -936,7 +936,7 @@ flowchart LR
       <h2 id="tuition-schema-title">Tuition assessment schema extension</h2>
       <p><strong>Academic:</strong> schools → academic periods/programs/year levels → college enrollments. <strong>Pricing:</strong> fee schedules → targets/items/payment plans. <strong>Ledger:</strong> assessment batches → student assessments → assignment snapshots, credits, terms, payment allocations, and receipts.</p>
       <p>Legacy fee assignments remain standalone; deterministic assignment keys allow the same college fee in different academic periods without rewriting history.</p>
-      <p><strong>Roster and onboarding UX:</strong> <code>schools.education_scope</code> is the shared boundary between School Setup and tuition schedule creation. Existing schedule-target and enrollment relationships resolve the eligible tuition roster. Guided school setup saves progress directly to school, school-year, K–12, Senior High offering, and college academic records. The additive Senior High migration links a section to its Strengthened SHS track or transitional legacy strand without rewriting existing sections.</p>
+      <p><strong>Roster and onboarding UX:</strong> <code>schools.education_scope</code> is the shared boundary between School Setup and tuition schedule creation. Existing schedule-target and enrollment relationships resolve the eligible tuition roster. Guided school setup saves progress directly to school, school-year, K–12, Senior High offering, and college academic records. Returning school administrators remain in onboarding until the active year and every selected track are ready; this guard adds no schema. The additive Senior High migration links a section to its Strengthened SHS track or transitional legacy strand without rewriting existing sections.</p>
     </section>
   </body>
 </html>
