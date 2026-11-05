@@ -307,8 +307,15 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
 
     const routes = [
       { path: "/admin/dashboard", heading: "Dashboard" },
+      { path: "/admin/school-setup", heading: "School setup" },
       { path: "/admin/tuition", heading: "Tuition report" },
+      { path: "/admin/collections", heading: "Collections log" },
+      { path: "/admin/other-fees", heading: "Other school fees" },
       { path: "/admin/students", heading: "Enrolled students" },
+      { path: "/admin/student-profile", heading: "Student profile" },
+      { path: "/admin/parents", heading: "Parents & guardians" },
+      { path: "/admin/allowance", heading: "Allowance ledger" },
+      { path: "/admin/store-transactions", heading: "Store transactions" },
       { path: "/admin/reports", heading: "Financial reports" },
     ];
 
@@ -530,6 +537,12 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     const adminDrawer = page.getByRole("dialog", { name: "Admin navigation" });
     await expect(adminDrawer).toBeVisible();
     await expect(adminDrawer).toBeInViewport();
+
+    await page.keyboard.press("Escape");
+    await expect(adminDrawer).not.toBeInViewport();
+    await expect(page.getByRole("button", { name: "Open admin menu" })).toBeFocused();
+
+    await page.getByRole("button", { name: "Open admin menu" }).click();
 
     await adminDrawer.getByRole("link", { name: "Dashboard" }).click();
     await expect(page).toHaveURL("/admin/dashboard");
@@ -860,7 +873,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
     await expect(tablePdf).toHaveCSS("background-color", "rgb(25, 29, 42)");
     await tablePdf.hover();
     await expect(tablePdf).toHaveCSS("background-color", "rgb(58, 35, 29)");
-    await expect(tableExcel).toHaveCSS("background-color", "rgb(15, 17, 23)");
+    await expect(tableExcel).toHaveCSS("background-color", "rgb(247, 248, 250)");
 
     await page.getByRole("button", { name: "Switch to light mode" }).click();
     await expect(tablePdf).toHaveCSS("border-color", "rgb(230, 74, 25)");
@@ -868,7 +881,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
     await expect(tablePdf).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await tablePdf.hover();
     await expect(tablePdf).toHaveCSS("background-color", "rgb(251, 233, 231)");
-    await expect(tableExcel).toHaveCSS("background-color", "rgb(15, 17, 23)");
+    await expect(tableExcel).toHaveCSS("background-color", "rgb(17, 19, 26)");
 
     await page.goto("/admin/reports", { waitUntil: "domcontentloaded" });
     const reportPdf = page.getByRole("link", { name: "PDF" }).first();
@@ -877,7 +890,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
     await expect(reportPdf).toHaveCSS("color", "rgb(230, 74, 25)");
     await reportPdf.hover();
     await expect(reportPdf).toHaveCSS("background-color", "rgb(251, 233, 231)");
-    await expect(reportExcel).toHaveCSS("background-color", "rgb(15, 17, 23)");
+    await expect(reportExcel).toHaveCSS("background-color", "rgb(17, 19, 26)");
   });
 
   test("Admin finance pages keep report hover text readable and tuition content focused", async ({ page }) => {
@@ -914,7 +927,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/admin/store-transactions", { waitUntil: "domcontentloaded" });
       test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
-      await page.getByPlaceholder("Search store transactions...").fill("no-matching-store-transaction");
+      await page.getByLabel("Search store transactions by reference, student, grade, or merchant").fill("no-matching-store-transaction");
       await expect(page.getByRole("button", { name: "Export Excel" })).toBeDisabled();
       await expect(page.getByRole("button", { name: "Export PDF" })).toBeDisabled();
       await expectNoHorizontalOverflow(page);
@@ -925,8 +938,10 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
     await expect(excelButton).toHaveCSS("color", "rgb(185, 192, 204)");
     await expect(excelButton).toHaveCSS("border-color", "rgb(56, 64, 82)");
 
-    await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: /Show reminder history/ }).click();
+    await page.goto("/admin/tuition", { waitUntil: "networkidle" });
+    const reminderHistoryToggle = page.getByRole("button", { name: /Show reminder history/ });
+    await expect(reminderHistoryToggle).toBeVisible();
+    await reminderHistoryToggle.click();
     await page.getByLabel("Search reminder history by student, parent, subject, or message").fill("no-matching-reminder");
     const selectVisible = page.getByRole("button", { name: "Select visible" }).first();
     await expect(selectVisible).toBeDisabled();
@@ -1003,14 +1018,14 @@ test.describe("XMETA EDU super admin branding", () => {
     await expect(pdfButton).toHaveCSS("color", "rgb(255, 106, 61)");
     await pdfButton.hover();
     await expect(pdfButton).toHaveCSS("background-color", "rgb(58, 35, 29)");
-    await expect(excelButton).toHaveCSS("background-color", "rgb(15, 17, 23)");
+    await expect(excelButton).toHaveCSS("background-color", "rgb(247, 248, 250)");
 
     await page.getByRole("button", { name: "Switch to light mode" }).click();
     await expect(pdfButton).toHaveCSS("border-color", "rgb(230, 74, 25)");
     await expect(pdfButton).toHaveCSS("color", "rgb(230, 74, 25)");
     await pdfButton.hover();
     await expect(pdfButton).toHaveCSS("background-color", "rgb(251, 233, 231)");
-    await expect(excelButton).toHaveCSS("background-color", "rgb(15, 17, 23)");
+    await expect(excelButton).toHaveCSS("background-color", "rgb(17, 19, 26)");
 
     await page.waitForLoadState("networkidle");
     const excelDownloadPromise = page.waitForEvent("download");

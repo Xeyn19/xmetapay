@@ -7,13 +7,13 @@ const parentShell = readFileSync("app/parent/_components/parent-shell.tsx", "utf
 
 test("admin and parent shells expose accessible mobile drawer controls", () => {
   [
-    { name: "admin", source: adminShell, drawerId: "admin-sidebar" },
-    { name: "parent", source: parentShell, drawerId: "parent-sidebar" },
-  ].forEach(({ name, source, drawerId }) => {
+    { name: "admin", source: adminShell, drawerId: "admin-sidebar", modalPattern: /aria-modal=\{sidebarOpen \? true : undefined\}/, rolePattern: /role=\{sidebarOpen \? "dialog" : undefined\}/ },
+    { name: "parent", source: parentShell, drawerId: "parent-sidebar", modalPattern: /aria-modal="true"/, rolePattern: /role="dialog"/ },
+  ].forEach(({ name, source, drawerId, modalPattern, rolePattern }) => {
     assert.match(source, new RegExp(`aria-controls="${drawerId}"`), `${name} menu button should target the drawer`);
     assert.match(source, new RegExp(`id="${drawerId}"`), `${name} drawer should have a stable id`);
-    assert.match(source, /aria-modal="true"/, `${name} drawer should be announced as a modal on mobile`);
-    assert.match(source, /role="dialog"/, `${name} drawer should expose dialog semantics`);
+    assert.match(source, modalPattern, `${name} drawer should be announced as a modal on mobile`);
+    assert.match(source, rolePattern, `${name} drawer should expose dialog semantics`);
     assert.doesNotMatch(source, /aria-hidden=\{!(sidebarOpen|open)\}/, `${name} desktop sidebar controls should stay accessible`);
   });
 });

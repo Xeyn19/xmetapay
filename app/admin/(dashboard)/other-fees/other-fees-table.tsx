@@ -44,11 +44,16 @@ export function OtherFeesTable({
     () => filterByQuery(
       items.filter((item) => status === "all" || item.status === status),
       query,
-      (item) => Object.values(item).join(" "),
+      (item) => [item.name, item.meta].join(" "),
     ),
     [items, query, status],
   );
   const pagination = usePaginatedRows(filteredItems, `${query}|${status}`);
+  const hasActiveFilters = query.trim() !== "" || status !== "all";
+  const resetFilters = () => {
+    setQuery("");
+    setStatus("all");
+  };
   const exportColumns: ExportColumn<OtherFeeRow>[] = [
     { label: "Fee type", value: (item) => item.name },
     { label: "Description", value: (item) => item.meta },
@@ -86,18 +91,18 @@ export function OtherFeesTable({
 
   return (
     <>
-      <div className="border-b border-black/[0.07] px-[18px] py-3">
+      <div className="border-b border-border px-[18px] py-3">
         <DashboardTableControls
           query={query}
           onQueryChange={setQuery}
-          searchPlaceholder="Search fee types..."
+          searchPlaceholder="Search fee name or description..."
+          searchLabel="Search other fees by fee name or description"
           filters={[
             { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(items.map((item) => item.status), "All statuses") },
           ]}
-          onClear={() => {
-            setQuery("");
-            setStatus("all");
-          }}
+          onClear={resetFilters}
+          clearLabel="Reset filters"
+          clearDisabled={!hasActiveFilters}
           onExport={() => exportRowsToExcel(
             "admin-other-fees.xlsx",
             "Other fees",
@@ -116,35 +121,36 @@ export function OtherFeesTable({
           exportingLabel="Generating Excel..."
           exportDisabled={filteredItems.length === 0}
         />
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-live="polite"><span><strong className="text-foreground">{filteredItems.length}</strong> fee types</span><span><strong className="text-foreground">{money(filteredTotals.assigned)}</strong> assigned</span><span><strong className="text-status-success-foreground">{money(filteredTotals.collected)}</strong> collected</span><span><strong className="text-status-danger-foreground">{money(filteredTotals.outstanding)}</strong> outstanding</span></div>
       </div>
-      <div className="divide-y divide-black/[0.07]">
+      <div className="divide-y divide-border">
         {filteredItems.length > 0 ? (
           pagination.pageRows.map((item) => {
             const assignmentTone = item.assignedCount === 0
-              ? "bg-[#eff1f5] text-[#5a6070]"
+              ? "bg-status-inactive-bg text-status-inactive-foreground"
               : item.paidCount >= item.assignedCount
-                ? "bg-[#e8f5e9] text-[#2e7d32]"
-                : "bg-[#fff3e0] text-[#f57c00]";
+                ? "bg-status-success-bg text-status-success-foreground"
+                : "bg-status-warning-bg text-status-warning-foreground";
             const statusTone = item.status === "Active" ? "active" : "inactive";
 
             return (
-              <div key={item.name} className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 transition hover:bg-[#f7f8fa]">
+              <div key={item.name} className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 transition hover:bg-muted/70">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-[#fbe9e7] text-[#e64a19]">
+                  <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-button-soft text-primary">
                     <ClipboardList className="size-4" />
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate text-[13px] font-bold text-[#0f1117]">{item.name}</div>
-                    <div className="mt-0.5 truncate text-[11px] text-[#5a6070]">{item.meta}</div>
+                    <div className="truncate text-[13px] font-bold text-foreground">{item.name}</div>
+                    <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{item.meta}</div>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-3 text-right sm:gap-5">
                   <div>
                     <div className="text-sm font-bold">{item.amount}</div>
-                    <div className="text-[11px] text-[#5a6070]">
+                    <div className="text-[11px] text-muted-foreground">
                       {item.assignedCount > 0 ? `Assigned ${item.totalBilled}` : "Not assigned yet"}
                     </div>
-                    <div className="text-[11px] text-[#5a6070]">Collected {item.collected}</div>
+                    <div className="text-[11px] text-muted-foreground">Collected {item.collected}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10.5px] font-bold leading-5 ${assignmentTone}`}>
@@ -157,8 +163,8 @@ export function OtherFeesTable({
             );
           })
         ) : (
-          <div className="px-[18px] py-8 text-center text-[12.5px] text-[#5a6070]">
-            {items.length === 0 ? "No other fee types yet." : "No other fee types match the current filters."}
+          <div className="px-[18px] py-8 text-center text-[12.5px] text-muted-foreground">
+            {items.length === 0 ? "No other fee types yet." : <span>No other fee types match the current filters. <button type="button" onClick={resetFilters} className="ml-1 min-h-11 font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Reset filters</button></span>}
           </div>
         )}
       </div>

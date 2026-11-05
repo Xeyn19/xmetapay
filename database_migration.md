@@ -2,6 +2,8 @@
 
 This checklist records which migrations have been applied to production. ✅ means applied; ⬜ means pending.
 
+> **Admin dashboard UI/UX organization (2026-11-05):** no SQL file is required. The redesign changes presentation, responsive navigation, table controls, page hierarchy, and selection safety only. It does not add or alter database tables, columns, indexes, records, Server Action payloads, or financial logic. Keep the migration checklist below unchanged.
+
 - ✅ [2026-06-24-admin-school-link.sql](database/migrations/2026-06-24-admin-school-link.sql)
 - ✅ [2026-06-25-auth-sessions.sql](database/migrations/2026-06-25-auth-sessions.sql)
 - ✅ [2026-07-03-notification-message-body.sql](database/migrations/2026-07-03-notification-message-body.sql)

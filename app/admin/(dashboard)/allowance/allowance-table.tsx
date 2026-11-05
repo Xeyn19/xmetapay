@@ -84,6 +84,7 @@ export function AllowanceTable({
   const allPageRowsSelected = pageIds.length > 0 && pageIds.every((id) => selectedSet.has(id));
   const exportColumns = allowanceExportColumns(view === "archived");
   const exportTitle = view === "archived" ? "Archived allowance wallets" : "Active allowance wallets";
+  const hasActiveFilters = query.trim() !== "" || status !== "all";
   const exportOptions = {
     context: [
       { label: "School", value: schoolName },
@@ -108,6 +109,23 @@ export function AllowanceTable({
     setStatus("all");
     setSelectedIds([]);
     setConfirmationIds([]);
+  };
+  const clearSelectionState = () => {
+    setSelectedIds([]);
+    setConfirmationIds([]);
+  };
+  const changeQuery = (value: string) => {
+    setQuery(value);
+    clearSelectionState();
+  };
+  const changeStatus = (value: WalletStatusFilter) => {
+    setStatus(value);
+    clearSelectionState();
+  };
+  const resetFilters = () => {
+    setQuery("");
+    setStatus("all");
+    clearSelectionState();
   };
 
   const toggleRow = (walletId: number) => {
@@ -167,9 +185,9 @@ export function AllowanceTable({
 
   return (
     <>
-      <div className="space-y-3 border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
+      <div className="space-y-3 border-b border-border px-4 py-3.5 sm:px-[18px]">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="inline-flex min-h-11 rounded-lg border border-black/10 bg-[#f1f2f5] p-1" role="tablist" aria-label="Allowance ledger archive view">
+          <div className="inline-flex min-h-11 rounded-lg border border-border bg-muted p-1" role="tablist" aria-label="Allowance ledger archive view">
             <button type="button" role="tab" aria-selected={view === "active"} onClick={() => changeView("active")} className={viewTabClass(view === "active")}>
               Active wallets ({activeWalletRows.length})
             </button>
@@ -177,29 +195,29 @@ export function AllowanceTable({
               Archived wallets ({archivedWalletRows.length})
             </button>
           </div>
-          <p className="text-[11.5px] text-[#5a6070]">
+          <p className="text-[11.5px] text-muted-foreground" aria-live="polite">
             {validSelectedIds.length} {validSelectedIds.length === 1 ? "wallet" : "wallets"} selected
           </p>
         </div>
 
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="text-[12.5px] font-semibold text-[#0f1117]">Wallet status filter</div>
-            <div className="mt-0.5 text-[11.5px] text-[#5a6070]">
+            <div className="text-[12.5px] font-semibold text-foreground">Wallet status filter</div>
+            <div className="mt-0.5 text-[11.5px] text-muted-foreground">
               Review balances or focus on students who may need a top-up.
             </div>
           </div>
-          <SegmentedTabs tabs={statusTabs} active={status} onChange={setStatus} />
+          <SegmentedTabs tabs={statusTabs} active={status} onChange={changeStatus} />
         </div>
 
         <DashboardTableControls
           query={query}
-          onQueryChange={setQuery}
-          searchPlaceholder="Search wallets..."
-          onClear={() => {
-            setQuery("");
-            setStatus("all");
-          }}
+          onQueryChange={changeQuery}
+          searchPlaceholder="Search student, grade, or wallet status..."
+          searchLabel="Search allowance wallets by student, grade, or status"
+          onClear={resetFilters}
+          clearLabel="Reset filters"
+          clearDisabled={!hasActiveFilters}
           onExport={() => exportRowsToExcel(
             view === "archived" ? "admin-allowance-wallets-archived.xlsx" : "admin-allowance-wallets.xlsx",
             exportTitle,
@@ -275,8 +293,8 @@ export function AllowanceTable({
           ))
         ) : (
           <tr>
-            <td colSpan={view === "archived" ? 10 : 9} className="text-center text-[#5a6070]">
-              {emptyState(view, hasRows, hasFilters)}
+            <td colSpan={view === "archived" ? 10 : 9} className="py-8 text-center text-muted-foreground">
+              {hasFilters ? <span>{emptyState(view, hasRows, hasFilters)} <button type="button" onClick={resetFilters} className="ml-1 min-h-11 font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Reset filters</button></span> : emptyState(view, hasRows, hasFilters)}
             </td>
           </tr>
         )}
@@ -321,8 +339,8 @@ export function AllowanceTable({
   );
 }
 
-const secondaryButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass);
-const primaryDarkButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#0f1117] bg-[#0f1117] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#2d3348] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass);
+const secondaryButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass);
+const primaryDarkButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-button-secondary bg-button-secondary px-3.5 text-[12.5px] font-semibold text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass);
 const iconButtonClass = cn("inline-flex size-10 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass);
 
 function viewTabClass(active: boolean) {

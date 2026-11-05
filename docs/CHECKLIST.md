@@ -23,6 +23,9 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] All portal email and password placeholders use professional instruction-only copy without sample or stored user addresses.
 - [x] Public and authentication screens provide a remembered Light/Dark toggle with Dark as the first-visit default while dashboard interiors remain unchanged.
 - [x] Admin, Parent, and Super Admin dashboards share the same remembered Light/Dark preference, semantic operational surfaces, theme-aware charts and statuses, and adaptive light/charcoal sidebars.
+- [x] Organize every authenticated Admin route around its primary task while preserving all existing actions, permissions, routes, exports, and data contracts.
+- [x] Use shared semantic Admin cards, workflow headers, table controls, empty states, and responsive mobile navigation with Escape, focus containment, and focus restoration.
+- [x] Put student, store, finance, and setup records before supporting queues or insights; keep archive selections safe when filters or Active/Archived views change.
 - [x] Keep Admin report-download rows readable during hover in both themes by using semantic foreground, muted, border, and hover surfaces.
 - [x] Keep disabled Admin exports, pagination, selection, and bulk actions readable with opaque neutral surfaces, and use semantic state colors for Admin alerts and status badges in both themes.
 - [x] Use the outlined XMETA red/orange treatment for every School Admin, Super Admin, and protected Reports-page PDF control while preserving Excel styling.

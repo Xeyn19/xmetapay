@@ -28,11 +28,17 @@ export function StudentsTable({ students, schoolName, schoolYearName }: { studen
         && (status === "all" || student.enrollmentStatus === status)
       ),
       query,
-      (student) => Object.values(student).join(" "),
+      (student) => [student.fullName, student.studentReference, student.guardians, student.guardianContact].join(" "),
     ),
     [grade, query, status, students],
   );
   const pagination = usePaginatedRows(filteredStudents, `${query}|${grade}|${status}`);
+  const hasActiveFilters = query.trim() !== "" || grade !== "all" || status !== "all";
+  const resetFilters = () => {
+    setQuery("");
+    setGrade("all");
+    setStatus("all");
+  };
   const exportColumns: ExportColumn<AdminStudentRow>[] = [
     { label: "Reference", value: (student) => student.studentReference },
     { label: "Full name", value: (student) => student.fullName },
@@ -57,26 +63,26 @@ export function StudentsTable({ students, schoolName, schoolYearName }: { studen
 
   return (
     <>
-      <div className="border-b border-black/[0.07] px-[18px] py-3">
+      <div className="border-b border-border px-[18px] py-3">
         <DashboardTableControls
           query={query}
           onQueryChange={setQuery}
-          searchPlaceholder="Search students..."
+          searchPlaceholder="Search name, reference, guardian, or contact..."
+          searchLabel="Search students by name, reference, guardian, or contact"
           filters={[
             { label: "Grade", value: grade, onChange: setGrade, options: toFilterOptions(students.map((student) => student.grade), "All grades") },
             { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(students.map((student) => student.enrollmentStatus), "All statuses") },
           ]}
-          onClear={() => {
-            setQuery("");
-            setGrade("all");
-            setStatus("all");
-          }}
+          onClear={resetFilters}
+          clearLabel="Reset filters"
+          clearDisabled={!hasActiveFilters}
           onExport={() => exportRowsToExcel("admin-students.xlsx", "Enrolled students", filteredStudents, exportColumns, { worksheetName: "Enrolled students", ...exportOptions })}
           onExportPdf={() => exportRowsToPdf("admin-students.pdf", "Enrolled students", filteredStudents, exportColumns, exportOptions)}
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredStudents.length === 0}
         />
+        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredStudents.length}</strong> {filteredStudents.length === 1 ? "student" : "students"} shown</p>
       </div>
       <AdminTable
         headers={[
@@ -92,16 +98,16 @@ export function StudentsTable({ students, schoolName, schoolYearName }: { studen
         {filteredStudents.length > 0 ? (
           pagination.pageRows.map((row) => (
             <tr key={row.id}>
-              <td className="font-mono text-[11px] text-[#5a6070]">{row.studentReference}</td>
+              <td className="font-mono text-[11px] text-muted-foreground">{row.studentReference}</td>
               <td>
-                <Link href={`/admin/students/${row.id}`} className="font-bold text-[#e64a19] hover:underline">
+                <Link href={`/admin/students/${row.id}`} className="font-bold text-primary hover:underline">
                   {row.fullName}
                 </Link>
               </td>
               <td>{row.grade}</td>
               <td>{row.section}</td>
               <td>{row.guardians}</td>
-              <td className="font-mono text-[11px] text-[#5a6070]">{row.guardianContact}</td>
+              <td className="font-mono text-[11px] text-muted-foreground">{row.guardianContact}</td>
               <td>
                 <StatusPill tone={row.enrollmentStatus === "enrolled" ? "enrolled" : "pending"}>
                   {row.enrollmentStatus.charAt(0).toUpperCase() + row.enrollmentStatus.slice(1)}
@@ -111,8 +117,8 @@ export function StudentsTable({ students, schoolName, schoolYearName }: { studen
           ))
         ) : (
           <tr>
-            <td colSpan={7} className="text-center text-[#5a6070]">
-              {students.length === 0 ? "No student records yet." : "No students match the current filters."}
+            <td colSpan={7} className="py-8 text-center text-muted-foreground">
+              {students.length === 0 ? "No student records yet." : <span>No students match the current filters. <button type="button" onClick={resetFilters} className="ml-1 min-h-11 font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Reset filters</button></span>}
             </td>
           </tr>
         )}

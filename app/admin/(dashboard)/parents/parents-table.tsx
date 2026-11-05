@@ -27,11 +27,17 @@ export function ParentsTable({ rows, schoolName, schoolYearName }: { rows: Admin
         && (status === "all" || row.status === status)
       ),
       query,
-      (row) => Object.values(row).join(" "),
+      (row) => [row.parentName, row.students, row.contact, row.email].join(" "),
     ),
     [query, relationship, rows, status],
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${relationship}|${status}`);
+  const hasActiveFilters = query.trim() !== "" || relationship !== "all" || status !== "all";
+  const resetFilters = () => {
+    setQuery("");
+    setRelationship("all");
+    setStatus("all");
+  };
   const exportColumns: ExportColumn<AdminParentRow>[] = [
     { label: "Parent name", value: (row) => row.parentName },
     { label: "Students", value: (row) => row.students },
@@ -57,26 +63,26 @@ export function ParentsTable({ rows, schoolName, schoolYearName }: { rows: Admin
 
   return (
     <>
-      <div className="border-b border-black/[0.07] px-[18px] py-3">
+      <div className="border-b border-border px-[18px] py-3">
         <DashboardTableControls
           query={query}
           onQueryChange={setQuery}
-          searchPlaceholder="Search parents..."
+          searchPlaceholder="Search parent, student, email, or contact..."
+          searchLabel="Search parents by parent name, student, email, or contact"
           filters={[
             { label: "Relationship", value: relationship, onChange: setRelationship, options: toFilterOptions(rows.map((row) => row.relationship), "All relationships") },
             { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
           ]}
-          onClear={() => {
-            setQuery("");
-            setRelationship("all");
-            setStatus("all");
-          }}
+          onClear={resetFilters}
+          clearLabel="Reset filters"
+          clearDisabled={!hasActiveFilters}
           onExport={() => exportRowsToExcel("admin-parent-contacts.xlsx", "Parent contacts", filteredRows, exportColumns, { worksheetName: "Parent contacts", ...exportOptions })}
           onExportPdf={() => exportRowsToPdf("admin-parent-contacts.pdf", "Parent contacts", filteredRows, exportColumns, exportOptions)}
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
+        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredRows.length}</strong> {filteredRows.length === 1 ? "contact" : "contacts"} shown</p>
       </div>
       <AdminTable
         headers={[
@@ -95,7 +101,7 @@ export function ParentsTable({ rows, schoolName, schoolYearName }: { rows: Admin
               <td className="font-bold">{row.parentName}</td>
               <td>{row.students}</td>
               <td>{row.grade}</td>
-              <td className="font-mono text-[11px] text-[#5a6070]">{row.contact}</td>
+              <td className="font-mono text-[11px] text-muted-foreground">{row.contact}</td>
               <td>{row.email}</td>
               <td>{row.relationship}</td>
               <td>
@@ -105,8 +111,8 @@ export function ParentsTable({ rows, schoolName, schoolYearName }: { rows: Admin
           ))
         ) : (
           <tr>
-            <td colSpan={7} className="text-center text-[#5a6070]">
-              {rows.length === 0 ? "No linked parent records yet." : "No parent records match the current filters."}
+            <td colSpan={7} className="py-8 text-center text-muted-foreground">
+              {rows.length === 0 ? "No linked parent records yet." : <span>No parent records match the current filters. <button type="button" onClick={resetFilters} className="ml-1 min-h-11 font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Reset filters</button></span>}
             </td>
           </tr>
         )}

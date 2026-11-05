@@ -84,6 +84,7 @@ Changing the offering never deletes records. Expansion is allowed; narrowing is 
 - Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table, with contrast-safe report rows and outlined XMETA red/orange PDF controls across School Admin and Super Admin in both dashboard themes.
 - Tuition page presents KPIs and the student balance report first, with name/reference search, status/grade/section filters, roster/balance/due-date/name sorting, live filtered totals, and all-filtered-row exports. Outstanding-by-grade insight follows, while payment-reminder history stays collapsed until opened and clears selections when its filter context changes. It does not duplicate the non-tuition summary owned by Other fees.
 - Admin and parent real-data tables paginate on screen and export all filtered authorized rows as branded Excel/PDF.
+- Authenticated Admin pages use one task-based UI system: operational lists and ledgers come before supporting insights, setup subpages use focused workflow headers, filters have explicit labels and reset recovery, and archive selections are cleared when their filter/view context changes. Mobile navigation contains focus and restores it on close. All underlying actions, permissions, routes, and records remain unchanged.
 - Real SMTP payment reminders with protected and school-owned templates plus audited delivery history in `notification_logs`.
 
 Next:

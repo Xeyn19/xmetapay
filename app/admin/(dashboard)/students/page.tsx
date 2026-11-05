@@ -1,4 +1,4 @@
-import { AlertTriangle, UserPlus, Users } from "lucide-react";
+import { AlertTriangle, Users } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
@@ -50,11 +50,11 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
         ))}
       </KpiGrid>
 
-      <div id="add-students" className="scroll-mt-32">
+      <div id="add-students" className="mb-5 scroll-mt-32">
         <DashboardCard
-          title="Student enrollment"
-          icon={UserPlus}
-          className="mb-5"
+          title={`Student registry - ${data.activeSchoolYearName ?? "School year pending"}`}
+          icon={Users}
+          bodyClassName="p-0"
           action={
             <StudentIntake
               initialOpen={query.intake === "choose"}
@@ -66,9 +66,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
             />
           }
         >
-          <p className="max-w-3xl text-[12px] leading-5 text-[#5a6070]">
-            Add one student, create a batch of new student records, or enroll students who already exist for the active school year.
-          </p>
+          <StudentsTable students={data.students} schoolName={schoolContext.schoolName} schoolYearName={data.activeSchoolYearName ?? "School year pending"} />
         </DashboardCard>
       </div>
 
@@ -91,13 +89,6 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
         </DashboardCard>
       ) : null}
 
-      <DashboardCard
-        title={`Student registry - ${data.activeSchoolYearName ?? "School year pending"}`}
-        icon={Users}
-        bodyClassName="p-0"
-      >
-        <StudentsTable students={data.students} schoolName={schoolContext.schoolName} schoolYearName={data.activeSchoolYearName ?? "School year pending"} />
-      </DashboardCard>
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   Database,
@@ -37,13 +37,10 @@ export function AdminShell({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const selectedStudentProfilePath = /^\/admin\/students\/\d+$/.test(pathname);
-  const schoolYearStructurePath = /^\/admin\/school-setup\/years\/\d+$/.test(pathname);
-  const meta = selectedStudentProfilePath
-    ? pageMeta["/admin/student-profile"]
-    : schoolYearStructurePath
-      ? pageMeta["/admin/school-setup/year-structure"]
-      : pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
+  const meta = resolveAdminPageMeta(pathname);
   const subtitle = dashboardSubtitle(meta.subtitle, schoolContext);
   const schoolYear = schoolContext.selectedSchoolYear?.name
     ?? schoolContext.activeSchoolYear?.name
@@ -58,13 +55,53 @@ export function AdminShell({
   const logout = logoutAction.bind(null, "admin");
   const duplicateYearNames = duplicateSchoolYearNames(schoolContext.schoolYears);
 
+  useEffect(() => {
+    if (!sidebarOpen || window.matchMedia("(min-width: 1024px)").matches) return;
+
+    const sidebar = sidebarRef.current;
+    const previousOverflow = document.body.style.overflow;
+    const focusable = sidebar?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable?.[0];
+    const last = focusable?.[focusable.length - 1];
+    document.body.style.overflow = "hidden";
+    first?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSidebarOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLButtonElement>('[aria-label="Open admin menu"]')?.focus();
+      });
+    };
+  }, [sidebarOpen]);
+
   return (
     <div className="dashboard-theme min-h-[100svh] overflow-x-hidden">
       {!sidebarOpen ? (
         <button
+          ref={menuButtonRef}
           type="button"
           onClick={() => setSidebarOpen(true)}
-          className="fixed left-3 top-3 z-[120] flex size-11 items-center justify-center rounded-lg bg-[#e64a19] text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30 lg:hidden"
+          className="fixed left-3 top-3 z-[120] flex size-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden"
           aria-label="Open admin menu"
           aria-controls="admin-sidebar"
           aria-expanded={sidebarOpen}
@@ -76,20 +113,21 @@ export function AdminShell({
       {sidebarOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-[90] bg-[#0f1117]/45 lg:hidden"
+          className="fixed inset-0 z-[90] bg-foreground/45 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-label="Close admin menu overlay"
         />
       ) : null}
 
       <aside
+        ref={sidebarRef}
         className={cn(
           "dashboard-sidebar fixed inset-y-0 left-0 z-[100] flex w-60 max-w-[calc(100vw-24px)] flex-col overflow-y-auto overscroll-contain border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-200",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         id="admin-sidebar"
-        role="dialog"
-        aria-modal="true"
+        role={sidebarOpen ? "dialog" : undefined}
+        aria-modal={sidebarOpen ? true : undefined}
         aria-label="Admin navigation"
       >
         <div className="shrink-0 border-b border-sidebar-border px-4 pb-3 pt-4">
@@ -178,17 +216,17 @@ export function AdminShell({
       </aside>
 
       <div className="min-h-[100svh] min-w-0 max-w-full lg:pl-60">
-        <header className="sticky top-0 z-50 min-w-0 max-w-full border-b border-black/[0.07] bg-white px-4 py-3 pl-16 sm:py-3.5 lg:px-6 lg:pl-6">
+        <header className="sticky top-0 z-50 min-w-0 max-w-full border-b border-border bg-card px-4 py-3 pl-16 text-card-foreground sm:py-3.5 lg:px-6 lg:pl-6">
           <div className="flex min-w-0 max-w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0 max-w-full">
-              <h1 className="text-base font-bold leading-6 text-[#0f1117]">{meta.title}</h1>
-              <p className="mt-0.5 text-[11.5px] leading-5 text-[#5a6070]">{subtitle}</p>
+              <h1 className="text-base font-bold leading-6 text-foreground">{meta.title}</h1>
+              <p className="mt-0.5 text-[11.5px] leading-5 text-muted-foreground">{subtitle}</p>
               {!schoolContext.databaseReady && schoolContext.warning ? (
-                <p className="mt-0.5 text-[11px] leading-4 text-[#f57c00]">{schoolContext.warning}</p>
+                <p className="mt-0.5 text-[11px] leading-4 text-status-warning-foreground">{schoolContext.warning}</p>
               ) : null}
               {setupIncomplete ? (
-                <div className="mt-2 flex flex-col gap-2 rounded-lg border border-[#f57c00]/20 bg-[#fff7ed] px-3 py-2 min-[520px]:flex-row min-[520px]:items-center">
-                  <p className="min-w-0 flex-1 text-[11.5px] leading-5 text-[#8a4b00]">
+                <div className="mt-2 flex flex-col gap-2 rounded-lg border border-status-warning-foreground/20 bg-status-warning-bg px-3 py-2 min-[520px]:flex-row min-[520px]:items-center">
+                  <p className="min-w-0 flex-1 text-[11.5px] leading-5 text-status-warning-foreground">
                     {canManageSetup
                       ? (schoolContext.warning ?? "Set up real school records before using database-backed admin pages.")
                       : "Ask a school administrator to complete school setup first."}
@@ -196,7 +234,7 @@ export function AdminShell({
                   {canManageSetup ? (
                     <Link
                       href="/admin/school-setup"
-                      className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3 text-[12px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-primary bg-primary px-3 text-[12px] font-semibold text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
                       <Database className="size-4" />
                       Set up school records
@@ -211,10 +249,10 @@ export function AdminShell({
                   <form action={selectAdminSchoolYearAction}>
                     <input type="hidden" name="redirectTo" value={redirectTo} />
                     <label
-                      className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.04em] text-[#7a8296]"
+                      className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.04em] text-muted-foreground"
                       htmlFor="admin-school-year-selector"
                     >
-                      <CalendarDays className="size-3.5 text-[#e64a19]" />
+                      <CalendarDays className="size-3.5 text-primary" />
                       Viewing school year
                     </label>
                     <select
@@ -222,7 +260,7 @@ export function AdminShell({
                       name="schoolYearId"
                       defaultValue={schoolContext.selectedSchoolYear?.id ?? schoolContext.activeSchoolYear?.id ?? ""}
                       onChange={(event) => event.currentTarget.form?.requestSubmit()}
-                      className="min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#303443] outline-none transition focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/15"
+                      className="min-h-11 w-full rounded-lg border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground outline-none transition focus:border-primary focus:ring-3 focus:ring-ring/40"
                       title="Choose school year to view"
                     >
                       {schoolContext.schoolYears.map((year) => (
@@ -239,7 +277,7 @@ export function AdminShell({
                 {canSendReminders ? (
                   <Link
                     href="/admin/tuition#payment-reminders"
-                    className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3.5 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto"
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3.5 text-[12.5px] font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-auto"
                   >
                     <Send className="size-4" />
                     Reminders
@@ -249,7 +287,7 @@ export function AdminShell({
             </div>
           </div>
           {!schoolContext.selectedSchoolYearIsActive && schoolContext.selectedSchoolYear ? (
-            <p className="mt-3 border-t border-[#f57c00]/15 pt-2 text-[10.5px] leading-4 text-[#8a4b00]">
+            <p className="mt-3 border-t border-status-warning-foreground/15 pt-2 text-[10.5px] leading-4 text-status-warning-foreground">
               Viewing {schoolContext.selectedSchoolYear.status} year. New records stay in the active year.
             </p>
           ) : null}
@@ -267,11 +305,20 @@ function dashboardSubtitle(subtitle: string, schoolContext: AdminSchoolContext) 
     ?? schoolContext.activeSchoolYear?.name
     ?? "School year pending";
 
-  if (subtitle === "School dashboard - SY 2025-2026") {
+  if (subtitle === "School operations overview") {
     return `${schoolContext.schoolName} - ${schoolYear}`;
   }
 
   return subtitle.replaceAll("SY 2025-2026", schoolYear);
+}
+
+function resolveAdminPageMeta(pathname: string) {
+  if (/^\/admin\/students\/\d+$/.test(pathname)) return pageMeta["/admin/student-profile"];
+  if (/^\/admin\/school-setup\/years\/\d+$/.test(pathname)) return pageMeta["/admin/school-setup/year-structure"];
+  if (/^\/admin\/tuition\/assessments\/[^/]+$/.test(pathname) && pathname !== "/admin/tuition/assessments/new") {
+    return pageMeta["/admin/tuition/assessments/result"];
+  }
+  return pageMeta[pathname] ?? pageMeta["/admin/dashboard"];
 }
 
 function schoolYearStatusLabel(status: "upcoming" | "active" | "closed") {

@@ -438,6 +438,8 @@ Scheduled reports and notification-driven report delivery are future features. I
 
 Real-data dashboard tables also support browser-side pagination plus browser-generated exports. Every visible Admin and Parent table export uses branded Excel/PDF with the canonical logo, authorized context, filters, counts, applicable totals, formula-safe cells, repeated headings, and page footers. School Admin, Super Admin, and protected Reports-page PDF controls use one outlined semantic XMETA red/orange style, while Excel controls retain their existing treatment. Parent Fee summary, Payment history, recent payments, and wallet activity use all filtered parent-scoped display rows; Removed exports retain removal and recovery metadata. The protected Reports page uses the same presentation language for server-generated Excel/PDF while retaining legacy CSV endpoint compatibility. These export-control colors require no report storage tables and never change authoritative records.
 
+The Admin dashboard-wide organization layer does not create a new data model. Shared semantic cards and workflow headers, report-first/list-first page ordering, explicit table search/reset controls, filtered summaries, responsive table shells, and selection clearing on filter/view changes all operate on the same authorized rows already returned by the existing helpers. No Server Action payload, financial calculation, school-year ownership rule, table, column, or historical record is changed, so no SQL migration is required.
+
 ## Notification Table
 
 ### `school_email_templates`
