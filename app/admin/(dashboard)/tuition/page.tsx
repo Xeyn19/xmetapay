@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calculator, Plus, Receipt, Send } from "lucide-react";
+import { Calculator, Plus, Receipt } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
@@ -8,8 +8,7 @@ import { getAdminFeeSetupData } from "@/lib/fees/records";
 import { getAdminSchoolContext } from "@/lib/school/setup";
 import { getActiveSchoolEmailTemplates } from "@/lib/email/templates";
 import { builtInPaymentReminderTemplates } from "@/lib/email/template-contract";
-import { PaymentReminderHistoryTable } from "./payment-reminder-history-table";
-import { PaymentReminderForm } from "./payment-reminder-form";
+import { PaymentReminderPanel } from "./payment-reminder-panel";
 
 import { AlertBanner, BarList, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
 import { TuitionReportTable, type TuitionReportRow } from "./tuition-report-table";
@@ -41,24 +40,7 @@ export default async function TuitionPage() {
       </KpiGrid>
 
       <DashboardCard
-        id="payment-reminders"
-        title="Payment reminders"
-        icon={Send}
-        className="mb-[18px] scroll-mt-24"
-        bodyClassName="p-0"
-        action={<PaymentReminderForm templates={reminderTemplates} />}
-      >
-        <div className="border-b border-black/[0.07] px-[18px] py-3 text-[12.5px] leading-5 text-[#5a6070]">
-          Sends email reminders to linked parents with open or partial balances and records each delivery result. SMS delivery remains future.
-        </div>
-        <PaymentReminderHistoryTable
-          activeRows={data.reminderRows}
-          archivedRows={data.archivedReminderRows}
-        />
-      </DashboardCard>
-
-      <DashboardCard
-        title={`Tuition report - ${data.schoolYearName ?? "School year pending"}`}
+        title={`Student tuition balances — ${data.schoolYearName ?? "School year pending"}`}
         icon={Receipt}
         bodyClassName="p-0"
         className="mb-[18px]"
@@ -75,13 +57,19 @@ export default async function TuitionPage() {
         />
       </DashboardCard>
 
-      <DashboardCard title="Outstanding by grade" icon={Calculator}>
+      <DashboardCard title="Outstanding by grade" icon={Calculator} className="mb-[18px]">
         {data.outstandingByGrade.length > 0 ? (
           <BarList rows={data.outstandingByGrade} />
         ) : (
           <div className="text-[12.5px] leading-5 text-[#5a6070]">Outstanding balances are pending.</div>
         )}
       </DashboardCard>
+
+      <PaymentReminderPanel
+        templates={reminderTemplates}
+        activeRows={data.reminderRows}
+        archivedRows={data.archivedReminderRows}
+      />
     </>
   );
 }

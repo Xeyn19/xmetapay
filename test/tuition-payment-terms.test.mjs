@@ -105,7 +105,7 @@ test("admin tuition report exposes per-student manage terms UI", () => {
   assert.match(helper, /parseTuitionTermsBlob/);
   assert.match(table, /saveTuitionTermsAction, updateTuitionAssignmentAction/);
   assert.match(table, /import \{ Button \} from "@\/components\/ui\/button";/);
-  assert.match(table, /label: "Schedule"/);
+  assert.match(table, /label: "Payment plan \/ due date"/);
   assert.match(table, /label: "Actions"/);
   assert.match(table, /colSpan=\{8\}/);
   assert.match(table, /row\.grade\} - \{row\.section/);

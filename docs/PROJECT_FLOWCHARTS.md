@@ -82,7 +82,7 @@ Changing the offering never deletes records. Expansion is allowed; narrowing is 
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table, with contrast-safe report rows and outlined XMETA red/orange PDF controls across School Admin and Super Admin in both dashboard themes.
-- Tuition report presents tuition assignments, reminders, and outstanding-by-grade data without duplicating the non-tuition summary owned by Other fees.
+- Tuition page presents KPIs and the student balance report first, then outstanding-by-grade insight, with payment-reminder history collapsed in a compact secondary section until opened. It does not duplicate the non-tuition summary owned by Other fees.
 - Admin and parent real-data tables paginate on screen and export all filtered authorized rows as branded Excel/PDF.
 - Real SMTP payment reminders with protected and school-owned templates plus audited delivery history in `notification_logs`.
 
@@ -817,26 +817,32 @@ flowchart TD
   A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
   B --> C{"Can access finance?"}
   C -->|No| D["Redirect to admin dashboard"]
-  C -->|Yes| E["Open Send email reminders modal"]
-  E --> E2["Choose target, type, active template, and optional one-time message"]
-  E2 --> E3["Resolve protected or school-owned template and validate allowlisted placeholders"]
-  E3 --> F["Verify SMTP configuration"]
-  F --> G["Find linked parents with matching open or partial fee balances and real email addresses"]
-  G --> G2["Exclude sent emails and recent queued attempts already recorded today"]
-  G2 --> H{"Any new reminder targets?"}
-  H -->|No open balances| I["Show no reminders logged"]
-  H -->|Already reminded today| J["Show reminders already logged today"]
-  H -->|Yes| H2["Bulk-load matching fee assignments and tuition terms"]
-  H2 --> K["Render safe subject/message, add locked statement, and snapshot queued reminder audit"]
-  K --> L["Commit rows, then send through pooled Nodemailer SMTP"]
-  L --> M{"Delivery result"}
-  M -->|Sent| N["Set status sent and sent_at"]
-  M -->|Failed| O["Set status failed and allow retry"]
-  N --> P["Tuition history and dashboard activity update"]
-  O --> P
-  P --> Q{"Organize reminder history?"}
-  Q -->|Archive| R["Set archived_at and show in Archived reminders"]
-  R -->|Restore| P
+  C -->|Yes| E["Show KPIs and student tuition balances first"]
+  E --> F["Show outstanding-by-grade insight"]
+  F --> G["Show compact payment-reminder summary"]
+  G --> H{"Open reminder history?"}
+  H -->|No| I["Keep history collapsed"]
+  H -->|Yes| J["Render searchable and paginated history"]
+  G --> K["Open Send email reminders modal when requested"]
+  K --> L["Choose target, type, active template, and optional one-time message"]
+  L --> M["Resolve protected or school-owned template and validate allowlisted placeholders"]
+  M --> N["Verify SMTP configuration"]
+  N --> O["Find linked parents with matching open or partial fee balances and real email addresses"]
+  O --> P["Exclude sent emails and recent queued attempts already recorded today"]
+  P --> Q{"Any new reminder targets?"}
+  Q -->|No open balances| R["Show no reminders logged"]
+  Q -->|Already reminded today| S["Show reminders already logged today"]
+  Q -->|Yes| T["Bulk-load matching fee assignments and tuition terms"]
+  T --> U["Render safe subject/message, add locked statement, and snapshot queued reminder audit"]
+  U --> V["Commit rows, then send through pooled Nodemailer SMTP"]
+  V --> W{"Delivery result"}
+  W -->|Sent| X["Set status sent and sent_at"]
+  W -->|Failed| Y["Set status failed and allow retry"]
+  X --> Z["Tuition history and dashboard activity update"]
+  Y --> Z
+  Z --> AA{"Organize reminder history?"}
+  AA -->|Archive| AB["Set archived_at and show in Archived reminders"]
+  AB -->|Restore| Z
 ```
 
 Current reminder rules:

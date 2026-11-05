@@ -344,7 +344,7 @@
             <tr>
               <td>Fees</td>
               <td><code>fee_types</code>, <code>fee_type_term_templates</code>, <code>student_fee_assignments</code>, <code>parent_fee_summary_archives</code>, <code>tuition_payment_terms</code></td>
-              <td>Tuition, balances, terms, and parent-specific Fee summary visibility. The Admin Tuition report stays tuition-specific, while non-tuition summaries remain on Other fees; this UI separation adds no schema fields. Per-student term dates use the existing inclusive range from <code>school_years.starts_on</code> through <code>student_fee_assignments.due_date</code>; no schedule-window columns are added. Archive is indefinite; <code>deleted_at</code> starts a database-timed 30-day recovery window. Recovery returns the row to Archived, while expired tombstones remain visible as Permanently hidden without changing financial records.</td>
+              <td>Tuition, balances, terms, and parent-specific Fee summary visibility. The Admin Tuition page is report-first: it shows KPIs and student balances before outstanding-by-grade insight, then keeps reminder history collapsed in a compact secondary panel until opened. It still reads existing assignments, payments, terms, and <code>notification_logs</code>; non-tuition summaries remain on Other fees. This presentation-only refinement adds no schema fields and requires no migration or database re-import. Per-student term dates use the existing inclusive range from <code>school_years.starts_on</code> through <code>student_fee_assignments.due_date</code>; no schedule-window columns are added. Archive is indefinite; <code>deleted_at</code> starts a database-timed 30-day recovery window. Recovery returns the row to Archived, while expired tombstones remain visible as Permanently hidden without changing financial records.</td>
             </tr>
             <tr>
               <td>Payments</td>
@@ -734,9 +734,11 @@ flowchart TD
 flowchart TD
   A["Admin opens dashboard"] --> B["Read payments, fees, wallets, and store transactions"]
   B --> C["Show collection KPIs"]
-  C --> D["Open tuition report"]
-  D --> E["Filter by status, grade, section, or due date"]
-  E --> F["Open collections log"]
+  C --> D["Open student tuition balances"]
+  D --> E["Filter by status or grade and export all filtered rows"]
+  E --> E2["Review outstanding-by-grade insight"]
+  E2 --> E3["Open compact reminder history only when needed"]
+  E3 --> F["Open collections log"]
   F --> G["Review payment records and receipts"]
   G --> H["Open reports page"]
   H --> I["Download CSV and PDF reports from operational queries"]
