@@ -1,0 +1,7 @@
+interface:
+  display_name: "Filter and Control UX"
+  short_description: "Practical filters, searches, and actions"
+  default_prompt: "Use $filter-controls-ux to improve the filters, buttons, and workflow controls on this XMETA Pay screen."
+
+policy:
+  allow_implicit_invocation: true

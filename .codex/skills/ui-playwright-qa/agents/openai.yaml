@@ -1,0 +1,7 @@
+interface:
+  display_name: "UI Playwright QA"
+  short_description: "Explicit browser and responsive UI checks"
+  default_prompt: "Use $ui-playwright-qa to verify this XMETA Pay UI change in the browser and with the narrowest relevant Playwright test."
+
+policy:
+  allow_implicit_invocation: false
