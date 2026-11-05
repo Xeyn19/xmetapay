@@ -297,12 +297,12 @@
             payment history, wallet top-ups, store purchases, a Recharts-backed real-data overview
             for the school administrator dashboard, contrast-safe report download rows in both themes,
             a task-organized authenticated Admin workspace where operational lists and ledgers precede supporting insights, setup subpages share workflow headers, filters explain searchable fields and provide reset recovery, archive selections clear when their context changes, and the mobile drawer contains and restores keyboard focus,
-            a report-first Tuition page with KPIs, student-reference search, status/grade/section filters, collection-focused sorting, live filtered totals, supporting outstanding-by-grade insight, and compact selection-safe reminder history that stays collapsed until opened; non-tuition summaries remain on Other fees,
+            a connected tuition workspace with Student balances for assessments, due dates, plans, billed/paid/balance totals, exports, and compact reminders, plus Payment history for individual tuition transactions, references, channels, statuses, exports, and reversible Admin-view archiving; a shared responsive switcher connects both existing routes without merging their ledgers, while non-tuition summaries remain on Other fees,
             CSV/PDF report exports with outlined XMETA red/orange PDF controls across School Admin,
             Super Admin, and protected Reports pages, paginated table screens
             with filtered-row CSV/PDF exports, queued in-app reminder history, and accurate wallet totals.
             Registrar and finance officer dashboards keep their role-scoped layout. Parent-side mock enrollment has been removed.
-            The Admin organization refinement preserves every route, permission, Server Action, export, financial calculation, and historical record and requires no migration.
+            The Admin organization refinement preserves every route, permission, Server Action, export filename, financial calculation, and historical record and requires no migration or SQL import.
           </div>
           <div class="card">
             <strong>Next</strong>
@@ -912,7 +912,7 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="payment-reminder-history-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> the Tuition page shows searchable and sortable student balances plus live filtered financial totals before collection insight and a compact reminder summary. Reminder history is collapsed by default and expands into the existing searchable, paginated archive/restore table; changing its search, status, or view clears selections. Protected XMETA and school-owned templates, safe allowlisted placeholders, sample preview, responsive HTML/plain-text delivery, locked itemized fee details, template audit snapshots, and same-day duplicate prevention remain unchanged.</p>
+          <p><strong>Implemented:</strong> the Tuition page shows searchable and sortable student balances directly below the KPI summary without repeating the same totals in another strip. Filtered exports retain the authorized financial totals in report metadata. Reminder history is collapsed by default and expands into the existing searchable, paginated archive/restore table; changing its search, status, or view clears selections. Protected XMETA and school-owned templates, safe allowlisted placeholders, sample preview, responsive HTML/plain-text delivery, locked itemized fee details, template audit snapshots, and same-day duplicate prevention remain unchanged.</p>
           <pre class="mermaid">
 flowchart TD
   A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
@@ -920,7 +920,7 @@ flowchart TD
   C -->|No| D["Redirect to admin dashboard"]
   C -->|Yes| E["Show KPIs and student tuition balances first"]
   E --> E0["Search by name or reference; filter status, grade, and section"]
-  E0 --> E00["Sort and show live filtered billed, paid, and outstanding totals"]
+  E0 --> E00["Sort rows and retain filtered totals in export metadata"]
   E00 --> E1["Show outstanding-by-grade insight"]
   E1 --> E2{"Open reminder history?"}
   E2 -->|No| E3["Keep history collapsed"]

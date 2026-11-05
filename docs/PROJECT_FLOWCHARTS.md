@@ -82,7 +82,7 @@ Changing the offering never deletes records. Expansion is allowed; narrowing is 
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table, with contrast-safe report rows and outlined XMETA red/orange PDF controls across School Admin and Super Admin in both dashboard themes.
-- Tuition page presents KPIs and the student balance report first, with name/reference search, status/grade/section filters, roster/balance/due-date/name sorting, live filtered totals, and all-filtered-row exports. Outstanding-by-grade insight follows, while payment-reminder history stays collapsed until opened and clears selections when its filter context changes. It does not duplicate the non-tuition summary owned by Other fees.
+- The connected tuition workspace uses two focused routes: **Student balances** (`/admin/tuition`) for assessments, billed/paid/balance totals, due dates, plans, exports, and reminders; and **Payment history** (`/admin/collections`) for individual tuition transactions, references, channels, statuses, exports, and Admin-view archive/restore. A shared responsive switcher connects them without merging assignment and payment ledgers. Archiving a payment only organizes the Admin view and never deletes, reverses, or changes financial truth.
 - Admin and parent real-data tables paginate on screen and export all filtered authorized rows as branded Excel/PDF.
 - Authenticated Admin pages use one task-based UI system: operational lists and ledgers come before supporting insights, setup subpages use focused workflow headers, filters have explicit labels and reset recovery, and archive selections are cleared when their filter/view context changes. Mobile navigation contains focus and restores it on close. All underlying actions, permissions, routes, and records remain unchanged.
 - Real SMTP payment reminders with protected and school-owned templates plus audited delivery history in `notification_logs`.
@@ -821,7 +821,7 @@ flowchart TD
   C -->|Yes| E["Show KPIs and student tuition balances first"]
   E --> E2["Search by name or reference; filter by status, grade, or section"]
   E2 --> E3["Sort by roster, balance, due date, or student name"]
-  E3 --> E4["Show filtered totals and export all matching rows"]
+  E3 --> E4["Export all matching rows with filtered totals in report metadata"]
   E4 --> F["Show outstanding-by-grade insight"]
   F --> G["Show compact payment-reminder summary"]
   G --> H{"Open reminder history?"}

@@ -33,7 +33,7 @@ test("admin role guide documents the three school staff roles", () => {
   assert.match(doc, /finance_officer/);
   assert.match(doc, /Set up school records/);
   assert.match(doc, /add new students|enroll existing pending students/i);
-  assert.match(doc, /tuition, collections, other fees, allowance, store transactions, reports/i);
+  assert.match(doc, /Tuition balances, Tuition payments, Other fees, Allowance, Store transactions, and Financial reports/i);
   assert.match(doc, /Ask a school administrator to complete school setup first\./);
   assert.match(doc, /School setup is school-wide, not per staff account\./);
   assert.match(doc, /same exact `school_name`/);

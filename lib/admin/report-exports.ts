@@ -260,7 +260,7 @@ async function collectionsExport(schoolId: number, schoolYearId: number, context
   const rows = await getTuitionCollectionRows(schoolId, schoolYearId);
 
   return reportData(
-    "Tuition collections report",
+    "Tuition payments report",
     `${PRODUCT_EXPORT_SLUG}-collections`,
     contextLines,
     rows,
@@ -268,7 +268,7 @@ async function collectionsExport(schoolId: number, schoolYearId: number, context
       { label: "Reference", value: (row) => row.reference_number },
       { label: "Student", value: (row) => fullName(row.first_name, row.middle_name, row.last_name) },
       { label: "Grade", value: (row) => row.grade_name ?? "Not enrolled" },
-      { label: "Tuition record", value: (row) => row.fee_name },
+      { label: "Applied to", value: (row) => row.fee_name },
       { label: "Channel", value: (row) => label(row.channel) },
       { label: "Status", value: (row) => label(row.status) },
       { label: "Amount", value: (row) => decimal(row.amount) },
@@ -617,7 +617,7 @@ function reportTitle(type: ReportExportType) {
   }
 
   if (type === "collections") {
-    return "Tuition collections report";
+    return "Tuition payments report";
   }
 
   if (type === "outstanding-balances") {
