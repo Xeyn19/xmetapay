@@ -227,6 +227,7 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 - [x] Add pagination plus CSV and PDF filtered-row exports to real-data admin and parent tables.
 - [x] Keep the Tuition report focused on tuition data and manage non-tuition summaries through the dedicated Other fees page.
 - [x] Present the student tuition balance report immediately after its KPIs, use clearer finance labels, and keep payment-reminder history collapsed below supporting collection insights until the administrator opens it.
+- [x] Add student-reference search/display, status/grade/section filtering, collection-focused sorting, live filtered tuition totals, recoverable empty states, and selection-safe reminder filtering without changing financial records.
 - [x] Apply the shared XMETA EDU logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition report and Collection log.
 - [x] Replace every visible Admin CSV control with branded Excel and apply the canonical logo, context, summaries, repeated headings, and page footers to protected report PDFs.
 - [x] Replace every visible Parent CSV control with branded Excel while retaining branded PDFs, filtered summaries, Removed recovery metadata, and nested Fee summary tuition terms.

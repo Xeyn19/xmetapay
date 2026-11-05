@@ -95,6 +95,7 @@ export type PaymentReminderHistoryRow = {
 export type TuitionRow = {
   assignmentId: number;
   student: string;
+  studentReference: string;
   grade: string;
   section: string;
   due: number;
@@ -1078,7 +1079,7 @@ async function getRecentReminderRows(
 async function getTuitionRows(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<TuitionSqlRow[]>(
     `SELECT sfa.id AS assignment_id,
-       st.first_name, st.middle_name, st.last_name,
+       st.student_reference, st.first_name, st.middle_name, st.last_name,
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
        COALESCE(sec.name, '-') AS section_name,
        sfa.amount_due, sfa.amount_paid,
@@ -1118,7 +1119,7 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
      LEFT JOIN payment_term_allocations pta ON pta.tuition_payment_term_id = tpt.id
      LEFT JOIN payments term_payment ON term_payment.id = pta.payment_id AND term_payment.status = 'paid'
      WHERE st.school_id = :schoolId AND sfa.school_year_id = :schoolYearId
-     GROUP BY sfa.id, st.first_name, st.middle_name, st.last_name, gl.name, sec.name,
+     GROUP BY sfa.id, st.student_reference, st.first_name, st.middle_name, st.last_name, gl.name, sec.name,
        sfa.amount_due, sfa.amount_paid, sfa.due_date, sy.starts_on, sfa.status
      ORDER BY gl.sort_order ASC, st.last_name ASC, st.first_name ASC`,
     { schoolId, schoolYearId },
@@ -1127,6 +1128,7 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
   return rows.map((row) => ({
     assignmentId: row.assignment_id,
     student: fullName(row.first_name, row.middle_name, row.last_name),
+    studentReference: row.student_reference,
     grade: row.grade_name,
     section: row.section_name,
     due: decimalValue(row.amount_due),
@@ -1771,6 +1773,7 @@ type ReminderHistoryRow = RowDataPacket & {
 
 type TuitionSqlRow = RowDataPacket & {
   assignment_id: number;
+  student_reference: string;
   first_name: string;
   middle_name: string | null;
   last_name: string;

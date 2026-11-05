@@ -58,3 +58,40 @@ test("tuition report compatibility keeps filters exports and financial actions",
   assert.match(panel, /focus-visible:ring-primary/);
   assert.match(panel, /aria-live="polite"/);
 });
+
+test("tuition controls support reference search section filtering sorting summaries and reset", () => {
+  const table = read("app/admin/(dashboard)/tuition/tuition-report-table.tsx");
+  const controls = read("app/_components/table-controls.tsx");
+  const realData = read("lib/admin/real-data.ts");
+
+  assert.match(realData, /st\.student_reference/);
+  assert.match(realData, /studentReference: row\.student_reference/);
+  assert.match(table, /studentReference: string/);
+  assert.match(table, /Search student name or reference/);
+  assert.match(table, /row\.studentReference/);
+  assert.match(table, /label: "Student reference"/);
+  assert.match(table, /label: "Section"/);
+  assert.match(table, /Grade then student name/);
+  assert.match(table, /Highest balance/);
+  assert.match(table, /Nearest due date/);
+  assert.match(table, /Student name A–Z/);
+  assert.match(table, /if \(!left\.dueDate\) return 1/);
+  assert.match(table, /aria-live="polite"/);
+  assert.match(table, /Reset filters/);
+  assert.match(table, /exportRowsToExcel[\s\S]*filteredRows/);
+  assert.match(controls, /searchLabel\?: string/);
+  assert.match(controls, /clearLabel\?: string/);
+  assert.match(controls, /clearDisabled\?: boolean/);
+});
+
+test("reminder filters clear hidden selections and keep filter reset separate", () => {
+  const history = read("app/admin/(dashboard)/tuition/payment-reminder-history-table.tsx");
+
+  assert.match(history, /function|const changeQuery/);
+  assert.match(history, /const changeQuery = \(value: string\)[\s\S]*setSelectedIds\(\[\]\)[\s\S]*setConfirmationIds\(\[\]\)/);
+  assert.match(history, /const changeStatus = \(value: string\)[\s\S]*setSelectedIds\(\[\]\)[\s\S]*setConfirmationIds\(\[\]\)/);
+  assert.match(history, /Search reminder history by student, parent, subject, or message/);
+  assert.match(history, /Reset filters/);
+  assert.match(history, /Clear selection/);
+  assert.match(history, /Select visible/);
+});

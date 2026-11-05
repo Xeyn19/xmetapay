@@ -22,6 +22,7 @@ import { AdminButton, AdminTable, StatusPill } from "../../_components/admin-ui"
 export type TuitionReportRow = {
   assignmentId: number;
   student: string;
+  studentReference: string;
   grade: string;
   section: string;
   due: number;
@@ -44,6 +45,15 @@ export type TuitionReportRow = {
   }>;
 };
 
+type TuitionSort = "roster" | "balance_desc" | "due_asc" | "student_asc";
+
+const tuitionSortOptions = [
+  { label: "Grade then student name", value: "roster" },
+  { label: "Highest balance", value: "balance_desc" },
+  { label: "Nearest due date", value: "due_asc" },
+  { label: "Student name A–Z", value: "student_asc" },
+];
+
 export function TuitionReportTable({
   rows,
   schoolName,
@@ -56,15 +66,27 @@ export function TuitionReportTable({
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [grade, setGrade] = useState("all");
-  const filteredRows = useMemo(
-    () => filterByQuery(
-      rows.filter((row) => (status === "all" || row.status === status) && (grade === "all" || row.grade === grade)),
+  const [section, setSection] = useState("all");
+  const [sort, setSort] = useState<TuitionSort>("roster");
+  const filteredRows = useMemo(() => {
+    const matchingRows = filterByQuery(
+      rows.filter((row) => (
+        (status === "all" || row.status === status)
+        && (grade === "all" || row.grade === grade)
+        && (section === "all" || row.section === section)
+      )),
       query,
-      (row) => `${row.student} ${row.grade} ${row.section} ${row.lastPayment} ${row.status}`,
-    ),
-    [grade, query, rows, status],
-  );
-  const pagination = usePaginatedRows(filteredRows, `${query}|${status}|${grade}`);
+      (row) => `${row.student} ${row.studentReference}`,
+    );
+
+    return sortTuitionRows(matchingRows, sort);
+  }, [grade, query, rows, section, sort, status]);
+  const pagination = usePaginatedRows(filteredRows, `${query}|${status}|${grade}|${section}|${sort}`);
+  const hasActiveFilters = query.trim().length > 0
+    || status !== "all"
+    || grade !== "all"
+    || section !== "all"
+    || sort !== "roster";
   const filteredTotals = useMemo(
     () => filteredRows.reduce(
       (totals, row) => ({
@@ -78,6 +100,7 @@ export function TuitionReportTable({
   );
   const exportColumns: ExportColumn<TuitionReportRow>[] = [
     { label: "Student name", value: (row) => row.student },
+    { label: "Student reference", value: (row) => row.studentReference },
     { label: "Grade", value: (row) => row.grade },
     { label: "Section", value: (row) => row.section },
     { label: "Billed", value: (row) => money(row.due) },
@@ -97,6 +120,8 @@ export function TuitionReportTable({
       { label: "Search", value: query.trim() || "All students" },
       { label: "Status", value: filterLabel(status) },
       { label: "Grade", value: filterLabel(grade) },
+      { label: "Section", value: filterLabel(section) },
+      { label: "Sort", value: tuitionSortOptions.find((option) => option.value === sort)?.label ?? "Grade then student name" },
     ],
     summary: [
       { label: "Assignments", value: filteredRows.length },
@@ -105,6 +130,13 @@ export function TuitionReportTable({
       { label: "Outstanding", value: money(filteredTotals.balance) },
     ],
   };
+  const resetFilters = () => {
+    setQuery("");
+    setStatus("all");
+    setGrade("all");
+    setSection("all");
+    setSort("roster");
+  };
 
   return (
     <>
@@ -112,16 +144,17 @@ export function TuitionReportTable({
         <DashboardTableControls
           query={query}
           onQueryChange={setQuery}
-          searchPlaceholder="Search student, grade..."
+          searchPlaceholder="Search student name or reference..."
+          searchLabel="Search tuition records by student name or reference"
           filters={[
             { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
             { label: "Grade", value: grade, onChange: setGrade, options: toFilterOptions(rows.map((row) => row.grade), "All grades") },
+            { label: "Section", value: section, onChange: setSection, options: toFilterOptions(rows.map((row) => row.section), "All sections") },
+            { label: "Sort tuition records", value: sort, onChange: (value) => setSort(value as TuitionSort), options: tuitionSortOptions },
           ]}
-          onClear={() => {
-            setQuery("");
-            setStatus("all");
-            setGrade("all");
-          }}
+          onClear={resetFilters}
+          clearLabel="Reset filters"
+          clearDisabled={!hasActiveFilters}
           onExport={() => exportRowsToExcel(
             "admin-tuition-report.xlsx",
             "Tuition report",
@@ -140,6 +173,12 @@ export function TuitionReportTable({
           exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
+      </div>
+      <div className="grid gap-2 border-b border-border bg-muted/35 px-4 py-3 text-xs text-muted-foreground sm:grid-cols-2 sm:px-[18px] lg:grid-cols-4" aria-live="polite">
+        <p><strong className="text-foreground">{filteredRows.length}</strong> {filteredRows.length === 1 ? "student" : "students"}</p>
+        <p><strong className="text-foreground">{money(filteredTotals.due)}</strong> billed</p>
+        <p><strong className="text-status-success-foreground">{money(filteredTotals.paid)}</strong> paid</p>
+        <p><strong className="text-status-danger-foreground">{money(filteredTotals.balance)}</strong> outstanding</p>
       </div>
       <AdminTable
         headers={[
@@ -161,24 +200,24 @@ export function TuitionReportTable({
               <tr key={row.assignmentId}>
                 <td className="whitespace-normal">
                   <div className="min-w-0">
-                    <p className="truncate font-bold text-[#0f1117]">{row.student}</p>
-                    <p className="mt-1 truncate text-[11.5px] font-medium text-[#5a6070]">
-                      {row.grade} - {row.section}
+                    <p className="truncate font-bold text-foreground">{row.student}</p>
+                    <p className="mt-1 truncate text-[11.5px] font-medium text-muted-foreground">
+                      {row.studentReference} · {row.grade} - {row.section}
                     </p>
                   </div>
                 </td>
-                <td className="font-semibold text-[#0f1117]">P{row.due.toLocaleString()}</td>
-                <td className="font-semibold text-[#2e7d32]">P{row.paid.toLocaleString()}</td>
-                <td className={row.balance > 0 ? "font-semibold text-[#c62828]" : "font-semibold text-[#9ba3b8]"}>
+                <td className="font-semibold text-foreground">P{row.due.toLocaleString()}</td>
+                <td className="font-semibold text-status-success-foreground">P{row.paid.toLocaleString()}</td>
+                <td className={row.balance > 0 ? "font-semibold text-status-danger-foreground" : "font-semibold text-muted-foreground"}>
                   P{row.balance.toLocaleString()}
                 </td>
                 <td className="whitespace-normal">
                   <div className="min-w-0">
-                    <p className="truncate text-[12px] font-semibold text-[#0f1117]">{paymentPlanLabel(row)}</p>
-                    <p className="mt-1 truncate text-[11px] font-medium text-[#5a6070]">{row.dueDate ? `Due ${row.dueDate}` : "No due date"}</p>
+                    <p className="truncate text-[12px] font-semibold text-foreground">{paymentPlanLabel(row)}</p>
+                    <p className="mt-1 truncate text-[11px] font-medium text-muted-foreground">{row.dueDate ? `Due ${row.dueDate}` : "No due date"}</p>
                   </div>
                 </td>
-                <td className="font-mono text-[11px] text-[#5a6070]">{lastPaymentLabel(row.lastPayment)}</td>
+                <td className="font-mono text-[11px] text-muted-foreground">{lastPaymentLabel(row.lastPayment)}</td>
                 <td>
                   <StatusPill tone={row.status}>{statusLabel}</StatusPill>
                 </td>
@@ -193,8 +232,17 @@ export function TuitionReportTable({
           })
         ) : (
           <tr>
-            <td colSpan={8} className="text-center text-[#5a6070]">
-              {rows.length === 0 ? "No tuition fee assignments yet." : "No tuition rows match the current filters."}
+            <td colSpan={8} className="text-center text-muted-foreground">
+              {rows.length === 0 ? (
+                "No tuition fee assignments yet."
+              ) : (
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <span>No tuition rows match the current filters.</span>
+                  <button type="button" onClick={resetFilters} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25">
+                    Reset filters
+                  </button>
+                </div>
+              )}
             </td>
           </tr>
         )}
@@ -216,6 +264,25 @@ export function TuitionReportTable({
 function filterLabel(value: string) {
   if (value === "all") return "All";
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function sortTuitionRows(rows: TuitionReportRow[], sort: TuitionSort) {
+  if (sort === "roster") return rows;
+
+  return [...rows].sort((left, right) => {
+    if (sort === "balance_desc") {
+      return right.balance - left.balance || left.student.localeCompare(right.student);
+    }
+
+    if (sort === "due_asc") {
+      if (!left.dueDate && !right.dueDate) return left.student.localeCompare(right.student);
+      if (!left.dueDate) return 1;
+      if (!right.dueDate) return -1;
+      return left.dueDate.localeCompare(right.dueDate) || left.student.localeCompare(right.student);
+    }
+
+    return left.student.localeCompare(right.student);
+  });
 }
 
 function paymentPlanLabel(row: TuitionReportRow) {

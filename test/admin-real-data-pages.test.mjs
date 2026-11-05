@@ -182,7 +182,7 @@ test("admin real-data tables use working search filters plus spreadsheet and PDF
   assert.match(controls, /Export CSV/);
   assert.match(controls, /Export PDF/);
   assert.match(controls, /border-primary bg-card[\s\S]*text-primary[\s\S]*hover:bg-button-soft/);
-  assert.match(controls, /border-\[#0f1117\] bg-\[#0f1117\] text-white hover:bg-\[#2d3348\]/);
+  assert.match(controls, /border-button-secondary bg-button-secondary text-button-secondary-foreground hover:bg-button-secondary-hover/);
   assert.doesNotMatch(controls, /border-\[#0f1117\] text-\[#0f1117\] hover:bg-\[#f2f1ef\]/);
 
   for (const componentPath of adminTableComponentPaths) {

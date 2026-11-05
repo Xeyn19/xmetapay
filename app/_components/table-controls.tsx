@@ -51,8 +51,11 @@ export function DashboardTableControls({
   query,
   onQueryChange,
   searchPlaceholder,
+  searchLabel,
   filters = [],
   onClear,
+  clearLabel = "Clear",
+  clearDisabled = false,
   onExport,
   onExportPdf,
   exportDisabled,
@@ -63,6 +66,7 @@ export function DashboardTableControls({
   query: string;
   onQueryChange: (value: string) => void;
   searchPlaceholder: string;
+  searchLabel?: string;
   filters?: Array<{
     label: string;
     value: string;
@@ -70,6 +74,8 @@ export function DashboardTableControls({
     onChange: (value: string) => void;
   }>;
   onClear: () => void;
+  clearLabel?: string;
+  clearDisabled?: boolean;
   onExport: () => void | Promise<void>;
   onExportPdf?: () => void | Promise<void>;
   exportDisabled: boolean;
@@ -82,7 +88,7 @@ export function DashboardTableControls({
   const isParent = tone === "parent";
   const controlClass = isParent
     ? "rounded-[10px] border-black/15 bg-[#f8f8f7] text-[13px] text-[#1a1a1a] focus:border-[#e64a19] focus:ring-[#e64a19]/10"
-    : "rounded-lg border-black/15 bg-[#f7f8fa] text-[12.5px] text-[#0f1117] focus:border-[#e64a19] focus:ring-[#e64a19]/10";
+    : "rounded-lg border-border bg-background text-[12.5px] text-foreground focus:border-primary focus:ring-primary/10";
   const buttonClass = isParent
     ? "rounded-[10px] text-[13px] font-medium"
     : "rounded-lg text-[12.5px] font-semibold";
@@ -90,12 +96,13 @@ export function DashboardTableControls({
   return (
     <div className="flex w-full flex-wrap items-center gap-2">
       <label className={cn("flex min-h-11 min-w-0 items-center gap-2 border px-3 py-2 sm:min-w-[210px]", controlClass)}>
-        <Search className={cn("shrink-0", isParent ? "size-4 text-[#9e9e9e]" : "size-[15px] text-[#9ba3b8]")} />
+        <Search className={cn("shrink-0", isParent ? "size-4 text-[#9e9e9e]" : "size-[15px] text-muted-foreground")} />
         <input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[#9e9e9e]"
+          className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
           placeholder={searchPlaceholder}
+          aria-label={searchLabel ?? searchPlaceholder}
         />
       </label>
 
@@ -116,14 +123,15 @@ export function DashboardTableControls({
       <button
         type="button"
         onClick={onClear}
+        disabled={clearDisabled}
         className={cn(
-          "inline-flex min-h-11 items-center justify-center gap-1.5 border border-black/15 bg-white px-3.5 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
+          "inline-flex min-h-11 items-center justify-center gap-1.5 border border-border bg-background px-3.5 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",
           buttonClass,
-          isParent ? "text-[#6b6b6b]" : "text-[#5a6070]",
+          isParent ? "text-[#6b6b6b] disabled:pointer-events-none disabled:opacity-50" : cn("text-[#5a6070]", readableDisabledControlClass),
         )}
       >
         <RotateCcw className="size-4" />
-        Clear
+        {clearLabel}
       </button>
       <button
         type="button"
@@ -142,7 +150,7 @@ export function DashboardTableControls({
           buttonClass,
           isParent
             ? "border-[#e64a19] bg-[#e64a19] text-white hover:bg-[#bf360c] disabled:pointer-events-none disabled:opacity-60"
-            : cn("border-[#0f1117] bg-[#0f1117] text-white hover:bg-[#2d3348]", readableDisabledControlClass),
+            : cn("border-button-secondary bg-button-secondary text-button-secondary-foreground hover:bg-button-secondary-hover", readableDisabledControlClass),
         )}
       >
         {exportingPrimary ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}
@@ -203,10 +211,10 @@ export function DashboardTablePagination({
   const isParent = tone === "parent";
   const controlClass = isParent
     ? "rounded-[10px] border-black/15 bg-[#f8f8f7] text-[13px] text-[#1a1a1a] focus:border-[#e64a19] focus:ring-[#e64a19]/10"
-    : "rounded-lg border-black/15 bg-[#f7f8fa] text-[12.5px] text-[#0f1117] focus:border-[#e64a19] focus:ring-[#e64a19]/10";
+    : "rounded-lg border-border bg-background text-[12.5px] text-foreground focus:border-primary focus:ring-primary/10";
   const buttonClass = isParent
     ? "rounded-[10px] text-[13px] font-medium text-[#6b6b6b]"
-    : "rounded-lg text-[12.5px] font-semibold text-[#5a6070]";
+    : "rounded-lg text-[12.5px] font-semibold text-muted-foreground";
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.07] px-[18px] py-3">
@@ -219,7 +227,7 @@ export function DashboardTablePagination({
           <select
             value={pageSize}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            className={cn("ml-2 min-h-9 border px-2 outline-none transition focus:ring-3", controlClass)}
+            className={cn("ml-2 min-h-11 border px-2 outline-none transition focus:ring-3", controlClass)}
             aria-label="Rows per page"
           >
             {TABLE_PAGE_SIZE_OPTIONS.map((option) => (
@@ -235,7 +243,7 @@ export function DashboardTablePagination({
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
           className={cn(
-            "inline-flex min-h-9 items-center justify-center gap-1.5 border border-black/15 bg-white px-3 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
+            "inline-flex min-h-11 items-center justify-center gap-1.5 border border-border bg-background px-3 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",
             buttonClass,
             isParent ? "disabled:pointer-events-none disabled:opacity-50" : readableDisabledControlClass,
           )}
@@ -248,7 +256,7 @@ export function DashboardTablePagination({
           onClick={() => onPageChange(page + 1)}
           disabled={page >= pageCount}
           className={cn(
-            "inline-flex min-h-9 items-center justify-center gap-1.5 border border-black/15 bg-white px-3 transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
+            "inline-flex min-h-11 items-center justify-center gap-1.5 border border-border bg-background px-3 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",
             buttonClass,
             isParent ? "disabled:pointer-events-none disabled:opacity-50" : readableDisabledControlClass,
           )}

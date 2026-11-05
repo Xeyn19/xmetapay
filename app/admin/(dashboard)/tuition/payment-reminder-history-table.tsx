@@ -92,6 +92,22 @@ export function PaymentReminderHistoryTable({
   const selectVisible = () => {
     setSelectedIds((current) => [...new Set([...current, ...pageIds])]);
   };
+  const changeQuery = (value: string) => {
+    setQuery(value);
+    setSelectedIds([]);
+    setConfirmationIds([]);
+  };
+  const changeStatus = (value: string) => {
+    setStatus(value);
+    setSelectedIds([]);
+    setConfirmationIds([]);
+  };
+  const resetFilters = () => {
+    setQuery("");
+    setStatus("all");
+    setSelectedIds([]);
+    setConfirmationIds([]);
+  };
   const changeView = (nextView: "active" | "archived") => {
     setView(nextView);
     setSelectedIds([]);
@@ -113,10 +129,10 @@ export function PaymentReminderHistoryTable({
 
   return (
     <>
-      <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
+      <div className="flex flex-col gap-3 border-b border-border px-4 py-3.5 sm:px-[18px]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div
-            className="inline-flex min-h-11 rounded-lg border border-black/10 bg-[#f1f2f5] p-1"
+            className="inline-flex min-h-11 rounded-lg border border-border bg-muted p-1"
             role="tablist"
             aria-label="Payment reminder history view"
           >
@@ -139,25 +155,26 @@ export function PaymentReminderHistoryTable({
               Archived reminders
             </button>
           </div>
-          <div className="text-[11.5px] text-[#5a6070]">
+          <div className="text-[11.5px] text-muted-foreground" aria-live="polite">
             {selectedIds.length} {selectedIds.length === 1 ? "reminder" : "reminders"} selected
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg border border-black/15 bg-[#f7f8fa] px-3 py-2 sm:max-w-[280px]">
-            <Search className="size-4 shrink-0 text-[#9ba3b8]" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 sm:max-w-[320px]">
+            <Search className="size-4 shrink-0 text-muted-foreground" />
             <input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-[#9ba3b8]"
-              placeholder="Search reminder history..."
+              onChange={(event) => changeQuery(event.target.value)}
+              className="min-w-0 flex-1 bg-transparent text-[12.5px] text-foreground outline-none placeholder:text-muted-foreground"
+              placeholder="Search student, parent, subject, or message..."
+              aria-label="Search reminder history by student, parent, subject, or message"
             />
           </label>
           <select
             value={status}
-            onChange={(event) => setStatus(event.target.value)}
-            className="min-h-11 rounded-lg border border-black/15 bg-[#f7f8fa] px-3 text-[12.5px] outline-none focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/10"
+            onChange={(event) => changeStatus(event.target.value)}
+            className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-[12.5px] text-foreground outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 sm:w-auto"
             aria-label="Filter reminder status"
           >
             <option value="all">All statuses</option>
@@ -165,6 +182,9 @@ export function PaymentReminderHistoryTable({
             <option value="queued">Queued</option>
             <option value="failed">Failed</option>
           </select>
+          <button type="button" onClick={resetFilters} disabled={!hasFilters} className={secondaryButtonClass}>
+            <X className="size-4" /> Reset filters
+          </button>
           <button type="button" onClick={selectVisible} disabled={pageIds.length === 0 || allPageRowsSelected} className={secondaryButtonClass}>
             <CheckSquare className="size-4" /> Select visible
           </button>
@@ -175,7 +195,7 @@ export function PaymentReminderHistoryTable({
             type="button"
             onClick={() => setConfirmationIds(selectedIds)}
             disabled={selectedIds.length === 0 || pending}
-            className={cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#0f1117] bg-[#0f1117] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#2d3348] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass)}
+            className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-button-secondary bg-button-secondary px-3.5 text-[12.5px] font-semibold text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 sm:w-auto", readableDisabledControlClass)}
           >
             {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
             {operationLabel} selected
@@ -210,18 +230,18 @@ export function PaymentReminderHistoryTable({
                   />
                 </label>
               </td>
-              <td className="font-mono text-[11px] text-[#5a6070]">{row.created}</td>
+              <td className="font-mono text-[11px] text-muted-foreground">{row.created}</td>
               <td className="font-bold">{row.student}</td>
               <td>{row.parent}</td>
               <td>{row.grade}</td>
               <td>{row.channel}</td>
               <td><span className={statusClassName(row.status)}>{row.status}</span></td>
-              {view === "archived" ? <td className="font-mono text-[11px] text-[#5a6070]">{row.archivedAt}</td> : null}
-              <td className="max-w-[240px] text-[#5a6070]">
+              {view === "archived" ? <td className="font-mono text-[11px] text-muted-foreground">{row.archivedAt}</td> : null}
+              <td className="max-w-[240px] text-muted-foreground">
                 <div className="line-clamp-2 break-words [overflow-wrap:anywhere]">
                   {row.message.trim() || "Message unavailable"}
                 </div>
-                {row.templateName ? <div className="mt-1 truncate text-[10.5px] text-[#9ba3b8]">{row.templateName}</div> : null}
+                {row.templateName ? <div className="mt-1 truncate text-[10.5px] text-muted-foreground">{row.templateName}</div> : null}
               </td>
               <td className="text-center">
                 <div className="flex items-center justify-center gap-1.5">
@@ -232,7 +252,7 @@ export function PaymentReminderHistoryTable({
                       setConfirmationIds([]);
                       setViewingRow(row);
                     }}
-                    className="inline-flex size-11 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                    className="inline-flex size-11 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition hover:border-primary/40 hover:bg-button-soft hover:text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25"
                     aria-label={`View message for ${row.student}`}
                   >
                     <Eye className="size-4" />
@@ -244,7 +264,7 @@ export function PaymentReminderHistoryTable({
                       setConfirmationIds([row.notificationId]);
                     }}
                     disabled={pending}
-                    className={cn("inline-flex size-11 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass)}
+                    className={cn("inline-flex size-11 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition hover:border-primary/40 hover:bg-button-soft hover:text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25", readableDisabledControlClass)}
                     aria-label={`${operationLabel} reminder for ${row.student}`}
                   >
                     {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
@@ -255,8 +275,13 @@ export function PaymentReminderHistoryTable({
           ))
         ) : (
           <tr>
-            <td colSpan={view === "archived" ? 10 : 9} className="text-center text-[#5a6070]">
-              {emptyState(view, hasRows, hasFilters)}
+            <td colSpan={view === "archived" ? 10 : 9} className="text-center text-muted-foreground">
+              {hasRows && hasFilters ? (
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <span>No reminders match the current filters.</span>
+                  <button type="button" onClick={resetFilters} className={secondaryButtonClass}>Reset filters</button>
+                </div>
+              ) : emptyState(view)}
             </td>
           </tr>
         )}
@@ -277,21 +302,21 @@ export function PaymentReminderHistoryTable({
       {confirmationIds.length > 0 ? (
         <div className="fixed inset-0 z-[220] grid place-items-center bg-[#0f1117]/45 px-4 py-6 backdrop-blur-sm">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmationIds([])} aria-label="Close confirmation" />
-          <section role="alertdialog" aria-modal="true" aria-labelledby="reminder-archive-title" className="relative w-full max-w-md rounded-xl border border-black/[0.07] bg-white p-5 shadow-2xl sm:p-6">
-            <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-[#fff3e0] text-[#e65100]">
+          <section role="alertdialog" aria-modal="true" aria-labelledby="reminder-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl sm:p-6">
+            <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-status-warning-bg text-status-warning-foreground">
               {view === "archived" ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
             </div>
-            <h3 id="reminder-archive-title" className="text-[16px] font-bold text-[#0f1117]">
+            <h3 id="reminder-archive-title" className="text-[16px] font-bold text-foreground">
               {operationLabel} {confirmationIds.length === 1 ? "this reminder" : `${confirmationIds.length} reminders`}?
             </h3>
-            <p className="mt-2 text-[12.5px] leading-5 text-[#5a6070]">
+            <p className="mt-2 text-[12.5px] leading-5 text-muted-foreground">
               {view === "archived"
                 ? "Restored reminders return to Active reminders. Their delivery status and audit details stay unchanged."
                 : "Archived reminders move out of the active table but remain available for audit and can be restored."}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setConfirmationIds([])} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>
-              <button type="button" onClick={confirmAction} disabled={pending} className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-4 text-[12.5px] font-semibold text-white hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto", readableDisabledControlClass)}>
+              <button type="button" onClick={confirmAction} disabled={pending} className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-primary bg-primary px-4 text-[12.5px] font-semibold text-primary-foreground hover:bg-primary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 sm:w-auto", readableDisabledControlClass)}>
                 {pending ? "Updating..." : `${operationLabel} reminders`}
               </button>
             </div>
@@ -302,24 +327,23 @@ export function PaymentReminderHistoryTable({
   );
 }
 
-const secondaryButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass);
+const secondaryButtonClass = cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[12.5px] font-semibold text-muted-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 sm:w-auto", readableDisabledControlClass);
 
 function viewTabClass(active: boolean) {
   return cn(
-    "inline-flex min-h-9 items-center justify-center rounded-md px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
-    active ? "bg-white text-[#0f1117] shadow-sm" : "text-[#5a6070] hover:text-[#0f1117]",
+    "inline-flex min-h-11 items-center justify-center rounded-md px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",
+    active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
   );
 }
 
-function emptyState(view: "active" | "archived", hasRows: boolean, hasFilters: boolean) {
-  if (hasRows && hasFilters) return "No reminders match the current filters.";
+function emptyState(view: "active" | "archived") {
   if (view === "archived") return "No archived payment reminders yet.";
   return "No payment reminder history yet.";
 }
 
 function statusClassName(status: string) {
   const base = "inline-flex min-h-6 items-center rounded-full px-2 py-0.5 text-[11px] font-bold";
-  if (status.toLowerCase() === "sent") return `${base} bg-[#e7f5e9] text-[#2e7d32]`;
-  if (status.toLowerCase() === "failed") return `${base} bg-[#fdebec] text-[#c62828]`;
-  return `${base} bg-[#fff3e0] text-[#e65100]`;
+  if (status.toLowerCase() === "sent") return `${base} bg-status-success-bg text-status-success-foreground`;
+  if (status.toLowerCase() === "failed") return `${base} bg-status-danger-bg text-status-danger-foreground`;
+  return `${base} bg-status-warning-bg text-status-warning-foreground`;
 }
