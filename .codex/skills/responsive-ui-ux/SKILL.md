@@ -1,28 +1,31 @@
 ---
 name: responsive-ui-ux
-description: Apply XMETA Pay responsive UI and UX standards to Next.js/Tailwind screens. Use when modifying landing, auth, dashboard, portal, form, navigation, card, table, or workflow UI in this project; when the user asks for responsive design, mobile/tablet/desktop polish, best UI/UX practices, accessibility, tap targets, layout cleanup, or visual QA.
+description: Design, implement, or review responsive XMETA Pay interfaces while preserving the project's established theme. Use for mobile, tablet, or desktop layout work; accessibility and interaction polish; or theme-consistent landing, auth, dashboard, portal, form, navigation, table, dialog, and workflow UI. Use filter-controls-ux instead when the main task is choosing filters, search controls, or button behavior.
 ---
 
 # Responsive UI/UX
 
-Use this skill to keep XMETA Pay screens polished, usable, and consistent across mobile, tablet, and desktop.
+Keep XMETA Pay screens practical, accessible, and visually consistent across mobile, tablet, desktop, light mode, and dark mode.
 
 ## Workflow
 
 1. Read `AGENTS.md` first. This project uses Next.js 16, so inspect relevant docs in `node_modules/next/dist/docs/` before changing Next APIs, routing, metadata, images, fonts, or CSS conventions.
-2. Inspect the target route and shared components before editing. Prefer existing project patterns in `app/_components`, `components/ui`, `app/globals.css`, and current Tailwind utilities.
+2. Inspect the target route, its surrounding layout, and relevant shared components before editing. Treat `app/globals.css` as the source of truth for theme tokens and prefer existing patterns in `app/_components`, `app/admin/_components`, `components/ui`, and current Tailwind utilities.
 3. Preserve public interfaces unless the user explicitly asks otherwise: routes, form actions, visible portal choices, core copy, and existing navigation destinations.
-4. Make the smallest coherent UI change that solves the responsive/UX problem. Avoid turning operational screens into marketing pages.
-5. Verify with lint/build and browser checks at mobile, tablet, and desktop widths whenever the UI is rendered.
+4. Make the smallest coherent change that solves the responsive or theme problem. Avoid broad visual rewrites when the existing screen only needs targeted layout or interaction fixes.
+5. Inspect the complete state set affected by the change: default, hover, focus, active, disabled, loading, empty, error, and dark mode where applicable.
 
 ## XMETA Pay Design Standards
 
-- Use a calm school-fintech interface: light gray page background, white surfaces, charcoal text, XMETA orange primary actions, subtle blue secondary accents.
-- Keep UI practical and task-focused. Avoid decorative blobs, heavy gradients, fake dashboards, stock imagery, dense bento grids, and extra sections unless requested.
+- Use the existing semantic tokens for background, foreground, card, primary orange, secondary blue, muted, border, controls, status colors, and focus rings. Do not introduce a parallel palette when a suitable token already exists.
+- Preserve the calm school-fintech character: neutral page backgrounds, clear surfaces, charcoal text, XMETA orange primary actions, and restrained blue accents. Ensure the same hierarchy remains legible in dark mode.
+- Prefer shared buttons, controls, cards, table shells, and utility classes over one-off copies. Do not perform an unrelated component-system migration while fixing a screen.
+- Keep UI practical and task-focused. Avoid decorative blobs, heavy gradients, fake dashboards, stock imagery, dense bento grids, excessive shadows, attention-seeking animation, and extra sections unless requested.
 - Use cards only for individual content units such as portal choices or auth panels. Do not nest cards inside larger decorative cards.
 - Keep radius restrained: prefer `rounded-lg` or `rounded-xl`; avoid oversized pill/card radius unless the existing component already requires it.
 - Use semantic text hierarchy: concise page heading, readable supporting copy, clear section titles, and labels that remain legible on small screens.
 - Keep body copy line lengths controlled with `max-w-*`, `text-pretty`, or layout constraints where useful.
+- Use motion only when it communicates a state change, and respect reduced-motion preferences.
 - Fix mojibake and encoding issues when found in visible UI text.
 
 ## Responsive Rules
@@ -32,9 +35,11 @@ Use this skill to keep XMETA Pay screens polished, usable, and consistent across
 - Prevent horizontal overflow. Compare `document.documentElement.scrollWidth` with `clientWidth` during browser QA.
 - Use `min-h-[calc(100svh-...)]` or flexible spacing instead of brittle `100vh` assumptions for full-screen shells.
 - Stack primary actions on narrow mobile. Switch to side-by-side actions only when there is enough width, such as `min-[420px]:flex-row`.
-- Keep tappable controls at least about `44px` high. Inputs and submit buttons should generally be `min-h-12`; compact links should still have visible focus and enough click area.
-- Let long register forms scroll naturally. Do not force long forms into one viewport.
-- For register forms, use one column on mobile and two columns on wider screens when it improves scanning.
+- Keep tappable controls at least about `44px` high. Inputs and primary buttons should generally be `min-h-11` or larger; compact links still need visible focus and a usable hit area.
+- Let long forms scroll naturally. Use one column on mobile and add columns only when grouping and reading order remain clear.
+- Keep dialog content inside the viewport, with scrollable bodies and reachable actions. Stack dialog actions on narrow screens when side-by-side controls would become cramped.
+- Treat wide tables deliberately: preserve important columns, use the existing horizontal table shell when appropriate, and consider a compact mobile presentation only when it improves comprehension without hiding required data.
+- Keep action placement predictable: primary completion actions last or right-aligned on wider screens, and full-width or clearly ordered on narrow screens.
 
 ## Accessibility And Interaction
 
@@ -47,20 +52,11 @@ Use this skill to keep XMETA Pay screens polished, usable, and consistent across
 
 ## Verification
 
-Run these checks after UI edits:
+Run the checks relevant to the edited code, normally:
 
 ```powershell
 npm run lint
 npm run build
 ```
 
-For rendered QA, start the app with the repo script and inspect the target route in the in-app Browser when available:
-
-- Page identity: correct URL and title.
-- Not blank: expected headings, controls, and route-specific content render.
-- No framework overlay.
-- Console health: no relevant warnings or errors.
-- Responsive layout: mobile, tablet, and desktop screenshots or DOM metrics.
-- Interaction proof: click or submit one primary visible control when safe.
-
-Report any verification that could not be completed and why.
+When the user explicitly requests rendered browser verification, use `$ui-playwright-qa`. Otherwise report the static checks performed and any browser verification that remains outstanding.
