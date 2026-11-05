@@ -321,7 +321,7 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     }
   });
 
-  test("Enrolled students keeps one contextual Add students action while other Admin pages retain the shortcut", async ({
+  test("Enrolled students keeps one contextual Add students action without a global header shortcut", async ({
     page,
   }) => {
     for (const width of [320, 375, 768, 1440]) {
@@ -345,11 +345,6 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     await page.getByRole("button", { name: "Close modal" }).click();
 
     await page.goto("/admin/dashboard", { waitUntil: "networkidle" });
-    const shortcut = page.getByRole("link", { name: "Add students", exact: true });
-    await expect(shortcut).toBeVisible();
-    await shortcut.click();
-    await expect(page).toHaveURL(/\/admin\/students\?intake=choose$/);
-    await expect(page.getByRole("dialog", { name: "Add students" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Add students", exact: true })).toHaveCount(0);
   });
 

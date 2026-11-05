@@ -206,8 +206,8 @@ test("admin real-data tables use working search filters plus spreadsheet and PDF
 
   assert.match(shell, /\/admin\/tuition#payment-reminders/);
   assert.doesNotMatch(shell, /Reminders future/);
-  assert.match(shell, /Manual payment/);
-  assert.match(shell, /Coming soon/);
+  assert.doesNotMatch(shell, /Manual payment/);
+  assert.doesNotMatch(shell, /Coming soon/);
   assert.match(shell, /subtitle === "School dashboard - SY 2025-2026"/);
   assert.doesNotMatch(shell, /Brentwood Academy/);
   assert.doesNotMatch(shell, /AdminModals|data-modal-trigger|openModal/);
