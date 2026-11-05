@@ -384,9 +384,9 @@ export async function getAdminTuitionPageRealData(
       schoolYearName: setup.schoolYearName,
       kpis: [
         { label: "Tuition billed", value: hasRows ? money(feeSummary.amountDue) : "Pending", note: hasRows ? `${rows.length} tuition assignments` : "Create tuition fee assignments first", tone: "orange", icon: Calculator },
-        { label: "Collected", value: hasRows ? money(feeSummary.amountPaid) : "Pending", note: hasRows ? percent(feeSummary.amountPaid, feeSummary.amountDue) : "Collection pending", tone: "green", noteTone: hasRows ? "up" : "default", icon: CreditCard },
-        { label: "Outstanding", value: hasRows ? money(feeSummary.openBalance) : "Pending", note: hasRows ? `${feeSummary.openAssignments} open or partial` : "No balances yet", tone: "red", noteTone: feeSummary.openBalance > 0 ? "danger" : "default", icon: Activity },
-        { label: "Due records", value: hasRows ? String(feeSummary.assignmentCount) : "0", note: setup.schoolYearName ?? "Active school year", tone: "blue", icon: Receipt },
+        { label: "Collected", value: hasRows ? money(feeSummary.amountPaid) : "Pending", note: hasRows ? `${percent(feeSummary.amountPaid, feeSummary.amountDue)} collected` : "Collection pending", tone: "green", noteTone: hasRows ? "up" : "default", icon: CreditCard },
+        { label: "Outstanding", value: hasRows ? money(feeSummary.openBalance) : "Pending", note: hasRows ? `${feeSummary.openAssignments} with remaining balance` : "No balances yet", tone: "red", noteTone: feeSummary.openBalance > 0 ? "danger" : "default", icon: Activity },
+        { label: "Tuition records", value: hasRows ? String(feeSummary.assignmentCount) : "0", note: setup.schoolYearName ?? "Active school year", tone: "blue", icon: Receipt },
       ],
       rows,
       outstandingByGrade,

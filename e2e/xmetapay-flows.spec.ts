@@ -373,6 +373,38 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     );
   });
 
+  test("tuition page keeps the report primary and reminder history expandable", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
+      test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+      await expect(page.getByRole("heading", { name: /Student tuition balances/ })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    const report = page.getByRole("heading", { name: /Student tuition balances/ });
+    const reminders = page.getByRole("heading", { name: "Payment reminders" });
+    const reportBox = await report.boundingBox();
+    const reminderBox = await reminders.boundingBox();
+    expect(reportBox?.y ?? Number.MAX_SAFE_INTEGER).toBeLessThan(reminderBox?.y ?? 0);
+
+    const historyToggle = page.getByRole("button", { name: /Show reminder history/ });
+    await expect(historyToggle).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByPlaceholder("Search reminder history...")).toHaveCount(0);
+    await historyToggle.focus();
+    await page.keyboard.press("Enter");
+    await expect(historyToggle).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByPlaceholder("Search reminder history...")).toBeVisible();
+    await page.getByRole("button", { name: "Hide reminder history" }).click();
+    await expect(page.getByPlaceholder("Search reminder history...")).toHaveCount(0);
+
+    await page.getByRole("link", { name: "Reminders" }).click();
+    await expect(page).toHaveURL(/\/admin\/tuition#payment-reminders$/);
+    await expect(page.locator("#payment-reminders")).toBeInViewport();
+  });
+
   test("tuition term dates use the student schedule window in both themes", async ({
     context,
     page,
@@ -693,7 +725,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
         filename: "admin-tuition-report.xlsx",
         worksheetName: "Tuition report",
         title: "Tuition report",
-        headers: ["Student name", "Grade", "Section", "Fee due", "Paid", "Balance", "Last payment", "Status", "Terms"],
+        headers: ["Student name", "Grade", "Section", "Billed", "Paid", "Balance", "Payment plan", "Due date", "Last payment", "Status"],
       },
       {
         path: "/admin/collections",
@@ -877,6 +909,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
     await expect(excelButton).toHaveCSS("border-color", "rgb(56, 64, 82)");
 
     await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /Show reminder history/ }).click();
     await page.getByPlaceholder("Search reminder history...").fill("no-matching-reminder");
     const selectVisible = page.getByRole("button", { name: "Select visible" }).first();
     await expect(selectVisible).toBeDisabled();

@@ -80,12 +80,13 @@ export function TuitionReportTable({
     { label: "Student name", value: (row) => row.student },
     { label: "Grade", value: (row) => row.grade },
     { label: "Section", value: (row) => row.section },
-    { label: "Fee due", value: (row) => money(row.due) },
+    { label: "Billed", value: (row) => money(row.due) },
     { label: "Paid", value: (row) => money(row.paid) },
     { label: "Balance", value: (row) => money(row.balance) },
-    { label: "Last payment", value: (row) => row.lastPayment },
+    { label: "Payment plan", value: (row) => paymentPlanLabel(row) },
+    { label: "Due date", value: (row) => row.dueDate ?? "No due date" },
+    { label: "Last payment", value: (row) => lastPaymentLabel(row.lastPayment) },
     { label: "Status", value: (row) => row.status },
-    { label: "Terms", value: (row) => row.termSummary },
   ];
   const exportOptions = {
     context: [
@@ -142,14 +143,14 @@ export function TuitionReportTable({
       </div>
       <AdminTable
         headers={[
-          { label: "Student", className: "w-[22%]" },
-          { label: "Schedule", className: "w-[18%]" },
-          { label: "Fee due", className: "w-[11%]" },
-          { label: "Paid", className: "w-[10%]" },
-          { label: "Balance", className: "w-[11%]" },
+          { label: "Student", className: "w-[20%]" },
+          { label: "Billed", className: "w-[9%]" },
+          { label: "Paid", className: "w-[9%]" },
+          { label: "Balance", className: "w-[10%]" },
+          { label: "Payment plan / due date", className: "w-[22%]" },
           { label: "Last payment", className: "w-[12%]" },
           { label: "Status", className: "w-[8%]" },
-          { label: "Actions", className: "w-[8%]" },
+          { label: "Actions", className: "w-[10%]" },
         ]}
       >
         {filteredRows.length > 0 ? (
@@ -166,23 +167,18 @@ export function TuitionReportTable({
                     </p>
                   </div>
                 </td>
-                <td className="whitespace-normal">
-                  <div className="min-w-0">
-                    <p className="truncate text-[12px] font-semibold text-[#0f1117]">
-                      {row.terms.length > 0 ? row.termSummary : "No terms"}
-                    </p>
-                    <p className="mt-1 truncate text-[11px] font-medium text-[#5a6070]">
-                      {row.dueDate ? `Fee due ${row.dueDate}` : "No fee due date"}
-                      {row.terms.length > 0 ? " - terms are schedule notes" : ""}
-                    </p>
-                  </div>
-                </td>
                 <td className="font-semibold text-[#0f1117]">P{row.due.toLocaleString()}</td>
                 <td className="font-semibold text-[#2e7d32]">P{row.paid.toLocaleString()}</td>
                 <td className={row.balance > 0 ? "font-semibold text-[#c62828]" : "font-semibold text-[#9ba3b8]"}>
                   P{row.balance.toLocaleString()}
                 </td>
-                <td className="font-mono text-[11px] text-[#5a6070]">{row.lastPayment}</td>
+                <td className="whitespace-normal">
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-semibold text-[#0f1117]">{paymentPlanLabel(row)}</p>
+                    <p className="mt-1 truncate text-[11px] font-medium text-[#5a6070]">{row.dueDate ? `Due ${row.dueDate}` : "No due date"}</p>
+                  </div>
+                </td>
+                <td className="font-mono text-[11px] text-[#5a6070]">{lastPaymentLabel(row.lastPayment)}</td>
                 <td>
                   <StatusPill tone={row.status}>{statusLabel}</StatusPill>
                 </td>
@@ -220,6 +216,14 @@ export function TuitionReportTable({
 function filterLabel(value: string) {
   if (value === "all") return "All";
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function paymentPlanLabel(row: TuitionReportRow) {
+  return row.terms.length > 0 ? row.termSummary : "Full payment";
+}
+
+function lastPaymentLabel(value: string) {
+  return value === "Pending" ? "No payment yet" : value;
 }
 
 function TuitionAssignmentEditModal({ row }: { row: TuitionReportRow }) {

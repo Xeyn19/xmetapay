@@ -7,6 +7,7 @@ const mailerPath = "lib/email/mailer.ts";
 const envExamplePath = ".env.example";
 const packagePath = "package.json";
 const tuitionPagePath = "app/admin/(dashboard)/tuition/page.tsx";
+const tuitionReminderPanelPath = "app/admin/(dashboard)/tuition/payment-reminder-panel.tsx";
 const tuitionReminderFormPath = "app/admin/(dashboard)/tuition/payment-reminder-form.tsx";
 const tuitionReminderHistoryTablePath = "app/admin/(dashboard)/tuition/payment-reminder-history-table.tsx";
 const tuitionReminderMessageDialogPath = "app/admin/(dashboard)/tuition/payment-reminder-message-dialog.tsx";
@@ -119,14 +120,17 @@ test("nodemailer uses a server-only pooled SMTP transport and safe environment c
 
 test("tuition page exposes real reminder logging and reminder history", () => {
   const page = readFileSync(tuitionPagePath, "utf8");
+  const panel = readFileSync(tuitionReminderPanelPath, "utf8");
   const form = readFileSync(tuitionReminderFormPath, "utf8");
   const historyTable = readFileSync(tuitionReminderHistoryTablePath, "utf8");
   const messageDialog = readFileSync(tuitionReminderMessageDialogPath, "utf8");
   const realData = readFileSync(realDataPath, "utf8");
 
-  assert.match(page, /<PaymentReminderForm templates=\{reminderTemplates\} \/>/);
+  assert.match(page, /<PaymentReminderPanel/);
   assert.match(page, /activeRows=\{data\.reminderRows\}/);
   assert.match(page, /archivedRows=\{data\.archivedReminderRows\}/);
+  assert.match(panel, /<PaymentReminderForm templates=\{templates\} \/>/);
+  assert.match(panel, /<PaymentReminderHistoryTable activeRows=\{activeRows\} archivedRows=\{archivedRows\} \/>/);
   assert.match(form, /useActionState\(async \(previousState: ReminderActionState, formData: FormData\)/);
   assert.match(form, /sendPaymentReminderEmailsAction\(previousState, formData\)/);
   assert.match(form, /toast\.success/);
@@ -167,13 +171,14 @@ test("tuition page exposes real reminder logging and reminder history", () => {
   assert.match(messageDialog, /Message copied/);
   assert.match(messageDialog, /event\.key === "Escape"/);
   assert.match(messageDialog, /max-h-\[calc\(100svh-2rem\)\]/);
-  assert.match(page, /id="payment-reminders"/);
-  assert.match(page, /<DashboardCard\s+id="payment-reminders"/);
-  assert.match(page, /className="mb-\[18px\] scroll-mt-24"/);
+  assert.match(panel, /id="payment-reminders"/);
+  assert.match(panel, /className="mb-\[18px\] scroll-mt-24/);
+  assert.match(panel, /aria-expanded=\{historyOpen\}/);
+  assert.match(panel, /Show reminder history/);
   assert.match(form, /Send email reminders/);
   assert.match(form, /Sending emails/);
-  assert.match(page, /records each delivery result/);
-  assert.match(page, /SMS delivery remains future/);
+  assert.match(panel, /Every delivery result stays available for audit/);
+  assert.match(panel, /SMS remains future scope/);
   assert.match(page, /data\.reminderRows/);
   assert.match(realData, /reminderRows: PaymentReminderHistoryRow\[\]/);
   assert.match(realData, /async function getRecentReminderRows/);
