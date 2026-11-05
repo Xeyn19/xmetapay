@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 
-import { DashboardTablePagination, usePaginatedRows } from "@/app/_components/table-controls";
+import { DashboardTableControls, DashboardTablePagination, toFilterOptions, usePaginatedRows } from "@/app/_components/table-controls";
 import type { ParentRegistrationRequest } from "@/lib/parents/registration-approval";
 
-import { AdminTable, SearchInput, StatusPill, fieldControlClass } from "../../_components/admin-ui";
+import { AdminTable, StatusPill } from "../../_components/admin-ui";
 import { reviewParentRegistrationAction } from "./actions";
 
 export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRequest[] }) {
@@ -21,31 +21,31 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
   }, [query, rows, status]);
   const pagination = usePaginatedRows(filteredRows, `${query}|${status}`);
   const pendingCount = rows.filter((row) => row.status === "Pending approval").length;
+  const hasActiveFilters = query.trim() !== "" || status !== "all";
+  const resetFilters = () => {
+    setQuery("");
+    setStatus("all");
+  };
 
   return (
     <>
-      <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-[18px]">
-        <p className="text-xs leading-5 text-[#5a6070]">
+      <div className="space-y-3 border-b border-border px-4 py-3 sm:px-[18px]">
+        <p className="text-xs leading-5 text-muted-foreground">
           School-wide requests · {pendingCount} pending. Review the parent and matching student records before granting access.
         </p>
-        <div className="flex flex-col gap-2 min-[420px]:flex-row">
-          <SearchInput value={query} onChange={setQuery} placeholder="Search requests..." />
-          <label className="sr-only" htmlFor="parent-registration-status">Filter registration status</label>
-          <select
-            id="parent-registration-status"
-            className={fieldControlClass}
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            <option value="all">All statuses</option>
-            <option value="Pending approval">Pending approval</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Disabled">Disabled</option>
-          </select>
-        </div>
+        <DashboardTableControls
+          query={query}
+          onQueryChange={setQuery}
+          searchPlaceholder="Search parent, email, phone, or student reference..."
+          searchLabel="Search registration requests by parent, email, phone, or student reference"
+          filters={[{ label: "Registration status", value: status, onChange: setStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") }]}
+          onClear={resetFilters}
+          clearLabel="Reset filters"
+          clearDisabled={!hasActiveFilters}
+        />
+        <p className="text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredRows.length}</strong> {filteredRows.length === 1 ? "request" : "requests"} shown</p>
       </div>
-      <p className="px-4 py-2 text-[11px] text-[#5a6070] sm:hidden">Swipe the table to see status and review actions.</p>
+      <p className="px-4 py-2 text-[11px] text-muted-foreground sm:hidden">Swipe the table to see status and review actions.</p>
       <AdminTable headers={[
         { label: "Parent", className: "w-[25%]" },
         { label: "Student matches", className: "w-[32%]" },
@@ -59,21 +59,21 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
             <tr key={row.userId}>
               <td className="!whitespace-normal">
                 <div className="font-bold">{row.name}</div>
-                <div className="break-all text-[11px] text-[#5a6070]">{row.email}</div>
-                <div className="text-[11px] text-[#5a6070]">{row.phone} · {row.relationship}</div>
+                <div className="break-all text-[11px] text-muted-foreground">{row.email}</div>
+                <div className="text-[11px] text-muted-foreground">{row.phone} · {row.relationship}</div>
               </td>
               <td className="!whitespace-normal">
                 <div className="space-y-1.5">
                   {row.references.map((reference) => (
                     <div key={reference.value} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <span className="font-mono text-[11px]">{reference.value}</span>
-                      {reference.schoolRecorded ? <span className="text-[11px] font-semibold text-[#1565c0]">School recorded email</span> : null}
-                      <span className={reference.studentName ? "text-[11px] text-[#2e7d32]" : "text-[11px] text-[#9a5b00]"}>
+                      {reference.schoolRecorded ? <span className="text-[11px] font-semibold text-status-info-foreground">School recorded email</span> : null}
+                      <span className={reference.studentName ? "text-[11px] text-status-success-foreground" : "text-[11px] text-status-warning-foreground"}>
                         {reference.studentName ? `Matched: ${reference.studentName}` : "No match yet"}
                       </span>
                     </div>
                   ))}
-                  {row.references.length === 0 ? <span className="text-[11px] text-[#9a5b00]">No saved reference</span> : null}
+                  {row.references.length === 0 ? <span className="text-[11px] text-status-warning-foreground">No saved reference</span> : null}
                 </div>
               </td>
               <td>{row.submittedAt}</td>
@@ -100,7 +100,7 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
                           event.preventDefault();
                         }
                       }}
-                      className="min-h-11 rounded-lg bg-[#e64a19] px-3 text-xs font-bold text-white hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="min-h-11 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground hover:bg-primary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Approve
                     </button>
@@ -113,7 +113,7 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
                           event.preventDefault();
                         }
                       }}
-                      className="min-h-11 rounded-lg border border-[#c62828]/40 px-3 text-xs font-bold text-[#c62828] hover:bg-[#c62828]/10 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#c62828]/25"
+                      className="min-h-11 rounded-lg border border-status-danger-foreground/40 px-3 text-xs font-bold text-status-danger-foreground hover:bg-status-danger-bg focus:outline-none focus-visible:ring-3 focus-visible:ring-status-danger-foreground/25"
                     >
                       Reject
                     </button>
@@ -128,19 +128,19 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
                       onClick={(event) => {
                         if (!window.confirm(`Reopen ${row.name}'s registration for review?`)) event.preventDefault();
                       }}
-                      className="min-h-11 rounded-lg border border-black/15 px-3 text-xs font-bold text-[#0f1117] hover:bg-[#eff1f5] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25"
+                      className="min-h-11 rounded-lg border border-border px-3 text-xs font-bold text-foreground hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
                       Reopen for review
                     </button>
                   </form>
-                ) : <span className="text-xs text-[#5a6070]">{row.status === "Disabled" ? "Access disabled" : "Reviewed"}</span>}
+                ) : <span className="text-xs text-muted-foreground">{row.status === "Disabled" ? "Access disabled" : "Reviewed"}</span>}
               </td>
             </tr>
           );
         }) : (
           <tr>
-            <td colSpan={5} className="py-8 text-center text-[#5a6070]">
-              {rows.length === 0 ? "No parent registration requests yet." : "No requests match the current filters."}
+            <td colSpan={5} className="py-8 text-center text-muted-foreground">
+              {rows.length === 0 ? "No parent registration requests yet." : <span>No requests match the current filters. <button type="button" onClick={resetFilters} className="ml-1 min-h-11 font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Reset filters</button></span>}
             </td>
           </tr>
         )}

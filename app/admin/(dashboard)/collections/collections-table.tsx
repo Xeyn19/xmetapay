@@ -78,6 +78,7 @@ export function CollectionsTable({
   const exportColumns = collectionExportColumns(view === "archived");
   const filteredAmount = filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0);
   const exportTitle = view === "archived" ? "Archived tuition collections" : "Active tuition collections";
+  const hasActiveFilters = query.trim() !== "" || status !== "all" || channel !== "all";
   const exportOptions = {
     context: [
       { label: "School", value: schoolName },
@@ -102,6 +103,28 @@ export function CollectionsTable({
     setChannel("all");
     setSelectedIds([]);
     setConfirmationIds([]);
+  };
+  const clearSelectionState = () => {
+    setSelectedIds([]);
+    setConfirmationIds([]);
+  };
+  const changeQuery = (value: string) => {
+    setQuery(value);
+    clearSelectionState();
+  };
+  const changeStatus = (value: string) => {
+    setStatus(value);
+    clearSelectionState();
+  };
+  const changeChannel = (value: string) => {
+    setChannel(value);
+    clearSelectionState();
+  };
+  const resetFilters = () => {
+    setQuery("");
+    setStatus("all");
+    setChannel("all");
+    clearSelectionState();
   };
   const toggleRow = (paymentId: number) => {
     setSelectedIds((current) => current.includes(paymentId)
@@ -163,7 +186,7 @@ export function CollectionsTable({
       <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div
-            className="inline-flex min-h-11 rounded-lg border border-black/10 bg-[#f1f2f5] p-1"
+            className="inline-flex min-h-11 rounded-lg border border-border bg-muted p-1"
             role="tablist"
             aria-label="Tuition collection history view"
           >
@@ -174,24 +197,23 @@ export function CollectionsTable({
               Archived collections ({archivedCollectionRows.length})
             </button>
           </div>
-          <p className="text-[11.5px] text-[#5a6070]">
+          <p className="text-[11.5px] text-muted-foreground" aria-live="polite">
             {validSelectedIds.length} {validSelectedIds.length === 1 ? "collection" : "collections"} selected
           </p>
         </div>
 
         <DashboardTableControls
           query={query}
-          onQueryChange={setQuery}
+          onQueryChange={changeQuery}
           searchPlaceholder="Search student, ref, tuition term..."
+          searchLabel="Search collections by student, reference, or tuition term"
           filters={[
-            { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
-            { label: "Channel", value: channel, onChange: setChannel, options: toFilterOptions(rows.map((row) => row.channel), "All channels") },
+            { label: "Status", value: status, onChange: changeStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
+            { label: "Channel", value: channel, onChange: changeChannel, options: toFilterOptions(rows.map((row) => row.channel), "All channels") },
           ]}
-          onClear={() => {
-            setQuery("");
-            setStatus("all");
-            setChannel("all");
-          }}
+          onClear={resetFilters}
+          clearLabel="Reset filters"
+          clearDisabled={!hasActiveFilters}
           onExport={() => exportRowsToExcel(
             view === "archived" ? "admin-collections-archived.xlsx" : "admin-collections-active.xlsx",
             exportTitle,
@@ -225,7 +247,7 @@ export function CollectionsTable({
             type="button"
             onClick={() => setConfirmationIds(validSelectedIds)}
             disabled={validSelectedIds.length === 0 || pending}
-            className={cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#0f1117] bg-[#0f1117] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#2d3348] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass)}
+            className={cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-button-secondary bg-button-secondary px-3.5 text-[12.5px] font-semibold text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass)}
           >
             {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
             {operationLabel} selected
@@ -281,8 +303,8 @@ export function CollectionsTable({
           ))
         ) : (
           <tr>
-            <td colSpan={view === "archived" ? 11 : 10} className="text-center text-[#5a6070]">
-              {emptyState(view, hasRows, hasFilters)}
+            <td colSpan={view === "archived" ? 11 : 10} className="py-8 text-center text-muted-foreground">
+              {hasFilters ? <span>{emptyState(view, hasRows, hasFilters)} <button type="button" onClick={resetFilters} className="ml-1 min-h-11 font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Reset filters</button></span> : emptyState(view, hasRows, hasFilters)}
             </td>
           </tr>
         )}
@@ -327,7 +349,7 @@ export function CollectionsTable({
   );
 }
 
-const secondaryButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3 text-[12.5px] font-semibold text-[#5a6070] transition hover:bg-[#f2f1ef] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass);
+const secondaryButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass);
 
 function viewTabClass(active: boolean) {
   return cn(

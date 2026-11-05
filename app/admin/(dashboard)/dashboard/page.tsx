@@ -52,7 +52,7 @@ export default async function AdminDashboardPage() {
           {data.tuitionByGrade.length > 0 ? (
             <BarList rows={data.tuitionByGrade} />
           ) : (
-            <div className="text-[12.5px] leading-5 text-[#5a6070]">Collected tuition appears here after payments.</div>
+            <div className="text-[12.5px] leading-5 text-muted-foreground">Collected tuition appears here after payments.</div>
           )}
         </DashboardCard>
 
@@ -70,7 +70,7 @@ export default async function AdminDashboardPage() {
           {data.activityFeed.length > 0 ? (
             <Timeline items={data.activityFeed} />
           ) : (
-            <div className="text-[12.5px] leading-5 text-[#5a6070]">Notification activity is pending.</div>
+            <div className="text-[12.5px] leading-5 text-muted-foreground">Notification activity is pending.</div>
           )}
         </DashboardCard>
       </div>
@@ -103,7 +103,7 @@ function SchoolAdministratorDashboard({
           {data.tuitionByGrade.length > 0 ? (
             <TuitionCollectedByGradeChart rows={data.tuitionByGrade} />
           ) : (
-            <div className="text-[12.5px] leading-5 text-[#5a6070]">Collected tuition appears here after payments.</div>
+            <div className="text-[12.5px] leading-5 text-muted-foreground">Collected tuition appears here after payments.</div>
           )}
         </DashboardCard>
 
@@ -119,7 +119,7 @@ function SchoolAdministratorDashboard({
           {data.activityFeed.length > 0 ? (
             <Timeline items={data.activityFeed} />
           ) : (
-            <div className="text-[12.5px] leading-5 text-[#5a6070]">Notification activity is pending.</div>
+            <div className="text-[12.5px] leading-5 text-muted-foreground">Notification activity is pending.</div>
           )}
         </DashboardCard>
       </div>

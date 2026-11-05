@@ -68,6 +68,14 @@ export function AdminStudentProfileSelector({ students, schoolName, schoolYearNa
     filteredStudents,
     `${query}|${grade}|${section}|${enrollmentStatus}|${guardianStatus}`,
   );
+  const hasActiveFilters = query.trim() !== "" || grade !== "all" || section !== "all" || enrollmentStatus !== "all" || guardianStatus !== "all";
+  const resetFilters = () => {
+    setQuery("");
+    setGrade("all");
+    setSection("all");
+    setEnrollmentStatus("all");
+    setGuardianStatus("all");
+  };
   const exportColumns: ExportColumn<AdminStudentProfileSummary>[] = [
     { label: "Reference", value: (student) => student.studentReference },
     { label: "Full name", value: (student) => student.fullName },
@@ -97,14 +105,15 @@ export function AdminStudentProfileSelector({ students, schoolName, schoolYearNa
 
   return (
     <DashboardCard title={`Choose a student profile${schoolYearName ? ` - ${schoolYearName}` : ""}`} icon={IdCard} bodyClassName="p-0">
-      <div className="border-b border-black/[0.07] bg-[#f7f8fa] px-[18px] py-2.5 text-[11px] leading-4 text-[#5a6070]">
+      <div className="border-b border-border bg-muted px-[18px] py-2.5 text-[11px] leading-4 text-muted-foreground">
         Showing all students in this school. Grade and section show their placement for {schoolYearName ?? "the selected school year"}; <span className="font-semibold">Pending</span> means no enrollment exists in that year yet.
       </div>
-      <div className="border-b border-black/[0.07] px-[18px] py-3">
+      <div className="border-b border-border px-[18px] py-3">
         <DashboardTableControls
           query={query}
           onQueryChange={setQuery}
           searchPlaceholder="Search name, reference, guardian..."
+          searchLabel="Search student profiles by name, reference, or guardian"
           filters={[
             {
               label: "Grade",
@@ -129,19 +138,16 @@ export function AdminStudentProfileSelector({ students, schoolName, schoolYearNa
               options: toFilterOptions(students.map((student) => student.guardianStatus), "All guardian links"),
             },
           ]}
-          onClear={() => {
-            setQuery("");
-            setGrade("all");
-            setSection("all");
-            setEnrollmentStatus("all");
-            setGuardianStatus("all");
-          }}
+          onClear={resetFilters}
+          clearLabel="Reset filters"
+          clearDisabled={!hasActiveFilters}
           onExport={() => exportRowsToExcel("admin-student-profiles.xlsx", "Student profile selector", filteredStudents, exportColumns, { worksheetName: "Student profiles", ...exportOptions })}
           onExportPdf={() => exportRowsToPdf("admin-student-profiles.pdf", "Student profile selector", filteredStudents, exportColumns, exportOptions)}
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredStudents.length === 0}
         />
+        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredStudents.length}</strong> {filteredStudents.length === 1 ? "student" : "students"} shown</p>
       </div>
       <AdminTable
         headers={[
@@ -156,18 +162,18 @@ export function AdminStudentProfileSelector({ students, schoolName, schoolYearNa
           pagination.pageRows.map((student) => (
             <tr key={student.id}>
               <td>
-                <Link href={student.profileHref} className="flex min-w-0 items-center gap-2.5 font-bold text-[#e64a19] hover:underline">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#fff3e0] text-[11px] font-bold text-[#e64a19]">
+                <Link href={student.profileHref} className="flex min-w-0 items-center gap-2.5 font-bold text-primary hover:underline">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-button-soft text-[11px] font-bold text-primary">
                     {student.initials}
                   </span>
                   <span className="min-w-0 truncate">{student.fullName}</span>
                 </Link>
               </td>
-              <td className="font-mono text-[11px] text-[#5a6070]">{student.studentReference}</td>
+              <td className="font-mono text-[11px] text-muted-foreground">{student.studentReference}</td>
               <td>{student.gradeSection}</td>
               <td>
-                <div className="font-semibold text-[#0f1117]">{student.guardians}</div>
-                <div className="mt-0.5 text-[11px] text-[#5a6070]">{student.guardianStatus}</div>
+                <div className="font-semibold text-foreground">{student.guardians}</div>
+                <div className="mt-0.5 text-[11px] text-muted-foreground">{student.guardianStatus}</div>
               </td>
               <td>
                 <StatusPill tone={student.enrollmentStatus === "Enrolled" ? "enrolled" : "pending"}>
@@ -178,8 +184,8 @@ export function AdminStudentProfileSelector({ students, schoolName, schoolYearNa
           ))
         ) : (
           <tr>
-            <td colSpan={5} className="text-center text-[#5a6070]">
-              {students.length === 0 ? "No student records yet." : "No students match the current filters."}
+            <td colSpan={5} className="py-8 text-center text-muted-foreground">
+              {students.length === 0 ? "No student records yet." : <span>No students match the current filters. <button type="button" onClick={resetFilters} className="ml-1 min-h-11 font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Reset filters</button></span>}
             </td>
           </tr>
         )}
@@ -215,29 +221,27 @@ export function AdminStudentProfileView({ student }: { student: StudentProfile }
 
   return (
     <>
-      <section className="relative mb-5 flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl bg-[#0f1117] px-6 py-5 text-white">
-        <div className="absolute -right-8 -top-8 size-36 rounded-full bg-white/[0.04]" />
-        <div className="absolute -bottom-7 right-16 size-24 rounded-full bg-[#e64a19]/15" />
-        <span className="relative flex size-14 shrink-0 items-center justify-center rounded-full border-[2.5px] border-white/25 bg-[#e64a19] text-xl font-bold">
+      <section className="mb-5 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-button-secondary px-5 py-5 text-button-secondary-foreground">
+        <span className="flex size-14 shrink-0 items-center justify-center rounded-full border-[2.5px] border-current/20 bg-primary text-xl font-bold text-primary-foreground">
           {student.initials}
         </span>
-        <div className="relative min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold tracking-[-0.02em]">{student.fullName}</h2>
-          <p className="mt-0.5 text-xs text-white/60">{student.subtitle}</p>
+          <p className="mt-0.5 text-xs opacity-70">{student.subtitle}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {student.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/90">{tag}</span>
+              <span key={tag} className="rounded-full border border-current/15 px-2.5 py-1 text-[11px] font-bold">{tag}</span>
             ))}
           </div>
         </div>
-        <div className="relative ml-auto flex gap-6 text-right">
+        <div className="ml-auto flex gap-6 text-right">
           <div>
             <div className="text-lg font-bold">{student.walletBalance}</div>
-            <div className="mt-0.5 text-[10.5px] text-white/50">Wallet balance</div>
+            <div className="mt-0.5 text-[10.5px] opacity-60">Wallet balance</div>
           </div>
           <div>
             <div className="text-lg font-bold">{student.openBalance}</div>
-            <div className="mt-0.5 text-[10.5px] text-white/50">Open balance</div>
+            <div className="mt-0.5 text-[10.5px] opacity-60">Open balance</div>
           </div>
         </div>
       </section>
@@ -283,16 +287,16 @@ export function AdminStudentProfileView({ student }: { student: StudentProfile }
             {student.transactions.length > 0 ? (
               transactionsPagination.pageRows.map(([date, description, amount, channel, status]) => (
                 <tr key={`${date}-${description}`}>
-                  <td className="font-mono text-[11px] text-[#5a6070]">{date}</td>
+                  <td className="font-mono text-[11px] text-muted-foreground">{date}</td>
                   <td className="font-bold">{description}</td>
-                  <td className="font-bold text-[#e64a19]">{amount}</td>
+                  <td className="font-bold text-primary">{amount}</td>
                   <td>{channel}</td>
-                  <td className="font-semibold text-[#2e7d32]">{status}</td>
+                  <td className="font-semibold text-status-success-foreground">{status}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="text-center text-[#5a6070]">
+                <td colSpan={5} className="text-center text-muted-foreground">
                   No student payment transactions yet.
                 </td>
               </tr>

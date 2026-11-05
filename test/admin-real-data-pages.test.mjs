@@ -208,7 +208,7 @@ test("admin real-data tables use working search filters plus spreadsheet and PDF
   assert.doesNotMatch(shell, /Reminders future/);
   assert.doesNotMatch(shell, /Manual payment/);
   assert.doesNotMatch(shell, /Coming soon/);
-  assert.match(shell, /subtitle === "School dashboard - SY 2025-2026"/);
+  assert.match(shell, /subtitle === "School operations overview"/);
   assert.doesNotMatch(shell, /Brentwood Academy/);
   assert.doesNotMatch(shell, /AdminModals|data-modal-trigger|openModal/);
 });

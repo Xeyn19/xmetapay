@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Layers3 } from "lucide-react";
+import { Layers3 } from "lucide-react";
 
-import { DashboardCard, StatusPill } from "@/app/admin/_components/admin-ui";
+import { AdminWorkflowHeader, DashboardCard, StatusPill } from "@/app/admin/_components/admin-ui";
 import { EditSchoolYearModal } from "@/app/admin/_components/school-setup-management-modals";
 import { SchoolYearStructureForm } from "@/app/admin/_components/school-year-structure-form";
 import { requireAdminPageAccess } from "@/lib/admin/access";
@@ -21,20 +20,10 @@ export default async function AdminSchoolYearStructurePage({ params }: { params:
 
   return (
     <div className="grid gap-5">
-      <div>
-        <Link href="/admin/school-setup" className="inline-flex min-h-11 items-center gap-2 text-[12px] font-semibold text-[#5a6070] hover:text-[#e64a19]"><ArrowLeft className="size-4" /> Back to School setup</Link>
-        <div className="mt-2 flex flex-col gap-3 rounded-xl border border-black/[0.07] bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold">{data.schoolYear.name}</h2><StatusPill tone={statusTone(data.schoolYear.status)}>{statusLabel(data.schoolYear.status)}</StatusPill></div>
-            <p className="mt-1 flex items-center gap-1.5 text-[12px] text-[#5a6070]"><CalendarDays className="size-4 text-[#e64a19]" /> {data.schoolYear.startsOn} to {data.schoolYear.endsOn}</p>
-            <p className="mt-1 text-[11px] text-[#7a8296]">{data.schoolName}</p>
-          </div>
-          <EditSchoolYearModal year={data.schoolYear} />
-        </div>
-      </div>
+      <AdminWorkflowHeader backHref="/admin/school-setup" backLabel="Back to School setup" title={data.schoolYear.name} description={`${data.schoolName} · ${data.schoolYear.startsOn} to ${data.schoolYear.endsOn}`} status={<StatusPill tone={statusTone(data.schoolYear.status)}>{statusLabel(data.schoolYear.status)}</StatusPill>} action={<EditSchoolYearModal year={data.schoolYear} />} />
 
       {data.schoolYear.status !== "active" ? (
-        <div className="rounded-lg border border-[#1565c0]/15 bg-[#e3f2fd] px-4 py-3 text-[12px] leading-5 text-[#1565c0]">
+        <div className="rounded-lg border border-status-info-foreground/20 bg-status-info-bg px-4 py-3 text-[12px] leading-5 text-status-info-foreground">
           You are preparing {statusLabel(data.schoolYear.status).toLowerCase()}-year structure. Normal enrollment and finance writes still use the active year.
         </div>
       ) : null}

@@ -39,7 +39,7 @@ export default async function AdminSchoolSetupPage() {
 
       <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 text-card-foreground sm:p-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#fff1ec] text-[#e64a19]"><School className="size-5" /></span>
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-button-soft text-primary"><School className="size-5" /></span>
           <div className="min-w-0">
             <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted-foreground">School identity</div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -60,7 +60,7 @@ export default async function AdminSchoolSetupPage() {
       <DashboardCard title="Academic offerings" icon={School}>
         <form action={updateSchoolEducationScopeAction} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)_auto] lg:items-end">
           <div><h3 className="font-semibold text-foreground">What does this school offer?</h3><p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">Choose Basic Education for K–12, Higher Education for College, or Both for an integrated Philippine school. Existing academic records are never deleted.</p></div>
-          <label className="grid gap-1.5 text-sm font-semibold text-foreground"><span>School offering</span><select name="educationScope" defaultValue={overview.educationScope} className="min-h-12 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-[#e64a19] focus:ring-3 focus:ring-[#e64a19]/20"><option value="basic">Basic Education only (K–12)</option><option value="higher">Higher Education only (College)</option><option value="both">Both K–12 and College</option></select></label>
+          <label className="grid gap-1.5 text-sm font-semibold text-foreground"><span>School offering</span><select name="educationScope" defaultValue={overview.educationScope} className="min-h-12 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-3 focus:ring-ring/40"><option value="basic">Basic Education only (K–12)</option><option value="higher">Higher Education only (College)</option><option value="both">Both K–12 and College</option></select></label>
           <button className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Save offering</button>
         </form>
       </DashboardCard>
@@ -75,10 +75,6 @@ export default async function AdminSchoolSetupPage() {
           <div className="mt-4"><Link href="/admin/school-setup/academics" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"><ArrowRight className="size-4" />Manage college academics</Link></div>
         </DashboardCard> : null}
       </div>
-
-      <DashboardCard title="Email templates" icon={Mail}>
-        <EmailTemplateLibrary library={emailTemplateLibrary} />
-      </DashboardCard>
 
       <DashboardCard title="School years" icon={CalendarDays} bodyClassName="p-0">
         {duplicateYearNames.size > 0 ? (
@@ -132,6 +128,10 @@ export default async function AdminSchoolSetupPage() {
           </div>
         ) : <EmptyState title="No active-year structure yet" detail="Open the active school year and add its grades and sections." />}
       </DashboardCard> : null}
+
+      <DashboardCard title="Email templates" icon={Mail}>
+        <EmailTemplateLibrary library={emailTemplateLibrary} />
+      </DashboardCard>
     </div>
   );
 }

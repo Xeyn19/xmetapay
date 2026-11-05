@@ -76,9 +76,9 @@ export function DashboardTableControls({
   onClear: () => void;
   clearLabel?: string;
   clearDisabled?: boolean;
-  onExport: () => void | Promise<void>;
+  onExport?: () => void | Promise<void>;
   onExportPdf?: () => void | Promise<void>;
-  exportDisabled: boolean;
+  exportDisabled?: boolean;
   tone?: "admin" | "parent";
   exportLabel?: string;
   exportingLabel?: string;
@@ -120,26 +120,26 @@ export function DashboardTableControls({
         </select>
       ))}
 
-      <button
+      {onExport ? <button
         type="button"
         onClick={onClear}
         disabled={clearDisabled}
         className={cn(
           "inline-flex min-h-11 items-center justify-center gap-1.5 border border-border bg-background px-3.5 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",
           buttonClass,
-          isParent ? "text-[#6b6b6b] disabled:pointer-events-none disabled:opacity-50" : cn("text-[#5a6070]", readableDisabledControlClass),
+          isParent ? "text-[#6b6b6b] disabled:pointer-events-none disabled:opacity-50" : cn("text-muted-foreground", readableDisabledControlClass),
         )}
       >
         <RotateCcw className="size-4" />
         {clearLabel}
-      </button>
+      </button> : null}
       <button
         type="button"
         onClick={async () => {
           if (exportingPrimary) return;
           setExportingPrimary(true);
           try {
-            await onExport();
+            await onExport?.();
           } finally {
             setExportingPrimary(false);
           }
@@ -217,12 +217,12 @@ export function DashboardTablePagination({
     : "rounded-lg text-[12.5px] font-semibold text-muted-foreground";
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.07] px-[18px] py-3">
-      <div className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-[#5a6070]"}>
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-[18px] py-3">
+      <div className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-muted-foreground"}>
         Showing {startItem}-{endItem} of {totalItems}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <label className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-[#5a6070]"}>
+        <label className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-muted-foreground"}>
           Rows
           <select
             value={pageSize}
@@ -235,7 +235,7 @@ export function DashboardTablePagination({
             ))}
           </select>
         </label>
-        <span className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-[#5a6070]"}>
+        <span className={isParent ? "text-[12px] text-[#6b6b6b]" : "text-[11.5px] text-muted-foreground"}>
           Page {page} of {pageCount}
         </span>
         <button

@@ -45,15 +45,6 @@ export default async function StoreTransactionsPage() {
         ))}
       </KpiGrid>
 
-      <div className="mb-[18px] grid gap-[18px] xl:grid-cols-2">
-        <DashboardCard title="Spend by grade" icon={Store}>
-          {data.spendByGrade.length > 0 ? <BarList rows={data.spendByGrade} /> : <div className="text-[12.5px] leading-5 text-[#5a6070]">Store spend is pending.</div>}
-        </DashboardCard>
-        <DashboardCard title="Peak hours" icon={Clock}>
-          {data.peakHours.length > 0 ? <BarList rows={data.peakHours} tone="green" /> : <div className="text-[12.5px] leading-5 text-[#5a6070]">Store transaction timing is pending.</div>}
-        </DashboardCard>
-      </div>
-
       <DashboardCard
         title="Store transaction log"
         icon={Store}
@@ -86,6 +77,15 @@ export default async function StoreTransactionsPage() {
       >
         <StoreTransactionsTable rows={rows} schoolName={schoolContext.schoolName} schoolYearName={schoolContext.selectedSchoolYear?.name ?? "School year pending"} />
       </DashboardCard>
+
+      <div className="grid gap-[18px] xl:grid-cols-2">
+        <DashboardCard title="Spend by grade" icon={Store}>
+          {data.spendByGrade.length > 0 ? <BarList rows={data.spendByGrade} /> : <div className="text-[12.5px] leading-5 text-muted-foreground">Store spend is pending.</div>}
+        </DashboardCard>
+        <DashboardCard title="Peak hours" icon={Clock}>
+          {data.peakHours.length > 0 ? <BarList rows={data.peakHours} tone="green" /> : <div className="text-[12.5px] leading-5 text-muted-foreground">Store transaction timing is pending.</div>}
+        </DashboardCard>
+      </div>
     </>
   );
 }

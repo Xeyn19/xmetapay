@@ -1,7 +1,6 @@
-import Link from "next/link";
-import { ArrowLeft, ArrowRight, CheckSquare, GraduationCap } from "lucide-react";
+import { ArrowRight, CheckSquare } from "lucide-react";
 
-import { DashboardCard } from "@/app/admin/_components/admin-ui";
+import { AdminWorkflowHeader, DashboardCard } from "@/app/admin/_components/admin-ui";
 import { SchoolYearRolloverForm } from "@/app/admin/_components/school-year-rollover-form";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { requireRole } from "@/lib/auth/session";
@@ -14,12 +13,7 @@ export default async function AdminSchoolRolloverPage() {
 
   return (
     <div className="grid gap-5">
-      <div>
-        <Link href="/admin/school-setup" className="inline-flex min-h-11 items-center gap-2 text-[12px] font-semibold text-[#5a6070] hover:text-[#e64a19]"><ArrowLeft className="size-4" /> Back to School setup</Link>
-        <div className="mt-2 rounded-xl border border-black/[0.07] bg-white p-4 sm:p-5">
-          <div className="flex items-start gap-3"><span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#fff1ec] text-[#e64a19]"><GraduationCap className="size-5" /></span><div><h2 className="text-lg font-bold">Prepare next year</h2><p className="mt-1 max-w-2xl text-[12px] leading-5 text-[#5a6070]">Review students from one school year and create their placement in an upcoming year. Student identity and historical records stay unchanged.</p></div></div>
-        </div>
-      </div>
+      <AdminWorkflowHeader backHref="/admin/school-setup" backLabel="Back to School setup" title="Prepare next year" description="Review students from one school year and create their placement in an upcoming year. Student identity and historical records stay unchanged." />
 
       <div className="grid gap-3 md:grid-cols-3">
         <Step number="1" title="Choose years" detail="Select the source and upcoming target year." />
@@ -35,5 +29,5 @@ export default async function AdminSchoolRolloverPage() {
 }
 
 function Step({ number, title, detail }: { number: string; title: string; detail: string }) {
-  return <div className="flex gap-3 rounded-xl border border-black/[0.07] bg-white p-4"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#e64a19] text-[12px] font-bold text-white">{number}</span><div><div className="text-[12.5px] font-bold">{title}</div><div className="mt-1 text-[11px] leading-4 text-[#5a6070]">{detail}</div></div>{number !== "3" ? <ArrowRight className="ml-auto hidden size-4 text-[#c4c8d2] md:block" /> : null}</div>;
+  return <div className="flex gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-[12px] font-bold text-primary-foreground">{number}</span><div><div className="text-[12.5px] font-bold text-foreground">{title}</div><div className="mt-1 text-[11px] leading-4 text-muted-foreground">{detail}</div></div>{number !== "3" ? <ArrowRight className="ml-auto hidden size-4 text-muted-foreground md:block" /> : null}</div>;
 }

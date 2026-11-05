@@ -105,7 +105,6 @@ export function FeeAssignStudentsForm({
   data: AdminFeeSetupData;
 }) {
   const assignAction = assignStudentFeeAction.bind(null, category, redirectPath);
-  const label = feeLabel(category);
   const [selectedFeeTypeId, setSelectedFeeTypeId] = useState("");
   const [selectedStudentCount, setSelectedStudentCount] = useState(0);
   const dueDateLabel = "Fee due date";

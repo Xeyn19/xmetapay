@@ -61,7 +61,7 @@ export type Kpi = {
 export const pageMeta: Record<string, PageMeta> = {
   "/admin/dashboard": {
     title: "Dashboard",
-    subtitle: "School dashboard - SY 2025-2026",
+    subtitle: "School operations overview",
   },
   "/admin/school-setup": {
     title: "School setup",
@@ -75,21 +75,37 @@ export const pageMeta: Record<string, PageMeta> = {
     title: "Year structure",
     subtitle: "Grade levels and sections for one school year",
   },
+  "/admin/school-setup/academics": {
+    title: "College academics",
+    subtitle: "Programs, periods, year levels, and college sections",
+  },
   "/admin/tuition": {
     title: "Tuition report",
-    subtitle: "June 2025 - collection status and outstanding balances",
+    subtitle: "Collection status and outstanding balances",
+  },
+  "/admin/tuition/schedules": {
+    title: "Tuition packages & setup",
+    subtitle: "Versioned packages, approved charges, and payment plans",
+  },
+  "/admin/tuition/assessments/new": {
+    title: "Create assessments",
+    subtitle: "Select a package, validate students, and post one safe batch",
+  },
+  "/admin/tuition/assessments/result": {
+    title: "Assessment batch result",
+    subtitle: "Posted, duplicate, excluded, credit, and net totals",
   },
   "/admin/collections": {
     title: "Collections log",
-    subtitle: "All incoming payments - SY 2025-2026",
+    subtitle: "Tuition payment activity for the selected school year",
   },
   "/admin/other-fees": {
     title: "Other school fees",
-    subtitle: "Non-tuition fee items - SY 2025-2026",
+    subtitle: "Non-tuition fee items for the selected school year",
   },
   "/admin/students": {
     title: "Enrolled students",
-    subtitle: "Student registry - SY 2025-2026",
+    subtitle: "Student registry and active-year enrollment",
   },
   "/admin/student-profile": {
     title: "Student profile",

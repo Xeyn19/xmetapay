@@ -94,7 +94,7 @@ test("admin reports page links to branded Excel and PDF while the route retains 
   assert.match(page, /format="pdf">PDF/);
   assert.match(page, /format === "pdf"/);
   assert.match(page, /border-primary bg-card text-primary hover:bg-button-soft hover:text-primary/);
-  assert.match(page, /border-\[#0f1117\] bg-\[#0f1117\] text-white hover:bg-\[#2d3348\]/);
+  assert.match(page, /border-button-secondary bg-button-secondary text-button-secondary-foreground hover:bg-button-secondary-hover/);
   assert.doesNotMatch(page, /Export pending/);
   assert.match(realData, /function reportDownloads/);
   assert.match(realData, /excelHref: "\/admin\/reports\/export\?type=collections&format=xlsx"/);
