@@ -82,7 +82,7 @@ Changing the offering never deletes records. Expansion is allowed; narrowing is 
 - Store/canteen purchase recording through student wallets.
 - School administrator dashboard uses a Recharts-backed real-data overview; registrar and finance officer dashboards keep their role-scoped layout.
 - Branded Admin Excel/PDF exports for monthly revenue, tuition collections, outstanding balances, wallet/store activity, and every database-backed Admin table, with contrast-safe report rows and outlined XMETA red/orange PDF controls across School Admin and Super Admin in both dashboard themes.
-- Tuition page presents KPIs and the student balance report first, then outstanding-by-grade insight, with payment-reminder history collapsed in a compact secondary section until opened. It does not duplicate the non-tuition summary owned by Other fees.
+- Tuition page presents KPIs and the student balance report first, with name/reference search, status/grade/section filters, roster/balance/due-date/name sorting, live filtered totals, and all-filtered-row exports. Outstanding-by-grade insight follows, while payment-reminder history stays collapsed until opened and clears selections when its filter context changes. It does not duplicate the non-tuition summary owned by Other fees.
 - Admin and parent real-data tables paginate on screen and export all filtered authorized rows as branded Excel/PDF.
 - Real SMTP payment reminders with protected and school-owned templates plus audited delivery history in `notification_logs`.
 
@@ -818,11 +818,14 @@ flowchart TD
   B --> C{"Can access finance?"}
   C -->|No| D["Redirect to admin dashboard"]
   C -->|Yes| E["Show KPIs and student tuition balances first"]
-  E --> F["Show outstanding-by-grade insight"]
+  E --> E2["Search by name or reference; filter by status, grade, or section"]
+  E2 --> E3["Sort by roster, balance, due date, or student name"]
+  E3 --> E4["Show filtered totals and export all matching rows"]
+  E4 --> F["Show outstanding-by-grade insight"]
   F --> G["Show compact payment-reminder summary"]
   G --> H{"Open reminder history?"}
   H -->|No| I["Keep history collapsed"]
-  H -->|Yes| J["Render searchable and paginated history"]
+  H -->|Yes| J["Render searchable and paginated history; clear selections when filters change"]
   G --> K["Open Send email reminders modal when requested"]
   K --> L["Choose target, type, active template, and optional one-time message"]
   L --> M["Resolve protected or school-owned template and validate allowlisted placeholders"]

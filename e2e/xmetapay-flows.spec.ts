@@ -381,6 +381,9 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
       await expect(page.getByRole("heading", { name: /Student tuition balances/ })).toBeVisible();
       await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+      await expect(page.getByLabel("Search tuition records by student name or reference")).toBeVisible();
+      await expect(page.getByLabel("Section")).toBeVisible();
+      await expect(page.getByLabel("Sort tuition records")).toHaveValue("roster");
       await expectNoHorizontalOverflow(page);
     }
 
@@ -390,15 +393,34 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     const reminderBox = await reminders.boundingBox();
     expect(reportBox?.y ?? Number.MAX_SAFE_INTEGER).toBeLessThan(reminderBox?.y ?? 0);
 
-    const historyToggle = page.getByRole("button", { name: /Show reminder history/ });
+    await page.waitForLoadState("networkidle");
+    const reportSort = page.getByLabel("Sort tuition records");
+    const reportReset = page.getByRole("button", { name: "Reset filters" }).first();
+    await reportSort.selectOption("balance_desc");
+    await expect(reportSort).toHaveValue("balance_desc");
+    await expect(reportReset).toBeEnabled();
+    await reportReset.click();
+    await expect(reportSort).toHaveValue("roster");
+    await expect(reportReset).toBeDisabled();
+
+    const historyToggle = page.locator('button[aria-controls="payment-reminder-history"]');
+    await expect(historyToggle).toHaveAccessibleName(/Show reminder history/);
     await expect(historyToggle).toHaveAttribute("aria-expanded", "false");
-    await expect(page.getByPlaceholder("Search reminder history...")).toHaveCount(0);
+    await expect(page.getByLabel("Search reminder history by student, parent, subject, or message")).toHaveCount(0);
     await historyToggle.focus();
     await page.keyboard.press("Enter");
     await expect(historyToggle).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByPlaceholder("Search reminder history...")).toBeVisible();
+    const reminderSearch = page.getByLabel("Search reminder history by student, parent, subject, or message");
+    const reminderReset = page.getByRole("button", { name: "Reset filters" }).last();
+    await expect(reminderSearch).toBeVisible();
+    await expect(reminderReset).toBeDisabled();
+    await reminderSearch.fill("no-matching-reminder");
+    await expect(reminderReset).toBeEnabled();
+    await reminderReset.click();
+    await expect(reminderSearch).toHaveValue("");
+    await expect(page.getByText("0 reminders selected")).toBeVisible();
     await page.getByRole("button", { name: "Hide reminder history" }).click();
-    await expect(page.getByPlaceholder("Search reminder history...")).toHaveCount(0);
+    await expect(page.getByLabel("Search reminder history by student, parent, subject, or message")).toHaveCount(0);
 
     await page.getByRole("link", { name: "Reminders" }).click();
     await expect(page).toHaveURL(/\/admin\/tuition#payment-reminders$/);
@@ -725,7 +747,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
         filename: "admin-tuition-report.xlsx",
         worksheetName: "Tuition report",
         title: "Tuition report",
-        headers: ["Student name", "Grade", "Section", "Billed", "Paid", "Balance", "Payment plan", "Due date", "Last payment", "Status"],
+        headers: ["Student name", "Student reference", "Grade", "Section", "Billed", "Paid", "Balance", "Payment plan", "Due date", "Last payment", "Status"],
       },
       {
         path: "/admin/collections",
@@ -910,7 +932,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
 
     await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: /Show reminder history/ }).click();
-    await page.getByPlaceholder("Search reminder history...").fill("no-matching-reminder");
+    await page.getByLabel("Search reminder history by student, parent, subject, or message").fill("no-matching-reminder");
     const selectVisible = page.getByRole("button", { name: "Select visible" }).first();
     await expect(selectVisible).toBeDisabled();
     await expect(selectVisible).toHaveCSS("background-color", "rgb(34, 40, 58)");

@@ -296,7 +296,7 @@
             single and batch student creation, enrollment, parent-student linking, fees, local test payments, receipts,
             payment history, wallet top-ups, store purchases, a Recharts-backed real-data overview
             for the school administrator dashboard, contrast-safe report download rows in both themes,
-            a report-first Tuition page with KPIs, student balances, supporting outstanding-by-grade insight, and compact reminder history that stays collapsed until opened; non-tuition summaries remain on Other fees,
+            a report-first Tuition page with KPIs, student-reference search, status/grade/section filters, collection-focused sorting, live filtered totals, supporting outstanding-by-grade insight, and compact selection-safe reminder history that stays collapsed until opened; non-tuition summaries remain on Other fees,
             CSV/PDF report exports with outlined XMETA red/orange PDF controls across School Admin,
             Super Admin, and protected Reports pages, paginated table screens
             with filtered-row CSV/PDF exports, queued in-app reminder history, and accurate wallet totals.
@@ -910,17 +910,19 @@ flowchart TD
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="payment-reminder-history-flow.svg">Download SVG</button>
           </div>
-          <p><strong>Implemented:</strong> the Tuition page shows student balances before collection insight and a compact reminder summary. Reminder history is collapsed by default and expands into the existing searchable, paginated archive/restore table. Protected XMETA and school-owned templates, safe allowlisted placeholders, sample preview, responsive HTML/plain-text delivery, locked itemized fee details, template audit snapshots, and same-day duplicate prevention remain unchanged.</p>
+          <p><strong>Implemented:</strong> the Tuition page shows searchable and sortable student balances plus live filtered financial totals before collection insight and a compact reminder summary. Reminder history is collapsed by default and expands into the existing searchable, paginated archive/restore table; changing its search, status, or view clears selections. Protected XMETA and school-owned templates, safe allowlisted placeholders, sample preview, responsive HTML/plain-text delivery, locked itemized fee details, template audit snapshots, and same-day duplicate prevention remain unchanged.</p>
           <pre class="mermaid">
 flowchart TD
   A["School administrator or finance officer opens tuition report"] --> B["Require admin session"]
   B --> C{"Can access finance?"}
   C -->|No| D["Redirect to admin dashboard"]
   C -->|Yes| E["Show KPIs and student tuition balances first"]
-  E --> E1["Show outstanding-by-grade insight"]
+  E --> E0["Search by name or reference; filter status, grade, and section"]
+  E0 --> E00["Sort and show live filtered billed, paid, and outstanding totals"]
+  E00 --> E1["Show outstanding-by-grade insight"]
   E1 --> E2{"Open reminder history?"}
   E2 -->|No| E3["Keep history collapsed"]
-  E2 -->|Yes| E4["Render searchable and paginated history"]
+  E2 -->|Yes| E4["Render searchable and paginated history; clear selections when filters change"]
   E1 --> E5["Open Send email reminders modal when requested"]
   E5 --> E6["Choose target, type, active template, and optional one-time message"]
   E6 --> E7["Resolve protected or school template and validate placeholders"]
