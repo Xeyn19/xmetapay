@@ -81,8 +81,8 @@ test("admin shell filters sidebar and setup actions by staff role", () => {
   assert.match(shell, /visibleNavSections\.map/);
   assert.match(shell, /Ask a school administrator to complete school setup first\./);
   assert.match(shell, /canManageSetup/);
-  assert.match(shell, /canAddStudents/);
-  assert.match(shell, /canRecordPayments/);
+  assert.doesNotMatch(shell, /canAddStudents/);
+  assert.doesNotMatch(shell, /canRecordPayments/);
 });
 
 test("school setup and student actions enforce staff permissions", () => {

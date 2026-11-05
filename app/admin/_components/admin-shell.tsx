@@ -8,10 +8,8 @@ import {
   Database,
   Menu,
   LogOut,
-  Plus,
   Send,
   Settings,
-  UserPlus,
   X,
 } from "lucide-react";
 
@@ -19,7 +17,6 @@ import { logoutAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/app/_components/brand-logo";
 import { ThemeToggle } from "@/app/_components/theme-toggle";
 import { selectAdminSchoolYearAction } from "@/app/admin/school-year/actions";
-import { AdminButton } from "./admin-ui";
 import { navSections, pageMeta } from "../_data/admin-dashboard-data";
 import {
   canManageSchoolSetup,
@@ -57,9 +54,6 @@ export function AdminShell({
     || !schoolContext.activeSchoolYear;
   const visibleNavSections = filterAdminNavSectionsForStaffRole(navSections, schoolContext.staffRole);
   const canManageSetup = canManageSchoolSetup(schoolContext.staffRole);
-  const canAddStudents = canUseAdminHeaderAction(schoolContext.staffRole, "add_student");
-  const showAddStudentsShortcut = canAddStudents && pathname !== "/admin/students";
-  const canRecordPayments = canUseAdminHeaderAction(schoolContext.staffRole, "record_payment");
   const canSendReminders = canUseAdminHeaderAction(schoolContext.staffRole, "send_reminder");
   const logout = logoutAction.bind(null, "admin");
   const duplicateYearNames = duplicateSchoolYearNames(schoolContext.schoolYears);
@@ -249,27 +243,6 @@ export function AdminShell({
                   >
                     <Send className="size-4" />
                     Reminders
-                  </Link>
-                ) : null}
-                {canRecordPayments ? (
-                  <AdminButton
-                    disabled
-                    className="w-full sm:w-auto"
-                    title="Manual payment is coming soon"
-                    aria-label="Manual payment is coming soon"
-                  >
-                    <Plus className="size-4" />
-                    Manual payment
-                    <span className="text-[10px] font-medium">Coming soon</span>
-                  </AdminButton>
-                ) : null}
-                {showAddStudentsShortcut ? (
-                  <Link
-                    href="/admin/students?intake=choose"
-                    className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-3.5 text-[12.5px] font-semibold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto"
-                  >
-                    <UserPlus className="size-4" />
-                    Add students
                   </Link>
                 ) : null}
               </div>

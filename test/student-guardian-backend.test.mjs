@@ -226,15 +226,14 @@ test("admin student enrollment form filters sections by selected grade", () => {
   assert.match(form, /name="sectionId"/);
 });
 
-test("admin enrollment exposes one contextual trigger and keeps the header shortcut elsewhere", () => {
+test("admin enrollment exposes one contextual Add students trigger without a global header shortcut", () => {
   const shell = readFileSync(adminShellPath, "utf8");
   const intake = readFileSync(adminStudentIntakePath, "utf8");
 
   assert.equal(existsSync("app/admin/_components/admin-modals.tsx"), false);
-  assert.match(shell, /const showAddStudentsShortcut = canAddStudents && pathname !== "\/admin\/students"/);
-  assert.match(shell, /\{showAddStudentsShortcut \? \(/);
-  assert.match(shell, /href="\/admin\/students\?intake=choose"/);
-  assert.match(shell, /Add students/);
+  assert.doesNotMatch(shell, /showAddStudentsShortcut|canAddStudents/);
+  assert.doesNotMatch(shell, /href="\/admin\/students\?intake=choose"/);
+  assert.doesNotMatch(shell, /Add students/);
   assert.match(intake, /<AdminButton[\s\S]*?onClick=\{\(\) => setMode\("choose"\)\}[\s\S]*?Add students/);
   assert.doesNotMatch(shell, /openModal\("enroll"\)/);
   assert.doesNotMatch(shell, /data-modal-trigger="enroll"/);
