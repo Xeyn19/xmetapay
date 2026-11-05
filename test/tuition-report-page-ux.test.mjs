@@ -7,7 +7,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 test("tuition page renders the student balance report before secondary insights and reminders", () => {
   const page = read("app/admin/(dashboard)/tuition/page.tsx");
   const reportIndex = page.indexOf("Student tuition balances");
-  const insightIndex = page.indexOf("Outstanding by grade");
+  const insightIndex = page.indexOf("Outstanding balances by grade");
   const reminderIndex = page.indexOf("<PaymentReminderPanel");
 
   assert.ok(reportIndex > -1);
@@ -39,8 +39,8 @@ test("tuition report uses finance-first columns and clearer payment wording", ()
   assert.match(table, /Full payment/);
   assert.match(table, /No payment yet/);
   assert.match(table, /`Due \$\{row\.dueDate\}`/);
-  assert.match(realData, /label: "Tuition records"/);
-  assert.match(realData, /collected`/);
+  assert.match(realData, /label: "Student tuition records"/);
+  assert.match(realData, /paid`/);
   assert.match(realData, /with remaining balance/);
 });
 
@@ -59,7 +59,7 @@ test("tuition report compatibility keeps filters exports and financial actions",
   assert.match(panel, /aria-live="polite"/);
 });
 
-test("tuition controls support reference search section filtering sorting summaries and reset", () => {
+test("tuition controls support reference search section filtering sorting exports and reset", () => {
   const table = read("app/admin/(dashboard)/tuition/tuition-report-table.tsx");
   const controls = read("app/_components/table-controls.tsx");
   const realData = read("lib/admin/real-data.ts");
@@ -76,7 +76,7 @@ test("tuition controls support reference search section filtering sorting summar
   assert.match(table, /Nearest due date/);
   assert.match(table, /Student name A–Z/);
   assert.match(table, /if \(!left\.dueDate\) return 1/);
-  assert.match(table, /aria-live="polite"/);
+  assert.doesNotMatch(table, /filteredRows\.length === 1 \? "student" : "students"/);
   assert.match(table, /Reset filters/);
   assert.match(table, /exportRowsToExcel[\s\S]*filteredRows/);
   assert.match(controls, /searchLabel\?: string/);

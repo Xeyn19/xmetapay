@@ -77,16 +77,16 @@ export function CollectionsTable({
   const operationLabel = view === "archived" ? "Restore" : "Archive";
   const exportColumns = collectionExportColumns(view === "archived");
   const filteredAmount = filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0);
-  const exportTitle = view === "archived" ? "Archived tuition collections" : "Active tuition collections";
+  const exportTitle = view === "archived" ? "Archived tuition payments" : "Active tuition payments";
   const hasActiveFilters = query.trim() !== "" || status !== "all" || channel !== "all";
   const exportOptions = {
     context: [
       { label: "School", value: schoolName },
       { label: "School year", value: schoolYearName },
-      { label: "View", value: view === "archived" ? "Archived collections" : "Active collections" },
+      { label: "View", value: view === "archived" ? "Archived payments" : "Active payments" },
     ],
     filters: [
-      { label: "Search", value: query.trim() || "All collections" },
+      { label: "Search", value: query.trim() || "All payments" },
       { label: "Status", value: filterLabel(status) },
       { label: "Channel", value: filterLabel(channel) },
     ],
@@ -183,30 +183,30 @@ export function CollectionsTable({
 
   return (
     <>
-      <div className="flex flex-col gap-3 border-b border-black/[0.07] px-4 py-3.5 sm:px-[18px]">
+      <div className="flex flex-col gap-3 border-b border-border px-4 py-3.5 sm:px-[18px]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div
             className="inline-flex min-h-11 rounded-lg border border-border bg-muted p-1"
             role="tablist"
-            aria-label="Tuition collection history view"
+            aria-label="Tuition payment history view"
           >
             <button type="button" role="tab" aria-selected={view === "active"} onClick={() => changeView("active")} className={viewTabClass(view === "active")}>
-              Active collections ({activeCollectionRows.length})
+              Active payments ({activeCollectionRows.length})
             </button>
             <button type="button" role="tab" aria-selected={view === "archived"} onClick={() => changeView("archived")} className={viewTabClass(view === "archived")}>
-              Archived collections ({archivedCollectionRows.length})
+              Archived payments ({archivedCollectionRows.length})
             </button>
           </div>
           <p className="text-[11.5px] text-muted-foreground" aria-live="polite">
-            {validSelectedIds.length} {validSelectedIds.length === 1 ? "collection" : "collections"} selected
+            {validSelectedIds.length} {validSelectedIds.length === 1 ? "payment" : "payments"} selected
           </p>
         </div>
 
         <DashboardTableControls
           query={query}
           onQueryChange={changeQuery}
-          searchPlaceholder="Search student, ref, tuition term..."
-          searchLabel="Search collections by student, reference, or tuition term"
+          searchPlaceholder="Search student, payment reference, or tuition term..."
+          searchLabel="Search tuition payments by student, payment reference, or tuition term"
           filters={[
             { label: "Status", value: status, onChange: changeStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
             { label: "Channel", value: channel, onChange: changeChannel, options: toFilterOptions(rows.map((row) => row.channel), "All channels") },
@@ -220,7 +220,7 @@ export function CollectionsTable({
             filteredRows,
             exportColumns,
             {
-              worksheetName: view === "archived" ? "Archived collections" : "Active collections",
+              worksheetName: view === "archived" ? "Archived payments" : "Active payments",
               ...exportOptions,
             },
           )}
@@ -261,7 +261,7 @@ export function CollectionsTable({
           { label: "Ref #", className: "w-[100px]" },
           { label: "Student", className: "w-[170px]" },
           { label: "Class", className: "w-[110px]" },
-          { label: "Tuition record", className: "w-[180px]" },
+          { label: "Applied to", className: "w-[180px]" },
           { label: "Amount", className: "w-[110px]" },
           { label: "Date & time", className: "w-[145px]" },
           { label: "Channel", className: "w-[110px]" },
@@ -274,27 +274,27 @@ export function CollectionsTable({
           pagination.pageRows.map((row) => (
             <tr key={row.paymentId}>
               <td>
-                <label className="flex min-h-11 items-center" aria-label={`Select collection ${row.ref}`}>
+                <label className="flex min-h-11 items-center" aria-label={`Select payment ${row.ref}`}>
                   <input type="checkbox" checked={selectedSet.has(row.paymentId)} onChange={() => toggleRow(row.paymentId)} className="size-4 accent-[#e64a19]" />
                 </label>
               </td>
-              <td className="font-mono text-[11px] text-[#5a6070]">{row.ref}</td>
+              <td className="font-mono text-[11px] text-muted-foreground">{row.ref}</td>
               <td className="font-bold">{row.student}</td>
               <td>{row.grade}</td>
               <td>{row.fee}</td>
-              <td className="font-bold text-[#e64a19]">{row.amount}</td>
-              <td className="font-mono text-[11px] text-[#5a6070]">{row.date}</td>
+              <td className="font-bold text-primary">{row.amount}</td>
+              <td className="font-mono text-[11px] text-muted-foreground">{row.date}</td>
               <td>{row.channel}</td>
               <td><StatusPill tone={row.status === "Partial" ? "partial" : row.status === "Paid" || row.status === "Done" ? "paid" : "pending"}>{row.status}</StatusPill></td>
-              {view === "archived" ? <td className="font-mono text-[11px] text-[#5a6070]">{row.archivedAt ?? "Pending"}</td> : null}
+              {view === "archived" ? <td className="font-mono text-[11px] text-muted-foreground">{row.archivedAt ?? "Pending"}</td> : null}
               <td className="text-center">
                 <button
                   type="button"
                   onClick={() => setConfirmationIds([row.paymentId])}
                   disabled={pending}
-                  className={cn("inline-flex size-10 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass)}
-                  aria-label={`${operationLabel} collection ${row.ref}`}
-                  title={`${operationLabel} collection`}
+                  className={cn("inline-flex size-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:border-primary/40 hover:bg-muted hover:text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass)}
+                  aria-label={`${operationLabel} payment ${row.ref}`}
+                  title={`${operationLabel} payment`}
                 >
                   {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
                 </button>
@@ -322,24 +322,24 @@ export function CollectionsTable({
       />
 
       {confirmationIds.length > 0 ? (
-        <div className="fixed inset-0 z-[220] grid place-items-center bg-[#0f1117]/45 px-4 py-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[220] grid place-items-center bg-foreground/45 px-4 py-6 backdrop-blur-sm">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmationIds([])} aria-label="Close confirmation" />
-          <section role="alertdialog" aria-modal="true" aria-labelledby="collection-archive-title" className="relative w-full max-w-md rounded-xl border border-black/[0.07] bg-white p-5 shadow-2xl sm:p-6">
-            <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-[#fff3e0] text-[#e65100]">
+          <section role="alertdialog" aria-modal="true" aria-labelledby="payment-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:p-6">
+            <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-status-warning-bg text-status-warning-foreground">
               {view === "archived" ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
             </div>
-            <h3 id="collection-archive-title" className="text-[16px] font-bold text-[#0f1117]">
-              {operationLabel} {confirmationIds.length === 1 ? "this collection" : `${confirmationIds.length} collections`}?
+            <h3 id="payment-archive-title" className="text-[16px] font-bold text-foreground">
+              {operationLabel} {confirmationIds.length === 1 ? "this payment" : `${confirmationIds.length} payments`}?
             </h3>
-            <p className="mt-2 text-[12.5px] leading-5 text-[#5a6070]">
+            <p className="mt-2 text-[12.5px] leading-5 text-muted-foreground">
               {view === "archived"
-                ? "Restored collections return to the active log. Payment status, receipts, balances, and parent history stay unchanged."
-                : "Archived collections move out of the active log but remain in financial totals, reports, receipts, and parent history."}
+                ? "Restored payments return to the active list. Payment status, receipts, balances, and parent history stay unchanged."
+                : "Archived payments move out of the active list but remain in financial totals, reports, receipts, and parent history."}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setConfirmationIds([])} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>
-              <button type="button" onClick={confirmAction} disabled={pending} className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-4 text-[12.5px] font-semibold text-white hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto", readableDisabledControlClass)}>
-                {pending ? "Updating..." : `${operationLabel} collections`}
+              <button type="button" onClick={confirmAction} disabled={pending} className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-primary bg-primary px-4 text-[12.5px] font-semibold text-primary-foreground hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-auto", readableDisabledControlClass)}>
+                {pending ? "Updating..." : `${operationLabel} payments`}
               </button>
             </div>
           </section>
@@ -353,8 +353,8 @@ const secondaryButtonClass = cn("inline-flex min-h-11 items-center justify-cente
 
 function viewTabClass(active: boolean) {
   return cn(
-    "inline-flex min-h-9 items-center justify-center rounded-md px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
-    active ? "bg-white text-[#0f1117] shadow-sm" : "text-[#5a6070] hover:text-[#0f1117]",
+    "inline-flex min-h-9 items-center justify-center rounded-md px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+    active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
   );
 }
 
@@ -363,7 +363,7 @@ function collectionExportColumns(includeArchived: boolean): ExportColumn<Collect
     { label: "Reference", value: (row) => row.ref },
     { label: "Student", value: (row) => row.student },
     { label: "Grade", value: (row) => row.grade },
-    { label: "Tuition record", value: (row) => row.fee },
+    { label: "Applied to", value: (row) => row.fee },
     { label: "Amount", value: (row) => row.amount },
     { label: "Date and time", value: (row) => row.date },
     { label: "Channel", value: (row) => row.channel },
@@ -373,8 +373,8 @@ function collectionExportColumns(includeArchived: boolean): ExportColumn<Collect
 }
 
 function emptyState(view: "active" | "archived", hasRows: boolean, hasFilters: boolean) {
-  if (hasRows && hasFilters) return "No tuition collections match the current filters.";
-  if (view === "archived") return "No archived tuition collections yet.";
+  if (hasRows && hasFilters) return "No tuition payments match the current filters.";
+  if (view === "archived") return "No archived tuition payments yet.";
   return "No tuition payment records yet.";
 }
 

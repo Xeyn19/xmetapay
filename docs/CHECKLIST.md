@@ -168,7 +168,7 @@ Done when: admin and parent fee screens show real balances from MySQL.
 - [x] Add parent-specific Payment history archive/restore for finished payments without changing receipts or financial records.
 - [x] Add parent-specific permanent removal for archived Payment history rows through irreversible visibility metadata, preserving receipts, allocations, balances, dashboard activity, and audit records.
 - [x] Add database-timed 30-day recovery for removed parent Fee summary and Payment history rows, returning eligible rows to Archived while preserving expired tombstone history.
-- [x] Show admin tuition collections log from database records, excluding wallet-only payments.
+- [x] Show the Admin Tuition payments history from database records, excluding wallet-only payments.
 - [x] Add reversible active/archived Tuition collection log views with row and bulk controls while preserving financial totals, reports, receipts, balances, and parent history.
 
 Done when: a parent can record a local test payment and both portals show the result.
@@ -228,10 +228,11 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 - [x] Add protected admin PDF export downloads for the same report data.
 - [x] Show separate branded Excel and PDF report buttons on the Admin reports page while preserving legacy protected CSV URLs.
 - [x] Add pagination plus CSV and PDF filtered-row exports to real-data admin and parent tables.
-- [x] Keep the Tuition report focused on tuition data and manage non-tuition summaries through the dedicated Other fees page.
+- [x] Keep Tuition balances focused on assessed student accounts and manage non-tuition summaries through the dedicated Other fees page.
+- [x] Connect Tuition balances and Tuition payments with a responsive Student balances / Payment history switcher while preserving both routes and their separate ledgers.
 - [x] Present the student tuition balance report immediately after its KPIs, use clearer finance labels, and keep payment-reminder history collapsed below supporting collection insights until the administrator opens it.
-- [x] Add student-reference search/display, status/grade/section filtering, collection-focused sorting, live filtered tuition totals, recoverable empty states, and selection-safe reminder filtering without changing financial records.
-- [x] Apply the shared XMETA EDU logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition report and Collection log.
+- [x] Add student-reference search/display, status/grade/section filtering, collection-focused sorting, filtered export totals, recoverable empty states, and selection-safe reminder filtering without changing financial records or repeating the KPI summary above the table.
+- [x] Apply the shared XMETA EDU logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition balances and Tuition payments.
 - [x] Replace every visible Admin CSV control with branded Excel and apply the canonical logo, context, summaries, repeated headings, and page footers to protected report PDFs.
 - [x] Replace every visible Parent CSV control with branded Excel while retaining branded PDFs, filtered summaries, Removed recovery metadata, and nested Fee summary tuition terms.
 

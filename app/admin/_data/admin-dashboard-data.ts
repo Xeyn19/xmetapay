@@ -80,8 +80,8 @@ export const pageMeta: Record<string, PageMeta> = {
     subtitle: "Programs, periods, year levels, and college sections",
   },
   "/admin/tuition": {
-    title: "Tuition report",
-    subtitle: "Collection status and outstanding balances",
+    title: "Tuition balances",
+    subtitle: "Track assessed tuition, payments received, due dates, and remaining student balances",
   },
   "/admin/tuition/schedules": {
     title: "Tuition packages & setup",
@@ -96,8 +96,8 @@ export const pageMeta: Record<string, PageMeta> = {
     subtitle: "Posted, duplicate, excluded, credit, and net totals",
   },
   "/admin/collections": {
-    title: "Collections log",
-    subtitle: "Tuition payment activity for the selected school year",
+    title: "Tuition payments",
+    subtitle: "Review tuition transactions, references, payment channels, and processing status",
   },
   "/admin/other-fees": {
     title: "Other school fees",
@@ -140,8 +140,8 @@ export const navSections: NavSection[] = [
   {
     label: "Finance",
     items: [
-      { label: "Tuition report", href: "/admin/tuition", icon: Receipt },
-      { label: "Collections log", href: "/admin/collections", icon: CreditCard },
+      { label: "Tuition balances", href: "/admin/tuition", icon: Receipt },
+      { label: "Tuition payments", href: "/admin/collections", icon: CreditCard },
       { label: "Other fees", href: "/admin/other-fees", icon: ClipboardList },
     ],
   },

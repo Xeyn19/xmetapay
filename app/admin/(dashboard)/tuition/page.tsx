@@ -8,6 +8,7 @@ import { getAdminFeeSetupData } from "@/lib/fees/records";
 import { getAdminSchoolContext } from "@/lib/school/setup";
 import { getActiveSchoolEmailTemplates } from "@/lib/email/templates";
 import { builtInPaymentReminderTemplates } from "@/lib/email/template-contract";
+import { TuitionWorkspaceNav } from "@/app/admin/_components/tuition-workspace-nav";
 import { PaymentReminderPanel } from "./payment-reminder-panel";
 
 import { AlertBanner, BarList, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
@@ -33,6 +34,7 @@ export default async function TuitionPage() {
     <>
       {data.warning ? <AlertBanner tone="warn" icon={Receipt}>{data.warning}</AlertBanner> : null}
       {feeSetup.warning ? <AlertBanner tone="warn" icon={Receipt}>{feeSetup.warning}</AlertBanner> : null}
+      <TuitionWorkspaceNav current="balances" />
       <KpiGrid>
         {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
@@ -57,11 +59,11 @@ export default async function TuitionPage() {
         />
       </DashboardCard>
 
-      <DashboardCard title="Outstanding by grade" icon={Calculator} className="mb-[18px]">
+      <DashboardCard title="Outstanding balances by grade" icon={Calculator} className="mb-[18px]">
         {data.outstandingByGrade.length > 0 ? (
           <BarList rows={data.outstandingByGrade} />
         ) : (
-          <div className="text-[12.5px] leading-5 text-[#5a6070]">Outstanding balances are pending.</div>
+          <div className="text-[12.5px] leading-5 text-muted-foreground">Outstanding balances are pending.</div>
         )}
       </DashboardCard>
 

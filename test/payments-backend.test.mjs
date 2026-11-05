@@ -233,5 +233,5 @@ test("checklist marks Phase 5 payments and receipts backend complete", () => {
   assert.match(checklist, /- \[x\] Update fee assignment status after payment\./);
   assert.match(checklist, /- \[x\] Generate receipt records after successful payment\./);
   assert.match(checklist, /- \[x\] Show parent payment history from database records\./);
-  assert.match(checklist, /- \[x\] Show admin (?:tuition )?collections log from database records/);
+  assert.match(checklist, /- \[x\] Show the Admin Tuition payments history from database records/);
 });

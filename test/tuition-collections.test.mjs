@@ -28,13 +28,13 @@ test("tuition collection helper scopes through fee and term allocations", () => 
   assert.doesNotMatch(helper, /store_transactions/);
 });
 
-test("collections page and exports use the shared tuition reader", () => {
+test("tuition payments page and exports use the shared tuition reader", () => {
   assert.match(page, /getAdminCollectionsPageRealData/);
-  assert.match(page, /Tuition collection log/);
-  assert.match(table, /Search student, ref, tuition term/);
+  assert.match(page, /Tuition payment history/);
+  assert.match(table, /Search student, payment reference, or tuition term/);
   assert.match(table, /No tuition payment records yet/);
   assert.match(reports, /getTuitionCollectionRows/);
-  assert.match(reports, /Tuition collections report/);
+  assert.match(reports, /Tuition payments report/);
 });
 
 test("docs separate tuition collections from wallet and store activity", () => {
@@ -67,10 +67,10 @@ test("collection archive actions require finance access and selected-year owners
   assert.match(actions, /revalidatePath\("\/admin\/collections"\)/);
 });
 
-test("collections table switches archive views locally and preserves controls", () => {
+test("tuition payments table switches archive views locally and preserves controls", () => {
   assert.match(table, /role="tablist"/);
-  assert.match(table, /Active collections/);
-  assert.match(table, /Archived collections/);
+  assert.match(table, /Active payments/);
+  assert.match(table, /Archived payments/);
   assert.doesNotMatch(table, /href=.*collectionView/);
   assert.match(table, /Select visible/);
   assert.match(table, /Clear selection/);
@@ -80,7 +80,7 @@ test("collections table switches archive views locally and preserves controls", 
   assert.match(table, /exportRowsToExcel/);
   assert.match(table, /admin-collections-active\.xlsx/);
   assert.match(table, /admin-collections-archived\.xlsx/);
-  assert.match(table, /worksheetName: view === "archived" \? "Archived collections" : "Active collections"/);
+  assert.match(table, /worksheetName: view === "archived" \? "Archived payments" : "Active payments"/);
   assert.match(table, /exportLabel="Export Excel"/);
   assert.doesNotMatch(table, /exportRowsToCsv|admin-collections-(?:active|archived)\.csv/);
   assert.match(table, /exportRowsToPdf/);

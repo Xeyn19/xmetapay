@@ -48,8 +48,8 @@ export const adminRoleDetails: Record<AdminStaffRole, AdminRoleDetail> = {
     summary: "Works with fees, payments, allowance, store transactions, and reports.",
     allowedAreas: [
       "Dashboard",
-      "Tuition report",
-      "Collections log",
+      "Tuition balances",
+      "Tuition payments",
       "Other fees",
       "Allowance ledger",
       "Store transactions",

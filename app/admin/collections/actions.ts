@@ -37,7 +37,7 @@ async function updateArchiveState(
   const staffRole = await getAdminStaffRole(session.userId);
 
   if (!canAccessFinance(staffRole)) {
-    return actionState("error", "Access limited", "Only school administrators and finance officers can organize collection history.");
+    return actionState("error", "Access limited", "Only school administrators and finance officers can organize tuition payment history.");
   }
 
   const setup = await getResolvedAdminSchoolViewSetup(session.userId);
@@ -53,7 +53,7 @@ async function updateArchiveState(
   )].slice(0, 100);
 
   if (paymentIds.length === 0) {
-    return actionState("info", "No collections selected", "Select one or more tuition collection records first.");
+    return actionState("info", "No payments selected", "Select one or more tuition payment records first.");
   }
 
   try {
@@ -69,20 +69,20 @@ async function updateArchiveState(
       return actionState(
         "info",
         operation === "archive" ? "Collection not archived" : "Collection not restored",
-        "This tuition collection is no longer available in the selected school year.",
+        "This tuition payment is no longer available in the selected school year.",
       );
     }
 
     return actionState(
       "success",
       operation === "archive" ? "Collection history archived" : "Collection history restored",
-      `${affected} collection${affected === 1 ? "" : "s"} ${operation === "archive" ? "archived" : "restored"}.`,
+      `${affected} payment${affected === 1 ? "" : "s"} ${operation === "archive" ? "archived" : "restored"}.`,
     );
   } catch {
     return actionState(
       "error",
       operation === "archive" ? "Collections not archived" : "Collections not restored",
-      "Unable to update collection history. Confirm the collection archive migration is imported and try again.",
+      "Unable to update tuition payment history. Confirm the payment archive migration is imported and try again.",
     );
   }
 }

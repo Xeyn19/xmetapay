@@ -308,8 +308,8 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     const routes = [
       { path: "/admin/dashboard", heading: "Dashboard" },
       { path: "/admin/school-setup", heading: "School setup" },
-      { path: "/admin/tuition", heading: "Tuition report" },
-      { path: "/admin/collections", heading: "Collections log" },
+      { path: "/admin/tuition", heading: "Tuition balances" },
+      { path: "/admin/collections", heading: "Tuition payments" },
       { path: "/admin/other-fees", heading: "Other school fees" },
       { path: "/admin/students", heading: "Enrolled students" },
       { path: "/admin/student-profile", heading: "Student profile" },
@@ -325,6 +325,26 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
         page.getByRole("heading", { level: 1, name: route.heading })
       ).toBeVisible();
       await expectBrandLogo(page);
+    }
+  });
+
+  test("tuition workspace switches between student balances and payment history responsively", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
+      test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+
+      const workspace = page.getByRole("navigation", { name: "Tuition workspace" });
+      await expect(workspace.getByRole("link", { name: /Student balances/ })).toHaveAttribute("aria-current", "page");
+      await expect(workspace.getByRole("link", { name: /Payment history/ })).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+
+      await workspace.getByRole("link", { name: /Payment history/ }).click();
+      await expect(page).toHaveURL("/admin/collections");
+      await expect(page.getByRole("heading", { level: 1, name: "Tuition payments" })).toBeVisible();
+      const paymentWorkspace = page.getByRole("navigation", { name: "Tuition workspace" });
+      await expect(paymentWorkspace.getByRole("link", { name: /Payment history/ })).toHaveAttribute("aria-current", "page");
+      await expectNoHorizontalOverflow(page);
     }
   });
 
@@ -751,19 +771,19 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
       },
       {
         path: "/admin/tuition",
-        heading: "Tuition report",
+        heading: "Tuition balances",
         filename: "admin-tuition-report.xlsx",
-        worksheetName: "Tuition report",
-        title: "Tuition report",
+        worksheetName: "Tuition balances",
+        title: "Tuition balances",
         headers: ["Student name", "Student reference", "Grade", "Section", "Billed", "Paid", "Balance", "Payment plan", "Due date", "Last payment", "Status"],
       },
       {
         path: "/admin/collections",
-        heading: "Collections log",
+        heading: "Tuition payments",
         filename: "admin-collections-active.xlsx",
-        worksheetName: "Active collections",
-        title: "Active tuition collections",
-        headers: ["Reference", "Student", "Grade", "Tuition record", "Amount", "Date and time", "Channel", "Status"],
+        worksheetName: "Active payments",
+        title: "Active tuition payments",
+        headers: ["Reference", "Student", "Grade", "Applied to", "Amount", "Date and time", "Channel", "Status"],
       },
       {
         path: "/admin/other-fees",
@@ -919,7 +939,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
     await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Other fee items" })).toHaveCount(0);
     await expect(page.getByText("No other fee records yet.")).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Outstanding by grade" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Outstanding balances by grade" })).toBeVisible();
   });
 
   test("Admin disabled table controls remain readable in both themes", async ({ page }) => {

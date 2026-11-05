@@ -384,10 +384,10 @@ export async function getAdminTuitionPageRealData(
       warning: null,
       schoolYearName: setup.schoolYearName,
       kpis: [
-        { label: "Tuition billed", value: hasRows ? money(feeSummary.amountDue) : "Pending", note: hasRows ? `${rows.length} tuition assignments` : "Create tuition fee assignments first", tone: "orange", icon: Calculator },
-        { label: "Collected", value: hasRows ? money(feeSummary.amountPaid) : "Pending", note: hasRows ? `${percent(feeSummary.amountPaid, feeSummary.amountDue)} collected` : "Collection pending", tone: "green", noteTone: hasRows ? "up" : "default", icon: CreditCard },
-        { label: "Outstanding", value: hasRows ? money(feeSummary.openBalance) : "Pending", note: hasRows ? `${feeSummary.openAssignments} with remaining balance` : "No balances yet", tone: "red", noteTone: feeSummary.openBalance > 0 ? "danger" : "default", icon: Activity },
-        { label: "Tuition records", value: hasRows ? String(feeSummary.assignmentCount) : "0", note: setup.schoolYearName ?? "Active school year", tone: "blue", icon: Receipt },
+        { label: "Total tuition billed", value: hasRows ? money(feeSummary.amountDue) : "Pending", note: hasRows ? `${rows.length} tuition assignments` : "Create tuition fee assignments first", tone: "orange", icon: Calculator },
+        { label: "Paid toward tuition", value: hasRows ? money(feeSummary.amountPaid) : "Pending", note: hasRows ? `${percent(feeSummary.amountPaid, feeSummary.amountDue)} paid` : "Payment activity pending", tone: "green", noteTone: hasRows ? "up" : "default", icon: CreditCard },
+        { label: "Outstanding balance", value: hasRows ? money(feeSummary.openBalance) : "Pending", note: hasRows ? `${feeSummary.openAssignments} with remaining balance` : "No balances yet", tone: "red", noteTone: feeSummary.openBalance > 0 ? "danger" : "default", icon: Activity },
+        { label: "Student tuition records", value: hasRows ? String(feeSummary.assignmentCount) : "0", note: setup.schoolYearName ?? "Active school year", tone: "blue", icon: Receipt },
       ],
       rows,
       outstandingByGrade,
@@ -420,16 +420,16 @@ export async function getAdminCollectionsPageRealData(adminUserId: number): Prom
     return {
       warning: null,
       kpis: [
-        { label: "Tuition payments", value: String(summary.total_count), note: summary.total_count > 0 ? `${summary.paid_count} paid records` : "No tuition payments yet", tone: "orange", icon: CreditCard },
-        { label: "Tuition collected", value: summary.paid_count > 0 ? money(summary.paid_amount) : "Pending", note: "Paid tuition allocations", tone: "green", noteTone: summary.paid_count > 0 ? "up" : "default", icon: CreditCard },
-        { label: "Pending review", value: String(summary.pending_count), note: "Tuition payment status pending", tone: "blue", icon: FileText },
-        { label: "Failed / voided", value: String(summary.failed_count), note: "Needs tuition review", tone: "red", noteTone: summary.failed_count > 0 ? "warn" : "default", icon: Activity },
+        { label: "Payment records", value: String(summary.total_count), note: summary.total_count > 0 ? `${summary.paid_count} completed payments` : "No tuition payments yet", tone: "orange", icon: CreditCard },
+        { label: "Total tuition collected", value: summary.paid_count > 0 ? money(summary.paid_amount) : "Pending", note: "Completed tuition payments", tone: "green", noteTone: summary.paid_count > 0 ? "up" : "default", icon: CreditCard },
+        { label: "Pending payments", value: String(summary.pending_count), note: "Awaiting final payment status", tone: "blue", icon: FileText },
+        { label: "Failed or voided payments", value: String(summary.failed_count), note: "Needs finance review", tone: "red", noteTone: summary.failed_count > 0 ? "warn" : "default", icon: Activity },
       ],
       activeRows,
       archivedRows,
     };
   } catch {
-    return emptyCollections("Collection data is unavailable. Confirm MySQL/XAMPP, payment tables, and the collection archive migration are ready.");
+    return emptyCollections("Tuition payment history is unavailable. Confirm MySQL/XAMPP, payment tables, and the payment archive migration are ready.");
   }
 }
 
@@ -1449,10 +1449,10 @@ function emptyTuition(warning: string | null): TuitionPageRealData {
     warning,
     schoolYearName: null,
     kpis: [
-      { label: "Tuition billed", value: "Pending", note: "Create tuition fee assignments first", tone: "orange", icon: Calculator },
-      { label: "Collected", value: "Pending", note: "Collection pending", tone: "green", icon: CreditCard },
-      { label: "Outstanding", value: "Pending", note: "No balances yet", tone: "red", icon: Activity },
-      { label: "Due records", value: "0", note: "No tuition assignments", tone: "blue", icon: Receipt },
+      { label: "Total tuition billed", value: "Pending", note: "Create tuition fee assignments first", tone: "orange", icon: Calculator },
+      { label: "Paid toward tuition", value: "Pending", note: "Payment activity pending", tone: "green", icon: CreditCard },
+      { label: "Outstanding balance", value: "Pending", note: "No balances yet", tone: "red", icon: Activity },
+      { label: "Student tuition records", value: "0", note: "No tuition assignments", tone: "blue", icon: Receipt },
     ],
     rows: [],
     outstandingByGrade: [],
@@ -1465,10 +1465,10 @@ function emptyCollections(warning: string | null): CollectionsPageRealData {
   return {
     warning,
     kpis: [
-      { label: "Payments", value: "0", note: "No payment records yet", tone: "orange", icon: CreditCard },
-      { label: "Paid amount", value: "Pending", note: "Payments table", tone: "green", icon: CreditCard },
-      { label: "Pending review", value: "0", note: "Payment status pending", tone: "blue", icon: FileText },
-      { label: "Failed / voided", value: "0", note: "Needs admin review", tone: "red", icon: Activity },
+      { label: "Payment records", value: "0", note: "No tuition payments yet", tone: "orange", icon: CreditCard },
+      { label: "Total tuition collected", value: "Pending", note: "Completed tuition payments", tone: "green", icon: CreditCard },
+      { label: "Pending payments", value: "0", note: "Awaiting final payment status", tone: "blue", icon: FileText },
+      { label: "Failed or voided payments", value: "0", note: "Needs finance review", tone: "red", icon: Activity },
     ],
     activeRows: [],
     archivedRows: [],
@@ -1553,7 +1553,7 @@ function reportDownloads() {
       icon: BarChart3,
     },
     {
-      name: "Tuition collections report",
+      name: "Tuition payments report",
       desc: "Tuition payment references, terms, channels, statuses, and dates",
       excelHref: "/admin/reports/export?type=collections&format=xlsx",
       pdfHref: "/admin/reports/export?type=collections&format=pdf",

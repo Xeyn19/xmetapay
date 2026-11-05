@@ -121,7 +121,7 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.match(tuitionPage, /TuitionReportTable/);
   assert.match(tuitionTable, /DashboardTableControls/);
   assert.match(tuitionTable, /admin-tuition-report\.xlsx/);
-  assert.match(tuitionTable, /worksheetName: "Tuition report"/);
+  assert.match(tuitionTable, /worksheetName: "Tuition balances"/);
   assert.match(tuitionTable, /exportRowsToExcel/);
   assert.match(tuitionTable, /schoolName/);
   assert.match(tuitionTable, /schoolYearName/);

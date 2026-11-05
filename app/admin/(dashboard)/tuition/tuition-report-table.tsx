@@ -157,14 +157,14 @@ export function TuitionReportTable({
           clearDisabled={!hasActiveFilters}
           onExport={() => exportRowsToExcel(
             "admin-tuition-report.xlsx",
-            "Tuition report",
+            "Tuition balances",
             filteredRows,
             exportColumns,
-            { worksheetName: "Tuition report", ...exportOptions },
+            { worksheetName: "Tuition balances", ...exportOptions },
           )}
           onExportPdf={() => exportRowsToPdf(
             "admin-tuition-report.pdf",
-            "Tuition report",
+            "Tuition balances",
             filteredRows,
             exportColumns,
             exportOptions,
@@ -173,12 +173,6 @@ export function TuitionReportTable({
           exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
-      </div>
-      <div className="grid gap-2 border-b border-border bg-muted/35 px-4 py-3 text-xs text-muted-foreground sm:grid-cols-2 sm:px-[18px] lg:grid-cols-4" aria-live="polite">
-        <p><strong className="text-foreground">{filteredRows.length}</strong> {filteredRows.length === 1 ? "student" : "students"}</p>
-        <p><strong className="text-foreground">{money(filteredTotals.due)}</strong> billed</p>
-        <p><strong className="text-status-success-foreground">{money(filteredTotals.paid)}</strong> paid</p>
-        <p><strong className="text-status-danger-foreground">{money(filteredTotals.balance)}</strong> outstanding</p>
       </div>
       <AdminTable
         headers={[

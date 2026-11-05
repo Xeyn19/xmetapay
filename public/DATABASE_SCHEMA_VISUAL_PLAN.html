@@ -344,12 +344,12 @@
             <tr>
               <td>Fees</td>
               <td><code>fee_types</code>, <code>fee_type_term_templates</code>, <code>student_fee_assignments</code>, <code>parent_fee_summary_archives</code>, <code>tuition_payment_terms</code></td>
-              <td>Tuition, balances, terms, and parent-specific Fee summary visibility. The Admin Tuition page is report-first: it joins the existing student reference for search/display, filters by status/grade/section, sorts the authorized selected-year rows on the client, shows filtered totals, and exports every matching row before outstanding-by-grade insight. Reminder history stays collapsed and clears selections when its filter context changes. It still reads existing assignments, payments, terms, students, and <code>notification_logs</code>; non-tuition summaries remain on Other fees. This UI/query-contract refinement adds no schema fields and requires no migration or database re-import. Per-student term dates use the existing inclusive range from <code>school_years.starts_on</code> through <code>student_fee_assignments.due_date</code>; no schedule-window columns are added. Archive is indefinite; <code>deleted_at</code> starts a database-timed 30-day recovery window. Recovery returns the row to Archived, while expired tombstones remain visible as Permanently hidden without changing financial records.</td>
+              <td>Tuition, balances, terms, and parent-specific Fee summary visibility. The Admin <strong>Tuition balances</strong> view joins the existing student reference for search/display, filters by status/grade/section, sorts authorized selected-year rows on the client, and exports every matching assignment row with filtered totals in report metadata. The table does not repeat the KPI totals in a second summary strip. Reminder history stays collapsed and clears selections when its filter context changes. A shared workspace link opens the separate <strong>Tuition payments</strong> transaction view; the two routes do not merge assignment and payment records. This presentation refinement adds no schema fields and requires no migration, SQL import, or database re-import. Per-student term dates use the existing inclusive range from <code>school_years.starts_on</code> through <code>student_fee_assignments.due_date</code>; no schedule-window columns are added. Archive is indefinite; <code>deleted_at</code> starts a database-timed 30-day recovery window. Recovery returns the row to Archived, while expired tombstones remain visible as Permanently hidden without changing financial records.</td>
             </tr>
             <tr>
               <td>Payments</td>
               <td><code>payments</code>, <code>parent_payment_history_archives</code>, <code>payment_allocations</code>, <code>payment_term_allocations</code>, <code>receipts</code></td>
-              <td>Payment records, allocations, receipts, and parent-specific history visibility. Parent <code>deleted_at</code> starts a database-timed 30-day recovery window; expired tombstones remain visible as Permanently hidden while financial and audit history stays unchanged.</td>
+              <td>Payment records, allocations, receipts, and parent-specific history visibility. The Admin <strong>Tuition payments</strong> view presents individual transactions, references, channels, statuses, and the existing archive metadata; archiving only organizes the Admin view and never deletes, reverses, or changes a payment. Parent <code>deleted_at</code> starts a database-timed 30-day recovery window; expired tombstones remain visible as Permanently hidden while financial and audit history stays unchanged.</td>
             </tr>
             <tr>
               <td>Wallet</td>
@@ -736,7 +736,7 @@ flowchart TD
   B --> C["Show collection KPIs"]
   C --> D["Open student tuition balances"]
   D --> E["Search name or reference; filter status, grade, and section"]
-  E --> E1["Sort rows, show filtered totals, and export all matching rows"]
+  E --> E1["Sort rows and export all matches with filtered totals in report metadata"]
   E1 --> E2["Review outstanding-by-grade insight"]
   E2 --> E3["Open compact reminder history only when needed"]
   E3 --> F["Open collections log"]

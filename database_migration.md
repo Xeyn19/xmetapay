@@ -107,4 +107,10 @@ Do not mark the migration as ✅ until the production import and verification ch
 
 Created: September 21, 2026
 
-Last updated: November 4, 2026
+## Tuition balances and payments UX organization
+
+No new SQL file is required for the connected **Tuition balances** and **Tuition payments** workspace. This change only updates navigation, labels, page organization, and visible export titles while preserving the existing `/admin/tuition` and `/admin/collections` routes, queries, payment records, allocations, receipts, archive metadata, and export filenames.
+
+Do not import or re-import the production schema for this UI refinement. Existing databases continue using their current migration state, and new empty databases still follow the normal schema-bundle instructions above.
+
+Last updated: November 5, 2026
