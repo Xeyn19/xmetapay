@@ -87,6 +87,8 @@ export function TuitionReportTable({
     || grade !== "all"
     || section !== "all"
     || sort !== "roster";
+  const activeFilterCount = [status, grade, section].filter((value) => value !== "all").length
+    + (sort === "roster" ? 0 : 1);
   const filteredTotals = useMemo(
     () => filteredRows.reduce(
       (totals, row) => ({
@@ -172,6 +174,10 @@ export function TuitionReportTable({
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
+          layout="compact"
+          activeFilterCount={activeFilterCount}
+          filterTitle="Filter tuition balances"
+          filterDescription="Narrow the student balances or change their ordering."
         />
       </div>
       <AdminTable

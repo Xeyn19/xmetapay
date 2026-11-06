@@ -10,9 +10,11 @@ test("shared table controls provide a backward-compatible compact filter and exp
   assert.match(controls, /layout\?: "expanded" \| "compact"/);
   assert.match(controls, /layout = "expanded"/);
   assert.match(controls, /activeFilterCount\?: number/);
+  assert.match(controls, /filterTitle\?: string/);
+  assert.match(controls, /filterDescription\?: string/);
   assert.match(controls, /import \{ Menu \} from "@base-ui\/react\/menu"/);
   assert.match(controls, /import \{ Popover \} from "@base-ui\/react\/popover"/);
-  assert.match(controls, /<Popover\.Title[^>]*>Filter payments/);
+  assert.match(controls, /<Popover\.Title[^>]*>\{filterTitle\}/);
   assert.match(controls, /<Menu\.Item[\s\S]*Export Excel/);
   assert.match(controls, /<Menu\.Item[\s\S]*Export PDF/);
   assert.match(controls, /w-\[min\(20rem,calc\(100vw-2rem\)\)\]/);

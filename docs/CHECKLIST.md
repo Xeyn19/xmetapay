@@ -26,6 +26,7 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Organize every authenticated Admin route around its primary task while preserving all existing actions, permissions, routes, exports, and data contracts.
 - [x] Use shared semantic Admin cards, workflow headers, table controls, empty states, and responsive mobile navigation with Escape, focus containment, and focus restoration.
 - [x] Put student, store, finance, and setup records before supporting queues or insights; keep archive selections safe when filters or Active/Archived views change.
+- [x] Apply minimal controls to Tuition balances, enrolled students, Student Profile selection, parent queues and contacts, Allowance, Store transactions, and Financial reports: visible search or primary views, one counted Filters panel, one Export/Download menu, and contextual bulk actions without removing capabilities.
 - [x] Keep Admin report-download rows readable during hover in both themes by using semantic foreground, muted, border, and hover surfaces.
 - [x] Keep disabled Admin exports, pagination, selection, and bulk actions readable with opaque neutral surfaces, and use semantic state colors for Admin alerts and status badges in both themes.
 - [x] Use the outlined XMETA red/orange treatment for every School Admin, Super Admin, and protected Reports-page PDF control while preserving Excel styling.

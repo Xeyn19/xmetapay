@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, CheckSquare, X } from "lucide-react";
+import { Archive, ArchiveRestore, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -23,7 +23,7 @@ import type { AdminAllowanceDisplayRow } from "@/lib/admin/real-data";
 import { readableDisabledControlClass } from "@/lib/ui/control-styles";
 import { cn } from "@/lib/utils";
 
-import { AdminTable, SegmentedTabs, StatusPill } from "../../_components/admin-ui";
+import { AdminTable, StatusPill } from "../../_components/admin-ui";
 
 export type AllowanceRow = AdminAllowanceDisplayRow;
 
@@ -37,7 +37,7 @@ const initialActionState: AllowanceArchiveActionState = {
   submittedAt: 0,
 };
 
-const statusTabs: Array<{ label: string; value: WalletStatusFilter }> = [
+const statusFilterOptions: Array<{ label: string; value: WalletStatusFilter }> = [
   { label: "All students", value: "all" },
   { label: "Active", value: "Active" },
   { label: "Low balance", value: "Low" },
@@ -82,9 +82,12 @@ export function AllowanceTable({
   const validSelectedIds = selectedIds.filter((id) => rowIds.has(id));
   const selectedSet = new Set(validSelectedIds);
   const allPageRowsSelected = pageIds.length > 0 && pageIds.every((id) => selectedSet.has(id));
+  const somePageRowsSelected = pageIds.some((id) => selectedSet.has(id));
+  const selectAllVisibleRef = useRef<HTMLInputElement>(null);
   const exportColumns = allowanceExportColumns(view === "archived");
   const exportTitle = view === "archived" ? "Archived allowance wallets" : "Active allowance wallets";
   const hasActiveFilters = query.trim() !== "" || status !== "all";
+  const activeFilterCount = status === "all" ? 0 : 1;
   const exportOptions = {
     context: [
       { label: "School", value: schoolName },
@@ -132,6 +135,11 @@ export function AllowanceTable({
     setSelectedIds((current) => current.includes(walletId)
       ? current.filter((id) => id !== walletId)
       : [...current, walletId]);
+  };
+  const toggleVisible = () => {
+    setSelectedIds((current) => allPageRowsSelected
+      ? current.filter((id) => !pageIds.includes(id))
+      : [...new Set([...current, ...pageIds])]);
   };
 
   const confirmAction = () => {
@@ -183,10 +191,16 @@ export function AllowanceTable({
   const hasRows = rows.length > 0;
   const hasFilters = query.trim().length > 0 || status !== "all";
 
+  useEffect(() => {
+    if (selectAllVisibleRef.current) {
+      selectAllVisibleRef.current.indeterminate = somePageRowsSelected && !allPageRowsSelected;
+    }
+  }, [allPageRowsSelected, somePageRowsSelected]);
+
   return (
     <>
-      <div className="space-y-3 border-b border-border px-4 py-3.5 sm:px-[18px]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col gap-2 border-b border-border px-4 py-3.5 sm:px-[18px]">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div className="inline-flex min-h-11 rounded-lg border border-border bg-muted p-1" role="tablist" aria-label="Allowance ledger archive view">
             <button type="button" role="tab" aria-selected={view === "active"} onClick={() => changeView("active")} className={viewTabClass(view === "active")}>
               Active wallets ({activeWalletRows.length})
@@ -195,68 +209,81 @@ export function AllowanceTable({
               Archived wallets ({archivedWalletRows.length})
             </button>
           </div>
-          <p className="text-[11.5px] text-muted-foreground" aria-live="polite">
-            {validSelectedIds.length} {validSelectedIds.length === 1 ? "wallet" : "wallets"} selected
-          </p>
+          <div className="min-w-0 flex-1">
+            <DashboardTableControls
+              query={query}
+              onQueryChange={changeQuery}
+              searchPlaceholder="Search wallets..."
+              searchLabel="Search allowance wallets by student, grade, or status"
+              filters={[
+                { label: "Wallet status", value: status, onChange: (value) => changeStatus(value as WalletStatusFilter), options: statusFilterOptions },
+              ]}
+              onClear={resetFilters}
+              clearLabel="Reset filters"
+              clearDisabled={!hasActiveFilters}
+              onExport={() => exportRowsToExcel(
+                view === "archived" ? "admin-allowance-wallets-archived.xlsx" : "admin-allowance-wallets.xlsx",
+                exportTitle,
+                filteredRows,
+                exportColumns,
+                {
+                  worksheetName: view === "archived" ? "Archived allowance" : "Active allowance",
+                  ...exportOptions,
+                },
+              )}
+              onExportPdf={() => exportRowsToPdf(
+                view === "archived" ? "admin-allowance-wallets-archived.pdf" : "admin-allowance-wallets.pdf",
+                exportTitle,
+                filteredRows,
+                exportColumns,
+                exportOptions,
+              )}
+              exportLabel="Export Excel"
+              exportingLabel="Generating Excel..."
+              exportDisabled={filteredRows.length === 0}
+              layout="compact"
+              activeFilterCount={activeFilterCount}
+              filterTitle="Filter allowance wallets"
+              filterDescription="Focus on active, low-balance, or zero-balance wallets."
+            />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="text-[12.5px] font-semibold text-foreground">Wallet status filter</div>
-            <div className="mt-0.5 text-[11.5px] text-muted-foreground">
-              Review balances or focus on students who may need a top-up.
+        {validSelectedIds.length > 0 ? (
+          <div className="flex flex-col gap-2 rounded-lg border border-primary/20 bg-button-soft px-3 py-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <span className="text-xs font-semibold text-foreground" aria-live="polite">
+              {validSelectedIds.length} {validSelectedIds.length === 1 ? "wallet" : "wallets"} selected
+            </span>
+            <div className="flex flex-col gap-2 min-[420px]:flex-row">
+              <button type="button" onClick={() => setSelectedIds([])} className={secondaryButtonClass}>
+                <X className="size-4" /> Clear
+              </button>
+              <button type="button" onClick={() => setConfirmationIds(validSelectedIds)} disabled={pending} className={primaryDarkButtonClass}>
+                {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+                {operationLabel} selected
+              </button>
             </div>
           </div>
-          <SegmentedTabs tabs={statusTabs} active={status} onChange={changeStatus} />
-        </div>
-
-        <DashboardTableControls
-          query={query}
-          onQueryChange={changeQuery}
-          searchPlaceholder="Search student, grade, or wallet status..."
-          searchLabel="Search allowance wallets by student, grade, or status"
-          onClear={resetFilters}
-          clearLabel="Reset filters"
-          clearDisabled={!hasActiveFilters}
-          onExport={() => exportRowsToExcel(
-            view === "archived" ? "admin-allowance-wallets-archived.xlsx" : "admin-allowance-wallets.xlsx",
-            exportTitle,
-            filteredRows,
-            exportColumns,
-            {
-              worksheetName: view === "archived" ? "Archived allowance" : "Active allowance",
-              ...exportOptions,
-            },
-          )}
-          onExportPdf={() => exportRowsToPdf(
-            view === "archived" ? "admin-allowance-wallets-archived.pdf" : "admin-allowance-wallets.pdf",
-            exportTitle,
-            filteredRows,
-            exportColumns,
-            exportOptions,
-          )}
-          exportLabel="Export Excel"
-          exportingLabel="Generating Excel..."
-          exportDisabled={filteredRows.length === 0}
-        />
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setSelectedIds((current) => [...new Set([...current, ...pageIds])])} disabled={pageIds.length === 0 || allPageRowsSelected} className={secondaryButtonClass}>
-            <CheckSquare className="size-4" /> Select visible
-          </button>
-          <button type="button" onClick={() => setSelectedIds([])} disabled={validSelectedIds.length === 0} className={secondaryButtonClass}>
-            <X className="size-4" /> Clear selection
-          </button>
-          <button type="button" onClick={() => setConfirmationIds(validSelectedIds)} disabled={validSelectedIds.length === 0 || pending} className={primaryDarkButtonClass}>
-            {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-            {operationLabel} selected
-          </button>
-        </div>
+        ) : null}
       </div>
 
       <AdminTable
         headers={[
-          { label: "Select", className: "w-[64px]" },
+          {
+            key: "select",
+            label: (
+              <input
+                ref={selectAllVisibleRef}
+                type="checkbox"
+                checked={allPageRowsSelected}
+                disabled={pageIds.length === 0}
+                onChange={toggleVisible}
+                aria-label="Select all visible allowance wallets"
+                className="size-4 accent-primary"
+              />
+            ),
+            className: "w-[64px]",
+          },
           { label: "Student", className: "w-[180px]" },
           { label: "Grade", className: "w-[110px]" },
           { label: "Current balance", className: "w-[135px]" },
@@ -273,17 +300,17 @@ export function AllowanceTable({
             <tr key={row.walletId}>
               <td>
                 <label className="flex min-h-11 items-center" aria-label={`Select wallet for ${row.student}`}>
-                  <input type="checkbox" checked={selectedSet.has(row.walletId)} onChange={() => toggleRow(row.walletId)} className="size-4 accent-[#e64a19]" />
+                  <input type="checkbox" checked={selectedSet.has(row.walletId)} onChange={() => toggleRow(row.walletId)} className="size-4 accent-primary" />
                 </label>
               </td>
               <td className="font-bold">{row.student}</td>
               <td>{row.grade}</td>
-              <td className={row.status === "No balance" ? "font-bold text-[#9ba3b8]" : row.status === "Low" ? "font-bold text-[#f57c00]" : "font-bold text-[#e64a19]"}>{row.balance}</td>
+              <td className={row.status === "No balance" ? "font-bold text-muted-foreground" : row.status === "Low" ? "font-bold text-status-warning-foreground" : "font-bold text-primary"}>{row.balance}</td>
               <td>{row.lastTopUp}</td>
               <td>{row.monthSpend}</td>
               <td>{row.totalTopUps}</td>
               <td><StatusPill tone={row.status === "Low" ? "low" : row.status === "No balance" ? "inactive" : "active"}>{row.status}</StatusPill></td>
-              {view === "archived" ? <td className="font-mono text-[11px] text-[#5a6070]">{row.archivedAt ?? "Pending"}</td> : null}
+              {view === "archived" ? <td className="font-mono text-[11px] text-muted-foreground">{row.archivedAt ?? "Pending"}</td> : null}
               <td className="text-center">
                 <button type="button" onClick={() => setConfirmationIds([row.walletId])} disabled={pending} className={iconButtonClass} aria-label={`${operationLabel} wallet for ${row.student}`} title={`${operationLabel} wallet`}>
                   {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
@@ -312,23 +339,23 @@ export function AllowanceTable({
       />
 
       {confirmationIds.length > 0 ? (
-        <div className="fixed inset-0 z-[220] grid place-items-center bg-[#0f1117]/45 px-4 py-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[220] grid place-items-center bg-foreground/45 px-4 py-6 backdrop-blur-sm">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmationIds([])} aria-label="Close confirmation" />
-          <section role="alertdialog" aria-modal="true" aria-labelledby="allowance-archive-title" className="relative w-full max-w-md rounded-xl border border-black/[0.07] bg-white p-5 shadow-2xl sm:p-6">
-            <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-[#fff3e0] text-[#e65100]">
+          <section role="alertdialog" aria-modal="true" aria-labelledby="allowance-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:p-6">
+            <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-status-warning-bg text-status-warning-foreground">
               {view === "archived" ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
             </div>
-            <h3 id="allowance-archive-title" className="text-[16px] font-bold text-[#0f1117]">
+            <h3 id="allowance-archive-title" className="text-[16px] font-bold text-foreground">
               {operationLabel} {confirmationIds.length === 1 ? "this wallet" : `${confirmationIds.length} wallets`}?
             </h3>
-            <p className="mt-2 text-[12.5px] leading-5 text-[#5a6070]">
+            <p className="mt-2 text-[12.5px] leading-5 text-muted-foreground">
               {view === "archived"
                 ? "Restored wallets return to this school year's active Allowance ledger."
                 : "Archiving only organizes this school year's admin ledger. The wallet stays usable, and balances, parent history, top-ups, purchases, KPIs, and reports remain unchanged."}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setConfirmationIds([])} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>
-              <button type="button" onClick={confirmAction} disabled={pending} className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e64a19] bg-[#e64a19] px-4 text-[12.5px] font-semibold text-white hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 sm:w-auto", readableDisabledControlClass)}>
+              <button type="button" onClick={confirmAction} disabled={pending} className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-primary bg-primary px-4 text-[12.5px] font-semibold text-primary-foreground hover:bg-primary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 sm:w-auto", readableDisabledControlClass)}>
                 {pending ? "Updating..." : `${operationLabel} wallets`}
               </button>
             </div>
@@ -341,12 +368,12 @@ export function AllowanceTable({
 
 const secondaryButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-[12.5px] font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass);
 const primaryDarkButtonClass = cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-button-secondary bg-button-secondary px-3.5 text-[12.5px] font-semibold text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass);
-const iconButtonClass = cn("inline-flex size-10 items-center justify-center rounded-lg border border-black/10 bg-white text-[#5a6070] transition hover:border-[#e64a19]/40 hover:bg-[#fff5f2] hover:text-[#e64a19] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25", readableDisabledControlClass);
+const iconButtonClass = cn("inline-flex size-11 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition hover:border-primary/40 hover:bg-button-soft hover:text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25", readableDisabledControlClass);
 
 function viewTabClass(active: boolean) {
   return cn(
-    "inline-flex min-h-9 items-center justify-center rounded-md px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
-    active ? "bg-white text-[#0f1117] shadow-sm" : "text-[#5a6070] hover:text-[#0f1117]",
+    "inline-flex min-h-9 items-center justify-center rounded-md px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+    active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
   );
 }
 

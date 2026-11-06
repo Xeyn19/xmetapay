@@ -188,7 +188,8 @@ test("admin allowance page uses working controls for real wallet rows", () => {
   assert.match(adminRealData, /monthly_top_ups/);
   assert.match(adminRealData, /monthly_top_up_count/);
   assert.match(table, /DashboardTableControls/);
-  assert.match(table, /SegmentedTabs/);
+  assert.match(table, /layout="compact"/);
+  assert.match(table, /filterTitle="Filter allowance wallets"/);
   assert.match(table, /All students/);
   assert.match(table, /Low balance/);
   assert.match(table, /Zero balance/);
@@ -205,8 +206,9 @@ test("admin allowance page uses working controls for real wallet rows", () => {
   assert.match(table, /filterByQuery/);
   assert.match(table, /Active wallets/);
   assert.match(table, /Archived wallets/);
-  assert.match(table, /Select visible/);
-  assert.match(table, /Clear selection/);
+  assert.match(table, /aria-label="Select all visible allowance wallets"/);
+  assert.match(table, /validSelectedIds\.length > 0/);
+  assert.match(table, /> Clear/);
   assert.match(table, /role="alertdialog"/);
   assert.match(table, /setActiveWalletRows/);
   assert.match(table, /setArchivedWalletRows/);

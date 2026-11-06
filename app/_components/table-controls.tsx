@@ -66,6 +66,8 @@ export function DashboardTableControls({
   exportingLabel = "Generating export...",
   layout = "expanded",
   activeFilterCount = 0,
+  filterTitle = "Filter records",
+  filterDescription,
 }: {
   query: string;
   onQueryChange: (value: string) => void;
@@ -88,6 +90,8 @@ export function DashboardTableControls({
   exportingLabel?: string;
   layout?: "expanded" | "compact";
   activeFilterCount?: number;
+  filterTitle?: string;
+  filterDescription?: string;
 }) {
   const [exportingPrimary, setExportingPrimary] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -156,10 +160,12 @@ export function DashboardTableControls({
               <Popover.Portal>
                 <Popover.Positioner sideOffset={8} align="end" collisionPadding={16} className="z-[260]">
                   <Popover.Popup className="w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-border bg-card p-4 text-card-foreground shadow-xl outline-none data-[ending-style]:opacity-0 data-[starting-style]:opacity-0">
-                    <Popover.Title className="text-sm font-bold text-foreground">Filter payments</Popover.Title>
-                    <Popover.Description className="mt-1 text-xs leading-5 text-muted-foreground">
-                      Narrow the payment history by status or channel.
-                    </Popover.Description>
+                    <Popover.Title className="text-sm font-bold text-foreground">{filterTitle}</Popover.Title>
+                    {filterDescription ? (
+                      <Popover.Description className="mt-1 text-xs leading-5 text-muted-foreground">
+                        {filterDescription}
+                      </Popover.Description>
+                    ) : null}
                     <div className="mt-3 grid gap-3">
                       {filters.map((filter) => (
                         <label key={filter.label} className="grid gap-1.5 text-xs font-semibold text-foreground">
