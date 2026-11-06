@@ -336,6 +336,10 @@ export async function saveTuitionTermSchedule(
     throw new TuitionTermsError("Choose a valid tuition assignment from this school year.");
   }
 
+  if (assignment.student_assessment_id) {
+    throw new TuitionTermsError("This tuition uses the approved package payment plan. View the assessment instead of creating manual terms.");
+  }
+
   if (assignment.status === "paid" || decimalValue(assignment.amount_paid) >= decimalValue(assignment.amount_due)) {
     throw new TuitionTermsError("Paid tuition assignments cannot be split into new terms.");
   }
@@ -555,7 +559,7 @@ async function getLockedTuitionAssignment(
   params: SaveTuitionTermScheduleParams,
 ) {
   const [rows] = await connection.execute<TuitionAssignmentRow[]>(
-    `SELECT sfa.id, sfa.amount_due, sfa.amount_paid,
+    `SELECT sfa.id, sfa.student_assessment_id, sfa.amount_due, sfa.amount_paid,
        DATE_FORMAT(sy.starts_on, '%Y-%m-%d') AS term_start_date,
        DATE_FORMAT(sfa.due_date, '%Y-%m-%d') AS term_end_date,
        sfa.status
@@ -665,6 +669,7 @@ type FeeTypeTermTemplateRow = RowDataPacket & {
 
 type TuitionAssignmentRow = RowDataPacket & {
   id: number;
+  student_assessment_id: number | null;
   amount_due: number | string;
   amount_paid: number | string;
   term_start_date: string;

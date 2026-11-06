@@ -931,18 +931,23 @@ Use this testing order when checking the project manually in XAMPP:
 flowchart LR
   A[School Setup academic offering] --> O{Basic, Higher, or Both}
   O --> S[Show only enabled grade or program/year/period targets]
-  S --> F[Draft fee schedule]
+  S --> D[Show authoritative billing range]
+  D --> I{Full, preset, monthly, or custom plan}
+  I --> F[Validate final deadline, term dates, and 100 percent]
   F -->|Server revalidates scope and School Setup ownership| P[Immutable approved version]
   P --> E[Resolve exact grade or program/year/period roster]
   E --> V[Search, group, and manually select eligible students]
   E --> D[Show already-assessed students as read-only]
   V --> X[Apply optional credit]
-  X --> R[Preview totals and fingerprint]
+  X --> R[Preview totals, fingerprint, and stable retry token]
   R -->|Revalidate under locks| B[Atomic assessment batch]
+  B --> A1[Admin balance reads approved assessment plan and next due term]
   B --> G[Guardian Statement of Account]
   G --> T[Pay assessment term]
   T --> L[Proportional fee-line allocations]
   L --> C[Receipt and updated balance]
 ```
 
-`schools.education_scope` is the shared source of truth between School Setup and tuition: Basic-only schools see only K–12 targeting, College-only schools see only College targeting, and mixed schools may choose either. Package setup supports selecting all or clearing all displayed grade/program targets, while the optional installment plan remains collapsed until needed. K–12 packages expose only students in their selected grade targets. College packages additionally require the matching program year level and active academic period. Package creation locks and revalidates the current school scope, while preview and posting revalidate the population, so a stale or manipulated browser request cannot bypass ownership or eligibility rules. Optional/ad hoc Other fees continue through their existing workflow.
+`schools.education_scope` is the shared source of truth between School Setup and tuition: Basic-only schools see only K–12 targeting, College-only schools see only College targeting, and mixed schools may choose either. Package setup supports selecting all or clearing all displayed grade/program targets. It shows the valid school-year or college-period range and guides the administrator through Full payment, 2-payment, 4-payment, monthly, or custom terms. Preset names and percentages remain editable, while term dates must be chronological, within the authoritative range, and no later than the final payment deadline. K–12 packages expose only students in their selected grade targets. College packages additionally require the matching program year level and active academic period. Preview keeps the selected package, students, and assistance values in place and returns one stable submission token; the selection is cleared only after the locked transaction commits. Package creation locks and revalidates the current scope and date ownership, while preview and posting revalidate the population, so a stale or manipulated browser request cannot bypass ownership or eligibility rules. Optional/ad hoc Other fees continue through their existing workflow.
+
+After posting, the Admin Tuition balances report reads the package plan from the assessment header and its `assessment_payment_terms`, including progress and the next unpaid due date. The row opens a read-only assessment breakdown. Only historical standalone assignments retain manual Edit assignment and Manage terms actions backed by `tuition_payment_terms`; server guards prevent those legacy actions from changing an assessment-backed schedule.

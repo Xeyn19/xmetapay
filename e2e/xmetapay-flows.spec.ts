@@ -501,6 +501,98 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     }
   });
 
+  test("tuition package setup guides deadlines and installment presets responsively", async ({ context, page }) => {
+    test.setTimeout(90_000);
+    const adminUserId = await ensureE2ETuitionTermWindow();
+    await addDatabaseSessionCookieForUser(context, adminUserId, "admin");
+    await page.goto("/admin/tuition/schedules", { waitUntil: "networkidle" });
+
+    await expect(page.getByText("Valid billing dates", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Jun 1, 2026 to Mar 31, 2027/).first()).toBeVisible();
+    const finalDeadline = page.getByRole("textbox", { name: "Final payment deadline" });
+    await expect(finalDeadline).toHaveAttribute("min", "2026-06-01");
+    await expect(finalDeadline).toHaveAttribute("max", "2027-03-31");
+    await finalDeadline.fill("2027-04-01");
+    expect(await finalDeadline.evaluate((input: HTMLInputElement) => input.validity.rangeOverflow)).toBe(true);
+    await finalDeadline.fill("2027-03-31");
+
+    await page.getByLabel("2 payments").check();
+    await expect(page.getByLabel("Installment plan name")).toHaveValue("Two-payment plan");
+    await expect(page.locator('input[name="termPercentages"]')).toHaveCount(2);
+    await expect(page.getByText("100%", { exact: true })).toBeVisible();
+    const twoPaymentDates = page.locator('input[name="termDates"]');
+    await expect(twoPaymentDates.first()).toHaveAttribute("min", "2026-06-01");
+    await expect(twoPaymentDates.first()).toHaveAttribute("max", "2027-03-31");
+
+    await page.getByLabel("Monthly").check();
+    await page.getByLabel("Number of monthly payments").selectOption("3");
+    await expect(page.locator('input[name="termDates"]')).toHaveCount(3);
+    await expect(page.getByText("100%", { exact: true })).toBeVisible();
+
+    await page.getByRole("radio", { name: /Custom Create your own/ }).check();
+    await page.getByRole("button", { name: "Add payment" }).click();
+    await expect(page.locator('input[name="termNames"]')).toHaveCount(3);
+    await page.getByRole("button", { name: "Remove payment 3" }).click();
+    await expect(page.locator('input[name="termNames"]')).toHaveCount(2);
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(page.getByText("How may families pay?", { exact: false })).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
+  test("assessment preview keeps the package and selection until posting succeeds", async ({ context, page }) => {
+    test.setTimeout(90_000);
+    const fixture = await ensureE2EAssessmentPosting();
+    await addDatabaseSessionCookieForUser(context, fixture.adminUserId, "admin");
+    await page.goto("/admin/tuition/assessments/new", { waitUntil: "networkidle" });
+
+    const packageSelect = page.getByLabel("Tuition package");
+    await packageSelect.selectOption(String(fixture.scheduleId));
+    const studentChoice = page.locator(`input[name="studentIds"][value="${fixture.studentId}"]`);
+    await studentChoice.check();
+    await page.getByRole("button", { name: "Preview 1 assessments" }).click();
+
+    await expect(page.getByText("Preview ready", { exact: true })).toBeVisible();
+    await expect(packageSelect).toHaveValue(String(fixture.scheduleId));
+    await expect(studentChoice).toBeChecked();
+    const submissionToken = page.locator('input[name="submissionToken"]');
+    await expect(submissionToken).not.toHaveValue("");
+    const tokenBeforePost = await submissionToken.inputValue();
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(packageSelect).toHaveValue(String(fixture.scheduleId));
+      await expect(submissionToken).toHaveValue(tokenBeforePost);
+      await expectNoHorizontalOverflow(page);
+    }
+
+    await page.getByRole("button", { name: "Post 1 assessments now" }).click();
+    await expect(page.getByText("Assessments posted", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Successfully posted\. Batch reference:/)).toBeVisible();
+    await expect(packageSelect).toHaveValue(String(fixture.scheduleId));
+    await expect(page.getByText("Already assessed (1)", { exact: true })).toBeVisible();
+
+    const connection = await mysql.createConnection(databaseConfig());
+    try {
+      const [rows] = await connection.execute<Array<{ assessments: number; assignments: number } & RowDataPacket>>(
+        `SELECT
+           (SELECT COUNT(*) FROM student_assessments WHERE student_id = :studentId AND fee_schedule_id = :scheduleId) assessments,
+           (SELECT COUNT(*) FROM student_fee_assignments sfa
+              JOIN student_assessments sa ON sa.id = sfa.student_assessment_id
+             WHERE sa.student_id = :studentId AND sa.fee_schedule_id = :scheduleId) assignments`,
+        { studentId: fixture.studentId, scheduleId: fixture.scheduleId },
+      );
+      expect(Number(rows[0].assessments)).toBe(1);
+      expect(Number(rows[0].assignments)).toBe(1);
+    } finally {
+      await connection.end();
+    }
+  });
+
   test("admin edits a student profile responsively in both themes", async ({ context, page }) => {
     test.setTimeout(90_000);
     const fixture = await ensureE2EAdminStudentProfileEdit();
@@ -1575,9 +1667,18 @@ async function ensureE2ETuitionTermWindow() {
 
     await connection.execute(
       `INSERT INTO student_fee_assignments (
-         student_id, fee_type_id, school_year_id, amount_due, amount_paid, due_date, status
+         student_id, fee_type_id, school_year_id, assignment_key, amount_due, amount_paid, due_date, status
        )
-       VALUES (:studentId, :feeTypeId, :schoolYearId, 30000.00, 0.00, '2027-01-15', 'open')
+       VALUES (
+         :studentId,
+         :feeTypeId,
+         :schoolYearId,
+         CONCAT('legacy-fee:', :feeTypeId),
+         30000.00,
+         0.00,
+         '2027-01-15',
+         'open'
+       )
        ON DUPLICATE KEY UPDATE
          amount_due = 30000.00,
          amount_paid = 0.00,
@@ -1598,6 +1699,115 @@ async function ensureE2ETuitionTermWindow() {
     );
     await connection.commit();
     return adminUserId;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.end();
+  }
+}
+
+async function ensureE2EAssessmentPosting() {
+  const adminUserId = await ensureE2ETuitionTermWindow();
+  const connection = await mysql.createConnection(databaseConfig());
+
+  try {
+    await connection.beginTransaction();
+    const [schoolRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM schools WHERE code = 'E2E-TUITION' LIMIT 1",
+    );
+    const schoolId = schoolRows[0].id;
+    const [yearRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM school_years WHERE school_id = :schoolId AND name = 'E2E Tuition 2026-2027' LIMIT 1",
+      { schoolId },
+    );
+    const schoolYearId = yearRows[0].id;
+    const [gradeRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM grade_levels WHERE school_id = :schoolId AND name = 'Grade Window' LIMIT 1",
+      { schoolId },
+    );
+    const gradeLevelId = gradeRows[0].id;
+    const [feeRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM fee_types WHERE school_year_id = :schoolYearId AND name = 'E2E Window Tuition' LIMIT 1",
+      { schoolYearId },
+    );
+    const feeTypeId = feeRows[0].id;
+
+    await connection.execute(
+      `INSERT INTO students (school_id, student_reference, first_name, last_name, status)
+       VALUES (:schoolId, 'E2E-ASSESS-001', 'E2E Assessment', 'Student', 'active')
+       ON DUPLICATE KEY UPDATE first_name = VALUES(first_name), last_name = VALUES(last_name), status = 'active'`,
+      { schoolId },
+    );
+    const [studentRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      "SELECT id FROM students WHERE school_id = :schoolId AND student_reference = 'E2E-ASSESS-001' LIMIT 1",
+      { schoolId },
+    );
+    const studentId = studentRows[0].id;
+    await connection.execute(
+      `INSERT INTO enrollments (student_id, school_year_id, grade_level_id, status, enrolled_at)
+       VALUES (:studentId, :schoolYearId, :gradeLevelId, 'enrolled', CURRENT_TIMESTAMP)
+       ON DUPLICATE KEY UPDATE grade_level_id = VALUES(grade_level_id), status = 'enrolled'`,
+      { studentId, schoolYearId, gradeLevelId },
+    );
+    await connection.execute(
+      `INSERT INTO fee_schedules
+         (school_id, school_year_id, name, education_level, version_no, status, created_by_user_id, approved_by_user_id, approved_at)
+       VALUES
+         (:schoolId, :schoolYearId, 'E2E Assessment Package', 'basic', 1, 'approved', :adminUserId, :adminUserId, CURRENT_TIMESTAMP)
+       ON DUPLICATE KEY UPDATE status = 'approved', approved_by_user_id = VALUES(approved_by_user_id), approved_at = CURRENT_TIMESTAMP`,
+      { schoolId, schoolYearId, adminUserId },
+    );
+    const [scheduleRows] = await connection.execute<Array<{ id: number } & RowDataPacket>>(
+      `SELECT id FROM fee_schedules
+       WHERE school_year_id = :schoolYearId AND name = 'E2E Assessment Package' AND version_no = 1 LIMIT 1`,
+      { schoolYearId },
+    );
+    const scheduleId = scheduleRows[0].id;
+    await connection.execute(
+      `INSERT IGNORE INTO fee_schedule_grade_targets (fee_schedule_id, grade_level_id)
+       VALUES (:scheduleId, :gradeLevelId)`,
+      { scheduleId, gradeLevelId },
+    );
+    await connection.execute(
+      `INSERT INTO fee_schedule_items (fee_schedule_id, fee_type_id, sort_order, amount, payment_timing, due_date)
+       VALUES (:scheduleId, :feeTypeId, 1, 30000.00, 'installment', '2027-01-15')
+       ON DUPLICATE KEY UPDATE amount = VALUES(amount), payment_timing = VALUES(payment_timing), due_date = VALUES(due_date)`,
+      { scheduleId, feeTypeId },
+    );
+
+    await connection.execute(
+      `DELETE allocations FROM student_assessment_credit_allocations allocations
+       JOIN student_assessment_credits credits ON credits.id = allocations.student_assessment_credit_id
+       JOIN student_assessments assessments ON assessments.id = credits.student_assessment_id
+       WHERE assessments.student_id = :studentId AND assessments.fee_schedule_id = :scheduleId`,
+      { studentId, scheduleId },
+    );
+    await connection.execute(
+      `DELETE credits FROM student_assessment_credits credits
+       JOIN student_assessments assessments ON assessments.id = credits.student_assessment_id
+       WHERE assessments.student_id = :studentId AND assessments.fee_schedule_id = :scheduleId`,
+      { studentId, scheduleId },
+    );
+    await connection.execute(
+      `DELETE assignments FROM student_fee_assignments assignments
+       JOIN student_assessments assessments ON assessments.id = assignments.student_assessment_id
+       WHERE assessments.student_id = :studentId AND assessments.fee_schedule_id = :scheduleId`,
+      { studentId, scheduleId },
+    );
+    await connection.execute(
+      "DELETE FROM student_assessments WHERE student_id = :studentId AND fee_schedule_id = :scheduleId",
+      { studentId, scheduleId },
+    );
+    await connection.execute(
+      `DELETE batches FROM assessment_batches batches
+       LEFT JOIN student_assessments assessments ON assessments.assessment_batch_id = batches.id
+       WHERE batches.fee_schedule_id = :scheduleId AND assessments.id IS NULL`,
+      { scheduleId },
+    );
+
+    await connection.commit();
+    return { adminUserId, schoolId, schoolYearId, scheduleId, studentId };
   } catch (error) {
     await connection.rollback();
     throw error;

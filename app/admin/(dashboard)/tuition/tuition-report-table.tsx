@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useMemo, useState } from "react";
-import { CalendarDays, Pencil, X } from "lucide-react";
+import { CalendarDays, Eye, Pencil, ReceiptText, X } from "lucide-react";
 
 import { saveTuitionTermsAction, updateTuitionAssignmentAction } from "@/app/admin/tuition-terms/actions";
 import { TuitionTermScheduleFields } from "@/app/admin/fees/tuition-term-schedule-fields";
@@ -21,6 +22,11 @@ import { AdminButton, AdminTable, StatusPill } from "../../_components/admin-ui"
 
 export type TuitionReportRow = {
   assignmentId: number;
+  recordSource: "assessment" | "legacy";
+  assessmentId: number | null;
+  packageName: string | null;
+  batchReference: string | null;
+  paymentPlanName: string | null;
   student: string;
   studentReference: string;
   grade: string;
@@ -29,6 +35,7 @@ export type TuitionReportRow = {
   paid: number;
   balance: number;
   dueDate: string | null;
+  nextDueDate: string | null;
   termStartDate: string;
   termEndDate: string | null;
   lastPayment: string;
@@ -214,7 +221,7 @@ export function TuitionReportTable({
                 <td className="whitespace-normal">
                   <div className="min-w-0">
                     <p className="truncate text-[12px] font-semibold text-foreground">{paymentPlanLabel(row)}</p>
-                    <p className="mt-1 truncate text-[11px] font-medium text-muted-foreground">{row.dueDate ? `Due ${row.dueDate}` : "No due date"}</p>
+                    <p className="mt-1 text-[11px] font-medium text-muted-foreground">{paymentPlanDetail(row)}</p>
                   </div>
                 </td>
                 <td className="font-mono text-[11px] text-muted-foreground">{lastPaymentLabel(row.lastPayment)}</td>
@@ -223,8 +230,14 @@ export function TuitionReportTable({
                 </td>
                 <td>
                   <div className="flex items-center justify-end gap-1.5">
-                    <TuitionAssignmentEditModal row={row} />
-                    <TuitionTermsModal row={row} />
+                    {row.recordSource === "assessment" ? (
+                      <AssessmentDetailsModal row={row} />
+                    ) : (
+                      <>
+                        <TuitionAssignmentEditModal row={row} />
+                        <TuitionTermsModal row={row} />
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -286,11 +299,178 @@ function sortTuitionRows(rows: TuitionReportRow[], sort: TuitionSort) {
 }
 
 function paymentPlanLabel(row: TuitionReportRow) {
-  return row.terms.length > 0 ? row.termSummary : "Full payment";
+  if (row.recordSource === "assessment") {
+    return row.paymentPlanName ?? "Full payment";
+  }
+
+  return row.terms.length > 0 ? "Custom payment terms" : "Full payment";
+}
+
+function paymentPlanDetail(row: TuitionReportRow) {
+  if (row.terms.length > 0) {
+    const nextDue = row.nextDueDate ? ` · Next due ${displayDate(row.nextDueDate)}` : "";
+    return `${row.termSummary}${nextDue}`;
+  }
+
+  return row.dueDate ? `Due ${displayDate(row.dueDate)}` : "No due date";
 }
 
 function lastPaymentLabel(value: string) {
   return value === "Pending" ? "No payment yet" : value;
+}
+
+function AssessmentDetailsModal({ row }: { row: TuitionReportRow }) {
+  const [open, setOpen] = useState(false);
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  return (
+    <>
+      <Button
+        type="button"
+        onClick={() => setOpen(true)}
+        variant="outline"
+        size="icon-sm"
+        title={`View assessment for ${row.student}`}
+        aria-label={`View tuition assessment for ${row.student}`}
+      >
+        <Eye />
+      </Button>
+
+      {open ? (
+        <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-foreground/45 px-3 py-6 backdrop-blur-sm sm:px-6">
+          <button
+            type="button"
+            aria-label="Close assessment details dialog"
+            className="fixed inset-0 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            className="relative flex max-h-[calc(100svh-48px)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3.5 sm:px-5">
+              <div className="min-w-0">
+                <h2 id={titleId} className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <ReceiptText className="size-4 text-primary" />
+                  Tuition assessment
+                </h2>
+                <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                  {row.student} · {row.studentReference}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                aria-label="Close modal"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 sm:p-5">
+              <div className="rounded-lg border border-status-info-foreground/20 bg-status-info-bg p-3 text-sm leading-5 text-status-info-foreground">
+                This schedule comes from the approved tuition package. To protect posted financial records, it cannot be replaced with manual row-level terms.
+              </div>
+
+              <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                <AssessmentSummary label="Tuition package" value={row.packageName ?? "Approved package"} />
+                <AssessmentSummary label="Payment arrangement" value={paymentPlanLabel(row)} />
+                <AssessmentSummary label="Tuition billed" value={money(row.due)} />
+                <AssessmentSummary label="Remaining tuition balance" value={money(row.balance)} />
+              </dl>
+
+              <div className="mt-5">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Approved payment schedule</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">{row.termSummary}</p>
+                  </div>
+                  {row.batchReference ? (
+                    <Link
+                      href={`/admin/tuition/assessments/${encodeURIComponent(row.batchReference)}`}
+                      className="inline-flex min-h-11 items-center rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                    >
+                      Batch {row.batchReference}
+                    </Link>
+                  ) : null}
+                </div>
+
+                {row.terms.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {row.terms.map((term) => {
+                      const termBalance = Math.max(term.amountDue - term.amountPaid, 0);
+
+                      return (
+                        <div key={term.id} className="grid gap-3 rounded-lg border border-border bg-background p-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground">{term.name}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">Due {displayDate(term.dueDate)} · {term.status}</p>
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <p className="text-xs text-muted-foreground">Scheduled</p>
+                            <p className="font-semibold text-foreground">{money(term.amountDue)}</p>
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <p className="text-xs text-muted-foreground">Remaining</p>
+                            <p className={termBalance > 0 ? "font-semibold text-status-danger-foreground" : "font-semibold text-status-success-foreground"}>{money(termBalance)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                    Full payment is due {row.dueDate ? `on ${displayDate(row.dueDate)}` : "on the package deadline"}.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t border-border px-4 py-3.5 sm:px-5">
+              <AdminButton type="button" tone="primary" className="w-full sm:w-auto" onClick={() => setOpen(false)}>
+                Done
+              </AdminButton>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function AssessmentSummary({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-muted/50 p-3">
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="mt-1 font-semibold text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+function displayDate(value: string) {
+  const parsed = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(parsed);
 }
 
 function TuitionAssignmentEditModal({ row }: { row: TuitionReportRow }) {

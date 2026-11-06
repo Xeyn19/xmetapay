@@ -32,12 +32,34 @@ test("assessment actions enforce school administrator ownership and atomic posti
   assert.match(actions, /connection\.rollback/);
 });
 
+test("assessment preview preserves the draft and uses one server-issued posting token", async () => {
+  const [forms, actions, domain] = await Promise.all([
+    readFile("app/admin/tuition-assessments/workflow-forms.tsx", "utf8"),
+    readFile("app/admin/tuition-assessments/actions.ts", "utf8"),
+    readFile("lib/fees/assessment-workflow.ts", "utf8"),
+  ]);
+  assert.match(forms, /onSubmit=\{submitAssessment\}/);
+  assert.match(forms, /new FormData\(event\.currentTarget\)/);
+  assert.match(forms, /formData\.set\("intent", intent\)/);
+  assert.match(forms, /startTransition\(\(\) => action\(formData\)\)/);
+  assert.match(forms, /value=\{creditTypeId\}/);
+  assert.match(forms, /value=\{creditAmount\}/);
+  assert.match(forms, /value=\{creditReference\}/);
+  assert.match(forms, /value=\{state\.submissionToken \?\? ""\}/);
+  assert.doesNotMatch(forms, /name="submissionToken" value=\{crypto\.randomUUID\(\)\}/);
+  assert.match(actions, /submissionToken: randomUUID\(\)/);
+  assert.match(domain, /submissionToken\?: string/);
+});
+
 test("approved schedules are target-safe and payment plans are validated", async () => {
-  const domain = await readFile("lib/fees/assessment-workflow.ts", "utf8");
+  const [domain, rules] = await Promise.all([
+    readFile("lib/fees/assessment-workflow.ts", "utf8"),
+    readFile("lib/fees/installment-plan-rules.ts", "utf8"),
+  ]);
   assert.match(domain, /status='draft' FOR UPDATE/);
   assert.match(domain, /already covers one or more selected targets/);
-  assert.match(domain, /percentages must be positive and total 100%/);
-  assert.match(domain, /term date must fall inside/);
+  assert.match(rules, /Payment percentages must total exactly 100%/);
+  assert.match(rules, /inside the billing period and on or before the final payment deadline/);
 });
 
 test("parent assessment terms allocate to authoritative fee lines", async () => {
@@ -117,7 +139,7 @@ test("school academic offering is authoritative for tuition setup and assessment
   assert.match(forms, /Select all/);
   assert.match(forms, /setSelectedTargetIds\(targetOptions\.map/);
   assert.match(forms, /selectedTargetIds\.length.*of.*availableTargets.*selected/);
-  assert.match(forms, /<details className="group rounded-xl border border-border bg-card text-card-foreground">/);
-  assert.match(forms, /Optional\. Open this only when families may pay the package in scheduled parts/);
-  assert.match(forms, /group-open:rotate-90/);
+  assert.match(forms, /How may families pay/);
+  assert.match(forms, /installmentChoices/);
+  assert.match(forms, /Full payment selected/);
 });

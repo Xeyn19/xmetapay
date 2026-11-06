@@ -155,6 +155,9 @@ Done when: admins can manage students and parents can add or view multiple same-
 - [x] Add irreversible parent-specific removal for archived settled Fee summary rows while preserving authoritative financial records and metrics.
 - [x] Make School Setup academic offering authoritative for tuition packages: Basic-only exposes K–12, College-only exposes College, and Both exposes either with server-side enforcement.
 - [x] Add tuition-target Select all/Clear controls and collapse the optional installment-plan editor until an administrator opens it.
+- [x] Show authoritative billing bounds and replace technical blank installment rows with guided Full, 2-payment, 4-payment, monthly, and custom choices.
+- [x] Validate the final deadline and chronological installment dates on the client and server with field-specific recovery, without changing the schema.
+- [x] Preserve the assessment draft between Preview and Post, use one stable server-issued retry token, and clear students only after the batch commits.
 
 Done when: admin and parent fee screens show real balances from MySQL.
 
@@ -234,6 +237,7 @@ Done when: a parent can top up a wallet, admin/finance can record a local test s
 - [x] Connect Tuition balances and Tuition payments with a responsive Student balances / Payment history switcher while preserving both routes and their separate ledgers.
 - [x] Present the student tuition balance report immediately after its KPIs, use clearer finance labels, and keep payment-reminder history collapsed below supporting collection insights until the administrator opens it.
 - [x] Add student-reference search/display, status/grade/section filtering, collection-focused sorting, filtered export totals, recoverable empty states, and selection-safe reminder filtering without changing financial records or repeating the KPI summary above the table.
+- [x] Read package-posted tuition plans from `assessment_payment_terms`, show their next unpaid due date and read-only assessment details, and limit manual assignment/term actions to legacy rows.
 - [x] Apply the shared XMETA EDU logo, report header/footer, repeated headings, and page numbering to browser table PDFs; include school, school year, filters, counts, and totals for Tuition balances and Tuition payments.
 - [x] Replace every visible Admin CSV control with branded Excel and apply the canonical logo, context, summaries, repeated headings, and page footers to protected report PDFs.
 - [x] Replace every visible Parent CSV control with branded Excel while retaining branded PDFs, filtered summaries, Removed recovery metadata, and nested Fee summary tuition terms.
