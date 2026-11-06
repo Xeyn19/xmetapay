@@ -979,7 +979,9 @@ The same extension supplies the college academic tables consumed by the unified 
 - School scope: `basic`, `higher`, or `both`.
 - Academic ownership: school → year → period → college enrollment.
 - Schedule lifecycle: draft → approved → archived; approved records are immutable in application actions.
-- Posting: preview fingerprint + transaction locks + unique submission-token hash.
+- Posting: preview fingerprint + one stable server-issued submission token + transaction locks + unique submission-token hash; the UI retains the preview draft until commit.
 - Money: immutable gross charge, separately allocated credits, compatible net `amount_due`, percentage terms, and payment allocations to underlying lines.
 - Migrations for existing installations: `database/migrations/2026-11-03-tuition-assessment-workflow.sql`, followed by `database/migrations/2026-11-04-senior-high-offerings.sql`; Parent dashboard connection review additionally requires `database/migrations/2026-11-04-parent-student-claim-requests.sql`. `database/full-schema-v1.sql` remains the fresh-install source.
 - Package-first roster UX: reads existing schedule target, enrollment, academic-period, and student-assessment relationships; it adds no tables, columns, indexes, or follow-up migration.
+- Guided schedule dates and installment presets: reuse `school_years`, `academic_periods`, `payment_plan_templates`, and existing term rows. Client constraints improve guidance, while the server remains authoritative for bounds, ordering, percentages, ownership, and atomic writes. No follow-up migration or SQL import is required.
+- Admin balance read model: assessment-linked assignments resolve their package and `assessment_payment_terms`; standalone legacy assignments resolve `tuition_payment_terms`. Only legacy rows accept manual assignment or term changes. This is an application query/action boundary and adds no schema.

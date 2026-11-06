@@ -38,7 +38,8 @@ test("tuition report uses finance-first columns and clearer payment wording", ()
   }
   assert.match(table, /Full payment/);
   assert.match(table, /No payment yet/);
-  assert.match(table, /`Due \$\{row\.dueDate\}`/);
+  assert.match(table, /paymentPlanDetail\(row\)/);
+  assert.match(table, /`Due \$\{displayDate\(row\.dueDate\)\}`/);
   assert.match(realData, /label: "Student tuition records"/);
   assert.match(realData, /paid`/);
   assert.match(realData, /with remaining balance/);

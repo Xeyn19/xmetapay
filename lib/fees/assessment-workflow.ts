@@ -7,6 +7,12 @@ import { pool } from "@/lib/auth/db";
 import { getAdminStaffRole } from "@/lib/admin/access";
 import { getResolvedAdminSchoolSetup } from "@/lib/school/setup";
 import { getSchoolAcademicReadiness, type EducationScope } from "@/lib/school/academic-offerings";
+import {
+  validateFinalDeadline,
+  validateInstallmentPlan,
+  type BillingWindow,
+  type InstallmentValidationError,
+} from "@/lib/fees/installment-plan-rules";
 
 export const maxAssessmentStudents = 500;
 
@@ -15,7 +21,9 @@ export type AssessmentActionState = {
   status: "idle" | "error" | "preview" | "success";
   title?: string;
   message?: string;
+  field?: InstallmentValidationError["field"];
   preview?: AssessmentPreview;
+  submissionToken?: string;
   batchReference?: string;
 };
 export type AssessmentPreview = {
@@ -37,6 +45,7 @@ export type AssessmentWorkspace = {
   ready: boolean;
   warning: string | null;
   schoolYearName: string | null;
+  schoolYearBounds: BillingWindow | null;
   educationScope: EducationScope;
   enabledAudiences: AcademicAudience[];
   trackReadiness: {
@@ -60,7 +69,12 @@ export type ParentAssessmentStatement = {
   terms: Array<{ name: string; dueDate: string; due: number; paid: number; balance: number; status: string }>;
 };
 
-export class AssessmentWorkflowError extends Error {}
+export class AssessmentWorkflowError extends Error {
+  constructor(message: string, public readonly field?: InstallmentValidationError["field"]) {
+    super(message);
+    this.name = "AssessmentWorkflowError";
+  }
+}
 
 export async function requireAssessmentAdmin(userId: number) {
   const role = await getAdminStaffRole(userId);
@@ -80,7 +94,7 @@ export async function requireAssessmentAdmin(userId: number) {
 export async function getAssessmentWorkspace(userId: number): Promise<AssessmentWorkspace> {
   try {
     const context = await requireAssessmentAdmin(userId);
-    const [scheduleRows, studentRows, creditRows, gradeRows, programRows, periodRows, allStudentRows, sectionRows, gradeTargetRows, programTargetRows, assessedRows] = await Promise.all([
+    const [scheduleRows, studentRows, creditRows, gradeRows, programRows, periodRows, allStudentRows, sectionRows, gradeTargetRows, programTargetRows, assessedRows, schoolYearRows] = await Promise.all([
       pool.execute<ScheduleOptionRow[]>(`SELECT fs.id, fs.name, fs.education_level, fs.academic_period_id, COALESCE(ap.name, 'Full school year') period_name, fs.status,
           COUNT(DISTINCT fsi.id) item_count, COALESCE(SUM(fsi.amount),0) gross_amount, MAX(fspp.payment_plan_template_id) payment_plan_id
         FROM fee_schedules fs LEFT JOIN academic_periods ap ON ap.id=fs.academic_period_id LEFT JOIN fee_schedule_items fsi ON fsi.fee_schedule_id=fs.id LEFT JOIN fee_schedule_payment_plans fspp ON fspp.fee_schedule_id=fs.id AND fspp.is_default=TRUE
@@ -106,6 +120,7 @@ export async function getAssessmentWorkspace(userId: number): Promise<Assessment
       pool.execute<ScheduleTargetRow[]>(`SELECT fsgt.fee_schedule_id schedule_id,gl.id target_id,gl.name target_label FROM fee_schedule_grade_targets fsgt JOIN fee_schedules fs ON fs.id=fsgt.fee_schedule_id JOIN grade_levels gl ON gl.id=fsgt.grade_level_id WHERE fs.school_id=:schoolId AND fs.school_year_id=:schoolYearId ORDER BY gl.sort_order,gl.name`,context),
       pool.execute<ScheduleTargetRow[]>(`SELECT fspt.fee_schedule_id schedule_id,pyl.id target_id,CONCAT(ap.code,' · ',pyl.name) target_label FROM fee_schedule_program_targets fspt JOIN fee_schedules fs ON fs.id=fspt.fee_schedule_id JOIN program_year_levels pyl ON pyl.id=fspt.program_year_level_id JOIN academic_programs ap ON ap.id=pyl.program_id WHERE fs.school_id=:schoolId AND fs.school_year_id=:schoolYearId ORDER BY ap.name,pyl.level_number`,context),
       pool.execute<AssessedScheduleRow[]>(`SELECT sa.student_id,sa.fee_schedule_id FROM student_assessments sa JOIN fee_schedules fs ON fs.id=sa.fee_schedule_id WHERE fs.school_id=:schoolId AND fs.school_year_id=:schoolYearId AND sa.status<>'cancelled'`,context),
+      pool.execute<SchoolYearBoundsRow[]>(`SELECT DATE_FORMAT(starts_on,'%Y-%m-%d') starts_on,DATE_FORMAT(ends_on,'%Y-%m-%d') ends_on FROM school_years WHERE id=:schoolYearId AND school_id=:schoolId LIMIT 1`, context),
     ]);
     const programs = new Map<number, AssessmentWorkspace["programs"][number]>();
     for (const row of programRows[0]) {
@@ -127,13 +142,13 @@ export async function getAssessmentWorkspace(userId: number): Promise<Assessment
       assessedByStudent.set(row.student_id, scheduleIds);
     }
     const enabledAudiences: AcademicAudience[] = context.educationScope === "both" ? ["basic", "higher"] : [context.educationScope];
-    return { ready: true, warning: null, schoolYearName: context.schoolYearName, educationScope: context.educationScope, enabledAudiences, trackReadiness: context.trackReadiness,
+    return { ready: true, warning: null, schoolYearName: context.schoolYearName, schoolYearBounds: schoolYearRows[0][0] ? { startsOn: schoolYearRows[0][0].starts_on, endsOn: schoolYearRows[0][0].ends_on } : null, educationScope: context.educationScope, enabledAudiences, trackReadiness: context.trackReadiness,
       schedules: scheduleRows[0].filter(r=>enabledAudiences.includes(r.education_level)).map(r=>({id:r.id,name:r.name,audience:r.education_level,periodId:r.academic_period_id?Number(r.academic_period_id):null,period:r.period_name,grossAmount:Number(r.gross_amount),itemCount:Number(r.item_count),status:r.status,paymentPlanId:r.payment_plan_id?Number(r.payment_plan_id):null,targetIds:targets.get(r.id)?.ids??[],targetLabels:targets.get(r.id)?.labels??[]})),
       students: studentRows[0].filter(r=>enabledAudiences.includes(r.audience)).map(r=>({id:r.id,name:r.student_name,reference:r.student_reference,meta:r.meta,groupLabel:r.group_label,audience:r.audience,targetId:Number(r.target_id),periodId:r.period_id?Number(r.period_id):null,assessedScheduleIds:assessedByStudent.get(r.id)??[]})),
       creditTypes: creditRows[0].map(r=>({id:r.id,code:r.code,name:r.name,requiresReference:Boolean(r.requires_reference),maxAmount:r.max_amount==null?null:Number(r.max_amount),maxPercent:r.max_percent==null?null:Number(r.max_percent)})),
       grades: enabledAudiences.includes("basic") ? gradeRows[0] : [], programs:enabledAudiences.includes("higher") ? [...programs.values()] : [], periods:enabledAudiences.includes("higher") ? periodRows[0].map(r=>({id:r.id,name:r.name,status:r.status,startsOn:r.starts_on,endsOn:r.ends_on})) : [],allStudents:allStudentRows[0].map(r=>({id:r.id,name:r.name,reference:r.student_reference})),collegeSections:enabledAudiences.includes("higher") ? sectionRows[0].map(r=>({id:r.id,name:r.name,periodName:r.period_name,levelName:r.level_name})) : [] };
   } catch (error) {
-    return { ready:false, warning:error instanceof Error?error.message:"Assessment workspace unavailable.", schoolYearName:null, educationScope:"basic", enabledAudiences:[], trackReadiness:{basic:false,higher:false}, schedules:[],students:[],creditTypes:[],grades:[],programs:[],periods:[],allStudents:[],collegeSections:[] };
+    return { ready:false, warning:error instanceof Error?error.message:"Assessment workspace unavailable.", schoolYearName:null, schoolYearBounds:null, educationScope:"basic", enabledAudiences:[], trackReadiness:{basic:false,higher:false}, schedules:[],students:[],creditTypes:[],grades:[],programs:[],periods:[],allStudents:[],collegeSections:[] };
   }
 }
 
@@ -242,17 +257,26 @@ export async function createFeeSchedule(connection:PoolConnection,p:{schoolId:nu
   const audienceEnabled=currentScope==='both'||currentScope===p.audience;
   if(!audienceEnabled)throw new AssessmentWorkflowError(`This school is configured for ${currentScope==='basic'?'Basic Education only':'Higher Education only'}. Update School Setup before creating a package for another track.`);
   if(!p.trackReadiness[p.audience])throw new AssessmentWorkflowError(`Complete the ${p.audience==='basic'?'Basic Education grade and section':'College program, period, and section'} setup before creating this tuition package.`);
-  if(!p.name||!p.targetIds.length||!p.tuitionName||p.tuitionAmount<=0||!p.dueDate)throw new AssessmentWorkflowError('Complete the schedule name, targets, tuition item, amount, and deadline.');
+  if(!p.name||!p.targetIds.length||!p.tuitionName||p.tuitionAmount<=0)throw new AssessmentWorkflowError('Complete the schedule name, targets, tuition item, and amount.');
+  if(!p.dueDate)throw new AssessmentWorkflowError('Choose the final payment deadline.','dueDate');
   if(p.audience==='higher'&&!p.periodId)throw new AssessmentWorkflowError('College schedules require an academic period.');
-  const [bounds]=await connection.execute<Array<RowDataPacket&{starts_on:string;ends_on:string}>>(p.periodId?`SELECT DATE_FORMAT(starts_on,'%Y-%m-%d') starts_on,DATE_FORMAT(ends_on,'%Y-%m-%d') ends_on FROM academic_periods WHERE id=:periodId AND school_id=:schoolId AND school_year_id=:schoolYearId AND status<>'closed'`:`SELECT DATE_FORMAT(starts_on,'%Y-%m-%d') starts_on,DATE_FORMAT(ends_on,'%Y-%m-%d') ends_on FROM school_years WHERE id=:schoolYearId AND school_id=:schoolId`,p);if(!bounds[0]||p.dueDate<bounds[0].starts_on||p.dueDate>bounds[0].ends_on)throw new AssessmentWorkflowError('The fee deadline must fall inside the school year or a selected open college period.');
-  const hasPlan=p.planName&&p.termNames.length>0; if(hasPlan){const total=p.termPercentages.reduce((s,v)=>s+v,0);if(p.termPercentages.some(value=>value<=0)||Math.round(total*100)!==10000||p.termNames.length!==p.termPercentages.length||p.termNames.length!==p.termDates.length)throw new AssessmentWorkflowError('Payment plan percentages must be positive and total 100%.');if(p.termDates.some(date=>!date||date<bounds[0].starts_on||date>bounds[0].ends_on))throw new AssessmentWorkflowError('Every payment term date must fall inside the school year or selected college period.');}
+  const [bounds]=await connection.execute<Array<RowDataPacket&{starts_on:string;ends_on:string}>>(p.periodId?`SELECT DATE_FORMAT(starts_on,'%Y-%m-%d') starts_on,DATE_FORMAT(ends_on,'%Y-%m-%d') ends_on FROM academic_periods WHERE id=:periodId AND school_id=:schoolId AND school_year_id=:schoolYearId AND status<>'closed'`:`SELECT DATE_FORMAT(starts_on,'%Y-%m-%d') starts_on,DATE_FORMAT(ends_on,'%Y-%m-%d') ends_on FROM school_years WHERE id=:schoolYearId AND school_id=:schoolId`,p);
+  const billingWindow = bounds[0] ? { startsOn: bounds[0].starts_on, endsOn: bounds[0].ends_on } : null;
+  const deadlineError = validateFinalDeadline(p.dueDate, billingWindow);
+  if(deadlineError)throw new AssessmentWorkflowError(deadlineError.message,deadlineError.field);
+  const wantsPlan=Boolean(p.planName||p.termNames.length||p.termPercentages.length||p.termDates.length);
+  if(wantsPlan&&new Set([p.termNames.length,p.termPercentages.length,p.termDates.length]).size!==1)throw new AssessmentWorkflowError('Complete every field for each installment payment.','installmentPlan');
+  const terms=p.termNames.map((name,index)=>({name,percentage:p.termPercentages[index],date:p.termDates[index]}));
+  const planError=validateInstallmentPlan({enabled:wantsPlan,planName:p.planName,terms,bounds:billingWindow,finalDeadline:p.dueDate});
+  if(planError)throw new AssessmentWorkflowError(planError.message,planError.field);
+  const hasPlan=wantsPlan;
   const [s]=await connection.execute<ResultSetHeader>(`INSERT INTO fee_schedules (school_id,school_year_id,academic_period_id,name,education_level,created_by_user_id) VALUES (:schoolId,:schoolYearId,:periodId,:name,:audience,:userId)`,p);
   const targetTable=p.audience==='basic'?'fee_schedule_grade_targets':'fee_schedule_program_targets';const targetColumn=p.audience==='basic'?'grade_level_id':'program_year_level_id';
   const ownershipSql=p.audience==='basic'?`SELECT COUNT(*) total FROM grade_levels WHERE school_id=:schoolId AND id IN (${p.targetIds.map((_,i)=>`:target${i}`).join(',')})`:`SELECT COUNT(*) total FROM program_year_levels pyl JOIN academic_programs ap ON ap.id=pyl.program_id WHERE ap.school_id=:schoolId AND pyl.id IN (${p.targetIds.map((_,i)=>`:target${i}`).join(',')})`;const [owned]=await connection.execute<Array<RowDataPacket&{total:number}>>(ownershipSql,{schoolId:p.schoolId,...Object.fromEntries(p.targetIds.map((id,i)=>[`target${i}`,id]))});if(Number(owned[0]?.total)!==new Set(p.targetIds).size)throw new AssessmentWorkflowError('Every schedule target must belong to this school.');
   for(const id of [...new Set(p.targetIds)])await connection.execute(`INSERT INTO ${targetTable} (fee_schedule_id,${targetColumn}) VALUES (:scheduleId,:targetId)`,{scheduleId:s.insertId,targetId:id});
   const tuitionTypeId=await getOrCreateFeeType(connection,{schoolId:p.schoolId,schoolYearId:p.schoolYearId,code:`TUI-${s.insertId}`,name:p.tuitionName,category:'tuition',amount:p.tuitionAmount,description:'Approved schedule tuition'});
   await connection.execute(`INSERT INTO fee_schedule_items (fee_schedule_id,fee_type_id,sort_order,amount,payment_timing,due_date) VALUES (:scheduleId,:typeId,1,:amount,'installment',:dueDate)`,{scheduleId:s.insertId,typeId:tuitionTypeId,amount:p.tuitionAmount,dueDate:p.dueDate});
-  if(p.mandatoryName&&p.mandatoryAmount>0){const otherId=await getOrCreateFeeType(connection,{schoolId:p.schoolId,schoolYearId:p.schoolYearId,code:`REQ-${s.insertId}`,name:p.mandatoryName,category:'other',amount:p.mandatoryAmount,description:'Approved mandatory schedule item'});await connection.execute(`INSERT INTO fee_schedule_items (fee_schedule_id,fee_type_id,sort_order,amount,payment_timing,due_date) VALUES (:scheduleId,:typeId,2,:amount,:timing,:dueDate)`,{scheduleId:s.insertId,typeId:otherId,amount:p.mandatoryAmount,timing:p.mandatoryTiming,dueDate:p.dueDate});}
+  if(p.mandatoryName&&p.mandatoryAmount>0){const otherId=await getOrCreateFeeType(connection,{schoolId:p.schoolId,schoolYearId:p.schoolYearId,code:`REQ-${s.insertId}`,name:p.mandatoryName,category:'other',amount:p.mandatoryAmount,description:'Approved mandatory schedule item'});await connection.execute(`INSERT INTO fee_schedule_items (fee_schedule_id,fee_type_id,sort_order,amount,payment_timing,due_date) VALUES (:scheduleId,:typeId,2,:amount,:timing,:dueDate)`,{scheduleId:s.insertId,typeId:otherId,amount:p.mandatoryAmount,timing:hasPlan?p.mandatoryTiming:'upfront',dueDate:p.dueDate});}
   if(hasPlan){const [plan]=await connection.execute<ResultSetHeader>(`INSERT INTO payment_plan_templates (school_id,school_year_id,academic_period_id,name,created_by_user_id) VALUES (:schoolId,:schoolYearId,:periodId,:name,:userId)`,{schoolId:p.schoolId,schoolYearId:p.schoolYearId,periodId:p.periodId,name:p.planName,userId:p.userId});for(let i=0;i<p.termNames.length;i++)await connection.execute(`INSERT INTO payment_plan_template_terms (payment_plan_template_id,name,sort_order,percentage,due_date) VALUES (:planId,:name,:sort,:percentage,:dueDate)`,{planId:plan.insertId,name:p.termNames[i],sort:i+1,percentage:p.termPercentages[i],dueDate:p.termDates[i]});await connection.execute(`INSERT INTO fee_schedule_payment_plans (fee_schedule_id,payment_plan_template_id,is_default) VALUES (:scheduleId,:planId,TRUE)`,{scheduleId:s.insertId,planId:plan.insertId});}
   return s.insertId;
 }
@@ -273,6 +297,7 @@ type ScheduleOptionRow=RowDataPacket&{id:number;name:string;education_level:Acad
 type StudentOptionRow=RowDataPacket&{id:number;student_name:string;student_reference:string;meta:string;group_label:string;audience:AcademicAudience;target_id:number;period_id:number|null}; type CreditTypeRow=RowDataPacket&{id:number;code:string;name:string;requires_reference:number;max_amount:number|string|null;max_percent:number|string|null};
 type ScheduleTargetRow=RowDataPacket&{schedule_id:number;target_id:number;target_label:string};type AssessedScheduleRow=RowDataPacket&{student_id:number;fee_schedule_id:number};
 type NameRow=RowDataPacket&{id:number;name:string};type ProgramLevelRow=RowDataPacket&{program_id:number;program_name:string;level_id:number|null;level_name:string};type PeriodRow=RowDataPacket&{id:number;name:string;status:string;starts_on:string;ends_on:string};
+type SchoolYearBoundsRow=RowDataPacket&{starts_on:string;ends_on:string};
 type AllStudentRow=RowDataPacket&{id:number;name:string;student_reference:string};type CollegeSectionRow=RowDataPacket&{id:number;name:string;period_name:string;level_name:string};
 type ScheduleRow=RowDataPacket&{id:number;academic_period_id:number|null;updated_at:Date|string};type ScheduleItemRow=RowDataPacket&{id:number;fee_type_id:number;fee_name:string;amount:number|string;payment_timing:'upfront'|'installment';due_date:Date|string|null};type LockedSchedule=ScheduleRow&{items:ScheduleItemRow[]};
 type StudentIdRow=RowDataPacket&{id:number};type CreditRuleRow=RowDataPacket&{requires_reference:number;max_amount:number|string|null;max_percent:number|string|null};type BatchRow=RowDataPacket&{reference_number:string;posted_count:number};type PlanTermRow=RowDataPacket&{name:string;sort_order:number;percentage:number|string;due_date:Date|string};

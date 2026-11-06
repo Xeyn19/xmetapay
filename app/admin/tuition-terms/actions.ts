@@ -86,7 +86,7 @@ export async function updateTuitionAssignmentAction(formData: FormData) {
     connection = await pool.getConnection();
     await connection.beginTransaction();
     const [rows] = await connection.execute<TuitionAssignmentRow[]>(
-      `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.status, COUNT(tpt.id) AS term_count
+      `SELECT sfa.id, sfa.student_assessment_id, sfa.amount_due, sfa.amount_paid, sfa.status, COUNT(tpt.id) AS term_count
        FROM student_fee_assignments sfa
        JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
        JOIN students st ON st.id = sfa.student_id
@@ -94,7 +94,7 @@ export async function updateTuitionAssignmentAction(formData: FormData) {
        WHERE sfa.id = :assignmentId
          AND sfa.school_year_id = :schoolYearId
          AND st.school_id = :schoolId
-       GROUP BY sfa.id, sfa.amount_due, sfa.amount_paid, sfa.status
+       GROUP BY sfa.id, sfa.student_assessment_id, sfa.amount_due, sfa.amount_paid, sfa.status
        FOR UPDATE`,
       {
         assignmentId,
@@ -106,6 +106,10 @@ export async function updateTuitionAssignmentAction(formData: FormData) {
 
     if (!row) {
       throw new TuitionAssignmentError("Choose a valid tuition assignment.");
+    }
+
+    if (row.student_assessment_id) {
+      throw new TuitionAssignmentError("This tuition comes from an approved package assessment and cannot be edited as a legacy assignment.");
     }
 
     const paid = Number(row.amount_paid);
@@ -237,6 +241,7 @@ class TuitionAssignmentError extends Error {}
 
 type TuitionAssignmentRow = RowDataPacket & {
   id: number;
+  student_assessment_id: number | null;
   amount_due: number | string;
   amount_paid: number | string;
   status: string;

@@ -94,6 +94,11 @@ export type PaymentReminderHistoryRow = {
 
 export type TuitionRow = {
   assignmentId: number;
+  recordSource: "assessment" | "legacy";
+  assessmentId: number | null;
+  packageName: string | null;
+  batchReference: string | null;
+  paymentPlanName: string | null;
   student: string;
   studentReference: string;
   grade: string;
@@ -101,6 +106,7 @@ export type TuitionRow = {
   due: number;
   paid: number;
   dueDate: string | null;
+  nextDueDate: string | null;
   termStartDate: string;
   termEndDate: string | null;
   lastPayment: string;
@@ -1079,6 +1085,10 @@ async function getRecentReminderRows(
 async function getTuitionRows(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<TuitionSqlRow[]>(
     `SELECT sfa.id AS assignment_id,
+       sa.id AS assessment_id,
+       fs.name AS package_name,
+       ab.reference_number AS batch_reference,
+       ppt.name AS payment_plan_name,
        st.student_reference, st.first_name, st.middle_name, st.last_name,
        COALESCE(gl.name, 'Not enrolled') AS grade_name,
        COALESCE(sec.name, '-') AS section_name,
@@ -1091,35 +1101,58 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
          COALESCE(MAX(p.paid_at), TIMESTAMP('1000-01-01 00:00:00')),
          COALESCE(MAX(term_payment.paid_at), TIMESTAMP('1000-01-01 00:00:00'))
        ) AS last_payment_at,
-       COUNT(DISTINCT tpt.id) AS term_count,
-       COUNT(DISTINCT CASE WHEN tpt.status = 'paid' THEN tpt.id END) AS paid_term_count,
-       COUNT(DISTINCT CASE WHEN tpt.status IN ('open', 'partial') THEN tpt.id END) AS open_term_count,
-       GROUP_CONCAT(
-         DISTINCT CONCAT_WS(
-           '~',
-           tpt.id,
-           tpt.term_name,
-           tpt.amount_due,
-           tpt.amount_paid,
-           DATE_FORMAT(tpt.due_date, '%Y-%m-%d'),
-           tpt.status
+       CASE WHEN sa.id IS NOT NULL THEN (
+         SELECT COUNT(*) FROM assessment_payment_terms apt
+         WHERE apt.student_assessment_id = sa.id AND apt.status <> 'cancelled'
+       ) ELSE COUNT(DISTINCT tpt.id) END AS term_count,
+       CASE WHEN sa.id IS NOT NULL THEN (
+         SELECT COUNT(*) FROM assessment_payment_terms apt
+         WHERE apt.student_assessment_id = sa.id AND apt.status = 'paid'
+       ) ELSE COUNT(DISTINCT CASE WHEN tpt.status = 'paid' THEN tpt.id END) END AS paid_term_count,
+       CASE WHEN sa.id IS NOT NULL THEN (
+         SELECT COUNT(*) FROM assessment_payment_terms apt
+         WHERE apt.student_assessment_id = sa.id AND apt.status IN ('open', 'partial')
+       ) ELSE COUNT(DISTINCT CASE WHEN tpt.status IN ('open', 'partial') THEN tpt.id END) END AS open_term_count,
+       CASE WHEN sa.id IS NOT NULL THEN DATE_FORMAT((
+         SELECT MIN(apt.due_date) FROM assessment_payment_terms apt
+         WHERE apt.student_assessment_id = sa.id
+           AND apt.status IN ('open', 'partial')
+           AND apt.amount_due > apt.amount_paid
+       ), '%Y-%m-%d') ELSE DATE_FORMAT(MIN(CASE
+         WHEN tpt.status IN ('open', 'partial') AND tpt.amount_due > tpt.amount_paid THEN tpt.due_date
+       END), '%Y-%m-%d') END AS next_due_date,
+       CASE WHEN sa.id IS NOT NULL THEN (
+         SELECT GROUP_CONCAT(
+           CONCAT_WS('~', apt.id, apt.name, apt.amount_due, apt.amount_paid, DATE_FORMAT(apt.due_date, '%Y-%m-%d'), apt.status)
+           ORDER BY apt.sort_order ASC SEPARATOR '||'
          )
+         FROM assessment_payment_terms apt
+         WHERE apt.student_assessment_id = sa.id AND apt.status <> 'cancelled'
+       ) ELSE GROUP_CONCAT(
+         DISTINCT CONCAT_WS('~', tpt.id, tpt.term_name, tpt.amount_due, tpt.amount_paid, DATE_FORMAT(tpt.due_date, '%Y-%m-%d'), tpt.status)
          ORDER BY tpt.sort_order ASC SEPARATOR '||'
-       ) AS terms_blob
+       ) END AS terms_blob
      FROM student_fee_assignments sfa
      JOIN fee_types ft ON ft.id = sfa.fee_type_id AND ft.category = 'tuition'
      JOIN school_years sy ON sy.id = sfa.school_year_id
      JOIN students st ON st.id = sfa.student_id
+     LEFT JOIN student_assessments sa ON sa.id = sfa.student_assessment_id
+     LEFT JOIN fee_schedules fs ON fs.id = sa.fee_schedule_id
+     LEFT JOIN assessment_batches ab ON ab.id = sa.assessment_batch_id
+     LEFT JOIN payment_plan_templates ppt ON ppt.id = sa.payment_plan_template_id
      LEFT JOIN enrollments e ON e.student_id = st.id AND e.school_year_id = sfa.school_year_id
      LEFT JOIN grade_levels gl ON gl.id = e.grade_level_id
      LEFT JOIN sections sec ON sec.id = e.section_id
      LEFT JOIN payment_allocations pa ON pa.student_fee_assignment_id = sfa.id
      LEFT JOIN payments p ON p.id = pa.payment_id AND p.status = 'paid'
-     LEFT JOIN tuition_payment_terms tpt ON tpt.student_fee_assignment_id = sfa.id AND tpt.status <> 'cancelled'
+     LEFT JOIN tuition_payment_terms tpt ON tpt.student_fee_assignment_id = sfa.id
+       AND sfa.student_assessment_id IS NULL
+       AND tpt.status <> 'cancelled'
      LEFT JOIN payment_term_allocations pta ON pta.tuition_payment_term_id = tpt.id
      LEFT JOIN payments term_payment ON term_payment.id = pta.payment_id AND term_payment.status = 'paid'
      WHERE st.school_id = :schoolId AND sfa.school_year_id = :schoolYearId
-     GROUP BY sfa.id, st.student_reference, st.first_name, st.middle_name, st.last_name, gl.name, sec.name,
+     GROUP BY sfa.id, sa.id, fs.name, ab.reference_number, ppt.name,
+       st.student_reference, st.first_name, st.middle_name, st.last_name, gl.name, sec.name,
        sfa.amount_due, sfa.amount_paid, sfa.due_date, sy.starts_on, sfa.status
      ORDER BY gl.sort_order ASC, st.last_name ASC, st.first_name ASC`,
     { schoolId, schoolYearId },
@@ -1127,6 +1160,11 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
 
   return rows.map((row) => ({
     assignmentId: row.assignment_id,
+    recordSource: row.assessment_id ? "assessment" as const : "legacy" as const,
+    assessmentId: row.assessment_id ?? null,
+    packageName: row.package_name ?? null,
+    batchReference: row.batch_reference ?? null,
+    paymentPlanName: row.payment_plan_name ?? null,
     student: fullName(row.first_name, row.middle_name, row.last_name),
     studentReference: row.student_reference,
     grade: row.grade_name,
@@ -1134,6 +1172,7 @@ async function getTuitionRows(schoolId: number, schoolYearId: number) {
     due: decimalValue(row.amount_due),
     paid: decimalValue(row.amount_paid),
     dueDate: row.due_date,
+    nextDueDate: row.next_due_date,
     termStartDate: row.term_start_date,
     termEndDate: row.term_end_date,
     lastPayment: validLastPayment(row.last_payment_at) ? formatDateTime(row.last_payment_at) : "Pending",
@@ -1773,6 +1812,10 @@ type ReminderHistoryRow = RowDataPacket & {
 
 type TuitionSqlRow = RowDataPacket & {
   assignment_id: number;
+  assessment_id: number | null;
+  package_name: string | null;
+  batch_reference: string | null;
+  payment_plan_name: string | null;
   student_reference: string;
   first_name: string;
   middle_name: string | null;
@@ -1782,6 +1825,7 @@ type TuitionSqlRow = RowDataPacket & {
   amount_due: number | string;
   amount_paid: number | string;
   due_date: string | null;
+  next_due_date: string | null;
   term_start_date: string;
   term_end_date: string | null;
   status: string;

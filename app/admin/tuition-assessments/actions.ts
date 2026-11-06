@@ -23,6 +23,7 @@ const initialError = (error: unknown): AssessmentActionState => ({
   status: "error",
   title: "Unable to continue",
   message: error instanceof AssessmentWorkflowError ? error.message : "The request could not be completed. No financial records were changed.",
+  field: error instanceof AssessmentWorkflowError ? error.field : undefined,
 });
 
 export async function assessmentWizardAction(_previous: AssessmentActionState, formData: FormData): Promise<AssessmentActionState> {
@@ -53,7 +54,7 @@ export async function assessmentWizardAction(_previous: AssessmentActionState, f
     }
     const preview = await previewAssessment(connection, request);
     await connection.rollback();
-    return { status: "preview", title: "Review before posting", message: "No charges have been posted yet.", preview };
+    return { status: "preview", title: "Preview ready", message: "Review the totals below. No charges have been posted yet.", preview, submissionToken: randomUUID() };
   } catch (error) {
     await connection.rollback();
     return initialError(error);
