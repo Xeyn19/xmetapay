@@ -37,9 +37,6 @@ export default async function CollectionsPage() {
         icon={CreditCard}
         bodyClassName="p-0"
       >
-        <div className="border-b border-border bg-muted/35 px-4 py-3 text-xs leading-5 text-muted-foreground sm:px-[18px]">
-          Archiving only organizes this Admin view. It never deletes, reverses, or changes a payment, receipt, allocation, or student balance.
-        </div>
         <CollectionsTable
           key={`${data.activeRows.map((row) => row.paymentId).join("-")}|${data.archivedRows.map((row) => row.paymentId).join("-")}`}
           activeRows={data.activeRows}

@@ -31,7 +31,7 @@ test("tuition collection helper scopes through fee and term allocations", () => 
 test("tuition payments page and exports use the shared tuition reader", () => {
   assert.match(page, /getAdminCollectionsPageRealData/);
   assert.match(page, /Tuition payment history/);
-  assert.match(table, /Search student, payment reference, or tuition term/);
+  assert.match(table, /Search payments\.\.\./);
   assert.match(table, /No tuition payment records yet/);
   assert.match(reports, /getTuitionCollectionRows/);
   assert.match(reports, /Tuition payments report/);
@@ -72,8 +72,11 @@ test("tuition payments table switches archive views locally and preserves contro
   assert.match(table, /Active payments/);
   assert.match(table, /Archived payments/);
   assert.doesNotMatch(table, /href=.*collectionView/);
-  assert.match(table, /Select visible/);
-  assert.match(table, /Clear selection/);
+  assert.match(table, /aria-label="Select all visible payments"/);
+  assert.match(table, /selectAllVisibleRef\.current\.indeterminate/);
+  assert.doesNotMatch(table, /> Select visible/);
+  assert.match(table, /validSelectedIds\.length > 0/);
+  assert.match(table, /<X className="size-4" \/> Clear/);
   assert.match(table, /const operationLabel = view === "archived" \? "Restore" : "Archive"/);
   assert.match(table, /\{operationLabel\} selected/);
   assert.match(table, /role="alertdialog"/);
@@ -82,6 +85,8 @@ test("tuition payments table switches archive views locally and preserves contro
   assert.match(table, /admin-collections-archived\.xlsx/);
   assert.match(table, /worksheetName: view === "archived" \? "Archived payments" : "Active payments"/);
   assert.match(table, /exportLabel="Export Excel"/);
+  assert.match(table, /layout="compact"/);
+  assert.match(table, /activeFilterCount=\{activeFilterCount\}/);
   assert.doesNotMatch(table, /exportRowsToCsv|admin-collections-(?:active|archived)\.csv/);
   assert.match(table, /exportRowsToPdf/);
   assert.match(table, /schoolName/);

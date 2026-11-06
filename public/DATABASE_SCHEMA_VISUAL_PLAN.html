@@ -349,7 +349,7 @@
             <tr>
               <td>Payments</td>
               <td><code>payments</code>, <code>parent_payment_history_archives</code>, <code>payment_allocations</code>, <code>payment_term_allocations</code>, <code>receipts</code></td>
-              <td>Payment records, allocations, receipts, and parent-specific history visibility. The Admin <strong>Tuition payments</strong> view presents individual transactions, references, channels, statuses, and the existing archive metadata; archiving only organizes the Admin view and never deletes, reverses, or changes a payment. Parent <code>deleted_at</code> starts a database-timed 30-day recovery window; expired tombstones remain visible as Permanently hidden while financial and audit history stays unchanged.</td>
+              <td>Payment records, allocations, receipts, and parent-specific history visibility. The Admin <strong>Tuition payments</strong> view presents individual transactions, references, channels, statuses, and existing archive metadata through a compact search/filter/export toolbar with contextual selection actions. This is presentation-only: archiving organizes the Admin view and never deletes, reverses, or changes a payment, and no schema migration is required. Parent <code>deleted_at</code> starts a database-timed 30-day recovery window; expired tombstones remain visible as Permanently hidden while financial and audit history stays unchanged.</td>
             </tr>
             <tr>
               <td>Wallet</td>
