@@ -243,6 +243,8 @@ export function CollectionsTable({
               exportDisabled={filteredRows.length === 0}
               layout="compact"
               activeFilterCount={activeFilterCount}
+              filterTitle="Filter payments"
+              filterDescription="Narrow the payment history by processing status or payment channel."
             />
           </div>
         </div>

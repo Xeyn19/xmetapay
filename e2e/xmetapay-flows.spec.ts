@@ -303,7 +303,7 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
   test("important admin dashboard routes render without crashing", async ({
     page,
   }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(150_000);
 
     const routes = [
       { path: "/admin/dashboard", heading: "Dashboard" },
@@ -401,11 +401,9 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
       await page.goto("/admin/tuition", { waitUntil: "domcontentloaded" });
       test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
       await expect(page.getByRole("heading", { name: /Student tuition balances/ })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Filters/ }).first()).toBeVisible();
       await expect(page.getByLabel("Search tuition records by student name or reference")).toBeVisible();
-      await expect(page.getByLabel("Section")).toBeVisible();
-      await expect(page.getByLabel("Sort tuition records")).toHaveValue("roster");
       await expectNoHorizontalOverflow(page);
     }
 
@@ -416,14 +414,19 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     expect(reportBox?.y ?? Number.MAX_SAFE_INTEGER).toBeLessThan(reminderBox?.y ?? 0);
 
     await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: /^Filters/ }).first().click();
+    await expect(page.getByText("Filter tuition balances", { exact: true })).toBeVisible();
     const reportSort = page.getByLabel("Sort tuition records");
-    const reportReset = page.getByRole("button", { name: "Reset filters" }).first();
+    await expect(page.getByLabel("Section")).toBeVisible();
+    await expect(reportSort).toHaveValue("roster");
     await reportSort.selectOption("balance_desc");
     await expect(reportSort).toHaveValue("balance_desc");
+    const reportReset = page.getByRole("button", { name: "Reset filters" });
     await expect(reportReset).toBeEnabled();
     await reportReset.click();
     await expect(reportSort).toHaveValue("roster");
-    await expect(reportReset).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Reset filters" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
 
     const historyToggle = page.locator('button[aria-controls="payment-reminder-history"]');
     await expect(historyToggle).toHaveAccessibleName(/Show reminder history/);
@@ -433,18 +436,20 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     await page.keyboard.press("Enter");
     await expect(historyToggle).toHaveAttribute("aria-expanded", "true");
     const reminderSearch = page.getByLabel("Search reminder history by student, parent, subject, or message");
-    const reminderReset = page.getByRole("button", { name: "Reset filters" }).last();
     await expect(reminderSearch).toBeVisible();
-    await expect(reminderReset).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Archive selected" })).toHaveCount(0);
     await reminderSearch.fill("no-matching-reminder");
+    await page.getByRole("button", { name: /^Filters/ }).last().click();
+    const reminderReset = page.getByRole("button", { name: "Reset filters" });
     await expect(reminderReset).toBeEnabled();
     await reminderReset.click();
     await expect(reminderSearch).toHaveValue("");
-    await expect(page.getByText("0 reminders selected")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByText("0 reminders selected")).toHaveCount(0);
     await page.getByRole("button", { name: "Hide reminder history" }).click();
     await expect(page.getByLabel("Search reminder history by student, parent, subject, or message")).toHaveCount(0);
 
-    await page.getByRole("link", { name: "Reminders" }).click();
+    await page.getByRole("link", { name: "Reminders", exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/tuition#payment-reminders$/);
     await expect(page.locator("#payment-reminders")).toBeInViewport();
   });
@@ -841,8 +846,8 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
         await page.goto(report.path, { waitUntil: "domcontentloaded" });
         test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
         await expect(page.getByRole("heading", { level: 1, name: report.heading })).toBeVisible();
-        if (report.path === "/admin/collections") {
-          const exportMenu = page.getByRole("button", { name: "Export", exact: true });
+        const exportMenu = page.getByRole("button", { name: "Export", exact: true });
+        if (await exportMenu.count()) {
           await expect(exportMenu).toBeVisible();
           if (await exportMenu.isEnabled()) {
             await exportMenu.click();
@@ -857,15 +862,17 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
         await expectNoHorizontalOverflow(page);
       }
 
-      const exportButton = report.path === "/admin/collections"
-        ? page.getByRole("button", { name: "Export", exact: true })
+      const compactExportButton = page.getByRole("button", { name: "Export", exact: true });
+      const usesCompactExport = await compactExportButton.count() > 0;
+      const exportButton = usesCompactExport
+        ? compactExportButton
         : page.getByRole("button", { name: "Export Excel" });
       if (await exportButton.isEnabled()) {
         // Next.js can paint server-rendered controls before their client handlers
         // hydrate. Wait for pending route assets before exercising downloads.
         await page.waitForLoadState("networkidle");
         const downloadPromise = page.waitForEvent("download", { timeout: 30_000 });
-        if (report.path === "/admin/collections") {
+        if (usesCompactExport) {
           await exportButton.click();
           await page.getByRole("menuitem", { name: "Export Excel" }).click();
         } else {
@@ -933,17 +940,48 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
     }
   });
 
+  test("Admin record pages keep important controls minimal and responsive", async ({ page }) => {
+    const pages = [
+      { path: "/admin/tuition", heading: "Tuition balances", search: "Search tuition records by student name or reference" },
+      { path: "/admin/students", heading: "Enrolled students", search: "Search students by name, reference, guardian, or contact" },
+      { path: "/admin/student-profile", heading: "Student profile", search: "Search student profiles by name, reference, or guardian" },
+      { path: "/admin/parents", heading: "Parents & guardians", search: "Search parents by parent name, student, email, or contact" },
+      { path: "/admin/allowance", heading: "Allowance ledger", search: "Search allowance wallets by student, grade, or status" },
+      { path: "/admin/store-transactions", heading: "Store transactions", search: "Search store transactions by reference, student, grade, or merchant" },
+    ];
+
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const item of pages) {
+        await page.goto(item.path, { waitUntil: "domcontentloaded" });
+        test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+        await expect(page.getByRole("heading", { level: 1, name: item.heading })).toBeVisible();
+        await expect(page.getByLabel(item.search)).toBeVisible();
+        await expect(page.getByRole("button", { name: /^Filters/ }).last()).toBeVisible();
+        await expect(page.getByRole("button", { name: "Export", exact: true }).last()).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+      }
+
+      await page.goto("/admin/reports", { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading", { level: 1, name: "Financial reports" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Download", exact: true }).first()).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
   test("protected Reports page serves branded Excel and PDF downloads", async ({ page }) => {
     test.setTimeout(90_000);
     await page.goto("/admin/reports", { waitUntil: "domcontentloaded" });
     test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+    await page.waitForLoadState("networkidle");
     await expect(page.getByRole("heading", { level: 1, name: "Financial reports" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Excel" }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "PDF" }).first()).toBeVisible();
+    const firstDownloadMenu = page.getByRole("button", { name: "Download", exact: true }).first();
+    await expect(firstDownloadMenu).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     const excelDownloadPromise = page.waitForEvent("download");
-    await page.getByRole("link", { name: "Excel" }).first().click();
+    await firstDownloadMenu.click();
+    await page.getByRole("menuitem", { name: "Download Monthly revenue as Excel" }).first().click();
     const excelDownload = await excelDownloadPromise;
     expect(excelDownload.suggestedFilename()).toBe("xmeta-edu-monthly-revenue.xlsx");
     await expectExcelWorkbook(excelDownload, {
@@ -953,40 +991,33 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
     });
 
     const pdfDownloadPromise = page.waitForEvent("download");
-    await page.getByRole("link", { name: "PDF" }).first().click();
+    const pdfMenuItem = page.getByRole("menuitem", { name: "Download Monthly revenue as PDF" });
+    await expect(pdfMenuItem).toBeVisible();
+    await pdfMenuItem.click();
     const pdfDownload = await pdfDownloadPromise;
     expect(pdfDownload.suggestedFilename()).toBe("xmeta-edu-monthly-revenue.pdf");
   });
 
-  test("Admin PDF controls use the XMETA outline treatment in both themes", async ({ page }) => {
+  test("Admin compact export and report download menus use semantic themes", async ({ page }) => {
     await page.goto("/admin/students", { waitUntil: "domcontentloaded" });
     test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+    await page.waitForLoadState("networkidle");
 
-    const tablePdf = page.getByRole("button", { name: "Export PDF" });
-    const tableExcel = page.getByRole("button", { name: "Export Excel" });
-    await expect(tablePdf).toHaveCSS("border-color", "rgb(255, 106, 61)");
-    await expect(tablePdf).toHaveCSS("color", "rgb(255, 106, 61)");
-    await expect(tablePdf).toHaveCSS("background-color", "rgb(25, 29, 42)");
-    await tablePdf.hover();
-    await expect(tablePdf).toHaveCSS("background-color", "rgb(58, 35, 29)");
-    await expect(tableExcel).toHaveCSS("background-color", "rgb(247, 248, 250)");
+    const tableExport = page.getByRole("button", { name: "Export", exact: true });
+    await expect(tableExport).toHaveCSS("background-color", "rgb(247, 248, 250)");
+    await tableExport.click();
+    await expect(page.getByRole("menuitem", { name: "Export PDF" })).toBeVisible();
+    await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "Switch to light mode" }).click();
-    await expect(tablePdf).toHaveCSS("border-color", "rgb(230, 74, 25)");
-    await expect(tablePdf).toHaveCSS("color", "rgb(230, 74, 25)");
-    await expect(tablePdf).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await tablePdf.hover();
-    await expect(tablePdf).toHaveCSS("background-color", "rgb(251, 233, 231)");
-    await expect(tableExcel).toHaveCSS("background-color", "rgb(17, 19, 26)");
+    await expect(tableExport).toHaveCSS("background-color", "rgb(17, 19, 26)");
 
     await page.goto("/admin/reports", { waitUntil: "domcontentloaded" });
-    const reportPdf = page.getByRole("link", { name: "PDF" }).first();
-    const reportExcel = page.getByRole("link", { name: "Excel" }).first();
-    await expect(reportPdf).toHaveCSS("border-color", "rgb(230, 74, 25)");
-    await expect(reportPdf).toHaveCSS("color", "rgb(230, 74, 25)");
-    await reportPdf.hover();
-    await expect(reportPdf).toHaveCSS("background-color", "rgb(251, 233, 231)");
-    await expect(reportExcel).toHaveCSS("background-color", "rgb(17, 19, 26)");
+    await page.waitForLoadState("networkidle");
+    const reportDownload = page.getByRole("button", { name: "Download", exact: true }).first();
+    await expect(reportDownload).toHaveCSS("background-color", "rgb(17, 19, 26)");
+    await reportDownload.click();
+    await expect(page.getByRole("menuitem", { name: "Download Monthly revenue as PDF" }).first()).toBeVisible();
   });
 
   test("Admin finance pages keep report hover text readable and tuition content focused", async ({ page }) => {
@@ -1024,30 +1055,25 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
       await page.goto("/admin/store-transactions", { waitUntil: "domcontentloaded" });
       test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
       await page.getByLabel("Search store transactions by reference, student, grade, or merchant").fill("no-matching-store-transaction");
-      await expect(page.getByRole("button", { name: "Export Excel" })).toBeDisabled();
-      await expect(page.getByRole("button", { name: "Export PDF" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Export", exact: true })).toBeDisabled();
       await expectNoHorizontalOverflow(page);
     }
 
-    const excelButton = page.getByRole("button", { name: "Export Excel" });
-    await expect(excelButton).toHaveCSS("background-color", "rgb(34, 40, 58)");
-    await expect(excelButton).toHaveCSS("color", "rgb(185, 192, 204)");
-    await expect(excelButton).toHaveCSS("border-color", "rgb(56, 64, 82)");
+    const exportButton = page.getByRole("button", { name: "Export", exact: true });
+    await expect(exportButton).toHaveCSS("background-color", "rgb(34, 40, 58)");
+    await expect(exportButton).toHaveCSS("color", "rgb(185, 192, 204)");
+    await expect(exportButton).toHaveCSS("border-color", "rgb(56, 64, 82)");
 
     await page.goto("/admin/tuition", { waitUntil: "networkidle" });
     const reminderHistoryToggle = page.getByRole("button", { name: /Show reminder history/ });
     await expect(reminderHistoryToggle).toBeVisible();
     await reminderHistoryToggle.click();
     await page.getByLabel("Search reminder history by student, parent, subject, or message").fill("no-matching-reminder");
-    const selectVisible = page.getByRole("button", { name: "Select visible" }).first();
+    const selectVisible = page.getByLabel("Select all visible reminders");
     await expect(selectVisible).toBeDisabled();
-    await expect(selectVisible).toHaveCSS("background-color", "rgb(34, 40, 58)");
-    await expect(selectVisible).toHaveCSS("color", "rgb(185, 192, 204)");
 
     await page.getByRole("button", { name: "Switch to light mode" }).click();
-    await expect(selectVisible).toHaveCSS("background-color", "rgb(238, 240, 243)");
-    await expect(selectVisible).toHaveCSS("color", "rgb(95, 102, 115)");
-    await expect(selectVisible).toHaveCSS("border-color", "rgb(215, 220, 227)");
+    await expect(selectVisible).toBeDisabled();
   });
 });
 

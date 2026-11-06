@@ -69,6 +69,7 @@ export function AdminStudentProfileSelector({ students, schoolName, schoolYearNa
     `${query}|${grade}|${section}|${enrollmentStatus}|${guardianStatus}`,
   );
   const hasActiveFilters = query.trim() !== "" || grade !== "all" || section !== "all" || enrollmentStatus !== "all" || guardianStatus !== "all";
+  const activeFilterCount = [grade, section, enrollmentStatus, guardianStatus].filter((value) => value !== "all").length;
   const resetFilters = () => {
     setQuery("");
     setGrade("all");
@@ -146,8 +147,11 @@ export function AdminStudentProfileSelector({ students, schoolName, schoolYearNa
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredStudents.length === 0}
+          layout="compact"
+          activeFilterCount={activeFilterCount}
+          filterTitle="Filter student profiles"
+          filterDescription="Narrow profiles by placement, enrollment, or guardian connection."
         />
-        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredStudents.length}</strong> {filteredStudents.length === 1 ? "student" : "students"} shown</p>
       </div>
       <AdminTable
         headers={[

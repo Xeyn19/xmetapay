@@ -1,9 +1,8 @@
-import { BarChart3, Download, FileText } from "lucide-react";
+import { BarChart3, FileText } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminReportsPageRealData } from "@/lib/admin/real-data";
-import { cn } from "@/lib/utils";
 
 import {
   AlertBanner,
@@ -12,6 +11,7 @@ import {
   KpiCard,
   KpiGrid,
 } from "../../_components/admin-ui";
+import { ReportDownloadMenu } from "./report-download-menu";
 
 export default async function ReportsPage() {
   const session = await requireRole("admin");
@@ -47,10 +47,7 @@ export default async function ReportsPage() {
                       <div className="mt-0.5 text-[11px] text-muted-foreground">{report.desc}</div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <ReportDownloadLink href={report.excelHref} format="excel">Excel</ReportDownloadLink>
-                    <ReportDownloadLink href={report.pdfHref} format="pdf">PDF</ReportDownloadLink>
-                  </div>
+                  <ReportDownloadMenu excelHref={report.excelHref} pdfHref={report.pdfHref} reportName={report.name} />
                 </div>
               );
             })}
@@ -60,12 +57,7 @@ export default async function ReportsPage() {
         <DashboardCard
           title="Monthly revenue trend"
           icon={BarChart3}
-          action={
-            <div className="flex flex-wrap gap-2">
-              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=xlsx" format="excel">Excel</ReportDownloadLink>
-              <ReportDownloadLink href="/admin/reports/export?type=monthly-revenue&format=pdf" format="pdf">PDF</ReportDownloadLink>
-            </div>
-          }
+          action={<ReportDownloadMenu excelHref="/admin/reports/export?type=monthly-revenue&format=xlsx" pdfHref="/admin/reports/export?type=monthly-revenue&format=pdf" reportName="Monthly revenue" />}
         >
           {data.monthlyRevenue.length > 0 ? (
             <BarList rows={data.monthlyRevenue} />
@@ -81,31 +73,6 @@ export default async function ReportsPage() {
         </DashboardCard>
       </div>
     </>
-  );
-}
-
-function ReportDownloadLink({
-  href,
-  format,
-  children,
-}: {
-  href: string;
-  format: "excel" | "pdf";
-  children: string;
-}) {
-  return (
-    <a
-      href={href}
-      className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-3.5 text-[12.5px] font-semibold transition focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",
-        format === "pdf"
-          ? "border-primary bg-card text-primary hover:bg-button-soft hover:text-primary"
-          : "border-button-secondary bg-button-secondary text-button-secondary-foreground hover:bg-button-secondary-hover",
-      )}
-    >
-      <Download className="size-4" />
-      {children}
-    </a>
   );
 }
 

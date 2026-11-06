@@ -92,6 +92,7 @@ test("reminder filters clear hidden selections and keep filter reset separate", 
   assert.match(history, /const changeStatus = \(value: string\)[\s\S]*setSelectedIds\(\[\]\)[\s\S]*setConfirmationIds\(\[\]\)/);
   assert.match(history, /Search reminder history by student, parent, subject, or message/);
   assert.match(history, /Reset filters/);
-  assert.match(history, /Clear selection/);
-  assert.match(history, /Select visible/);
+  assert.match(history, /aria-label="Select all visible reminders"/);
+  assert.match(history, /selectedIds\.length > 0/);
+  assert.match(history, /> Clear/);
 });

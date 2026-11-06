@@ -33,6 +33,7 @@ export function ParentsTable({ rows, schoolName, schoolYearName }: { rows: Admin
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${relationship}|${status}`);
   const hasActiveFilters = query.trim() !== "" || relationship !== "all" || status !== "all";
+  const activeFilterCount = [relationship, status].filter((value) => value !== "all").length;
   const resetFilters = () => {
     setQuery("");
     setRelationship("all");
@@ -81,8 +82,11 @@ export function ParentsTable({ rows, schoolName, schoolYearName }: { rows: Admin
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
+          layout="compact"
+          activeFilterCount={activeFilterCount}
+          filterTitle="Filter parent contacts"
+          filterDescription="Narrow the directory by relationship or connection status."
         />
-        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredRows.length}</strong> {filteredRows.length === 1 ? "contact" : "contacts"} shown</p>
       </div>
       <AdminTable
         headers={[

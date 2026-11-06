@@ -22,6 +22,7 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
   const pagination = usePaginatedRows(filteredRows, `${query}|${status}`);
   const pendingCount = rows.filter((row) => row.status === "Pending approval").length;
   const hasActiveFilters = query.trim() !== "" || status !== "all";
+  const activeFilterCount = status === "all" ? 0 : 1;
   const resetFilters = () => {
     setQuery("");
     setStatus("all");
@@ -42,8 +43,11 @@ export function RegistrationRequestsTable({ rows }: { rows: ParentRegistrationRe
           onClear={resetFilters}
           clearLabel="Reset filters"
           clearDisabled={!hasActiveFilters}
+          layout="compact"
+          activeFilterCount={activeFilterCount}
+          filterTitle="Filter registration requests"
+          filterDescription="Narrow the review queue by registration status."
         />
-        <p className="text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredRows.length}</strong> {filteredRows.length === 1 ? "request" : "requests"} shown</p>
       </div>
       <p className="px-4 py-2 text-[11px] text-muted-foreground sm:hidden">Swipe the table to see status and review actions.</p>
       <AdminTable headers={[

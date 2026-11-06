@@ -34,6 +34,7 @@ export function StudentsTable({ students, schoolName, schoolYearName }: { studen
   );
   const pagination = usePaginatedRows(filteredStudents, `${query}|${grade}|${status}`);
   const hasActiveFilters = query.trim() !== "" || grade !== "all" || status !== "all";
+  const activeFilterCount = [grade, status].filter((value) => value !== "all").length;
   const resetFilters = () => {
     setQuery("");
     setGrade("all");
@@ -81,8 +82,11 @@ export function StudentsTable({ students, schoolName, schoolYearName }: { studen
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredStudents.length === 0}
+          layout="compact"
+          activeFilterCount={activeFilterCount}
+          filterTitle="Filter students"
+          filterDescription="Narrow the registry by grade or enrollment status."
         />
-        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredStudents.length}</strong> {filteredStudents.length === 1 ? "student" : "students"} shown</p>
       </div>
       <AdminTable
         headers={[

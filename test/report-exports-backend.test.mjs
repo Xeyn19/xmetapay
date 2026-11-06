@@ -5,6 +5,7 @@ import test from "node:test";
 const reportExportsPath = "lib/admin/report-exports.ts";
 const reportRoutePath = "app/admin/(dashboard)/reports/export/route.ts";
 const reportsPagePath = "app/admin/(dashboard)/reports/page.tsx";
+const reportDownloadMenuPath = "app/admin/(dashboard)/reports/report-download-menu.tsx";
 const adminRealDataPath = "lib/admin/real-data.ts";
 const packageJsonPath = "package.json";
 const checklistPath = "docs/CHECKLIST.md";
@@ -83,18 +84,19 @@ test("jspdf is installed for PDF exports", () => {
 
 test("admin reports page links to branded Excel and PDF while the route retains CSV compatibility", () => {
   const page = readFileSync(reportsPagePath, "utf8");
+  const downloadMenu = readFileSync(reportDownloadMenuPath, "utf8");
   const realData = readFileSync(adminRealDataPath, "utf8");
 
-  assert.match(page, /ReportDownloadLink/);
+  assert.match(page, /ReportDownloadMenu/);
   assert.match(page, /\/admin\/reports\/export\?type=monthly-revenue&format=xlsx/);
   assert.match(page, /\/admin\/reports\/export\?type=monthly-revenue&format=pdf/);
-  assert.match(page, /href=\{report\.excelHref\}/);
-  assert.match(page, /href=\{report\.pdfHref\}/);
-  assert.match(page, /format="excel">Excel/);
-  assert.match(page, /format="pdf">PDF/);
-  assert.match(page, /format === "pdf"/);
-  assert.match(page, /border-primary bg-card text-primary hover:bg-button-soft hover:text-primary/);
-  assert.match(page, /border-button-secondary bg-button-secondary text-button-secondary-foreground hover:bg-button-secondary-hover/);
+  assert.match(page, /excelHref=\{report\.excelHref\}/);
+  assert.match(page, /pdfHref=\{report\.pdfHref\}/);
+  assert.match(downloadMenu, /Menu\.LinkItem/);
+  assert.match(downloadMenu, /href=\{excelHref\}/);
+  assert.match(downloadMenu, /href=\{pdfHref\}/);
+  assert.match(downloadMenu, />\s*Excel\s*</);
+  assert.match(downloadMenu, />\s*PDF\s*</);
   assert.doesNotMatch(page, /Export pending/);
   assert.match(realData, /function reportDownloads/);
   assert.match(realData, /excelHref: "\/admin\/reports\/export\?type=collections&format=xlsx"/);

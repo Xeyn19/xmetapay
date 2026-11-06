@@ -226,8 +226,9 @@ test("payment reminder history supports reversible row and bulk archive", () => 
   assert.match(realData, /nl\.archived_at IS NULL/);
   assert.match(historyTable, /Active reminders/);
   assert.match(historyTable, /Archived reminders/);
-  assert.match(historyTable, /Select visible/);
-  assert.match(historyTable, /Clear selection/);
+  assert.match(historyTable, /aria-label="Select all visible reminders"/);
+  assert.match(historyTable, /selectedIds\.length > 0/);
+  assert.match(historyTable, /> Clear/);
   assert.match(historyTable, /const operationLabel = view === "archived" \? "Restore" : "Archive"/);
   assert.match(historyTable, /\{operationLabel\} selected/);
   assert.match(historyTable, /type="checkbox"/);

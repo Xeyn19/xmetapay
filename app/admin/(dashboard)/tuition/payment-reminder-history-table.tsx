@@ -1,10 +1,10 @@
 "use client";
 
 import { startTransition, useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Archive, ArchiveRestore, CheckSquare, Eye, Search, X } from "lucide-react";
+import { Archive, ArchiveRestore, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { DashboardTablePagination, filterByQuery, usePaginatedRows } from "@/app/_components/table-controls";
+import { DashboardTableControls, DashboardTablePagination, filterByQuery, usePaginatedRows } from "@/app/_components/table-controls";
 import {
   archivePaymentRemindersAction,
   restorePaymentRemindersAction,
@@ -41,6 +41,7 @@ export function PaymentReminderHistoryTable({
   const [confirmationIds, setConfirmationIds] = useState<number[]>([]);
   const [viewingRow, setViewingRow] = useState<PaymentReminderHistoryRow | null>(null);
   const viewTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const selectAllVisibleRef = useRef<HTMLInputElement>(null);
   const filteredRows = useMemo(() => {
     const searchedRows = filterByQuery(rows, query, (row) => [
       row.student,
@@ -63,6 +64,7 @@ export function PaymentReminderHistoryTable({
   const pageIds = pagination.pageRows.map((row) => row.notificationId);
   const selectedSet = new Set(selectedIds);
   const allPageRowsSelected = pageIds.length > 0 && pageIds.every((id) => selectedSet.has(id));
+  const somePageRowsSelected = pageIds.some((id) => selectedSet.has(id));
 
   useEffect(() => {
     if (actionState.status === "idle") return;
@@ -89,8 +91,10 @@ export function PaymentReminderHistoryTable({
       ? current.filter((id) => id !== notificationId)
       : [...current, notificationId]);
   };
-  const selectVisible = () => {
-    setSelectedIds((current) => [...new Set([...current, ...pageIds])]);
+  const toggleVisible = () => {
+    setSelectedIds((current) => allPageRowsSelected
+      ? current.filter((id) => !pageIds.includes(id))
+      : [...new Set([...current, ...pageIds])]);
   };
   const changeQuery = (value: string) => {
     setQuery(value);
@@ -127,12 +131,18 @@ export function PaymentReminderHistoryTable({
   const hasFilters = query.trim().length > 0 || status !== "all";
   const operationLabel = view === "archived" ? "Restore" : "Archive";
 
+  useEffect(() => {
+    if (selectAllVisibleRef.current) {
+      selectAllVisibleRef.current.indeterminate = somePageRowsSelected && !allPageRowsSelected;
+    }
+  }, [allPageRowsSelected, somePageRowsSelected]);
+
   return (
     <>
-      <div className="flex flex-col gap-3 border-b border-border px-4 py-3.5 sm:px-[18px]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col gap-2 border-b border-border px-4 py-3.5 sm:px-[18px]">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div
-            className="inline-flex min-h-11 rounded-lg border border-border bg-muted p-1"
+            className="inline-flex min-h-11 shrink-0 rounded-lg border border-border bg-muted p-1"
             role="tablist"
             aria-label="Payment reminder history view"
           >
@@ -155,57 +165,76 @@ export function PaymentReminderHistoryTable({
               Archived reminders
             </button>
           </div>
-          <div className="text-[11.5px] text-muted-foreground" aria-live="polite">
-            {selectedIds.length} {selectedIds.length === 1 ? "reminder" : "reminders"} selected
+          <div className="min-w-0 flex-1">
+            <DashboardTableControls
+              query={query}
+              onQueryChange={changeQuery}
+              searchPlaceholder="Search reminder history..."
+              searchLabel="Search reminder history by student, parent, subject, or message"
+              filters={[
+                {
+                  label: "Reminder status",
+                  value: status,
+                  onChange: changeStatus,
+                  options: [
+                    { label: "All statuses", value: "all" },
+                    { label: "Sent", value: "sent" },
+                    { label: "Queued", value: "queued" },
+                    { label: "Failed", value: "failed" },
+                  ],
+                },
+              ]}
+              onClear={resetFilters}
+              clearLabel="Reset filters"
+              clearDisabled={!hasFilters}
+              layout="compact"
+              activeFilterCount={status === "all" ? 0 : 1}
+              filterTitle="Filter reminder history"
+              filterDescription="Narrow delivery history by reminder status."
+            />
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 sm:max-w-[320px]">
-            <Search className="size-4 shrink-0 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(event) => changeQuery(event.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-[12.5px] text-foreground outline-none placeholder:text-muted-foreground"
-              placeholder="Search student, parent, subject, or message..."
-              aria-label="Search reminder history by student, parent, subject, or message"
-            />
-          </label>
-          <select
-            value={status}
-            onChange={(event) => changeStatus(event.target.value)}
-            className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-[12.5px] text-foreground outline-none focus:border-primary focus:ring-3 focus:ring-primary/10 sm:w-auto"
-            aria-label="Filter reminder status"
-          >
-            <option value="all">All statuses</option>
-            <option value="sent">Sent</option>
-            <option value="queued">Queued</option>
-            <option value="failed">Failed</option>
-          </select>
-          <button type="button" onClick={resetFilters} disabled={!hasFilters} className={secondaryButtonClass}>
-            <X className="size-4" /> Reset filters
-          </button>
-          <button type="button" onClick={selectVisible} disabled={pageIds.length === 0 || allPageRowsSelected} className={secondaryButtonClass}>
-            <CheckSquare className="size-4" /> Select visible
-          </button>
-          <button type="button" onClick={() => setSelectedIds([])} disabled={selectedIds.length === 0} className={secondaryButtonClass}>
-            <X className="size-4" /> Clear selection
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmationIds(selectedIds)}
-            disabled={selectedIds.length === 0 || pending}
-            className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-button-secondary bg-button-secondary px-3.5 text-[12.5px] font-semibold text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 sm:w-auto", readableDisabledControlClass)}
-          >
-            {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-            {operationLabel} selected
-          </button>
-        </div>
+        {selectedIds.length > 0 ? (
+          <div className="flex flex-col gap-2 rounded-lg border border-primary/20 bg-button-soft px-3 py-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <span className="text-xs font-semibold text-foreground" aria-live="polite">
+              {selectedIds.length} {selectedIds.length === 1 ? "reminder" : "reminders"} selected
+            </span>
+            <div className="flex flex-col gap-2 min-[420px]:flex-row">
+              <button type="button" onClick={() => setSelectedIds([])} className={secondaryButtonClass}>
+                <X className="size-4" /> Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmationIds(selectedIds)}
+                disabled={pending}
+                className={cn("inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-button-secondary bg-button-secondary px-3.5 text-[12.5px] font-semibold text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25 sm:w-auto", readableDisabledControlClass)}
+              >
+                {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+                {operationLabel} selected
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <AdminTable
         headers={[
-          { label: "Select", className: "w-[64px]" },
+          {
+            key: "select",
+            label: (
+              <input
+                ref={selectAllVisibleRef}
+                type="checkbox"
+                checked={allPageRowsSelected}
+                disabled={pageIds.length === 0}
+                onChange={toggleVisible}
+                aria-label="Select all visible reminders"
+                className="size-4 accent-primary"
+              />
+            ),
+            className: "w-[64px]",
+          },
           { label: "Created", className: "w-[130px]" },
           { label: "Student", className: "w-[170px]" },
           { label: "Parent", className: "w-[170px]" },
@@ -226,7 +255,7 @@ export function PaymentReminderHistoryTable({
                     type="checkbox"
                     checked={selectedSet.has(row.notificationId)}
                     onChange={() => toggleRow(row.notificationId)}
-                    className="size-4 accent-[#e64a19]"
+                    className="size-4 accent-primary"
                   />
                 </label>
               </td>

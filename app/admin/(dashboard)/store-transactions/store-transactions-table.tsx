@@ -38,6 +38,7 @@ export function StoreTransactionsTable({ rows, schoolName, schoolYearName }: { r
   );
   const pagination = usePaginatedRows(filteredRows, `${query}|${merchant}`);
   const hasActiveFilters = query.trim() !== "" || merchant !== "all";
+  const activeFilterCount = merchant === "all" ? 0 : 1;
   const resetFilters = () => {
     setQuery("");
     setMerchant("all");
@@ -83,8 +84,16 @@ export function StoreTransactionsTable({ rows, schoolName, schoolYearName }: { r
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
+          layout="compact"
+          activeFilterCount={activeFilterCount}
+          filterTitle="Filter store transactions"
+          filterDescription="Narrow the transaction log by merchant."
         />
-        <p className="mt-2 text-xs text-muted-foreground" aria-live="polite"><strong className="text-foreground">{filteredRows.length}</strong> transactions · <strong className="text-foreground">{money(filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0))}</strong> total</p>
+        {hasActiveFilters ? (
+          <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
+            Filtered amount: <strong className="text-foreground">{money(filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0))}</strong>
+          </p>
+        ) : null}
       </div>
       <AdminTable
         headers={[
