@@ -139,7 +139,7 @@ export function AdminTable({
   headers,
   children,
 }: {
-  headers: Array<{ label: string; className?: string }>;
+  headers: Array<{ key?: string; label: ReactNode; className?: string }>;
   children: ReactNode;
 }) {
   return (
@@ -147,9 +147,9 @@ export function AdminTable({
       <table className="min-w-[700px] w-full table-fixed border-collapse text-[12.5px]">
         <thead>
           <tr>
-            {headers.map((header) => (
+            {headers.map((header, index) => (
               <th
-                key={header.label}
+                key={header.key ?? (typeof header.label === "string" ? header.label : `header-${index}`)}
                 className={cn(
                   "border-b border-border bg-muted px-3.5 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.04em] text-muted-foreground",
                   header.className

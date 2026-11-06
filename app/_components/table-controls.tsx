@@ -1,10 +1,12 @@
 "use client";
 
+import { Menu } from "@base-ui/react/menu";
+import { Popover } from "@base-ui/react/popover";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { CellHook } from "jspdf-autotable";
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, FileText, LoaderCircle, RotateCcw, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, LoaderCircle, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { readableDisabledControlClass } from "@/lib/ui/control-styles";
@@ -62,6 +64,8 @@ export function DashboardTableControls({
   tone = "admin",
   exportLabel = "Export CSV",
   exportingLabel = "Generating export...",
+  layout = "expanded",
+  activeFilterCount = 0,
 }: {
   query: string;
   onQueryChange: (value: string) => void;
@@ -82,6 +86,8 @@ export function DashboardTableControls({
   tone?: "admin" | "parent";
   exportLabel?: string;
   exportingLabel?: string;
+  layout?: "expanded" | "compact";
+  activeFilterCount?: number;
 }) {
   const [exportingPrimary, setExportingPrimary] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -92,6 +98,145 @@ export function DashboardTableControls({
   const buttonClass = isParent
     ? "rounded-[10px] text-[13px] font-medium"
     : "rounded-lg text-[12.5px] font-semibold";
+
+  const handlePrimaryExport = async () => {
+    if (exportingPrimary) return;
+    setExportingPrimary(true);
+    try {
+      await onExport?.();
+    } finally {
+      setExportingPrimary(false);
+    }
+  };
+
+  const handlePdfExport = async () => {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      await onExportPdf?.();
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  if (layout === "compact") {
+    const menuDisabled = exportDisabled || exportingPrimary || exportingPdf;
+
+    return (
+      <div className="flex w-full flex-wrap items-center gap-2">
+        <label className={cn("flex min-h-11 min-w-0 flex-[1_1_240px] items-center gap-2 border px-3 py-2", controlClass)}>
+          <Search className={cn("shrink-0", isParent ? "size-4 text-[#9e9e9e]" : "size-[15px] text-muted-foreground")} />
+          <input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+            placeholder={searchPlaceholder}
+            aria-label={searchLabel ?? searchPlaceholder}
+          />
+        </label>
+
+        <div className="flex flex-[1_0_auto] items-center gap-2 min-[420px]:flex-none">
+          {filters.length > 0 ? (
+            <Popover.Root>
+              <Popover.Trigger
+                className={cn(
+                  "inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 border border-border bg-background px-3.5 text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 min-[420px]:flex-none",
+                  buttonClass,
+                )}
+              >
+                <SlidersHorizontal className="size-4" />
+                Filters
+                {activeFilterCount > 0 ? (
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-4 text-primary-foreground">
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Positioner sideOffset={8} align="end" collisionPadding={16} className="z-[260]">
+                  <Popover.Popup className="w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-border bg-card p-4 text-card-foreground shadow-xl outline-none data-[ending-style]:opacity-0 data-[starting-style]:opacity-0">
+                    <Popover.Title className="text-sm font-bold text-foreground">Filter payments</Popover.Title>
+                    <Popover.Description className="mt-1 text-xs leading-5 text-muted-foreground">
+                      Narrow the payment history by status or channel.
+                    </Popover.Description>
+                    <div className="mt-3 grid gap-3">
+                      {filters.map((filter) => (
+                        <label key={filter.label} className="grid gap-1.5 text-xs font-semibold text-foreground">
+                          {filter.label}
+                          <select
+                            value={filter.value}
+                            onChange={(event) => filter.onChange(event.target.value)}
+                            className={cn("min-h-11 w-full border px-3 outline-none transition focus:ring-3", controlClass)}
+                          >
+                            {filter.options.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                      ))}
+                    </div>
+                    {!clearDisabled ? (
+                      <button
+                        type="button"
+                        onClick={onClear}
+                        className={cn(
+                          "mt-4 inline-flex min-h-11 w-full items-center justify-center gap-1.5 border border-border bg-background px-3.5 text-muted-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                          buttonClass,
+                        )}
+                      >
+                        <RotateCcw className="size-4" />
+                        {clearLabel}
+                      </button>
+                    ) : null}
+                  </Popover.Popup>
+                </Popover.Positioner>
+              </Popover.Portal>
+            </Popover.Root>
+          ) : null}
+
+          {onExport ? (
+            <Menu.Root disabled={menuDisabled}>
+              <Menu.Trigger
+                disabled={menuDisabled}
+                className={cn(
+                  "inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 border border-button-secondary bg-button-secondary px-3.5 text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 min-[420px]:flex-none",
+                  buttonClass,
+                  isParent ? "disabled:pointer-events-none disabled:opacity-60" : readableDisabledControlClass,
+                )}
+              >
+                {exportingPrimary || exportingPdf ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}
+                <span aria-live="polite">{exportingPrimary || exportingPdf ? "Generating..." : "Export"}</span>
+                <ChevronDown className="size-3.5" />
+              </Menu.Trigger>
+              <Menu.Portal>
+                <Menu.Positioner sideOffset={8} align="end" collisionPadding={16} className="z-[260]">
+                  <Menu.Popup className="w-48 rounded-xl border border-border bg-card p-1.5 text-card-foreground shadow-xl outline-none data-[ending-style]:opacity-0 data-[starting-style]:opacity-0">
+                    <Menu.Item
+                      onClick={handlePrimaryExport}
+                      className="flex min-h-11 cursor-default items-center gap-2 rounded-lg px-3 text-sm font-semibold text-foreground outline-none data-[highlighted]:bg-muted"
+                    >
+                      <Download className="size-4 text-muted-foreground" />
+                      Export Excel
+                    </Menu.Item>
+                    {onExportPdf ? (
+                      <Menu.Item
+                        onClick={handlePdfExport}
+                        className="flex min-h-11 cursor-default items-center gap-2 rounded-lg px-3 text-sm font-semibold text-foreground outline-none data-[highlighted]:bg-muted"
+                      >
+                        <FileText className="size-4 text-primary" />
+                        Export PDF
+                      </Menu.Item>
+                    ) : null}
+                  </Menu.Popup>
+                </Menu.Positioner>
+              </Menu.Portal>
+            </Menu.Root>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full flex-wrap items-center gap-2">
@@ -135,15 +280,7 @@ export function DashboardTableControls({
       </button> : null}
       <button
         type="button"
-        onClick={async () => {
-          if (exportingPrimary) return;
-          setExportingPrimary(true);
-          try {
-            await onExport?.();
-          } finally {
-            setExportingPrimary(false);
-          }
-        }}
+        onClick={handlePrimaryExport}
         disabled={exportDisabled || exportingPrimary}
         className={cn(
           "inline-flex min-h-11 items-center justify-center gap-1.5 border px-3.5 transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
@@ -159,15 +296,7 @@ export function DashboardTableControls({
       {onExportPdf ? (
         <button
           type="button"
-          onClick={async () => {
-            if (exportingPdf) return;
-            setExportingPdf(true);
-            try {
-              await onExportPdf();
-            } finally {
-              setExportingPdf(false);
-            }
-          }}
+          onClick={handlePdfExport}
           disabled={exportDisabled || exportingPdf}
           className={cn(
             "inline-flex min-h-11 items-center justify-center gap-1.5 border border-primary bg-card px-3.5 text-primary transition hover:bg-button-soft hover:text-primary focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/25",

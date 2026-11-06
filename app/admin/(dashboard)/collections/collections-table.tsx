@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, CheckSquare, X } from "lucide-react";
+import { Archive, ArchiveRestore, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -74,11 +74,14 @@ export function CollectionsTable({
   const validSelectedIds = selectedIds.filter((id) => rowIds.has(id));
   const selectedSet = new Set(validSelectedIds);
   const allPageRowsSelected = pageIds.length > 0 && pageIds.every((id) => selectedSet.has(id));
+  const somePageRowsSelected = pageIds.some((id) => selectedSet.has(id));
+  const selectAllVisibleRef = useRef<HTMLInputElement>(null);
   const operationLabel = view === "archived" ? "Restore" : "Archive";
   const exportColumns = collectionExportColumns(view === "archived");
   const filteredAmount = filteredRows.reduce((total, row) => total + parseMoney(row.amount), 0);
   const exportTitle = view === "archived" ? "Archived tuition payments" : "Active tuition payments";
   const hasActiveFilters = query.trim() !== "" || status !== "all" || channel !== "all";
+  const activeFilterCount = [status, channel].filter((value) => value !== "all").length;
   const exportOptions = {
     context: [
       { label: "School", value: schoolName },
@@ -131,8 +134,10 @@ export function CollectionsTable({
       ? current.filter((id) => id !== paymentId)
       : [...current, paymentId]);
   };
-  const selectVisible = () => {
-    setSelectedIds((current) => [...new Set([...current, ...pageIds])]);
+  const toggleVisible = () => {
+    setSelectedIds((current) => allPageRowsSelected
+      ? current.filter((id) => !pageIds.includes(id))
+      : [...new Set([...current, ...pageIds])]);
   };
   const confirmAction = () => {
     const submittedIds = [...confirmationIds];
@@ -181,12 +186,18 @@ export function CollectionsTable({
   const hasRows = rows.length > 0;
   const hasFilters = query.trim().length > 0 || status !== "all" || channel !== "all";
 
+  useEffect(() => {
+    if (selectAllVisibleRef.current) {
+      selectAllVisibleRef.current.indeterminate = somePageRowsSelected && !allPageRowsSelected;
+    }
+  }, [allPageRowsSelected, somePageRowsSelected]);
+
   return (
     <>
-      <div className="flex flex-col gap-3 border-b border-border px-4 py-3.5 sm:px-[18px]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col gap-2 border-b border-border px-4 py-3.5 sm:px-[18px]">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div
-            className="inline-flex min-h-11 rounded-lg border border-border bg-muted p-1"
+            className="inline-flex min-h-11 shrink-0 rounded-lg border border-border bg-muted p-1"
             role="tablist"
             aria-label="Tuition payment history view"
           >
@@ -197,67 +208,86 @@ export function CollectionsTable({
               Archived payments ({archivedCollectionRows.length})
             </button>
           </div>
-          <p className="text-[11.5px] text-muted-foreground" aria-live="polite">
-            {validSelectedIds.length} {validSelectedIds.length === 1 ? "payment" : "payments"} selected
-          </p>
+          <div className="min-w-0 flex-1">
+            <DashboardTableControls
+              query={query}
+              onQueryChange={changeQuery}
+              searchPlaceholder="Search payments..."
+              searchLabel="Search tuition payments by student, payment reference, or tuition term"
+              filters={[
+                { label: "Status", value: status, onChange: changeStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
+                { label: "Channel", value: channel, onChange: changeChannel, options: toFilterOptions(rows.map((row) => row.channel), "All channels") },
+              ]}
+              onClear={resetFilters}
+              clearLabel="Reset filters"
+              clearDisabled={!hasActiveFilters}
+              onExport={() => exportRowsToExcel(
+                view === "archived" ? "admin-collections-archived.xlsx" : "admin-collections-active.xlsx",
+                exportTitle,
+                filteredRows,
+                exportColumns,
+                {
+                  worksheetName: view === "archived" ? "Archived payments" : "Active payments",
+                  ...exportOptions,
+                },
+              )}
+              onExportPdf={() => exportRowsToPdf(
+                view === "archived" ? "admin-collections-archived.pdf" : "admin-collections-active.pdf",
+                exportTitle,
+                filteredRows,
+                exportColumns,
+                exportOptions,
+              )}
+              exportLabel="Export Excel"
+              exportingLabel="Generating Excel..."
+              exportDisabled={filteredRows.length === 0}
+              layout="compact"
+              activeFilterCount={activeFilterCount}
+            />
+          </div>
         </div>
 
-        <DashboardTableControls
-          query={query}
-          onQueryChange={changeQuery}
-          searchPlaceholder="Search student, payment reference, or tuition term..."
-          searchLabel="Search tuition payments by student, payment reference, or tuition term"
-          filters={[
-            { label: "Status", value: status, onChange: changeStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
-            { label: "Channel", value: channel, onChange: changeChannel, options: toFilterOptions(rows.map((row) => row.channel), "All channels") },
-          ]}
-          onClear={resetFilters}
-          clearLabel="Reset filters"
-          clearDisabled={!hasActiveFilters}
-          onExport={() => exportRowsToExcel(
-            view === "archived" ? "admin-collections-archived.xlsx" : "admin-collections-active.xlsx",
-            exportTitle,
-            filteredRows,
-            exportColumns,
-            {
-              worksheetName: view === "archived" ? "Archived payments" : "Active payments",
-              ...exportOptions,
-            },
-          )}
-          onExportPdf={() => exportRowsToPdf(
-            view === "archived" ? "admin-collections-archived.pdf" : "admin-collections-active.pdf",
-            exportTitle,
-            filteredRows,
-            exportColumns,
-            exportOptions,
-          )}
-          exportLabel="Export Excel"
-          exportingLabel="Generating Excel..."
-          exportDisabled={filteredRows.length === 0}
-        />
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={selectVisible} disabled={pageIds.length === 0 || allPageRowsSelected} className={secondaryButtonClass}>
-            <CheckSquare className="size-4" /> Select visible
-          </button>
-          <button type="button" onClick={() => setSelectedIds([])} disabled={validSelectedIds.length === 0} className={secondaryButtonClass}>
-            <X className="size-4" /> Clear selection
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmationIds(validSelectedIds)}
-            disabled={validSelectedIds.length === 0 || pending}
-            className={cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-button-secondary bg-button-secondary px-3.5 text-[12.5px] font-semibold text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass)}
-          >
-            {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
-            {operationLabel} selected
-          </button>
-        </div>
+        {validSelectedIds.length > 0 ? (
+          <div className="flex flex-col gap-2 rounded-lg border border-primary/20 bg-button-soft px-3 py-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <span className="text-xs font-semibold text-foreground" aria-live="polite">
+              {validSelectedIds.length} {validSelectedIds.length === 1 ? "payment" : "payments"} selected
+            </span>
+            <div className="flex flex-col gap-2 min-[420px]:flex-row">
+              <button type="button" onClick={() => setSelectedIds([])} className={secondaryButtonClass}>
+                <X className="size-4" /> Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmationIds(validSelectedIds)}
+                disabled={pending}
+                className={cn("inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-button-secondary bg-button-secondary px-3.5 text-[12.5px] font-semibold text-button-secondary-foreground transition hover:bg-button-secondary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50", readableDisabledControlClass)}
+              >
+                {view === "archived" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
+                {operationLabel} selected
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <AdminTable
         headers={[
-          { label: "Select", className: "w-[64px]" },
+          {
+            key: "select",
+            label: (
+              <label className="flex min-h-11 items-center" aria-label="Select all visible payments">
+                <input
+                  ref={selectAllVisibleRef}
+                  type="checkbox"
+                  checked={allPageRowsSelected}
+                  disabled={pageIds.length === 0}
+                  onChange={toggleVisible}
+                  className="size-4 accent-primary"
+                />
+              </label>
+            ),
+            className: "w-[64px]",
+          },
           { label: "Ref #", className: "w-[100px]" },
           { label: "Student", className: "w-[170px]" },
           { label: "Class", className: "w-[110px]" },
@@ -333,8 +363,8 @@ export function CollectionsTable({
             </h3>
             <p className="mt-2 text-[12.5px] leading-5 text-muted-foreground">
               {view === "archived"
-                ? "Restored payments return to the active list. Payment status, receipts, balances, and parent history stay unchanged."
-                : "Archived payments move out of the active list but remain in financial totals, reports, receipts, and parent history."}
+                ? "Restoring only returns these payments to the active Admin view. Payment status, receipts, balances, allocations, and parent history stay unchanged."
+                : "Archiving only organizes this Admin view. It never deletes, reverses, or changes a payment, receipt, allocation, student balance, report, or parent history."}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setConfirmationIds([])} className={cn(secondaryButtonClass, "w-full sm:w-auto")}>Cancel</button>

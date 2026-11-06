@@ -170,6 +170,7 @@ Done when: admin and parent fee screens show real balances from MySQL.
 - [x] Add database-timed 30-day recovery for removed parent Fee summary and Payment history rows, returning eligible rows to Archived while preserving expired tombstone history.
 - [x] Show the Admin Tuition payments history from database records, excluding wallet-only payments.
 - [x] Add reversible active/archived Tuition collection log views with row and bulk controls while preserving financial totals, reports, receipts, balances, and parent history.
+- [x] Keep Tuition payment controls minimal with visible search/view switching, popover Status/Channel filters, one Excel/PDF export menu, page-level header selection, and contextual bulk archive/restore.
 
 Done when: a parent can record a local test payment and both portals show the result.
 

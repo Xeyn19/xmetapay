@@ -759,7 +759,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
   });
 
   test("all admin table exports stay responsive and download readable workbooks", async ({ page }) => {
-    test.setTimeout(180_000);
+    test.setTimeout(300_000);
     const reports = [
       {
         path: "/admin/dashboard",
@@ -811,7 +811,7 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
       },
       {
         path: "/admin/parents",
-        heading: "Parent contacts",
+        heading: "Parents & guardians",
         filename: "admin-parent-contacts.xlsx",
         worksheetName: "Parent contacts",
         title: "Parent contacts",
@@ -841,19 +841,95 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
         await page.goto(report.path, { waitUntil: "domcontentloaded" });
         test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
         await expect(page.getByRole("heading", { level: 1, name: report.heading })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+        if (report.path === "/admin/collections") {
+          const exportMenu = page.getByRole("button", { name: "Export", exact: true });
+          await expect(exportMenu).toBeVisible();
+          if (await exportMenu.isEnabled()) {
+            await exportMenu.click();
+            await expect(page.getByRole("menuitem", { name: "Export Excel" })).toBeVisible();
+            await expect(page.getByRole("menuitem", { name: "Export PDF" })).toBeVisible();
+            await page.keyboard.press("Escape");
+          }
+        } else {
+          await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
+          await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+        }
         await expectNoHorizontalOverflow(page);
       }
 
-      const exportButton = page.getByRole("button", { name: "Export Excel" });
+      const exportButton = report.path === "/admin/collections"
+        ? page.getByRole("button", { name: "Export", exact: true })
+        : page.getByRole("button", { name: "Export Excel" });
       if (await exportButton.isEnabled()) {
-        const downloadPromise = page.waitForEvent("download");
-        await exportButton.click();
+        // Next.js can paint server-rendered controls before their client handlers
+        // hydrate. Wait for pending route assets before exercising downloads.
+        await page.waitForLoadState("networkidle");
+        const downloadPromise = page.waitForEvent("download", { timeout: 30_000 });
+        if (report.path === "/admin/collections") {
+          await exportButton.click();
+          await page.getByRole("menuitem", { name: "Export Excel" }).click();
+        } else {
+          await exportButton.click();
+        }
         const download = await downloadPromise;
         expect(download.suggestedFilename()).toBe(report.filename);
         await expectExcelWorkbook(download, report);
       }
+    }
+  });
+
+  test("Tuition payments keeps filters and exports compact until needed", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/admin/collections", { waitUntil: "domcontentloaded" });
+      test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+
+      await expect(page.getByRole("tab", { name: /Active payments/ })).toBeVisible();
+      await expect(page.getByLabel("Search tuition payments by student, payment reference, or tuition term")).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Filters/ })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Export", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Clear", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Archive selected" })).toHaveCount(0);
+      await expect(page.getByText(/Archiving only organizes this Admin view/)).toHaveCount(0);
+      await expectNoHorizontalOverflow(page);
+    }
+
+    // The controls are client-owned Base UI primitives. The final responsive
+    // navigation may finish painting before React has attached their handlers.
+    await page.waitForLoadState("networkidle");
+    const filtersButton = page.getByRole("button", { name: /^Filters/ });
+    await filtersButton.click();
+    await expect(page.getByText("Filter payments", { exact: true })).toBeVisible();
+    const statusFilter = page.getByLabel("Status");
+    if (await statusFilter.locator("option").count() > 1) {
+      await statusFilter.selectOption({ index: 1 });
+      await expect(page.getByRole("button", { name: /Filters\s+1/ })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Reset filters" })).toBeVisible();
+      await page.getByRole("button", { name: "Reset filters" }).click();
+      await expect(statusFilter).toHaveValue("all");
+    } else {
+      await expect(page.getByRole("button", { name: "Reset filters" })).toHaveCount(0);
+    }
+    await page.keyboard.press("Escape");
+
+    const exportButton = page.getByRole("button", { name: "Export", exact: true });
+    if (await exportButton.isEnabled()) {
+      await exportButton.click();
+      await expect(page.getByRole("menuitem", { name: "Export Excel" })).toBeVisible();
+      await expect(page.getByRole("menuitem", { name: "Export PDF" })).toBeVisible();
+      await page.keyboard.press("Escape");
+    }
+
+    const selectAll = page.getByLabel("Select all visible payments");
+    if (await selectAll.isEnabled()) {
+      await selectAll.check();
+      await expect(page.getByRole("button", { name: "Clear", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Archive selected" })).toBeVisible();
+      await page.getByRole("button", { name: "Archive selected" }).click();
+      await expect(page.getByRole("alertdialog")).toContainText("never deletes, reverses, or changes");
+      await page.getByRole("button", { name: "Cancel" }).click();
+      await page.getByRole("button", { name: "Clear", exact: true }).click();
+      await expect(page.getByRole("button", { name: "Archive selected" })).toHaveCount(0);
     }
   });
 

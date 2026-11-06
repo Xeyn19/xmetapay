@@ -46,8 +46,9 @@ test("payment archive language explains that financial truth remains unchanged",
   const table = read("app/admin/(dashboard)/collections/collections-table.tsx");
   const actions = read("app/admin/collections/actions.ts");
 
-  assert.match(page, /never deletes, reverses, or changes a payment/);
-  assert.match(table, /Payment status, receipts, balances, and parent history stay unchanged/);
+  assert.doesNotMatch(page, /Archiving only organizes this Admin view/);
+  assert.match(table, /Archiving only organizes this Admin view\. It never deletes, reverses, or changes a payment/);
+  assert.match(table, /Payment status, receipts, balances, allocations, and parent history stay unchanged/);
   assert.match(actions, /updateTuitionCollectionArchiveState/);
   assert.match(actions, /revalidatePath\("\/admin\/collections"\)/);
 });
