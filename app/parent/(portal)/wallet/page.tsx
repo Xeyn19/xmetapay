@@ -32,7 +32,7 @@ export default async function WalletPage() {
               ))}
             </div>
           ) : (
-            <div className="text-[13px] leading-5 text-[#6b6b6b]">
+            <div className="text-[13px] leading-5 text-muted-foreground">
               No linked student wallets yet.
             </div>
           )}
@@ -42,7 +42,7 @@ export default async function WalletPage() {
           {hasLinkedWallets ? (
             <WalletTopUpForm wallets={data.wallets} submissionToken={randomUUID()} />
           ) : (
-            <div className="text-[13px] leading-5 text-[#6b6b6b]">
+            <div className="text-[13px] leading-5 text-muted-foreground">
               Link a student first, then return here to top up allowance.
             </div>
           )}
@@ -64,20 +64,20 @@ export default async function WalletPage() {
 
 function BalanceCard({ wallet }: { wallet: ParentWalletSummary }) {
   return (
-    <div className="rounded-[14px] border border-black/[0.08] bg-[#f8f8f7] p-4">
+    <div className="rounded-xl border border-border bg-muted/50 p-4">
       <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">
+        <span className="flex size-10 items-center justify-center rounded-[10px] bg-primary/10 text-lg font-semibold text-primary">
           {wallet.initials}
         </span>
         <div className="min-w-0">
           <div className="truncate text-[13px] font-semibold">{wallet.studentName}</div>
-          <div className="truncate text-xs text-[#6b6b6b]">{wallet.meta}</div>
+          <div className="truncate text-xs text-muted-foreground">{wallet.meta}</div>
         </div>
       </div>
       <div className="mt-4 flex items-end justify-between gap-3">
         <div>
           <div className="text-2xl font-bold">{wallet.balance}</div>
-          <div className="mt-1 text-xs text-[#6b6b6b]">Current balance</div>
+          <div className="mt-1 text-xs text-muted-foreground">Current balance</div>
         </div>
         <StatusPill tone={wallet.tone}>{wallet.statusLabel}</StatusPill>
       </div>

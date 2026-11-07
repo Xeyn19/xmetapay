@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { CalendarClock, Plus, Users, Wallet } from "lucide-react";
+import { ArrowRight, CalendarClock, Users, Wallet } from "lucide-react";
 
-import { linkParentStudentAction } from "@/app/parent/student-link/actions";
 import { requireRole } from "@/lib/auth/session";
 import { getParentDashboardData } from "@/lib/students/records";
 
@@ -9,11 +8,8 @@ import {
   MetricCard,
   MetricGrid,
   ParentAlert,
-  ParentButton,
   ParentCard,
-  ParentField,
   StatusPill,
-  parentControlClass,
 } from "../../_components/parent-ui";
 import { ParentRecentPaymentsTable } from "./parent-recent-payments-table";
 import { ParentWalletActivityTable } from "../_components/parent-wallet-activity-table";
@@ -41,19 +37,20 @@ export default async function ParentDashboardPage() {
         <ParentCard
           title="My students"
           icon={Users}
+          action={<Link href="/parent/students" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-primary/10 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Manage students <ArrowRight className="size-4" /></Link>}
           bodyClassName={hasLinkedStudents ? "p-0" : undefined}
         >
           {hasLinkedStudents ? (
             <>
               {data.linkedStudents.map((student) => (
-                <Link key={student.id} href={student.profileHref} className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 sm:gap-4 sm:px-5">
+                <Link key={student.id} href={student.profileHref} className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 sm:gap-4 sm:px-5">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-10 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">
+                    <span className="flex size-10 items-center justify-center rounded-[10px] bg-primary/10 text-lg font-semibold text-primary">
                       {student.initials}
                     </span>
                     <div className="min-w-0">
-                      <div className="truncate text-[15px] font-medium text-[#1a1a1a]">{student.fullName}</div>
-                      <div className="mt-0.5 truncate text-xs text-[#6b6b6b]">{student.meta}</div>
+                      <div className="truncate text-[15px] font-medium text-foreground">{student.fullName}</div>
+                      <div className="mt-0.5 truncate text-xs text-muted-foreground">{student.meta}</div>
                     </div>
                   </div>
                   <StatusPill tone={student.status === "active" ? "blue" : "muted"}>
@@ -61,62 +58,25 @@ export default async function ParentDashboardPage() {
                   </StatusPill>
                 </Link>
               ))}
-              <form action={linkParentStudentAction} className="grid gap-3 border-t border-border p-4 sm:p-5">
-                <div>
-                  <ParentField label="Add another student" required>
-                    <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
-                  </ParentField>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <ParentField label="Student first name" required><input name="studentFirstName" className={parentControlClass} placeholder="Juan Miguel" required /></ParentField>
-                    <ParentField label="Student last name" required><input name="studentLastName" className={parentControlClass} placeholder="Santos" required /></ParentField>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                    Use the exact reference and official name. A school-recorded guardian email can connect immediately; otherwise approval is required.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <ParentButton type="submit" tone="primary" className="w-full min-[420px]:w-auto">
-                    <Plus className="size-4" />
-                    Request connection
-                  </ParentButton>
-                  <Link href="/parent/students" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
-                    Manage students
-                  </Link>
-                </div>
-              </form>
             </>
           ) : (
-            <form action={linkParentStudentAction} className="grid gap-3">
-              <div>
-                <ParentField label="Student reference" required>
-                  <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
-                </ParentField>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <ParentField label="Student first name" required><input name="studentFirstName" className={parentControlClass} placeholder="Juan Miguel" required /></ParentField>
-                  <ParentField label="Student last name" required><input name="studentLastName" className={parentControlClass} placeholder="Santos" required /></ParentField>
-                </div>
-                <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                  The school reviews this connection before student records become available.
-                </p>
-              </div>
-              <ParentButton type="submit" tone="primary">
-                <Plus className="size-4" />
-                Request connection
-              </ParentButton>
-            </form>
+            <div className="grid gap-3 text-sm text-muted-foreground">
+              <p>Add your child using the exact student reference and official name. The school reviews new connections before records appear.</p>
+              <Link href="/parent/students" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 min-[420px]:w-fit">Add a student <ArrowRight className="size-4" /></Link>
+            </div>
           )}
         </ParentCard>
         <ParentCard title="Fees and balances" icon={CalendarClock}>
-          <div className="grid gap-3 text-[13px] leading-5 text-[#6b6b6b]">
-            <p>Current outstanding balance: <span className="font-semibold text-[#c62828]">{data.outstandingBalance}</span></p>
-            <Link href="/parent/fees" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
+          <div className="grid gap-3 text-[13px] leading-5 text-muted-foreground">
+            <p>Current outstanding balance: <span className="font-semibold text-status-danger-foreground">{data.outstandingBalance}</span></p>
+            <Link href="/parent/fees" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
               View fee summary
             </Link>
           </div>
         </ParentCard>
       </div>
 
-      <ParentCard title="Recent payment activity" icon={CalendarClock} bodyClassName="p-0">
+      <ParentCard title="Recent payment activity" icon={CalendarClock} bodyClassName="p-0" action={<Link href="/parent/history" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-primary/10 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">View all <ArrowRight className="size-4" /></Link>}>
         <ParentRecentPaymentsTable rows={data.recentPayments} />
       </ParentCard>
 
@@ -126,12 +86,12 @@ export default async function ParentDashboardPage() {
         bodyClassName="p-0"
         className="mt-5"
         action={(
-          <Link href="/parent/wallet" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20">
+          <Link href="/parent/wallet" className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-border bg-card px-3 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
             View full history
           </Link>
         )}
       >
-        <ParentWalletActivityTable rows={data.walletActivity} />
+          <ParentWalletActivityTable rows={data.walletActivity} compactPreview />
       </ParentCard>
     </>
   );

@@ -2,7 +2,6 @@ import {
   CreditCard,
   History,
   Home,
-  IdCard,
   Receipt,
   Settings,
   Users,
@@ -55,11 +54,11 @@ export const parentPageMeta: Record<string, ParentPageMeta> = {
     subtitle: "Manage linked student records",
   },
   "/parent/fees": {
-    title: "Fee summary",
-    subtitle: "Assigned balances from school records",
+    title: "School fees & statements",
+    subtitle: "Review tuition statements, due dates, payments, and other assigned fees",
   },
   "/parent/pay-tuition": {
-    title: "Pay tuition & fees",
+    title: "Make a payment",
     subtitle: "Pay assigned balances for one student at a time",
   },
   "/parent/receipt": {
@@ -71,7 +70,7 @@ export const parentPageMeta: Record<string, ParentPageMeta> = {
     subtitle: "Recorded school fee payments",
   },
   "/parent/wallet": {
-    title: "Wallet & allowance top-up",
+    title: "Allowance wallet",
     subtitle: "Manage student allowance balances",
   },
 };
@@ -92,14 +91,13 @@ export const parentNavSections: ParentNavSection[] = [
   {
     label: "Enrollment",
     items: [
-      { label: "My students", href: "/parent/students", icon: Users },
       {
-        label: "Student profile",
-        href: "/parent/student-profile",
-        icon: IdCard,
+        label: "My students",
+        href: "/parent/students",
+        icon: Users,
         activePaths: [
-          { path: "/parent/student-profile" },
-          { path: "/parent/students", match: "descendant" },
+          { path: "/parent/students", match: "prefix" },
+          { path: "/parent/student-profile", match: "prefix" },
         ],
       },
     ],
@@ -107,8 +105,8 @@ export const parentNavSections: ParentNavSection[] = [
   {
     label: "Payments",
     items: [
-      { label: "Fee summary", href: "/parent/fees", icon: Receipt },
-      { label: "Pay tuition", href: "/parent/pay-tuition", icon: CreditCard },
+      { label: "School fees", href: "/parent/fees", icon: Receipt },
+      { label: "Make a payment", href: "/parent/pay-tuition", icon: CreditCard },
       {
         label: "Payment history",
         href: "/parent/history",
@@ -123,7 +121,7 @@ export const parentNavSections: ParentNavSection[] = [
   {
     label: "Allowance",
     items: [{
-      label: "Wallet & top-up",
+      label: "Allowance wallet",
       href: "/parent/wallet",
       icon: Wallet,
       activePaths: [{ path: "/parent/wallet", match: "prefix" }],

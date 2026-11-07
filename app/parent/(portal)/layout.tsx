@@ -31,7 +31,7 @@ export default async function ParentPortalLayout({
           </p>
           <div className="mt-6 flex flex-col gap-3 min-[420px]:flex-row min-[420px]:justify-center">
             <form action={logout}>
-              <button type="submit" className="min-h-11 w-full rounded-lg bg-[#e64a19] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e64a19]/25 min-[420px]:w-auto">
+              <button type="submit" className="min-h-11 w-full rounded-lg bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus-visible:ring-4 focus-visible:ring-ring/50 min-[420px]:w-auto">
                 Log out
               </button>
             </form>

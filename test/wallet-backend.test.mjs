@@ -101,7 +101,7 @@ test("parent wallet page uses real wallet data and no static placeholder rows", 
   assert.match(form, /max="10000"/);
   assert.match(form, /Select all eligible/);
   assert.match(form, /Clear selection/);
-  assert.match(form, /Apply amount to selected/);
+  assert.match(form, /2\. Set the amount/);
   assert.match(form, /role="alertdialog"/);
   assert.match(form, /Confirm allowance top-up/);
   assert.match(form, /Recording top-ups/);
@@ -156,7 +156,7 @@ test("parent dashboard and student profile expose real wallet details", () => {
   assert.match(walletActivityTable, /DashboardTableControls/);
   assert.match(walletActivityTable, /usePaginatedRows/);
   assert.match(walletActivityTable, /DashboardTablePagination/);
-  assert.match(walletActivityTable, /pagination\.pageRows\.map/);
+  assert.match(walletActivityTable, /compactPreview \? rows : pagination\.pageRows/);
   assert.match(walletActivityTable, /parent-wallet-activity\.xlsx/);
   assert.match(walletActivityTable, /exportRowsToExcel/);
   assert.match(walletActivityTable, /parent-wallet-activity\.pdf/);
@@ -167,6 +167,7 @@ test("parent dashboard and student profile expose real wallet details", () => {
   assert.match(profileView, /ParentWalletActivityTable/);
   assert.match(profileView, /rows=\{student\.walletActivity\}/);
   assert.match(profileView, /showStudent=\{false\}/);
+  assert.match(profileView, /compactPreview/);
   assert.doesNotMatch(records, /Phase 6 will add allowance/);
   assert.doesNotMatch(profileView, /Wallet backend pending/);
 });

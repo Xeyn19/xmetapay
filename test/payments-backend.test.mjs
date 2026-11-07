@@ -213,14 +213,8 @@ test("parent dashboard reflects real payment summary and recent payment rows", (
   assert.match(dashboard, /data\.outstandingBalance/);
   assert.match(dashboard, /Recent payment activity/);
   assert.match(dashboard, /ParentRecentPaymentsTable/);
-  assert.match(dashboardTable, /DashboardTableControls/);
-  assert.match(dashboardTable, /usePaginatedRows/);
-  assert.match(dashboardTable, /DashboardTablePagination/);
-  assert.match(dashboardTable, /pagination\.pageRows\.map/);
-  assert.match(dashboardTable, /parent-recent-payments\.xlsx/);
-  assert.match(dashboardTable, /exportRowsToExcel/);
-  assert.match(dashboardTable, /parent-recent-payments\.pdf/);
-  assert.match(dashboardTable, /exportRowsToPdf/);
+  assert.doesNotMatch(dashboardTable, /DashboardTableControls|usePaginatedRows|exportRowsToExcel/);
+  assert.match(dashboard, /href="\/parent\/history"/);
   assert.match(dashboardTable, /No payment records yet/);
 });
 

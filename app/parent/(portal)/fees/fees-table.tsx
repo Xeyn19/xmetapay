@@ -1,8 +1,8 @@
 "use client";
 
-import { Fragment, useMemo, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, CheckSquare, LockKeyhole, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, LockKeyhole, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -217,12 +217,34 @@ export function ParentFeesTable({
       : confirmation?.operation === "recover"
         ? "Restore to Archived"
         : "Remove from view";
+  const clearSelectionContext = () => {
+    setSelectedIds([]);
+    setConfirmation(null);
+  };
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    clearSelectionContext();
+  };
+  const updateCategory = (value: string) => {
+    setCategory(value);
+    clearSelectionContext();
+  };
+  const updateStatus = (value: string) => {
+    setStatus(value);
+    clearSelectionContext();
+  };
+  const someSelectablePageRowsSelected = selectablePageIds.some((id) => selectedSet.has(id));
+  const toggleVisibleRows = () => {
+    setSelectedIds((current) => allSelectablePageRowsSelected
+      ? current.filter((id) => !selectablePageIds.includes(id))
+      : [...new Set([...current, ...selectablePageIds])]);
+  };
 
   return (
     <>
-      <div className="flex flex-col gap-3 border-b border-black/[0.08] px-4 py-3 sm:px-5">
+      <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:px-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="grid min-h-11 w-full grid-cols-3 rounded-[10px] border border-black/10 bg-[#f2f1ef] p-1 sm:w-auto" role="tablist" aria-label="Fee summary view">
+          <div className="grid min-h-11 w-full grid-cols-3 rounded-[10px] border border-border bg-muted p-1 sm:w-auto" role="tablist" aria-label="Fee record view">
             <button type="button" role="tab" aria-selected={view === "active"} onClick={() => changeView("active")} className={viewTabClass(view === "active")}>
               Current ({activeFeeRows.length})
             </button>
@@ -233,24 +255,29 @@ export function ParentFeesTable({
               Removed ({removedFeeRows.length})
             </button>
           </div>
-          <p className="text-[12px] text-[#6b6b6b]">
-            {validSelectedIds.length} {validSelectedIds.length === 1 ? "fee" : "fees"} selected
-          </p>
         </div>
 
         <DashboardTableControls
           tone="parent"
+          layout="compact"
           query={query}
-          onQueryChange={setQuery}
-          searchPlaceholder="Search fees..."
+          onQueryChange={updateQuery}
+          searchPlaceholder="Search student, reference, or fee…"
+          searchLabel="Search fee records by student, reference, fee, due date, or term"
+          activeFilterCount={Number(category !== "all") + Number(status !== "all")}
+          filterTitle="Filter fee records"
+          filterDescription="Narrow this view by fee category or payment status."
           filters={[
-            { label: "Category", value: category, onChange: setCategory, options: toFilterOptions(rows.map((row) => row.category), "All categories") },
-            { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
+            { label: "Category", value: category, onChange: updateCategory, options: toFilterOptions(rows.map((row) => row.category), "All categories") },
+            { label: "Status", value: status, onChange: updateStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
           ]}
+          clearLabel="Reset filters"
+          clearDisabled={!hasFilters}
           onClear={() => {
             setQuery("");
             setCategory("all");
             setStatus("all");
+            clearSelectionContext();
           }}
           onExport={() => exportRowsToExcel(
             view === "archived" ? "parent-fee-summary-archived.xlsx" : view === "removed" ? "parent-fee-summary-removed.xlsx" : "parent-fee-summary.xlsx",
@@ -268,10 +295,8 @@ export function ParentFeesTable({
           exportDisabled={filteredRows.length === 0}
         />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setSelectedIds((current) => [...new Set([...current, ...selectablePageIds])])} disabled={selectablePageIds.length === 0 || allSelectablePageRowsSelected} className={secondaryButtonClass}>
-            <CheckSquare className="size-4" /> Select visible
-          </button>
+        {validSelectedIds.length > 0 ? <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-2" role="status">
+          <span className="px-2 text-sm font-semibold text-foreground">{validSelectedIds.length} selected</span>
           <button type="button" onClick={() => setSelectedIds([])} disabled={validSelectedIds.length === 0} className={secondaryButtonClass}>
             <X className="size-4" /> Clear selection
           </button>
@@ -282,7 +307,7 @@ export function ParentFeesTable({
               operation: view === "removed" ? "recover" : view === "archived" ? "restore" : "archive",
             })}
             disabled={validSelectedIds.length === 0 || pending}
-            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-primary bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60"
           >
             {view !== "active" ? <ArchiveRestore className="size-4" /> : <Archive className="size-4" />}
             {view === "removed" ? "Restore selected to Archived" : `${operationLabel} selected`}
@@ -295,29 +320,19 @@ export function ParentFeesTable({
                 operation: "delete",
               })}
               disabled={validSelectedIds.length === 0 || pending}
-              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#c62828] bg-[#c62828] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#8e1b1b] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#c62828]/25 disabled:pointer-events-none disabled:opacity-60"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-destructive bg-destructive px-3.5 text-[13px] font-medium text-destructive-foreground transition hover:bg-destructive/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-destructive/30 disabled:pointer-events-none disabled:opacity-60"
             >
               <Trash2 className="size-4" />
               Remove selected
             </button>
           ) : null}
-        </div>
-
-        {view === "active" ? (
-          <p className="text-[11.5px] leading-5 text-[#6b6b6b]">
-            Only paid or zero-balance fees can be archived. Outstanding fees stay in Current fees until settled.
-          </p>
-        ) : view === "removed" ? (
-          <p className="text-[11.5px] leading-5 text-[#6b6b6b]">
-            Removed fees can be restored to Archived for 30 days. After the deadline they remain visible as Permanently hidden and cannot be restored.
-          </p>
-        ) : null}
+        </div> : null}
       </div>
 
       <ParentTable
         tableClassName="min-w-[1080px]"
         headers={[
-          { label: "Select", className: "w-[64px]" },
+          { key: "select", label: <SelectPageCheckbox checked={allSelectablePageRowsSelected} mixed={!allSelectablePageRowsSelected && someSelectablePageRowsSelected} disabled={selectablePageIds.length === 0 || pending} onChange={toggleVisibleRows} label="Select visible fee records" />, className: "w-[64px]" },
           { label: "Student", className: "w-[170px]" },
           { label: "Fee", className: "w-[160px]" },
           { label: "Billed", className: "w-[105px]" },
@@ -342,29 +357,29 @@ export function ParentFeesTable({
                 <tr>
                   <td>
                     <label className="flex min-h-11 items-center" aria-label={`Select ${row.feeName} for ${row.studentName}`}>
-                      <input type="checkbox" checked={selectedSet.has(row.id)} onChange={() => toggleRow(row)} disabled={!selectable || pending} className="size-4 accent-[#e64a19] disabled:opacity-40" />
+                      <input type="checkbox" checked={selectedSet.has(row.id)} onChange={() => toggleRow(row)} disabled={!selectable || pending} className="size-4 accent-primary disabled:opacity-40" />
                     </label>
                   </td>
                   <td>
-                    <div className="font-semibold text-[#1a1a1a]">{row.studentName}</div>
-                    <div className="font-mono text-[11px] text-[#6b6b6b]">{row.studentReference}</div>
+                    <div className="font-semibold text-foreground">{row.studentName}</div>
+                    <div className="font-mono text-[11px] text-muted-foreground">{row.studentReference}</div>
                   </td>
                   <td>
-                    <div className="font-semibold text-[#1a1a1a]">{row.feeName}</div>
-                    <div className="text-[11px] text-[#6b6b6b]">{row.category === "tuition" ? "Tuition" : "Other fee"}</div>
+                    <div className="font-semibold text-foreground">{row.feeName}</div>
+                    <div className="text-[11px] text-muted-foreground">{row.category === "tuition" ? "Tuition" : "Other fee"}</div>
                   </td>
                   <td>{row.amountDue}</td>
-                  <td className="font-semibold text-[#2e7d32]">{row.amountPaid}</td>
-                  <td className="font-semibold text-[#c62828]">{row.balance}</td>
+                  <td className="font-semibold text-status-success-foreground">{row.amountPaid}</td>
+                  <td className="font-semibold text-status-danger-foreground">{row.balance}</td>
                   <td>{row.dueDate}</td>
                   <td><StatusPill tone={row.tone}>{row.status}</StatusPill></td>
-                  {view === "archived" ? <td className="font-mono text-[11px] text-[#6b6b6b]">{row.archivedAt ?? "Pending"}</td> : null}
+                  {view === "archived" ? <td className="font-mono text-[11px] text-muted-foreground">{row.archivedAt ?? "Pending"}</td> : null}
                   {view === "removed" ? (
                     <>
-                      <td className="font-mono text-[11px] text-[#6b6b6b]">{row.deletedAt ?? "Pending"}</td>
+                      <td className="font-mono text-[11px] text-muted-foreground">{row.deletedAt ?? "Pending"}</td>
                       <td>
                         <div className="text-[12px] font-medium">{row.recoverableUntil ?? "Expired"}</div>
-                        <div className="text-[11px] text-[#6b6b6b]">{row.canRecover ? `${row.recoveryDaysRemaining} day${row.recoveryDaysRemaining === 1 ? "" : "s"} remaining` : "Recovery period ended"}</div>
+                        <div className="text-[11px] text-muted-foreground">{row.canRecover ? `${row.recoveryDaysRemaining} day${row.recoveryDaysRemaining === 1 ? "" : "s"} remaining` : "Recovery period ended"}</div>
                       </td>
                       <td><StatusPill tone={row.canRecover ? "amber" : "muted"}>{row.canRecover ? "Recoverable" : "Permanently hidden"}</StatusPill></td>
                     </>
@@ -380,7 +395,7 @@ export function ParentFeesTable({
                           operation: view === "removed" ? "recover" : view === "archived" ? "restore" : "archive",
                         })}
                         disabled={!selectable || pending}
-                        className="size-11 text-muted-foreground hover:border-[#e64a19]/40 hover:bg-accent hover:text-accent-foreground"
+                        className="size-11 text-muted-foreground hover:border-primary/40 hover:bg-accent hover:text-accent-foreground"
                         aria-label={selectable ? `${view === "removed" ? "Restore to Archived" : operationLabel} ${row.feeName} for ${row.studentName}` : view === "removed" ? `${row.feeName} recovery period has ended` : `${row.feeName} cannot be archived until settled`}
                         title={selectable ? `${view === "removed" ? "Restore to Archived" : operationLabel} fee` : view === "removed" ? "Recovery period ended" : "Outstanding fees cannot be archived"}
                       >
@@ -409,20 +424,20 @@ export function ParentFeesTable({
                 {row.terms.length > 0 ? (
                   <tr className="bg-accent/55">
                     <td colSpan={columnCount} className="!overflow-visible !whitespace-normal px-4 py-3">
-                      <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#9a3412]">Tuition payment terms</div>
+                      <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-primary">Tuition payment terms</div>
                       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                         {row.terms.map((term) => (
                           <div key={term.id} className="rounded-lg border border-border bg-card px-3 py-2 text-[12px]">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-bold text-[#1a1a1a]">{term.name}</span>
+                              <span className="font-bold text-foreground">{term.name}</span>
                               <StatusPill tone={term.tone}>{term.status}</StatusPill>
                             </div>
-                            <div className="mt-1 text-[#6b6b6b]">Due {term.dueDate}</div>
+                            <div className="mt-1 text-muted-foreground">Due {term.dueDate}</div>
                             <div className="mt-1 flex justify-between gap-2">
                               <span>{term.amountPaid} paid</span>
-                              <span className="font-semibold text-[#c62828]">{term.balance} balance</span>
+                              <span className="font-semibold text-status-danger-foreground">{term.balance} balance</span>
                             </div>
-                            {!term.payable && term.status !== "Paid" ? <div className="mt-1 text-[11px] text-[#6b6b6b]">Visible now, not payable for this status.</div> : null}
+                            {!term.payable && term.status !== "Paid" ? <div className="mt-1 text-[11px] text-muted-foreground">Visible now, not payable for this status.</div> : null}
                           </div>
                         ))}
                       </div>
@@ -434,7 +449,7 @@ export function ParentFeesTable({
           })
         ) : (
           <tr>
-            <td colSpan={columnCount} className="text-center text-[#6b6b6b]">{emptyState(view, hasRows, hasFilters)}</td>
+            <td colSpan={columnCount} className="text-center text-muted-foreground">{emptyState(view, hasRows, hasFilters)}</td>
           </tr>
         )}
       </ParentTable>
@@ -452,14 +467,14 @@ export function ParentFeesTable({
       />
 
       {confirmation ? (
-        <div className="fixed inset-0 z-[220] grid place-items-center bg-[#1a1a1a]/45 px-4 py-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[220] grid place-items-center bg-black/45 px-4 py-6 backdrop-blur-sm">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmation(null)} aria-label="Close confirmation" />
           <section role="alertdialog" aria-modal="true" aria-labelledby="parent-fee-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl sm:p-6">
             <div className={cn(
               "mb-4 flex size-10 items-center justify-center rounded-lg",
               confirmation.operation === "delete"
-                ? "bg-[#ffebee] text-[#c62828]"
-                : "bg-[#fbe9e7] text-[#e64a19]",
+                ? "bg-status-danger-bg text-status-danger-foreground"
+                : "bg-primary/10 text-primary",
             )}>
               {confirmation.operation === "delete"
                 ? <Trash2 className="size-5" />
@@ -467,10 +482,10 @@ export function ParentFeesTable({
                   ? <ArchiveRestore className="size-5" />
                   : <Archive className="size-5" />}
             </div>
-            <h3 id="parent-fee-archive-title" className="text-[17px] font-semibold text-[#1a1a1a]">
+            <h3 id="parent-fee-archive-title" className="text-[17px] font-semibold text-foreground">
               {confirmationLabel} {confirmation.ids.length === 1 ? "this fee" : `${confirmation.ids.length} fees`}?
             </h3>
-            <p className="mt-2 text-[13px] leading-5 text-[#6b6b6b]">
+            <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
               {confirmation.operation === "delete"
                 ? "The fees move to Removed and can be restored to Archived for 30 days. After that they remain visible as Permanently hidden, while all school and financial records stay unchanged."
                 : confirmation.operation === "recover"
@@ -488,8 +503,8 @@ export function ParentFeesTable({
                 className={cn(
                   "inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 text-[13px] font-medium text-white transition focus:outline-none focus-visible:ring-3 disabled:opacity-60 sm:w-auto",
                   confirmation.operation === "delete"
-                    ? "bg-[#c62828] hover:bg-[#8e1b1b] focus-visible:ring-[#c62828]/25"
-                    : "bg-[#e64a19] hover:bg-[#bf360c] focus-visible:ring-[#e64a19]/25",
+                    ? "bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/25"
+                    : "bg-primary hover:bg-primary/90 focus-visible:ring-ring/50",
                 )}
               >
                 {pending ? "Updating..." : `${confirmationLabel} fees`}
@@ -502,11 +517,36 @@ export function ParentFeesTable({
   );
 }
 
-const secondaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25 disabled:pointer-events-none disabled:opacity-50";
+const secondaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50";
+
+function SelectPageCheckbox({
+  checked,
+  mixed,
+  disabled,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  mixed: boolean;
+  disabled: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = mixed;
+  }, [mixed]);
+
+  return (
+    <label className="flex min-h-6 items-center" aria-label={label}>
+      <input ref={ref} type="checkbox" checked={checked} disabled={disabled} onChange={onChange} className="size-4 accent-primary disabled:opacity-40" />
+    </label>
+  );
+}
 
 function viewTabClass(active: boolean) {
   return cn(
-    "inline-flex min-h-9 items-center justify-center rounded-lg px-3 text-[12.5px] font-medium transition focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/25",
+    "inline-flex min-h-9 items-center justify-center rounded-lg px-3 text-[12.5px] font-medium transition focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
     active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 }

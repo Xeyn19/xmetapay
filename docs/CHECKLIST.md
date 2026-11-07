@@ -32,6 +32,10 @@ Admin role reference: `ADMIN_ROLES.md`
 - [x] Use the outlined XMETA red/orange treatment for every School Admin, Super Admin, and protected Reports-page PDF control while preserving Excel styling.
 - [x] Parent sidebar navigation provides consistent hover, pressed, keyboard-focus, and current-page states across top-level and nested Parent routes.
 - [x] Parent dashboard rows, selection cards, tabs, dialogs, and table actions retain readable text during hover, selected, pressed, and focus states in Light and Dark modes.
+- [x] Organize every authenticated Parent route around its primary task with School fees, Make a payment, Payment history, Allowance wallet, and My students labels while preserving all bookmarked URLs.
+- [x] Collapse Statements of Account and the detailed fee/archive manager by default; keep search visible, secondary filters and exports in compact menus, and bulk archive controls contextual to a selection.
+- [x] Keep Parent Dashboard and Student Profile activity as lightweight previews that link to the complete payment or wallet ledger, without duplicating full-page filters.
+- [x] Preserve guardian ownership, payment allocation, retry, receipt, wallet atomicity, archive recovery, and export behavior throughout the Parent presentation redesign; no migration or SQL import is required.
 - [x] Company super admin uses a sidebar-based monitoring workspace.
 - [x] Company super admin can monitor schools and manage school admin accounts from a dedicated accounts page.
 - [x] Company super admin can open a read-only school profile with distinct current/total student and parent counts plus active-year enrollment and grade breakdowns, without parent or student directories.

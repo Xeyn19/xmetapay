@@ -10,9 +10,9 @@ const historyTable = readFileSync("app/parent/(portal)/history/history-table.tsx
 
 test("parent interactive rows and cards use contrast-safe semantic theme states", () => {
   assert.match(parentUi, /hover:bg-muted/);
-  assert.match(parentUi, /selected\s*\?\s*"border-\[#e64a19\] bg-accent text-accent-foreground"/);
+  assert.match(parentUi, /selected\s*\?\s*"border-primary bg-primary\/10 text-foreground"/);
   assert.match(dashboard, /transition hover:bg-muted/);
-  assert.match(walletTopUp, /selected \? "border-\[#e64a19\] bg-accent" : "border-border bg-card hover:bg-muted"/);
+  assert.match(walletTopUp, /selected \? "border-primary bg-primary\/10" : "border-border bg-card hover:bg-muted"/);
 });
 
 test("parent table tabs, actions, and dialogs use semantic surfaces in both themes", () => {

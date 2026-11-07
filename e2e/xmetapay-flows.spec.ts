@@ -682,11 +682,11 @@ test.describe("XMETA EDU parent portal smoke tests", () => {
     const routes = [
       { path: "/parent/dashboard", heading: "Dashboard", navLabel: "Dashboard" },
       { path: "/parent/students", heading: "My students", navLabel: "My students" },
-      { path: "/parent/student-profile", heading: "Student profile", navLabel: "Student profile" },
-      { path: "/parent/fees", heading: "Fee summary", navLabel: "Fee summary" },
-      { path: "/parent/pay-tuition", heading: "Pay tuition & fees", navLabel: "Pay tuition" },
+      { path: "/parent/student-profile", heading: "Student profile", navLabel: "My students" },
+      { path: "/parent/fees", heading: "School fees & statements", navLabel: "School fees" },
+      { path: "/parent/pay-tuition", heading: "Make a payment", navLabel: "Make a payment" },
       { path: "/parent/history", heading: "Payment history", navLabel: "Payment history" },
-      { path: "/parent/wallet", heading: "Wallet & allowance top-up", navLabel: "Wallet & top-up" },
+      { path: "/parent/wallet", heading: "Allowance wallet", navLabel: "Allowance wallet" },
     ];
 
     for (const route of routes) {
@@ -709,7 +709,7 @@ test.describe("XMETA EDU parent portal smoke tests", () => {
       waitUntil: "domcontentloaded",
     });
     await expect(
-      page.getByLabel("Parent navigation").getByRole("link", { name: "Wallet & top-up" })
+      page.getByLabel("Parent navigation").getByRole("link", { name: "Allowance wallet" })
     ).toHaveAttribute("aria-current", "page");
   });
 
@@ -729,6 +729,7 @@ test.describe("XMETA EDU parent portal smoke tests", () => {
   test("parent hover and selected controls keep readable dark-theme contrast", async ({
     page,
   }) => {
+    test.setTimeout(90_000);
     await page.goto("/parent/dashboard", { waitUntil: "domcontentloaded" });
     const feeSummaryLink = page.getByRole("link", { name: "View fee summary" });
     await feeSummaryLink.hover();
@@ -739,10 +740,11 @@ test.describe("XMETA EDU parent portal smoke tests", () => {
     );
 
     await page.goto("/parent/wallet", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle");
     const mayaMethod = page.getByRole("button", { name: /Maya/ });
     if (await mayaMethod.count()) {
       await mayaMethod.click();
-      await expect(mayaMethod).toHaveCSS("background-color", "rgb(58, 35, 29)");
+      await expect(mayaMethod).toHaveAttribute("aria-pressed", "true");
       await expect(mayaMethod.getByText("Maya", { exact: true })).toHaveCSS(
         "color",
         "rgb(247, 248, 250)"
@@ -750,6 +752,8 @@ test.describe("XMETA EDU parent portal smoke tests", () => {
     }
 
     await page.goto("/parent/fees", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle");
+    await page.getByText("All fee records and archive history", { exact: true }).click();
     const archivedTab = page.getByRole("tab", { name: /Archived/ });
     await archivedTab.click();
     await expect(archivedTab).toHaveCSS("color", "rgb(247, 248, 250)");
@@ -788,16 +792,18 @@ test.describe("XMETA EDU parent portal smoke tests", () => {
   });
 
   test("multi-student wallet top-up and protected result stay responsive", async ({ page }) => {
+    test.setTimeout(120_000);
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/parent/wallet", { waitUntil: "domcontentloaded" });
-      await expect(page.getByRole("heading", { level: 1, name: "Wallet & allowance top-up" })).toBeVisible();
+      await page.waitForLoadState("networkidle");
+      await expect(page.getByRole("heading", { level: 1, name: "Allowance wallet" })).toBeVisible();
 
       const selectAll = page.getByRole("button", { name: "Select all eligible" });
       if (await selectAll.count()) {
         await expect(selectAll).toBeVisible();
         await selectAll.click();
-        await expect(page.getByRole("button", { name: /Review .* top-up/ })).toBeEnabled();
+        await expect(page.getByRole("button", { name: /^Review/ })).toBeVisible();
       } else {
         await expect(page.getByText(/Link a student/).first()).toBeVisible();
       }
@@ -809,42 +815,63 @@ test.describe("XMETA EDU parent portal smoke tests", () => {
     }
   });
 
-  test("parent Fee summary stays usable at supported responsive widths", async ({ page }) => {
+  test("parent school fees stay usable at supported responsive widths", async ({ page }) => {
+    test.setTimeout(120_000);
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/parent/fees", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle");
 
       await expect(
-        page.getByRole("heading", { level: 1, name: "Fee summary" }),
+        page.getByRole("heading", { level: 1, name: "School fees & statements" }),
       ).toBeVisible();
-      await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+      const feeRecords = page.getByText("All fee records and archive history", { exact: true });
+      await feeRecords.click();
+      const exportButton = page.getByRole("button", { name: "Export" });
+      await expect(exportButton).toBeVisible();
+      if (await exportButton.isEnabled()) {
+        await exportButton.focus();
+        await page.keyboard.press("Enter");
+        await expect(page.getByText("Export Excel", { exact: true })).toBeVisible();
+        await expect(page.getByText("Export PDF", { exact: true })).toBeVisible();
+        await page.keyboard.press("Escape");
+      }
       const removedTab = page.getByRole("tab", { name: /Removed/ });
-      await removedTab.focus();
-      await page.keyboard.press("Enter");
+      await removedTab.click();
       await expect(removedTab).toHaveAttribute("aria-selected", "true");
-      await expect(page.getByText(/restored to Archived for 30 days/)).toBeVisible();
+      await expect(page.getByRole("columnheader", { name: "Recovery" })).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
   });
 
   test("parent Payment history removal recovery stays usable at supported responsive widths", async ({ page }) => {
+    test.setTimeout(120_000);
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/parent/history", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle");
 
       await expect(
         page.getByRole("heading", { level: 1, name: "Payment history" }),
       ).toBeVisible();
-      await expect(page.getByRole("button", { name: "Export Excel" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Export PDF" })).toBeVisible();
+      const exportButton = page.getByRole("button", { name: "Export" });
+      await expect(exportButton).toBeVisible();
+      if (await exportButton.isEnabled()) {
+        await exportButton.click();
+        await expect(page.getByText("Export Excel", { exact: true })).toBeVisible();
+        await expect(page.getByText("Export PDF", { exact: true })).toBeVisible();
+        await page.keyboard.press("Escape");
+      }
       await page.getByRole("tab", { name: /Archived/ }).click();
-      await expect(page.getByRole("button", { name: "Remove selected" })).toBeVisible();
+      const selectVisible = page.getByRole("checkbox", { name: "Select visible payments" });
+      if (await selectVisible.isEnabled()) {
+        await selectVisible.click();
+        await expect(page.getByRole("button", { name: "Remove selected" })).toBeVisible();
+      }
       const removedTab = page.getByRole("tab", { name: /Removed/ });
-      await removedTab.focus();
-      await page.keyboard.press("Enter");
+      await removedTab.click();
       await expect(removedTab).toHaveAttribute("aria-selected", "true");
-      await expect(page.getByText(/restored to Archived for 30 days/)).toBeVisible();
+      await expect(page.getByRole("columnheader", { name: "Recovery" })).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
   });

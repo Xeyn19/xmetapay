@@ -201,12 +201,7 @@ test("admin and parent pages use database helpers instead of mock student arrays
   assert.doesNotMatch(adminParentsPage, /parentRows|parentKpis/);
 
   assert.match(parentDashboard, /getParentDashboardData/);
-  assert.match(parentDashboard, /linkParentStudentAction/);
-  assert.match(parentDashboard, /<form action=\{linkParentStudentAction\}/);
   assert.match(parentDashboard, /href=\{student\.profileHref\}/);
-  assert.match(parentDashboard, /Use the exact reference and official name/);
-  assert.match(parentDashboard, /name="studentFirstName"/);
-  assert.match(parentDashboard, /name="studentLastName"/);
   assert.match(parentDashboard, /href="\/parent\/students"/);
   assert.doesNotMatch(parentDashboard, /href="\/parent\/student-profile"/);
   assert.doesNotMatch(parentDashboard, /children|dashboardMetrics|outstandingFees|recentActivity/);
@@ -253,10 +248,8 @@ test("parent portal removes dead enrollment wizard and keeps student reference l
   assert.doesNotMatch(parentShell, /Enroll student/);
   assert.doesNotMatch(parentPortalData, /Enroll a student|\/parent\/enroll/);
 
-  assert.match(parentDashboard, /linkParentStudentAction/);
-  assert.match(parentDashboard, /Add another student/);
   assert.match(parentDashboard, /Manage students/);
-  assert.match(parentDashboard, /name="studentReference"/);
+  assert.match(parentDashboard, /Add a student/);
   assert.doesNotMatch(parentDashboard, /href="\/parent\/enroll"/);
 });
 
@@ -294,7 +287,7 @@ test("parent portal shell and profile use real database-backed identity", () => 
   assert.match(parentShell, /context\.relationshipLabel/);
   assert.match(parentShell, /const hasPayableFees = context\.payableFeeCount > 0/);
   assert.match(parentShell, /context\.payableFeeCount > 0/);
-  assert.match(parentShell, /hasPayableFees \? \(/);
+  assert.match(parentShell, /const showPayAction = hasPayableFees/);
   assert.match(parentShell, /No fees due/);
   assert.match(parentShell, /Parent portal/);
   assert.match(parentShell, /context\.schoolName/);

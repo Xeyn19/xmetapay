@@ -22,7 +22,7 @@ export default async function ReceiptPage({
       <div className="mx-auto max-w-3xl">
         {data.warning ? <ParentAlert>{data.warning}</ParentAlert> : null}
         <ParentCard title="Receipt unavailable" icon={Receipt}>
-          <div className="grid gap-4 text-[13px] leading-5 text-[#6b6b6b]">
+          <div className="grid gap-4 text-[13px] leading-5 text-muted-foreground">
             <p>No payment receipt is available for this parent account yet.</p>
             <div className="flex flex-wrap gap-2">
               <Link href="/parent/pay-tuition"><ParentButton tone="primary"><Receipt className="size-4" />Pay fees</ParentButton></Link>
@@ -36,10 +36,10 @@ export default async function ReceiptPage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <section className="mb-5 rounded-[20px] border border-[#2e7d32]/20 bg-[#e8f5e9] p-8 text-center">
-        <CheckCircle2 className="mx-auto size-14 text-[#2e7d32]" />
-        <h2 className="mt-4 text-2xl font-bold text-[#1a1a1a]">Payment complete</h2>
-        <p className="mt-2 text-sm text-[#6b6b6b]">Your payment was recorded in the school fee ledger.</p>
+      <section className="mb-5 rounded-xl border border-status-success-foreground/20 bg-status-success-bg p-6 text-center sm:p-8">
+        <CheckCircle2 className="mx-auto size-14 text-status-success-foreground" />
+        <h2 className="mt-4 text-2xl font-bold text-foreground">Payment complete</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Your payment was recorded in the school fee ledger.</p>
       </section>
       <ParentCard title="Transaction receipt" icon={Receipt}>
         <DetailRows

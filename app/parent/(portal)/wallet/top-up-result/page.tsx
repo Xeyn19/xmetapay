@@ -33,10 +33,10 @@ export default async function WalletTopUpResultPage({
 
   return (
     <div className="mx-auto grid max-w-4xl gap-5">
-      <section className="rounded-xl border border-[#2e7d32]/20 bg-[#e8f5e9] p-5 text-center sm:p-8">
-        <CheckCircle2 className="mx-auto size-12 text-[#2e7d32]" />
-        <h1 className="mt-3 text-xl font-bold text-[#1a1a1a] sm:text-2xl">Allowance top-up complete</h1>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-[#6b6b6b]">
+      <section className="rounded-xl border border-status-success-foreground/20 bg-status-success-bg p-5 text-center sm:p-8">
+        <CheckCircle2 className="mx-auto size-12 text-status-success-foreground" />
+        <h1 className="mt-3 text-xl font-bold text-foreground sm:text-2xl">Allowance top-up complete</h1>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
           {data.batch.itemCount} student wallet{data.batch.itemCount === 1 ? "" : "s"} received {data.batch.totalAmount} in total.
         </p>
       </section>
@@ -56,7 +56,7 @@ export default async function WalletTopUpResultPage({
             <article key={item.paymentId} className="grid gap-3 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
               <div className="min-w-0">
                 <h2 className="truncate text-[13px] font-semibold">{item.studentName}</h2>
-                <p className="mt-1 truncate text-xs text-[#6b6b6b]">
+                <p className="mt-1 truncate text-xs text-muted-foreground">
                   {item.studentReference} · {item.paymentReference}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
@@ -88,9 +88,9 @@ export default async function WalletTopUpResultPage({
 
 function SummaryItem({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
   return (
-    <div className="rounded-lg bg-[#f8f8f7] p-3">
-      <dt className="text-xs text-[#6b6b6b]">{label}</dt>
-      <dd className={`mt-1 break-words ${strong ? "text-base font-bold text-[#2e7d32]" : "font-semibold"}`}>{value}</dd>
+    <div className="rounded-lg bg-muted p-3">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className={`mt-1 break-words ${strong ? "text-base font-bold text-status-success-foreground" : "font-semibold"}`}>{value}</dd>
     </div>
   );
 }
