@@ -1,4 +1,4 @@
-import { Plus, Users } from "lucide-react";
+import { ChevronDown, Plus, Users } from "lucide-react";
 
 import { linkParentStudentAction } from "@/app/parent/student-link/actions";
 import { requireRole } from "@/lib/auth/session";
@@ -26,11 +26,14 @@ export default async function ParentStudentsPage() {
         )}
       </section>
 
-      <ParentCard title={hasLinkedStudents ? "Add another student" : "Add student reference"} icon={Plus} className="self-start">
-        <p className="mb-4 text-[13px] leading-6 text-muted-foreground">
-          Enter the exact reference and official name. We search only your assigned school and never display student search results.
-        </p>
-        <form action={linkParentStudentAction} className="grid gap-3">
+      <details open={!hasLinkedStudents} className="group self-start overflow-hidden rounded-xl border border-border bg-card">
+        <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 outline-none hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-2 text-sm font-semibold text-foreground"><Plus className="size-4 text-primary" />{hasLinkedStudents ? "Add another student" : "Add student reference"}</span>
+          <ChevronDown className="size-5 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="border-t border-border p-4 sm:p-5">
+          <p className="mb-4 text-[13px] leading-6 text-muted-foreground">Enter the exact reference and official name. We search only your assigned school and never display student search results.</p>
+          <form action={linkParentStudentAction} className="grid gap-3">
           <input type="hidden" name="redirectTo" value="/parent/students" />
           <ParentField label="Student reference" required>
             <input name="studentReference" className={parentControlClass} placeholder="e.g. BWA-2025-0312" required />
@@ -45,8 +48,9 @@ export default async function ParentStudentsPage() {
             <Plus className="size-4" />
             {hasLinkedStudents ? "Request another connection" : "Request connection"}
           </ParentButton>
-        </form>
-      </ParentCard>
+          </form>
+        </div>
+      </details>
     </div>
   );
 }

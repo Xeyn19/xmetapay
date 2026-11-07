@@ -16,7 +16,7 @@ export default async function PayTuitionPage() {
       <>
         {data.warning ? <ParentAlert>{data.warning}</ParentAlert> : null}
         <ParentCard title="No payable fees" icon={Receipt}>
-          <div className="grid gap-4 text-[13px] leading-5 text-[#6b6b6b]">
+          <div className="grid gap-4 text-[13px] leading-5 text-muted-foreground">
             <p>No open or partial fee balances are available for your linked students.</p>
             <Link href="/parent/fees">
               <ParentButton tone="primary">

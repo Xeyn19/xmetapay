@@ -23,6 +23,7 @@ export function ParentWalletActivityTable({
   exportTitle = "Wallet activity",
   worksheetName = "Wallet activity",
   showStudent = true,
+  compactPreview = false,
 }: {
   rows: ParentWalletActivity[];
   excelFilename?: string;
@@ -30,6 +31,7 @@ export function ParentWalletActivityTable({
   exportTitle?: string;
   worksheetName?: string;
   showStudent?: boolean;
+  compactPreview?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
@@ -87,12 +89,17 @@ export function ParentWalletActivityTable({
 
   return (
     <>
-      <div className="border-b border-black/[0.08] px-4 py-3 sm:px-5">
+      {!compactPreview ? <div className="border-b border-border px-4 py-3 sm:px-5">
         <DashboardTableControls
           tone="parent"
+          layout="compact"
           query={query}
           onQueryChange={setQuery}
-          searchPlaceholder="Search wallet activity..."
+          searchPlaceholder="Search wallet activity…"
+          searchLabel="Search wallet activity by student, description, channel, amount, or status"
+          activeFilterCount={Number(status !== "all") + Number(channel !== "all")}
+          filterTitle="Filter wallet activity"
+          filterDescription="Narrow transactions by status or channel."
           filters={[
             { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(rows.map((row) => row.status), "All statuses") },
             { label: "Channel", value: channel, onChange: setChannel, options: toFilterOptions(rows.map((row) => row.channel), "All channels") },
@@ -102,6 +109,8 @@ export function ParentWalletActivityTable({
             setStatus("all");
             setChannel("all");
           }}
+          clearLabel="Reset filters"
+          clearDisabled={query.trim().length === 0 && status === "all" && channel === "all"}
           onExport={() => exportRowsToExcel(excelFilename, exportTitle, filteredRows, exportColumns, {
             worksheetName,
             ...exportOptions,
@@ -111,16 +120,16 @@ export function ParentWalletActivityTable({
           exportingLabel="Generating Excel..."
           exportDisabled={filteredRows.length === 0}
         />
-      </div>
+      </div> : null}
       <ParentTable headers={headers}>
-        {filteredRows.length > 0 ? (
-          pagination.pageRows.map((activity) => (
+        {(compactPreview ? rows : filteredRows).length > 0 ? (
+          (compactPreview ? rows : pagination.pageRows).map((activity) => (
             <tr key={activity.id}>
-              <td className="text-[12px] text-[#6b6b6b]">{activity.date}</td>
+              <td className="text-[12px] text-muted-foreground">{activity.date}</td>
               {showStudent ? <td className="font-medium">{activity.studentName}</td> : null}
-              <td className="font-medium text-[#1a1a1a]">{activity.description}</td>
-              <td className="text-[#6b6b6b]">{activity.channel}</td>
-              <td className={activity.amount.startsWith("+") ? "font-semibold text-[#2e7d32]" : "font-semibold text-[#c62828]"}>
+              <td className="font-medium text-foreground">{activity.description}</td>
+              <td className="text-muted-foreground">{activity.channel}</td>
+              <td className={activity.amount.startsWith("+") ? "font-semibold text-status-success-foreground" : "font-semibold text-status-danger-foreground"}>
                 {activity.amount}
               </td>
               <td className="font-semibold">{activity.balanceAfter}</td>
@@ -129,13 +138,13 @@ export function ParentWalletActivityTable({
           ))
         ) : (
           <tr>
-            <td colSpan={showStudent ? 7 : 6} className="text-center text-[#6b6b6b]">
+            <td colSpan={showStudent ? 7 : 6} className="text-center text-muted-foreground">
               {rows.length === 0 ? "No wallet activity yet." : "No wallet activity matches the current filters."}
             </td>
           </tr>
         )}
       </ParentTable>
-      <DashboardTablePagination
+      {!compactPreview ? <DashboardTablePagination
         page={pagination.page}
         pageSize={pagination.pageSize}
         pageCount={pagination.pageCount}
@@ -145,7 +154,7 @@ export function ParentWalletActivityTable({
         onPageChange={pagination.setPage}
         onPageSizeChange={pagination.setPageSize}
         tone="parent"
-      />
+      /> : null}
     </>
   );
 }

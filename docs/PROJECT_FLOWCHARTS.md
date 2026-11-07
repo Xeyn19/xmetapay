@@ -419,6 +419,20 @@ Database touchpoints:
 
 ## Parent Portal Flow
 
+The authenticated portal uses one task-focused path while preserving every existing URL: **Dashboard** provides bounded payment and wallet previews, **My students** owns student linking and profile access, **School fees & statements** provides collapsed assessment summaries plus an optional detailed archive manager, **Make a payment** groups payable items by student, **Payment history** owns the full transaction ledger, and **Allowance wallet** owns top-up and full wallet activity. Search stays visible on full ledgers; secondary filters, exports, and bulk archive actions use progressive disclosure. Guardian authorization continues to require `student_guardians.parent_user_id` and the assigned-school boundary.
+
+```mermaid
+flowchart LR
+  D[Parent dashboard] --> S[My students]
+  S --> P[Student profile]
+  D --> F[School fees and statements]
+  F --> A[Open one Statement of Account]
+  A --> M[Make a payment]
+  M --> R[Receipt and payment history]
+  D --> W[Allowance wallet]
+  W --> T[Top-up result and full wallet ledger]
+```
+
 ### 1. Parent Registration And School Approval
 
 Implemented.

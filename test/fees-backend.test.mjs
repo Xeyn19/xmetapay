@@ -263,9 +263,8 @@ test("parent fees page reads real balances instead of static fee summary", () =>
   assert.match(feesTable, /term\.dueDate/);
   assert.match(feesTable, /startsWith\("Term:"\)/);
   assert.doesNotMatch(feesTable, /onExportPdf=\{\(\) => exportRowsToPdf/);
-  assert.match(page, /data\.hasPayableFees/);
-  assert.match(page, /Pay fees/);
-  assert.match(page, /No balance due/);
+  assert.match(page, /All fee records and archive history/);
+  assert.match(page, /AssessmentStatements/);
   assert.doesNotMatch(page, /feeSummary/);
   assert.doesNotMatch(parentPortalData, /export const feeSummary/);
   assert.doesNotMatch(parentPortalData, /Fee backend pending/);

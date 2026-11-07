@@ -9,7 +9,8 @@ test("parent sidebar centralizes active routes for every nested portal flow", ()
   assert.match(navData, /isParentNavItemActive/);
   assert.match(navData, /\{ path: "\/parent\/receipt" \}/);
   assert.match(navData, /\{ path: "\/parent\/wallet", match: "prefix" \}/);
-  assert.match(navData, /\{ path: "\/parent\/students", match: "descendant" \}/);
+  assert.match(navData, /label: "My students"/);
+  assert.doesNotMatch(navData, /label: "Student profile"/);
   assert.match(navData, /pathname\.startsWith\(`\$\{path\}\/`\)/);
   assert.match(parentShell, /isParentNavItemActive\(pathname, item\)/);
 });

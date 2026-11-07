@@ -25,19 +25,16 @@ test("parent fee and payment views export branded Excel while retaining branded 
   assert.match(historyTable, /Recovery deadline/);
 });
 
-test("parent dashboard and reusable wallet exports use shared columns for Excel and PDF", () => {
-  for (const component of [recentPayments, walletActivity]) {
-    assert.match(component, /const exportColumns/);
-    assert.match(component, /exportRowsToExcel/);
-    assert.match(component, /exportRowsToPdf/);
-    assert.match(component, /exportLabel="Export Excel"/);
-    assert.doesNotMatch(component, /exportRowsToCsv|\.csv"/);
-  }
-
-  assert.match(recentPayments, /parent-recent-payments\.xlsx/);
+test("parent full wallet history keeps exports while dashboard previews stay lightweight", () => {
+  assert.match(walletActivity, /const exportColumns/);
+  assert.match(walletActivity, /exportRowsToExcel/);
+  assert.match(walletActivity, /exportRowsToPdf/);
+  assert.match(walletActivity, /layout="compact"/);
+  assert.doesNotMatch(walletActivity, /exportRowsToCsv|\.csv"/);
+  assert.doesNotMatch(recentPayments, /DashboardTableControls|exportRowsToExcel|usePaginatedRows/);
   assert.match(walletActivity, /excelFilename = "parent-wallet-activity\.xlsx"/);
   assert.match(walletPage, /excelFilename="parent-wallet-transactions\.xlsx"/);
-  assert.match(studentProfile, /excelFilename=\{`parent-\$\{student\.id\}-wallet-activity\.xlsx`\}/);
+  assert.match(studentProfile, /compactPreview/);
 });
 
 test("parent Excel and PDF exports include filtered counts and relevant summaries", () => {
@@ -45,7 +42,6 @@ test("parent Excel and PDF exports include filtered counts and relevant summarie
   assert.match(feeTable, /label: "Paid"/);
   assert.match(feeTable, /label: "Balance"/);
   assert.match(historyTable, /label: "Total amount"/);
-  assert.match(recentPayments, /label: "Total amount"/);
   assert.match(walletActivity, /label: "Net activity"/);
   assert.match(walletActivity, /filteredRows/);
 });

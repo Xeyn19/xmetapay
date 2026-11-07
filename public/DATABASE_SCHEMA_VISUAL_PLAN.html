@@ -781,9 +781,9 @@ flowchart TD
           </div>
           <pre class="mermaid">
 flowchart TD
-  A["Parent opens fee summary"] --> B["Load linked students"]
-  B --> C["Load open and partial fee assignments"]
-  C --> D["Parent selects payable fees"]
+  A["Parent opens School fees & statements"] --> B["Load guardian-authorized linked students"]
+  B --> C["Show collapsed assessment statements and balances"]
+  C --> D["Open a statement or choose Make a payment"]
   D --> E["Create payment with pending status"]
   E --> F["Payment channel confirms payment"]
   F --> G["Update payment status to paid"]
@@ -804,6 +804,7 @@ flowchart TD
   P -->|Expired| P3["Keep visible as Permanently hidden"]
   M -->|No| O["Keep fee visible in Current fees"]
           </pre>
+          <p>The compact statement, Filters, Export, and contextual archive controls are derived presentation over existing assignments, assessment terms, payments, receipts, wallets, and parent archive metadata. Dashboard and Student Profile show bounded previews; dedicated routes keep the complete ledgers. No new table, column, migration, SQL import, or authorization path is introduced.</p>
         </div>
 
         <h3>Parent Wallet and Allowance Flow</h3>

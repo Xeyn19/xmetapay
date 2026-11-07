@@ -79,10 +79,10 @@ export function WalletTopUpForm({
       <section className="grid gap-3" aria-labelledby="student-wallet-selection">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 id="student-wallet-selection" className="text-[13px] font-semibold text-[#1a1a1a]">
-              Student wallets
+            <h3 id="student-wallet-selection" className="text-[13px] font-semibold text-foreground">
+              1. Choose student wallets
             </h3>
-            <p className="mt-1 text-xs text-[#6b6b6b]">
+            <p className="mt-1 text-xs text-muted-foreground">
               {selectedIds.length} selected · up to {maxSelectedWallets}
             </p>
           </div>
@@ -90,7 +90,7 @@ export function WalletTopUpForm({
             <button
               type="button"
               onClick={() => setSelectedIds(eligibleWallets.slice(0, maxSelectedWallets).map((wallet) => wallet.studentId))}
-              className="min-h-11 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+              className="min-h-11 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               Select all eligible
             </button>
@@ -98,7 +98,7 @@ export function WalletTopUpForm({
               type="button"
               onClick={() => setSelectedIds([])}
               disabled={selectedIds.length === 0}
-              className="min-h-11 rounded-lg px-3 text-xs font-semibold text-[#6b6b6b] disabled:opacity-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+              className="min-h-11 rounded-lg px-3 text-xs font-semibold text-muted-foreground disabled:opacity-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               Clear selection
             </button>
@@ -113,7 +113,7 @@ export function WalletTopUpForm({
               <div
                 key={wallet.studentId}
                 className={`rounded-xl border p-3 transition ${
-                  selected ? "border-[#e64a19] bg-accent" : "border-border bg-card hover:bg-muted"
+                  selected ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-muted"
                 } ${unavailable ? "opacity-65" : ""}`}
               >
                 <label className="flex min-h-11 cursor-pointer items-start gap-3">
@@ -122,21 +122,21 @@ export function WalletTopUpForm({
                     checked={selected}
                     disabled={unavailable}
                     onChange={() => toggleStudent(wallet.studentId)}
-                    className="mt-1 size-4 accent-[#e64a19]"
+                    className="mt-1 size-4 accent-primary"
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-semibold">{wallet.studentName}</span>
-                    <span className="block truncate text-xs text-[#6b6b6b]">{wallet.meta}</span>
-                    <span className="mt-1 block text-xs text-[#6b6b6b]">
-                      Balance: <strong className="text-[#1a1a1a]">{wallet.balance}</strong>
+                    <span className="block truncate text-xs text-muted-foreground">{wallet.meta}</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Balance: <strong className="text-foreground">{wallet.balance}</strong>
                     </span>
                     {unavailable ? (
-                      <span className="mt-1 block text-xs font-medium text-[#b3261e]">
+                      <span className="mt-1 block text-xs font-medium text-destructive">
                         {wallet.statusLabel} wallets cannot receive top-ups.
                       </span>
                     ) : null}
                   </span>
-                  {selected ? <Check className="size-5 shrink-0 text-[#e64a19]" /> : null}
+                  {selected ? <Check className="size-5 shrink-0 text-primary" /> : null}
                 </label>
                 {selected ? (
                   <label className="mt-3 block">
@@ -162,7 +162,8 @@ export function WalletTopUpForm({
       </section>
 
       <section className="grid gap-2">
-        <div className="text-[13px] font-semibold">Apply amount to selected</div>
+        <div className="text-[13px] font-semibold">2. Set the amount</div>
+        <p className="text-xs text-muted-foreground">Quick amounts apply to every selected wallet. You can still edit each student amount.</p>
         <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-4">
           {quickAmounts.map((value) => (
             <button
@@ -170,7 +171,7 @@ export function WalletTopUpForm({
               type="button"
               onClick={() => applyAmount(value)}
               disabled={selectedIds.length === 0}
-              className="min-h-11 rounded-lg border border-border bg-card text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+              className="min-h-11 rounded-lg border border-border bg-card text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               P{value}
             </button>
@@ -179,9 +180,9 @@ export function WalletTopUpForm({
       </section>
 
       <section className="grid gap-3">
-        <div className="flex items-center gap-2 text-[13px] font-semibold text-[#1a1a1a]">
-          <CreditCard className="size-4 text-[#e64a19]" />
-          Payment method
+        <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+          <CreditCard className="size-4 text-primary" />
+          3. Choose a payment method
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {walletTopUpMethods.map((item) => (
@@ -199,15 +200,15 @@ export function WalletTopUpForm({
 
       <div className="rounded-xl border border-border bg-muted p-4 text-[13px]">
         <div className="flex justify-between gap-3">
-          <span className="text-[#6b6b6b]">Selected wallets</span>
+          <span className="text-muted-foreground">Selected wallets</span>
           <span className="font-semibold">{selectedWallets.length}</span>
         </div>
         <div className="mt-2 flex justify-between gap-3">
-          <span className="text-[#6b6b6b]">Combined top-up</span>
-          <span className="text-base font-bold text-[#1a1a1a]">{formatMoney(total)}</span>
+          <span className="text-muted-foreground">Combined top-up</span>
+          <span className="text-base font-bold text-foreground">{formatMoney(total)}</span>
         </div>
         {selectedWallets.length > 0 && !amountsValid ? (
-          <p className="mt-3 text-xs font-medium text-[#b3261e]">
+          <p className="mt-3 text-xs font-medium text-destructive">
             Enter P1 to P10,000 for every selected student.
           </p>
         ) : null}
@@ -229,7 +230,7 @@ export function WalletTopUpForm({
             <button
               type="button"
               onClick={() => setReviewing(false)}
-              className="absolute right-3 top-3 flex size-11 items-center justify-center rounded-lg text-[#6b6b6b] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/20"
+              className="absolute right-3 top-3 flex size-11 items-center justify-center rounded-lg text-muted-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               aria-label="Close top-up review"
             >
               <X className="size-5" />
@@ -237,7 +238,7 @@ export function WalletTopUpForm({
             <h3 id="wallet-top-up-review-title" className="pr-10 text-lg font-bold">
               Confirm allowance top-up
             </h3>
-            <p className="mt-2 text-[13px] leading-5 text-[#6b6b6b]">
+            <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
               All wallet updates are recorded together. If one wallet is unavailable, none will be topped up.
             </p>
             <div className="mt-4 max-h-64 space-y-2 overflow-y-auto">
@@ -249,7 +250,7 @@ export function WalletTopUpForm({
               ))}
             </div>
             <div className="mt-4 flex justify-between border-t border-border pt-4 text-sm">
-              <span className="text-[#6b6b6b]">Total</span>
+              <span className="text-muted-foreground">Total</span>
               <span className="font-bold">{formatMoney(total)}</span>
             </div>
             <div className="mt-5 flex flex-col-reverse gap-2 min-[420px]:flex-row min-[420px]:justify-end">

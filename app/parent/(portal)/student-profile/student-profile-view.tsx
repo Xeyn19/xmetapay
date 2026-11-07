@@ -50,15 +50,15 @@ export function StudentProfileSelector({ students }: { students: ParentLinkedStu
           <Link
             key={student.id}
             href={student.profileHref}
-            className="flex flex-col gap-3 px-4 py-4 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-[#e64a19]/20 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-5"
+            className="flex flex-col gap-3 px-4 py-4 transition hover:bg-muted focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between sm:px-5"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-[10px] bg-[#fbe9e7] text-lg font-semibold text-[#e64a19]">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-lg font-semibold text-primary">
                 {student.initials}
               </span>
               <div className="min-w-0">
-                <div className="truncate text-[15px] font-medium text-[#1a1a1a]">{student.fullName}</div>
-                <div className="mt-0.5 truncate text-xs text-[#6b6b6b]">{student.meta}</div>
+                <div className="truncate text-[15px] font-medium text-foreground">{student.fullName}</div>
+                <div className="mt-0.5 truncate text-xs text-muted-foreground">{student.meta}</div>
               </div>
             </div>
             <StatusPill tone={student.status === "active" ? "blue" : "muted"}>
@@ -85,13 +85,11 @@ export function StudentProfileSelector({ students }: { students: ParentLinkedStu
 export function StudentProfileView({ student }: { student: StudentProfile }) {
   return (
     <>
-      <section className="relative mb-5 flex flex-wrap items-center gap-5 overflow-hidden rounded-[20px] bg-[#e64a19] px-6 py-6 text-white">
-        <div className="absolute -right-8 -top-8 size-36 rounded-full bg-white/10" />
-        <div className="absolute -bottom-10 right-24 size-28 rounded-full bg-black/10" />
-        <span className="relative flex size-16 items-center justify-center rounded-full border-2 border-white/25 bg-white/15 text-xl font-semibold">
+      <section className="mb-5 flex flex-wrap items-center gap-5 rounded-xl border border-primary/25 bg-primary px-5 py-5 text-primary-foreground sm:px-6">
+        <span className="flex size-16 items-center justify-center rounded-full border-2 border-primary-foreground/25 bg-primary-foreground/10 text-xl font-semibold">
           {student.initials}
         </span>
-        <div className="relative min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <h2 className="text-[22px] font-bold">{student.fullName}</h2>
           <p className="mt-1 text-[13px] text-white/80">
             {student.schoolName} - SY {student.schoolYearName}
@@ -102,7 +100,7 @@ export function StudentProfileView({ student }: { student: StudentProfile }) {
             ))}
           </div>
         </div>
-        <div className="relative flex flex-wrap gap-5 text-center min-[520px]:gap-7">
+        <div className="flex flex-wrap gap-5 text-center min-[520px]:gap-7">
           {student.stats.map((stat) => (
             <div key={stat.label}>
               <div className="text-xl font-bold">{stat.value}</div>
@@ -145,6 +143,7 @@ export function StudentProfileView({ student }: { student: StudentProfile }) {
           exportTitle={`${student.fullName} wallet activity`}
           worksheetName="Student wallet activity"
           showStudent={false}
+          compactPreview
         />
       </ParentCard>
     </>

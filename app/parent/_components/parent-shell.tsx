@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Menu, Wallet, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { logoutAction } from "@/app/auth/actions";
 import { BrandLogo } from "@/app/_components/brand-logo";
@@ -27,10 +27,13 @@ export function ParentShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const meta = getParentMeta(pathname, context);
   const Settings = settingsIcon;
   const logout = logoutAction.bind(null, "parent");
   const hasPayableFees = context.payableFeeCount > 0;
+  const showPayAction = hasPayableFees && pathname !== "/parent/pay-tuition";
   const navSections = parentNavSections.map((section) => ({
     ...section,
     items: section.items.map((item) => ({
@@ -41,13 +44,31 @@ export function ParentShell({
     })),
   }));
 
+  useEffect(() => {
+    if (!open) return;
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
+  const closeMenu = () => {
+    setOpen(false);
+    window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+  };
+
   return (
     <div className="dashboard-theme min-h-[100svh] overflow-x-hidden">
       {!open ? (
         <button
           type="button"
+          ref={menuButtonRef}
           onClick={() => setOpen(true)}
-          className="fixed left-3 top-3 z-[120] flex size-11 items-center justify-center rounded-[10px] bg-[#e64a19] text-white shadow-sm transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30 lg:hidden"
+          className="fixed left-3 top-3 z-[120] flex size-11 items-center justify-center rounded-[10px] bg-primary text-primary-foreground shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden"
           aria-label="Open parent menu"
           aria-controls="parent-sidebar"
           aria-expanded={open}
@@ -56,7 +77,7 @@ export function ParentShell({
         </button>
       ) : null}
 
-      {open ? <button type="button" className="fixed inset-0 z-[90] bg-black/35 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu overlay" /> : null}
+      {open ? <button type="button" className="fixed inset-0 z-[90] bg-black/45 lg:hidden" onClick={closeMenu} aria-label="Close parent menu overlay" /> : null}
 
       <aside
         className={cn(
@@ -64,8 +85,8 @@ export function ParentShell({
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         id="parent-sidebar"
-        role="dialog"
-        aria-modal="true"
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? "true" : undefined}
         aria-label="Parent navigation"
       >
         <div className="shrink-0 border-b border-sidebar-border px-[18px] pb-3.5 pt-4">
@@ -80,7 +101,7 @@ export function ParentShell({
         </div>
 
         <div className="flex shrink-0 items-center gap-2.5 border-b border-sidebar-border bg-sidebar-accent px-[18px] py-2.5">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e64a19] text-[13px] font-semibold text-white">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-[13px] font-semibold text-primary-foreground">
             {context.parentInitials}
           </span>
           <div className="min-w-0 flex-1">
@@ -89,7 +110,7 @@ export function ParentShell({
               {context.relationshipLabel} - {context.contactLine}
             </div>
           </div>
-          <button type="button" className="flex size-11 items-center justify-center rounded-md text-sidebar-foreground/65 transition hover:bg-sidebar-primary hover:text-sidebar-primary-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30 lg:hidden" onClick={() => setOpen(false)} aria-label="Close parent menu" aria-controls="parent-sidebar">
+          <button ref={closeButtonRef} type="button" className="flex size-11 items-center justify-center rounded-md text-sidebar-foreground/65 transition hover:bg-sidebar-primary hover:text-sidebar-primary-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-sidebar-ring/30 lg:hidden" onClick={closeMenu} aria-label="Close parent menu" aria-controls="parent-sidebar">
             <X className="size-4" />
           </button>
         </div>
@@ -117,7 +138,7 @@ export function ParentShell({
                     >
                       <Icon className="size-[17px] shrink-0" />
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                      {item.badge ? <span className="shrink-0 rounded-full bg-[#c62828] px-1.5 text-[10px] font-semibold leading-4 text-white">{item.badge}</span> : null}
+                      {item.badge ? <span className="shrink-0 rounded-full bg-destructive px-1.5 text-[10px] font-semibold leading-4 text-destructive-foreground">{item.badge}</span> : null}
                     </Link>
                   );
                 })}
@@ -146,17 +167,17 @@ export function ParentShell({
       <div className="min-h-[100svh] min-w-0 max-w-full lg:pl-60">
         <header className="sticky top-0 z-50 flex min-w-0 max-w-full flex-col gap-3 border-b border-border bg-background px-4 py-3 pl-16 sm:flex-row sm:items-center sm:justify-between lg:px-7 lg:pl-7">
           <div className="min-w-0 max-w-full">
-            <h1 className="text-[17px] font-semibold leading-6 text-[#1a1a1a]">{meta.title}</h1>
-            <p className="mt-0.5 text-xs leading-5 text-[#6b6b6b]">{meta.subtitle}</p>
+            <h1 className="text-[17px] font-semibold leading-6 text-foreground">{meta.title}</h1>
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{meta.subtitle}</p>
           </div>
           <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:w-auto">
             <ThemeToggle className="justify-self-end min-[420px]:col-span-2 sm:col-span-1 sm:row-start-1" />
-            {hasPayableFees ? (
-              <Link href="/parent/pay-tuition" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#e64a19] bg-[#e64a19] px-3.5 text-[13px] font-medium text-white transition hover:bg-[#bf360c] focus:outline-none focus-visible:ring-3 focus-visible:ring-[#e64a19]/30">
+            {showPayAction ? (
+              <Link href="/parent/pay-tuition" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-primary bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
                 <Wallet className="size-4" />
                 Pay fees
               </Link>
-            ) : (
+            ) : !hasPayableFees && pathname !== "/parent/pay-tuition" ? (
               <button
                 type="button"
                 disabled
@@ -165,7 +186,7 @@ export function ParentShell({
                 <Wallet className="size-4" />
                 No fees due
               </button>
-            )}
+            ) : null}
           </div>
         </header>
         {context.schoolStatus === "inactive" ? (

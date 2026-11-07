@@ -8,7 +8,7 @@ const parentShell = readFileSync("app/parent/_components/parent-shell.tsx", "utf
 test("admin and parent shells expose accessible mobile drawer controls", () => {
   [
     { name: "admin", source: adminShell, drawerId: "admin-sidebar", modalPattern: /aria-modal=\{sidebarOpen \? true : undefined\}/, rolePattern: /role=\{sidebarOpen \? "dialog" : undefined\}/ },
-    { name: "parent", source: parentShell, drawerId: "parent-sidebar", modalPattern: /aria-modal="true"/, rolePattern: /role="dialog"/ },
+    { name: "parent", source: parentShell, drawerId: "parent-sidebar", modalPattern: /aria-modal=\{open \? "true" : undefined\}/, rolePattern: /role=\{open \? "dialog" : undefined\}/ },
   ].forEach(({ name, source, drawerId, modalPattern, rolePattern }) => {
     assert.match(source, new RegExp(`aria-controls="${drawerId}"`), `${name} menu button should target the drawer`);
     assert.match(source, new RegExp(`id="${drawerId}"`), `${name} drawer should have a stable id`);
@@ -56,7 +56,7 @@ test("admin and parent shells keep stable sidebar text layout", () => {
 
   [adminShell, parentShell].forEach((source) => {
     assert.match(source, /<span className="min-w-0 flex-1 truncate">\{item\.label\}<\/span>/);
-    assert.match(source, /shrink-0 rounded-full bg-\[#c62828\]/);
+    assert.match(source, /shrink-0 rounded-full bg-(?:destructive|\[#c62828\])/);
     assert.match(source, /<span className="truncate">Log out<\/span>/);
   });
 });
