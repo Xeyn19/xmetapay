@@ -30,9 +30,10 @@ test("parent shell keeps one contextual payment action and accessible mobile res
 });
 
 test("school fees prioritizes compact statements and collapses detailed records", () => {
-  assert.match(statements, /<details key=\{statement\.id\}/);
+  assert.match(statements, /<details className="group overflow-hidden/);
   assert.match(statements, /Outstanding balance/);
-  assert.match(statements, /Next: \$\{nextTerm\.name\}/);
+  assert.match(statements, /View statement details/);
+  assert.match(statements, /Payment progress/);
   assert.match(feesPage, /All fee records and archive history/);
   assert.match(feesPage, /<details className="group/);
 });

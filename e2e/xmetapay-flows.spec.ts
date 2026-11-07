@@ -413,6 +413,16 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     const reminderBox = await reminders.boundingBox();
     expect(reportBox?.y ?? Number.MAX_SAFE_INTEGER).toBeLessThan(reminderBox?.y ?? 0);
 
+    const allRecordsShown = page.getByText(/Total: \d+ records · All shown/);
+    if (await allRecordsShown.count()) {
+      await expect(allRecordsShown).toBeVisible();
+      await expect(page.getByLabel("Rows per page")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Prev" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Next" })).toHaveCount(0);
+    } else {
+      await expect(page.getByLabel("Rows per page")).toBeVisible();
+    }
+
     await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: /^Filters/ }).first().click();
     await expect(page.getByText("Filter tuition balances", { exact: true })).toBeVisible();
@@ -825,6 +835,20 @@ test.describe("XMETA EDU parent portal smoke tests", () => {
       await expect(
         page.getByRole("heading", { level: 1, name: "School fees & statements" }),
       ).toBeVisible();
+      const statementDetails = page.getByText("View statement details", { exact: true }).first();
+      if (await statementDetails.count()) {
+        await expect(statementDetails).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Payment progress" }).first()).toBeHidden();
+        const statementSummary = statementDetails.locator("xpath=ancestor::summary");
+        await statementSummary.focus();
+        await page.keyboard.press("Enter");
+        await expect(page.getByRole("heading", { name: "Payment progress" }).first()).toBeVisible();
+        await expect(page.getByText("Payment schedule", { exact: true }).first()).toBeVisible();
+        await expect(page.getByText("Charge and credit breakdown", { exact: true }).first()).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+        await page.keyboard.press("Enter");
+        await expect(statementDetails).toBeVisible();
+      }
       const feeRecords = page.getByText("All fee records and archive history", { exact: true });
       await feeRecords.click();
       const exportButton = page.getByRole("button", { name: "Export" });
@@ -1086,6 +1110,23 @@ test.describe("XMETA EDU admin branded Excel exports", () => {
       await expect(page.getByRole("button", { name: "Download", exact: true }).first()).toBeVisible();
       await expectNoHorizontalOverflow(page);
     }
+  });
+
+  test("table pagination shows total records and can display every row", async ({ page }) => {
+    await page.goto("/admin/students", { waitUntil: "networkidle" });
+    test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+
+    await expect(page.getByText(/Total: \d+ records/).first()).toBeVisible();
+    const rowsPerPage = page.getByLabel("Rows per page").first();
+    if (await rowsPerPage.count()) {
+      await expect(rowsPerPage.locator('option[value="-1"]')).toHaveText("All");
+      await rowsPerPage.selectOption("-1");
+      await expect(rowsPerPage).toHaveValue("-1");
+      await expect(page.getByText(/Total: \d+ records · All shown/).first()).toBeVisible();
+      await expect(page.getByRole("button", { name: "Prev" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Next" })).toHaveCount(0);
+    }
+    await expectNoHorizontalOverflow(page);
   });
 
   test("protected Reports page serves branded Excel and PDF downloads", async ({ page }) => {

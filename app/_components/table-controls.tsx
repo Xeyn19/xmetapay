@@ -47,7 +47,8 @@ export type BrandedPdfDocument = {
 };
 
 export const DEFAULT_TABLE_PAGE_SIZE = 10;
-export const TABLE_PAGE_SIZE_OPTIONS = [5, 10, 25] as const;
+export const ALL_TABLE_ROWS = -1;
+export const TABLE_PAGE_SIZE_OPTIONS = [5, 10, 25, ALL_TABLE_ROWS] as const;
 
 export function DashboardTableControls({
   query,
@@ -350,13 +351,17 @@ export function DashboardTablePagination({
   const buttonClass = isParent
     ? "rounded-[10px] text-[13px] font-medium text-muted-foreground"
     : "rounded-lg text-[12.5px] font-semibold text-muted-foreground";
+  const hasUsefulPagination = totalItems > TABLE_PAGE_SIZE_OPTIONS[0];
+  const hasMultiplePages = pageCount > 1;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-[18px] py-3">
       <div className={isParent ? "text-[12px] text-muted-foreground" : "text-[11.5px] text-muted-foreground"}>
-        Showing {startItem}-{endItem} of {totalItems}
+        <strong className="font-semibold text-foreground">Total: {totalItems} records</strong>
+        <span aria-hidden="true"> · </span>
+        <span>{hasMultiplePages ? `Showing ${startItem}-${endItem}` : "All shown"}</span>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      {hasUsefulPagination ? <div className="flex flex-wrap items-center gap-2">
         <label className={isParent ? "text-[12px] text-muted-foreground" : "text-[11.5px] text-muted-foreground"}>
           Rows
           <select
@@ -366,11 +371,11 @@ export function DashboardTablePagination({
             aria-label="Rows per page"
           >
             {TABLE_PAGE_SIZE_OPTIONS.map((option) => (
-              <option key={option} value={option}>{option}</option>
+              <option key={option} value={option}>{option === ALL_TABLE_ROWS ? "All" : option}</option>
             ))}
           </select>
         </label>
-        <span className={isParent ? "text-[12px] text-muted-foreground" : "text-[11.5px] text-muted-foreground"}>
+        {hasMultiplePages ? <><span className={isParent ? "text-[12px] text-muted-foreground" : "text-[11.5px] text-muted-foreground"}>
           Page {page} of {pageCount}
         </span>
         <button
@@ -398,8 +403,8 @@ export function DashboardTablePagination({
         >
           Next
           <ChevronRight className="size-4" />
-        </button>
-      </div>
+        </button></> : null}
+      </div> : null}
     </div>
   );
 }
@@ -411,11 +416,13 @@ export function usePaginatedRows<T>(rows: T[], resetKey: string, initialPageSize
     resetKey,
   });
   const pageSize = paginationState.pageSize;
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const showAllRows = pageSize === ALL_TABLE_ROWS;
+  const effectivePageSize = showAllRows ? Math.max(rows.length, 1) : pageSize;
+  const pageCount = showAllRows ? 1 : Math.max(1, Math.ceil(rows.length / effectivePageSize));
   const requestedPage = paginationState.resetKey === resetKey ? paginationState.page : 1;
   const safePage = clampPage(requestedPage, pageCount);
-  const startIndex = rows.length === 0 ? 0 : (safePage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, rows.length);
+  const startIndex = rows.length === 0 ? 0 : (safePage - 1) * effectivePageSize;
+  const endIndex = Math.min(startIndex + effectivePageSize, rows.length);
   const pageRows = useMemo(() => rows.slice(startIndex, endIndex), [endIndex, rows, startIndex]);
   const setPage = (nextPage: number) => {
     setPaginationState((current) => ({

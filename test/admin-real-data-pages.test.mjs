@@ -170,10 +170,13 @@ test("admin real-data tables use working search filters plus spreadsheet and PDF
   assert.match(controls, /alternateRowStyles/);
   assert.match(controls, /filterByQuery/);
   assert.match(controls, /export const DEFAULT_TABLE_PAGE_SIZE = 10/);
-  assert.match(controls, /export const TABLE_PAGE_SIZE_OPTIONS = \[5, 10, 25\] as const/);
+  assert.match(controls, /export const ALL_TABLE_ROWS = -1/);
+  assert.match(controls, /export const TABLE_PAGE_SIZE_OPTIONS = \[5, 10, 25, ALL_TABLE_ROWS\] as const/);
   assert.match(controls, /export function DashboardTablePagination/);
   assert.match(controls, /export function usePaginatedRows/);
-  assert.match(controls, /Showing \{startItem\}-\{endItem\} of \{totalItems\}/);
+  assert.match(controls, /Total: \{totalItems\} records/);
+  assert.match(controls, /Showing \$\{startItem\}-\$\{endItem\}/);
+  assert.match(controls, /All shown/);
   assert.match(controls, /Page \{page\} of \{pageCount\}/);
   assert.match(controls, /Prev/);
   assert.match(controls, /Next/);

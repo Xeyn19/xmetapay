@@ -65,9 +65,14 @@ export type AssessmentWorkspace = {
 export type ParentAssessmentStatement = {
   id: number; reference: string; studentName: string; scheduleName: string; periodName: string;
   gross: number; credits: number; net: number; paid: number; balance: number;
-  charges: Array<{ name: string; gross: number; credit: number; net: number; timing: string }>;
-  terms: Array<{ name: string; dueDate: string; due: number; paid: number; balance: number; status: string }>;
+  progressPercent: number; paymentPlanLabel: string; displayStatus: ParentStatementStatus;
+  nextPayment: { name: string; dueDate: string; amount: number; source: "term" | "charge" } | null;
+  charges: Array<{ sortOrder: number; name: string; gross: number; credit: number; net: number; paid: number; balance: number; dueDate: string; timing: string; displayStatus: ParentStatementLineStatus }>;
+  terms: Array<{ sortOrder: number; name: string; dueDate: string; due: number; paid: number; balance: number; status: string; displayStatus: ParentStatementLineStatus }>;
 };
+
+export type ParentStatementStatus = "paid" | "payment_due" | "partial" | "overdue";
+export type ParentStatementLineStatus = "paid" | "partial" | "upcoming" | "overdue";
 
 export class AssessmentWorkflowError extends Error {
   constructor(message: string, public readonly field?: InstallmentValidationError["field"]) {
@@ -156,13 +161,32 @@ export async function getParentAssessmentStatements(parentUserId:number):Promise
   try {
     const [rows] = await pool.execute<StatementRow[]>(`SELECT sa.id,ab.reference_number,CONCAT_WS(' ',st.first_name,NULLIF(st.middle_name,''),st.last_name) student_name,fs.name schedule_name,COALESCE(ap.name,'Full school year') period_name,sa.gross_amount,sa.credit_amount,sa.net_amount,
       COALESCE((SELECT SUM(sfa.amount_paid) FROM student_fee_assignments sfa WHERE sfa.student_assessment_id=sa.id),0) paid,
-      COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('name',sfa.fee_name_snapshot,'gross',sfa.gross_amount,'credit',sfa.credit_amount,'net',sfa.amount_due,'timing',fsi.payment_timing)) FROM student_fee_assignments sfa LEFT JOIN fee_schedule_items fsi ON fsi.id=sfa.fee_schedule_item_id WHERE sfa.student_assessment_id=sa.id),JSON_ARRAY()) charges,
-      COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('name',apt.name,'dueDate',DATE_FORMAT(apt.due_date,'%Y-%m-%d'),'due',apt.amount_due,'paid',apt.amount_paid,'status',apt.status)) FROM assessment_payment_terms apt WHERE apt.student_assessment_id=sa.id),JSON_ARRAY()) terms
+      COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('sortOrder',COALESCE(fsi.sort_order,sfa.id),'name',sfa.fee_name_snapshot,'gross',sfa.gross_amount,'credit',sfa.credit_amount,'net',sfa.amount_due,'paid',sfa.amount_paid,'dueDate',DATE_FORMAT(sfa.due_date,'%Y-%m-%d'),'timing',COALESCE(fsi.payment_timing,'upfront'))) FROM student_fee_assignments sfa LEFT JOIN fee_schedule_items fsi ON fsi.id=sfa.fee_schedule_item_id WHERE sfa.student_assessment_id=sa.id),JSON_ARRAY()) charges,
+      COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('sortOrder',apt.sort_order,'name',apt.name,'dueDate',DATE_FORMAT(apt.due_date,'%Y-%m-%d'),'due',apt.amount_due,'paid',apt.amount_paid,'status',apt.status)) FROM assessment_payment_terms apt WHERE apt.student_assessment_id=sa.id),JSON_ARRAY()) terms
       FROM student_assessments sa JOIN assessment_batches ab ON ab.id=sa.assessment_batch_id JOIN fee_schedules fs ON fs.id=sa.fee_schedule_id JOIN students st ON st.id=sa.student_id JOIN student_guardians sg ON sg.student_id=st.id LEFT JOIN academic_periods ap ON ap.id=ab.academic_period_id
       WHERE sg.parent_user_id=:parentUserId AND sa.status<>'cancelled' ORDER BY sa.created_at DESC`,{parentUserId});
-    return rows.map(row=>{const paid=Number(row.paid);return {id:row.id,reference:row.reference_number,studentName:row.student_name,scheduleName:row.schedule_name,periodName:row.period_name,gross:Number(row.gross_amount),credits:Number(row.credit_amount),net:Number(row.net_amount),paid,balance:money(Number(row.net_amount)-paid),charges:jsonArray(row.charges).map(x=>({name:String(x.name),gross:Number(x.gross),credit:Number(x.credit),net:Number(x.net),timing:String(x.timing)})),terms:jsonArray(row.terms).map(x=>({name:String(x.name),dueDate:String(x.dueDate),due:Number(x.due),paid:Number(x.paid),balance:money(Number(x.due)-Number(x.paid)),status:String(x.status)}))};});
+    const today = manilaDateKey();
+    return rows.map(row=>toParentAssessmentStatement(row,today)).sort(compareParentStatements);
   } catch { return []; }
 }
+
+function toParentAssessmentStatement(row:StatementRow,today:string):ParentAssessmentStatement {
+  const paid=Number(row.paid); const net=Number(row.net_amount); const balance=Math.max(0,money(net-paid));
+  const charges=jsonArray(row.charges).map(x=>{const linePaid=Number(x.paid??0);const lineNet=Number(x.net??0);const dueDate=stringValue(x.dueDate);const lineBalance=Math.max(0,money(lineNet-linePaid));return {sortOrder:Number(x.sortOrder??0),name:String(x.name),gross:Number(x.gross),credit:Number(x.credit),net:lineNet,paid:linePaid,balance:lineBalance,dueDate,timing:String(x.timing),displayStatus:lineStatus(lineBalance,linePaid,dueDate,today)};}).sort((a,b)=>a.sortOrder-b.sortOrder||a.dueDate.localeCompare(b.dueDate));
+  const terms=jsonArray(row.terms).map(x=>{const termPaid=Number(x.paid??0);const due=Number(x.due??0);const dueDate=stringValue(x.dueDate);const termBalance=Math.max(0,money(due-termPaid));return {sortOrder:Number(x.sortOrder??0),name:String(x.name),dueDate,due,paid:termPaid,balance:termBalance,status:String(x.status),displayStatus:lineStatus(termBalance,termPaid,dueDate,today)};}).sort((a,b)=>a.sortOrder-b.sortOrder||a.dueDate.localeCompare(b.dueDate));
+  const payable=[...terms.filter(term=>term.balance>0).map(term=>({name:term.name,dueDate:term.dueDate,amount:term.balance,source:"term" as const})),...charges.filter(charge=>charge.balance>0&&(terms.length===0||charge.timing==="upfront")).map(charge=>({name:charge.name,dueDate:charge.dueDate,amount:charge.balance,source:"charge" as const}))].sort((a,b)=>dateSortKey(a.dueDate).localeCompare(dateSortKey(b.dueDate))||a.name.localeCompare(b.name));
+  const firstPayable=payable[0]; const sameDatePayables=firstPayable?payable.filter(item=>item.dueDate===firstPayable.dueDate):[];
+  const nextPayment=firstPayable?{name:sameDatePayables.length>1?(terms.length===0?"Full payment":`${sameDatePayables.length} payments due`):firstPayable.name,dueDate:firstPayable.dueDate,amount:money(sameDatePayables.reduce((sum,item)=>sum+item.amount,0)),source:firstPayable.source}:null;
+  const hasOverdue=payable.some(item=>Boolean(item.dueDate)&&item.dueDate<today);
+  const displayStatus:ParentStatementStatus=balance<=0?"paid":hasOverdue?"overdue":paid>0?"partial":"payment_due";
+  return {id:row.id,reference:row.reference_number,studentName:row.student_name,scheduleName:row.schedule_name,periodName:row.period_name,gross:Number(row.gross_amount),credits:Number(row.credit_amount),net,paid,balance,progressPercent:net>0?Math.min(100,Math.max(0,Math.round((paid/net)*100))):0,paymentPlanLabel:terms.length?`${terms.length} scheduled payment${terms.length===1?"":"s"}`:"Full payment",displayStatus,nextPayment,charges,terms};
+}
+
+function lineStatus(balance:number,paid:number,dueDate:string,today:string):ParentStatementLineStatus {if(balance<=0)return "paid";if(dueDate&&dueDate<today)return "overdue";if(paid>0)return "partial";return "upcoming";}
+function compareParentStatements(a:ParentAssessmentStatement,b:ParentAssessmentStatement){const aPaid=a.balance<=0,bPaid=b.balance<=0;if(aPaid!==bPaid)return aPaid?1:-1;const due=dateSortKey(a.nextPayment?.dueDate??"").localeCompare(dateSortKey(b.nextPayment?.dueDate??""));return due||a.studentName.localeCompare(b.studentName)||a.scheduleName.localeCompare(b.scheduleName);}
+function dateSortKey(value:string){return value||"9999-12-31";}
+function stringValue(value:unknown){return value==null?"":String(value);}
+function manilaDateKey(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Manila",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());}
 export async function getAssessmentBatchResult(userId:number,reference:string){const context=await requireAssessmentAdmin(userId);const [rows]=await pool.execute<Array<RowDataPacket&{reference_number:string;selected_count:number;posted_count:number;duplicate_count:number;excluded_count:number;gross_total:number|string;credit_total:number|string;net_total:number|string;posted_at:Date|string}>>(`SELECT reference_number,selected_count,posted_count,duplicate_count,excluded_count,gross_total,credit_total,net_total,posted_at FROM assessment_batches WHERE school_id=:schoolId AND school_year_id=:schoolYearId AND reference_number=:reference LIMIT 1`,{...context,reference});const row=rows[0];return row?{reference:row.reference_number,selected:Number(row.selected_count),posted:Number(row.posted_count),duplicates:Number(row.duplicate_count),excluded:Number(row.excluded_count),gross:Number(row.gross_total),credits:Number(row.credit_total),net:Number(row.net_total),postedAt:String(row.posted_at)}:null;}
 
 export async function previewAssessment(connection: PoolConnection, params: PreviewParams): Promise<AssessmentPreview> {
