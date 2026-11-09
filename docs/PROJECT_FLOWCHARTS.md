@@ -639,11 +639,14 @@ Implemented.
 
 ```mermaid
 flowchart TD
-  A["Admin opens fees or tuition setup"] --> B["Create fee_types for active school year"]
-  B --> C["Search and select one or more enrolled students"]
-  C --> D["Set fee due date as official parent deadline"]
-  D --> E["Create student_fee_assignments and skip duplicates"]
-  E --> F{"Tuition needs installments?"}
+  A["Admin opens Other school fees"] --> B["Create reusable fee type with disclosed purpose and policy"]
+  B --> C["Choose K-12 school-year or active College-period context"]
+  C --> D["Enter charge title, amount, due date, and approval reference"]
+  D --> E["Select eligible students and review exact total"]
+  E --> N["Post one other_fee_charges row and linked student assignments atomically"]
+  N --> J["Parent sees the snapshotted non-tuition charge and balance"]
+  A --> O["Tuition package workflow remains separate"]
+  O --> F{"Tuition needs installments?"}
   F -->|Yes| G["Admin opens row-level Manage terms"]
   G --> H["Show school-year start and official tuition due date"]
   H --> M["Create terms inside the inclusive date window"]
@@ -657,6 +660,7 @@ flowchart TD
 Database touchpoints:
 
 - `fee_types`
+- `other_fee_charges`
 - `student_fee_assignments`
 - `tuition_payment_terms`
 - `students`

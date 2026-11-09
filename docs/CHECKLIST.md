@@ -162,6 +162,9 @@ Done when: admins can manage students and parents can add or view multiple same-
 - [x] Show authoritative billing bounds and replace technical blank installment rows with guided Full, 2-payment, 4-payment, monthly, and custom choices.
 - [x] Validate the final deadline and chronological installment dates on the client and server with field-specific recovery, without changing the schema.
 - [x] Preserve the assessment draft between Preview and Post, use one stable server-issued retry token, and clear students only after the batch commits.
+- [x] Separate reusable Other-fee types from repeatable charge instances with purpose, audience, policy, billing basis, fixed/variable amount rules, and parent-visible snapshots.
+- [x] Add K–12 and College Other-fee targeting, active-period date validation, optional-fee confirmation, 500-student limits, deterministic duplicate protection, atomic posting, and retry-safe submission tokens.
+- [x] Add compact Other-fee catalog search, Purpose/Audience/Policy/Status filters, combined Excel/PDF export, and guided Create fee type / Assign other fee forms.
 
 Done when: admin and parent fee screens show real balances from MySQL.
 

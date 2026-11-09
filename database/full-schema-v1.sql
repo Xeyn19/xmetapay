@@ -399,12 +399,19 @@ CREATE TABLE IF NOT EXISTS fee_types (
   name VARCHAR(120) NOT NULL,
   description VARCHAR(255) NULL,
   category ENUM('tuition', 'other', 'allowance') NOT NULL,
+  other_fee_group VARCHAR(40) NULL,
+  education_audience ENUM('basic', 'higher', 'both') NULL,
+  collection_policy ENUM('mandatory', 'optional', 'conditional') NULL,
+  billing_basis ENUM('school_year', 'academic_period', 'event', 'recurring') NULL,
+  amount_mode ENUM('fixed', 'assignment') NULL,
+  approval_reference VARCHAR(120) NULL,
   default_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   UNIQUE KEY uq_fee_types_year_name (school_year_id, name),
+  UNIQUE KEY uq_fee_types_year_code (school_year_id, code),
   KEY idx_fee_types_school_category_status (school_id, category, status),
   CONSTRAINT fk_fee_types_school FOREIGN KEY (school_id) REFERENCES schools(id),
   CONSTRAINT fk_fee_types_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id)
@@ -437,6 +444,7 @@ CREATE TABLE IF NOT EXISTS student_fee_assignments (
   student_assessment_id BIGINT UNSIGNED NULL,
   fee_schedule_item_id BIGINT UNSIGNED NULL,
   academic_period_id BIGINT UNSIGNED NULL,
+  other_fee_charge_id BIGINT UNSIGNED NULL,
   fee_name_snapshot VARCHAR(120) NULL,
   gross_amount DECIMAL(10,2) NULL,
   credit_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -450,6 +458,7 @@ CREATE TABLE IF NOT EXISTS student_fee_assignments (
   UNIQUE KEY uq_student_fee_assignments_identity (student_id, school_year_id, assignment_key),
   KEY idx_student_fee_assignments_student_status_due (student_id, status, due_date),
   KEY idx_student_fee_assignments_year_status_due (school_year_id, status, due_date),
+  KEY idx_student_fee_assignments_other_charge (other_fee_charge_id, student_id),
   CONSTRAINT fk_student_fee_assignments_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   CONSTRAINT fk_student_fee_assignments_fee_type FOREIGN KEY (fee_type_id) REFERENCES fee_types(id),
   CONSTRAINT fk_student_fee_assignments_school_year FOREIGN KEY (school_year_id) REFERENCES school_years(id)
@@ -753,6 +762,42 @@ CREATE TABLE IF NOT EXISTS college_enrollments (
   CONSTRAINT fk_college_enrollments_section FOREIGN KEY (college_section_id) REFERENCES college_sections(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS other_fee_charges (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  school_id BIGINT UNSIGNED NOT NULL,
+  school_year_id BIGINT UNSIGNED NOT NULL,
+  academic_period_id BIGINT UNSIGNED NULL,
+  fee_type_id BIGINT UNSIGNED NOT NULL,
+  education_audience ENUM('basic', 'higher') NOT NULL,
+  reference_number VARCHAR(80) NOT NULL,
+  submission_token_hash CHAR(64) NOT NULL,
+  charge_title VARCHAR(140) NOT NULL,
+  fee_name_snapshot VARCHAR(120) NOT NULL,
+  description_snapshot VARCHAR(255) NOT NULL,
+  amount_per_student DECIMAL(10,2) NOT NULL,
+  due_date DATE NOT NULL,
+  approval_reference VARCHAR(120) NULL,
+  internal_note VARCHAR(255) NULL,
+  amount_override_reason VARCHAR(255) NULL,
+  selected_count SMALLINT UNSIGNED NOT NULL,
+  assigned_count SMALLINT UNSIGNED NOT NULL,
+  duplicate_count SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  total_amount DECIMAL(12,2) NOT NULL,
+  created_by_user_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('completed', 'cancelled') NOT NULL DEFAULT 'completed',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_other_fee_charges_reference (reference_number),
+  UNIQUE KEY uq_other_fee_charges_submission (school_id, submission_token_hash),
+  KEY idx_other_fee_charges_school_year (school_id, school_year_id, status),
+  KEY idx_other_fee_charges_fee_type (fee_type_id, academic_period_id),
+  CONSTRAINT fk_other_fee_charges_school FOREIGN KEY (school_id) REFERENCES schools(id),
+  CONSTRAINT fk_other_fee_charges_year FOREIGN KEY (school_year_id) REFERENCES school_years(id),
+  CONSTRAINT fk_other_fee_charges_period FOREIGN KEY (academic_period_id) REFERENCES academic_periods(id),
+  CONSTRAINT fk_other_fee_charges_fee_type FOREIGN KEY (fee_type_id) REFERENCES fee_types(id),
+  CONSTRAINT fk_other_fee_charges_creator FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS fee_schedules (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, school_id BIGINT UNSIGNED NOT NULL, school_year_id BIGINT UNSIGNED NOT NULL, academic_period_id BIGINT UNSIGNED NULL,
   name VARCHAR(140) NOT NULL, education_level ENUM('basic','higher') NOT NULL, version_no SMALLINT UNSIGNED NOT NULL DEFAULT 1, cloned_from_id BIGINT UNSIGNED NULL,
@@ -868,4 +913,5 @@ CREATE TABLE IF NOT EXISTS payment_assessment_term_allocations (
 ALTER TABLE student_fee_assignments
   ADD CONSTRAINT fk_student_fee_assignments_assessment FOREIGN KEY (student_assessment_id) REFERENCES student_assessments(id),
   ADD CONSTRAINT fk_student_fee_assignments_schedule_item FOREIGN KEY (fee_schedule_item_id) REFERENCES fee_schedule_items(id),
-  ADD CONSTRAINT fk_student_fee_assignments_period FOREIGN KEY (academic_period_id) REFERENCES academic_periods(id);
+  ADD CONSTRAINT fk_student_fee_assignments_period FOREIGN KEY (academic_period_id) REFERENCES academic_periods(id),
+  ADD CONSTRAINT fk_student_fee_assignments_other_charge FOREIGN KEY (other_fee_charge_id) REFERENCES other_fee_charges(id);

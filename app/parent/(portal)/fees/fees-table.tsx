@@ -366,7 +366,7 @@ export function ParentFeesTable({
                   </td>
                   <td>
                     <div className="font-semibold text-foreground">{row.feeName}</div>
-                    <div className="text-[11px] text-muted-foreground">{row.category === "tuition" ? "Tuition" : "Other fee"}</div>
+                    <div className="text-[11px] text-muted-foreground">{row.category === "tuition" ? "Tuition" : row.feeDescription || "Other fee"}</div>
                   </td>
                   <td>{row.amountDue}</td>
                   <td className="font-semibold text-status-success-foreground">{row.amountPaid}</td>
@@ -556,6 +556,7 @@ function feeExportColumns(view: FeeView): ExportColumn<ParentFeeRow>[] {
     { label: "Student", value: (row) => row.studentName },
     { label: "Reference", value: (row) => row.studentReference },
     { label: "Fee", value: (row) => row.feeName },
+    { label: "Purpose", value: (row) => row.feeDescription },
     { label: "Category", value: (row) => row.category },
     { label: "Billed", value: (row) => row.amountDue },
     { label: "Paid", value: (row) => row.amountPaid },

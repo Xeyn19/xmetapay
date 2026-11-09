@@ -129,19 +129,19 @@ test("admin tuition and other-fees pages expose database-backed fee forms", () =
   assert.doesNotMatch(tuitionTable, /admin-tuition-report\.csv|exportRowsToCsv/);
   assert.match(tuitionTable, /admin-tuition-report\.pdf/);
   assert.match(tuitionTable, /exportRowsToPdf/);
-  assert.match(otherFeesPage, /getAdminFeeSetupData\(session\.userId, "other"\)/);
+  assert.match(otherFeesPage, /getOtherFeeWorkspace\(session\.userId\)/);
   assert.match(otherFeesPage, /getAdminSchoolContext\(session\.userId\)/);
   assert.match(otherFeesPage, /OtherFeeActionModal/);
-  assert.match(otherFeesPage, /triggerLabel="Assign fee"/);
-  assert.match(otherFeesPage, /triggerLabel="Add fee type"/);
+  assert.match(otherFeesPage, /triggerLabel="Assign other fee"/);
+  assert.match(otherFeesPage, /triggerLabel="Create fee type"/);
   assert.match(otherFeesPage, /triggerIcon="receipt"/);
   assert.match(otherFeesPage, /triggerIcon="plus"/);
   assert.doesNotMatch(otherFeesPage, /triggerIcon=\{Receipt\}/);
   assert.doesNotMatch(otherFeesPage, /triggerIcon=\{Plus\}/);
-  assert.match(otherFeesPage, /triggerTone="dark"/);
-  assert.match(otherFeesPage, /triggerTone="outline"/);
-  assert.match(otherFeesPage, /<FeeAssignStudentsForm category="other" redirectPath="\/admin\/other-fees" data=\{feeSetup\} \/>/);
-  assert.match(otherFeesPage, /<FeeCreateTypeForm category="other" redirectPath="\/admin\/other-fees" data=\{feeSetup\} \/>/);
+  assert.match(otherFeesPage, /triggerTone="primary"/);
+  assert.match(otherFeesPage, /triggerTone=\{hasFeeTypes \? "outline" : "primary"\}/);
+  assert.match(otherFeesPage, /<OtherFeeAssignmentForm workspace=\{workspace\}/);
+  assert.match(otherFeesPage, /<OtherFeeTypeForm workspace=\{workspace\}/);
   assert.doesNotMatch(otherFeesPage, /<FeeManagementForms category="other"/);
   assert.doesNotMatch(otherFeesPage, /Other fee setup/);
   assert.match(otherFeesModal, /"use client";/);
@@ -231,8 +231,8 @@ test("admin dashboard omits fee assignment management while dedicated finance pa
   assert.doesNotMatch(dashboardRecentTables, /Recent fee assignments|RecentFeeAssignmentsTable/);
   assert.match(tuitionPage, /Create assessments/);
   assert.match(tuitionPage, /Tuition packages &amp; setup/);
-  assert.match(otherFeesPage, /triggerLabel="Assign fee"/);
-  assert.match(otherFeesPage, /triggerLabel="Add fee type"/);
+  assert.match(otherFeesPage, /triggerLabel="Assign other fee"/);
+  assert.match(otherFeesPage, /triggerLabel="Create fee type"/);
 });
 
 test("parent fees page reads real balances instead of static fee summary", () => {

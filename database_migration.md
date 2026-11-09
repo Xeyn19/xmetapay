@@ -29,6 +29,38 @@ This checklist records which migrations have been applied to production. ✅ mea
 - ⬜ [2026-11-03-tuition-assessment-workflow.sql](database/migrations/2026-11-03-tuition-assessment-workflow.sql)
 - ⬜ [2026-11-04-senior-high-offerings.sql](database/migrations/2026-11-04-senior-high-offerings.sql)
 - ⬜ [2026-11-04-parent-student-claim-requests.sql](database/migrations/2026-11-04-parent-student-claim-requests.sql)
+- ⬜ [2026-11-07-other-fees-workflow.sql](database/migrations/2026-11-07-other-fees-workflow.sql)
+
+## Other school fees workflow migration
+
+### SQL to import now
+
+For an **existing database** that already has the tuition-assessment tables, import only:
+
+```text
+database/migrations/2026-11-07-other-fees-workflow.sql
+```
+
+If `2026-11-03-tuition-assessment-workflow.sql` is still pending, import these into the same existing database in this order:
+
+1. `database/migrations/2026-11-03-tuition-assessment-workflow.sql`
+2. `database/migrations/2026-11-07-other-fees-workflow.sql`
+
+The Other-fees migration adds purpose, audience, policy, billing-basis, amount-mode, and approval-reference metadata to `fee_types`; creates repeatable `other_fee_charges`; and links new `student_fee_assignments` rows to their charge instance. It is guarded with `information_schema` checks and is safe to rerun.
+
+For a **new empty database**, do not import the migration separately. Import the regenerated `utilities/database/xmetapay-production-schema.sql` bundle.
+
+This migration does not convert legacy Other-fee rows or rewrite balances. Existing assignments remain unchanged and display safe legacy defaults.
+
+After importing, verify in phpMyAdmin that:
+
+- `other_fee_charges` exists.
+- `fee_types` has `other_fee_group`, `education_audience`, `collection_policy`, `billing_basis`, `amount_mode`, and `approval_reference`.
+- `student_fee_assignments.other_fee_charge_id` exists and its foreign key points to `other_fee_charges.id`.
+- Existing tuition and Other-fee assignments, balances, payments, and receipts are unchanged.
+- A test Other fee can be assigned once without duplicate rows on form resubmission.
+
+Do not mark the checklist entry ✅ until the target database import and verification are complete.
 
 ## Tuition assessment and Senior High migration notes
 
@@ -81,7 +113,7 @@ The Parent claim migration adds only `parent_student_link_requests`, the auditab
 
 After importing, confirm that `parent_student_link_requests` appears in phpMyAdmin. Keep the checklist entry marked ⬜ until the actual target database has been imported and verified; then change only that entry to ✅.
 
-Apply the pending migrations in chronological order. The tuition assessment migration must run after the September 19 and September 21 migrations, the Senior High migration must run after tuition assessment, and the Parent claim-request migration must run before deploying the new Parent dashboard connection form.
+Apply pending migrations in dependency order. The tuition assessment migration must run after the September 19 and September 21 migrations; Senior High and Other-fees migrations must run after tuition assessment; and the Parent claim-request migration must run before deploying the new Parent dashboard connection form.
 
 Before importing `2026-11-03-tuition-assessment-workflow.sql`:
 
@@ -113,4 +145,4 @@ No new SQL file is required for the connected **Tuition balances** and **Tuition
 
 Do not import or re-import the production schema for this UI refinement. Existing databases continue using their current migration state, and new empty databases still follow the normal schema-bundle instructions above.
 
-Last updated: November 5, 2026
+Last updated: November 9, 2026
