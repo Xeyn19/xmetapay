@@ -133,6 +133,10 @@ The guided Philippine School Setup saves resumable progress to school, active-ye
    - Parent registration school inference itself reuses existing student, school, and registration tables.
    - Safe to rerun through `CREATE TABLE IF NOT EXISTS`; it does not rewrite existing guardian links or financial history.
 
+27. Import `migrations/2026-11-07-other-fees-workflow.sql` after the tuition-assessment migration and before enabling the guided Other school fees workflow.
+   - Adds purpose-specific fee-type metadata, repeatable `other_fee_charges`, and the assignment link used for idempotent K–12 and College postings.
+   - Existing assignments and balances are preserved; the migration is guarded and rerunnable.
+
 ## Temporary Super Admin Seed
 
 For local or MVP setup, import `migrations/2026-07-09-super-admin-role.sql` first, then import your local-only `database/local/seed-super-admin-account.sql`.

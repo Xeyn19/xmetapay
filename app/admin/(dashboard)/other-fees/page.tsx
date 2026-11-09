@@ -1,11 +1,12 @@
+import { randomUUID } from "node:crypto";
 import { ClipboardList } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/session";
 import { requireAdminPageAccess } from "@/lib/admin/access";
 import { getAdminOtherFeesPageRealData } from "@/lib/admin/real-data";
-import { getAdminFeeSetupData } from "@/lib/fees/records";
+import { getOtherFeeWorkspace } from "@/lib/fees/other-fees";
 import { getAdminSchoolContext } from "@/lib/school/setup";
-import { FeeAssignStudentsForm, FeeCreateTypeForm } from "@/app/admin/fees/fee-management-forms";
+import { OtherFeeAssignmentForm, OtherFeeTypeForm } from "@/app/admin/fees/other-fee-workflow-forms";
 
 import { AlertBanner, DashboardCard, KpiCard, KpiGrid } from "../../_components/admin-ui";
 import { OtherFeeActionModal } from "./other-fees-management-modal";
@@ -14,16 +15,17 @@ import { OtherFeesTable } from "./other-fees-table";
 export default async function OtherFeesPage() {
   const session = await requireRole("admin");
   await requireAdminPageAccess(session.userId, "/admin/other-fees");
-  const [data, feeSetup, schoolContext] = await Promise.all([
+  const [data, workspace, schoolContext] = await Promise.all([
     getAdminOtherFeesPageRealData(session.userId),
-    getAdminFeeSetupData(session.userId, "other"),
+    getOtherFeeWorkspace(session.userId),
     getAdminSchoolContext(session.userId),
   ]);
+  const hasFeeTypes = workspace.feeTypes.some((item) => item.status === "active");
 
   return (
     <>
       {data.warning ? <AlertBanner tone="warn" icon={ClipboardList}>{data.warning}</AlertBanner> : null}
-      {feeSetup.warning ? <AlertBanner tone="warn" icon={ClipboardList}>{feeSetup.warning}</AlertBanner> : null}
+      {workspace.warning ? <AlertBanner tone="warn" icon={ClipboardList}>{workspace.warning}</AlertBanner> : null}
       <KpiGrid>
         {data.kpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
@@ -35,26 +37,27 @@ export default async function OtherFeesPage() {
         icon={ClipboardList}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <OtherFeeActionModal
-              title={`Assign other fee - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
-              description="Choose one fee type, select enrolled students, then assign it safely."
-              triggerLabel="Assign fee"
+            {hasFeeTypes ? <OtherFeeActionModal
+              title={`Assign other fee - ${workspace.schoolYear?.name ?? "School year pending"}`}
+              description="Create one purpose-specific charge, then choose the eligible students who should receive it."
+              triggerLabel="Assign other fee"
               triggerIcon="receipt"
-              triggerTone="dark"
+              triggerTone="primary"
               size="wide"
             >
-              <FeeAssignStudentsForm category="other" redirectPath="/admin/other-fees" data={feeSetup} />
-            </OtherFeeActionModal>
+              <OtherFeeAssignmentForm workspace={workspace} submissionToken={randomUUID()} />
+            </OtherFeeActionModal> : null}
             <OtherFeeActionModal
-              title={`Add other fee type - ${feeSetup.activeSchoolYearName ?? "School year pending"}`}
-              description="Create reusable other-fee types before assigning them to students."
-              triggerLabel="Add fee type"
+              title={`Create fee type - ${workspace.schoolYear?.name ?? "School year pending"}`}
+              description="Define the purpose, audience, collection policy, and standard amount before assigning students."
+              triggerLabel="Create fee type"
               triggerIcon="plus"
-              triggerTone="outline"
+              triggerTone={hasFeeTypes ? "outline" : "primary"}
               size="small"
             >
-              <FeeCreateTypeForm category="other" redirectPath="/admin/other-fees" data={feeSetup} />
+              <OtherFeeTypeForm workspace={workspace} />
             </OtherFeeActionModal>
+            {!hasFeeTypes ? <span className="text-xs text-muted-foreground">Create a fee type before assigning students.</span> : null}
           </div>
         }
         bodyClassName="p-0"

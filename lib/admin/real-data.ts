@@ -150,8 +150,15 @@ export type OtherFeesPageRealData = {
   schoolYearName: string | null;
   kpis: AdminRealKpi[];
   items: Array<{
+    id: number;
+    code: string;
     name: string;
     meta: string;
+    purposeGroup: string;
+    audience: string;
+    policy: string;
+    billingBasis: string;
+    amountMode: string;
     amount: string;
     status: string;
     assignedCount: number;
@@ -1226,7 +1233,8 @@ async function getCollectionRows(
 
 async function getOtherFeeItems(schoolId: number, schoolYearId: number) {
   const [rows] = await pool.execute<OtherFeeItemRow[]>(
-    `SELECT ft.name, ft.category, ft.default_amount, ft.status,
+    `SELECT ft.id,ft.code,ft.name,ft.description,ft.category,ft.other_fee_group,ft.education_audience,
+       ft.collection_policy,ft.billing_basis,ft.amount_mode,ft.default_amount,ft.status,
        COUNT(sfa.id) AS assigned_count,
        COALESCE(SUM(CASE WHEN sfa.status = 'paid' THEN 1 ELSE 0 END), 0) AS paid_count,
        COALESCE(SUM(sfa.amount_due), 0) AS billed,
@@ -1235,14 +1243,22 @@ async function getOtherFeeItems(schoolId: number, schoolYearId: number) {
      FROM fee_types ft
      LEFT JOIN student_fee_assignments sfa ON sfa.fee_type_id = ft.id AND sfa.school_year_id = :schoolYearId
      WHERE ft.school_id = :schoolId AND ft.school_year_id = :schoolYearId AND ft.category = 'other'
-     GROUP BY ft.id, ft.name, ft.category, ft.default_amount, ft.status
+     GROUP BY ft.id,ft.code,ft.name,ft.description,ft.category,ft.other_fee_group,ft.education_audience,
+       ft.collection_policy,ft.billing_basis,ft.amount_mode,ft.default_amount,ft.status
      ORDER BY ft.name ASC`,
     { schoolId, schoolYearId },
   );
 
   return rows.map((row) => ({
+    id: Number(row.id),
+    code: row.code || `LEGACY-${row.id}`,
     name: row.name,
-    meta: `Default ${money(row.default_amount)} per student`,
+    meta: row.description || "Purpose not recorded for this legacy fee type",
+    purposeGroup: labelForStatus(row.other_fee_group || "other"),
+    audience: row.education_audience === "higher" ? "College" : row.education_audience === "both" ? "K–12 and College" : row.education_audience === "basic" ? "K–12" : "Legacy / not set",
+    policy: labelForStatus(row.collection_policy || "conditional"),
+    billingBasis: labelForStatus(row.billing_basis || "school_year"),
+    amountMode: labelForStatus(row.amount_mode || "fixed"),
     amount: money(row.default_amount),
     status: labelForStatus(row.status),
     assignedCount: Number(row.assigned_count ?? 0),
@@ -1837,8 +1853,16 @@ type TuitionSqlRow = RowDataPacket & {
 };
 
 type OtherFeeItemRow = RowDataPacket & {
+  id: number;
+  code: string | null;
   name: string;
+  description: string | null;
   category: string;
+  other_fee_group: string | null;
+  education_audience: string | null;
+  collection_policy: string | null;
+  billing_basis: string | null;
+  amount_mode: string | null;
   default_amount: number | string;
   status: string;
   assigned_count: number | string;

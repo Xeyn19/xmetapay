@@ -15,10 +15,18 @@ import {
 } from "@/app/_components/table-controls";
 
 import { StatusPill } from "../../_components/admin-ui";
+import { updateOtherFeeTypeStatusAction } from "@/app/admin/fees/other-fee-actions";
 
 export type OtherFeeRow = {
+  id: number;
+  code: string;
   name: string;
   meta: string;
+  purposeGroup: string;
+  audience: string;
+  policy: string;
+  billingBasis: string;
+  amountMode: string;
   amount: string;
   status: string;
   assignedCount: number;
@@ -40,23 +48,35 @@ export function OtherFeesTable({
 }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
+  const [purpose, setPurpose] = useState("all");
+  const [audience, setAudience] = useState("all");
+  const [policy, setPolicy] = useState("all");
   const filteredItems = useMemo(
     () => filterByQuery(
-      items.filter((item) => status === "all" || item.status === status),
+      items.filter((item) => (status === "all" || item.status === status) && (purpose === "all" || item.purposeGroup === purpose) && (audience === "all" || item.audience === audience) && (policy === "all" || item.policy === policy)),
       query,
-      (item) => [item.name, item.meta].join(" "),
+      (item) => [item.name, item.code, item.meta].join(" "),
     ),
-    [items, query, status],
+    [audience, items, policy, purpose, query, status],
   );
-  const pagination = usePaginatedRows(filteredItems, `${query}|${status}`);
-  const hasActiveFilters = query.trim() !== "" || status !== "all";
+  const pagination = usePaginatedRows(filteredItems, `${query}|${status}|${purpose}|${audience}|${policy}`);
+  const activeFilterCount = [status, purpose, audience, policy].filter((item) => item !== "all").length;
+  const hasActiveFilters = query.trim() !== "" || activeFilterCount > 0;
   const resetFilters = () => {
     setQuery("");
     setStatus("all");
+    setPurpose("all");
+    setAudience("all");
+    setPolicy("all");
   };
   const exportColumns: ExportColumn<OtherFeeRow>[] = [
     { label: "Fee type", value: (item) => item.name },
+    { label: "Code", value: (item) => item.code },
     { label: "Description", value: (item) => item.meta },
+    { label: "Purpose", value: (item) => item.purposeGroup },
+    { label: "Audience", value: (item) => item.audience },
+    { label: "Collection policy", value: (item) => item.policy },
+    { label: "Billing basis", value: (item) => item.billingBasis },
     { label: "Default amount", value: (item) => item.amount },
     { label: "Assigned total", value: (item) => item.totalBilled },
     { label: "Collected", value: (item) => item.collected },
@@ -80,6 +100,9 @@ export function OtherFeesTable({
     filters: [
       { label: "Search", value: query.trim() || "All fee types" },
       { label: "Status", value: filterLabel(status) },
+      { label: "Purpose", value: filterLabel(purpose) },
+      { label: "Audience", value: filterLabel(audience) },
+      { label: "Policy", value: filterLabel(policy) },
     ],
     summary: [
       { label: "Fee types", value: filteredItems.length },
@@ -95,10 +118,13 @@ export function OtherFeesTable({
         <DashboardTableControls
           query={query}
           onQueryChange={setQuery}
-          searchPlaceholder="Search fee name or description..."
-          searchLabel="Search other fees by fee name or description"
+          searchPlaceholder="Search fee name, code, or description..."
+          searchLabel="Search other fees by fee name, code, or description"
           filters={[
             { label: "Status", value: status, onChange: setStatus, options: toFilterOptions(items.map((item) => item.status), "All statuses") },
+            { label: "Purpose", value: purpose, onChange: setPurpose, options: toFilterOptions(items.map((item) => item.purposeGroup), "All purposes") },
+            { label: "Audience", value: audience, onChange: setAudience, options: toFilterOptions(items.map((item) => item.audience), "All audiences") },
+            { label: "Collection policy", value: policy, onChange: setPolicy, options: toFilterOptions(items.map((item) => item.policy), "All policies") },
           ]}
           onClear={resetFilters}
           clearLabel="Reset filters"
@@ -120,8 +146,12 @@ export function OtherFeesTable({
           exportLabel="Export Excel"
           exportingLabel="Generating Excel..."
           exportDisabled={filteredItems.length === 0}
+          layout="compact"
+          activeFilterCount={activeFilterCount}
+          filterTitle="Filter fee types"
+          filterDescription="Narrow the catalog by purpose, audience, policy, or status."
         />
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-live="polite"><span><strong className="text-foreground">{filteredItems.length}</strong> fee types</span><span><strong className="text-foreground">{money(filteredTotals.assigned)}</strong> assigned</span><span><strong className="text-status-success-foreground">{money(filteredTotals.collected)}</strong> collected</span><span><strong className="text-status-danger-foreground">{money(filteredTotals.outstanding)}</strong> outstanding</span></div>
+        {hasActiveFilters ? <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-live="polite"><span><strong className="text-foreground">{filteredItems.length}</strong> matching fee types</span><span><strong className="text-foreground">{money(filteredTotals.assigned)}</strong> assigned</span><span><strong className="text-status-success-foreground">{money(filteredTotals.collected)}</strong> collected</span><span><strong className="text-status-danger-foreground">{money(filteredTotals.outstanding)}</strong> outstanding</span></div> : null}
       </div>
       <div className="divide-y divide-border">
         {filteredItems.length > 0 ? (
@@ -134,17 +164,19 @@ export function OtherFeesTable({
             const statusTone = item.status === "Active" ? "active" : "inactive";
 
             return (
-              <div key={item.name} className="flex flex-wrap items-center justify-between gap-4 px-[18px] py-3 transition hover:bg-muted/70">
+              <div key={item.id} className="grid gap-3 px-[18px] py-3 transition hover:bg-muted/70 md:grid-cols-[minmax(220px,1.4fr)_minmax(170px,1fr)_minmax(150px,.8fr)_auto] md:items-center">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-button-soft text-primary">
                     <ClipboardList className="size-4" />
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate text-[13px] font-bold text-foreground">{item.name}</div>
+                    <div className="truncate text-[13px] font-bold text-foreground">{item.name} <span className="font-mono text-[10px] font-semibold text-muted-foreground">{item.code}</span></div>
                     <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{item.meta}</div>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center justify-end gap-3 text-right sm:gap-5">
+                <div className="text-xs"><div className="font-bold text-foreground">{item.purposeGroup}</div><div className="mt-0.5 text-muted-foreground">{item.audience}</div></div>
+                <div className="text-xs"><div className="font-bold text-foreground">{item.policy}</div><div className="mt-0.5 text-muted-foreground">{item.billingBasis}</div></div>
+                <div className="flex flex-wrap items-center gap-3 text-left md:justify-end md:text-right sm:gap-5">
                   <div>
                     <div className="text-sm font-bold">{item.amount}</div>
                     <div className="text-[11px] text-muted-foreground">
@@ -157,6 +189,11 @@ export function OtherFeesTable({
                       {item.paidLabel}
                     </span>
                     <StatusPill tone={statusTone}>{item.status}</StatusPill>
+                    <form action={updateOtherFeeTypeStatusAction.bind(null, item.id, item.status === "Active" ? "inactive" : "active")}>
+                      <button type="submit" className="min-h-11 rounded-lg px-2 text-xs font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                        {item.status === "Active" ? "Make inactive" : "Make active"}
+                      </button>
+                    </form>
                   </div>
                 </div>
               </div>

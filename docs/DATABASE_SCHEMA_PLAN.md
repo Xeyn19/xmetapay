@@ -333,7 +333,11 @@ CREATE TABLE enrollment_documents (
 
 #### `fee_types`
 
-Defines tuition and other school fees. Current MVP tuition installments are managed per student assignment through `tuition_payment_terms`; `fee_type_term_templates` remains in the schema as a reserved future template layer.
+Defines tuition and other school fees. Other-fee rows additionally store a school-year-unique code, purpose group, education audience, collection policy, billing basis, amount mode, and optional approval reference. Current MVP tuition installments are managed per student assignment through `tuition_payment_terms`; `fee_type_term_templates` remains in the schema as a reserved future template layer.
+
+#### `other_fee_charges`
+
+Stores one authoritative, repeatable Other-fee charge instance. It belongs to the school and school year, optionally belongs to an active College period, snapshots the parent-visible purpose and amount, records its due date and approval reference, and uses a school-scoped submission token hash for retry safety. New assignments reference this row through `student_fee_assignments.other_fee_charge_id`; legacy assignments remain null and are not rewritten.
 
 ```sql
 CREATE TABLE fee_types (
@@ -378,7 +382,7 @@ CREATE TABLE fee_type_term_templates (
 
 #### `student_fee_assignments`
 
-Assigns fees to students and tracks balances. The admin UI can assign one fee type to one or more selected enrolled students; the unique key prevents duplicate charges for the same student, fee type, and school year.
+Assigns fees to students and tracks balances. Tuition keeps its schedule/assessment relationships. Other fees use a deterministic assignment key per charge instance, allowing a reusable type to be charged for separate events while preventing duplicate student rows for the same posting.
 
 ```sql
 CREATE TABLE student_fee_assignments (

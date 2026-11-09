@@ -226,6 +226,12 @@ Main purpose:
 
 Examples include tuition, miscellaneous fee, lab fee, activity fee, and allowance-related charges.
 
+For `category = 'other'`, nullable metadata records the disclosed purpose group, Basic/College/Both audience, mandatory/optional/conditional policy, billing basis, fixed-or-assignment amount behavior, and optional approval reference. Legacy rows keep null metadata and receive safe display defaults; new rows use a school-year-unique code.
+
+### `other_fee_charges`
+
+Stores each repeatable non-tuition charge event separately from its reusable fee type. It snapshots the title, fee name, description, amount, due date, audience, academic period when applicable, approval reference, creator, duplicate counts, and a hashed one-time submission token. This lets the same fee type be charged again for a different event or period without changing historical parent-facing text.
+
 ### `fee_type_term_templates`
 
 Stores optional reusable installment templates for tuition fee types. This table is present for future template reuse, but the current MVP keeps term creation in row-level Manage terms for each student tuition assignment.
@@ -250,6 +256,7 @@ Main purpose:
 - Track the fee due date and payment status: open, partial, paid, or cancelled.
 - Support selected-student bulk assignment with grade/section filtering while the unique key prevents duplicate fee charges for the same student, fee, and school year.
 - Support both admin tuition reports and parent fee summaries.
+- Link new Other-fee assignments to `other_fee_charges` while keeping tuition and legacy assignments compatible.
 
 This table is the main source for outstanding balances.
 

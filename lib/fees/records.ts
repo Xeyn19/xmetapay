@@ -43,6 +43,7 @@ export type ParentFeeRow = {
   studentName: string;
   studentReference: string;
   feeName: string;
+  feeDescription: string;
   category: FeeCategory;
   amountDue: string;
   amountPaid: string;
@@ -140,6 +141,7 @@ export async function getParentFeePageData(parentUserId: number): Promise<Parent
         studentName: fullName(row.first_name, row.middle_name, row.last_name),
         studentReference: row.student_reference,
         feeName: row.fee_name,
+        feeDescription: row.fee_description,
         category: row.category,
         amountDue: money(row.amount_due),
         amountPaid: money(row.amount_paid),
@@ -244,7 +246,9 @@ async function getFeeTypeOptions(schoolId: number, schoolYearId: number, categor
 async function getParentFeeRows(parentUserId: number) {
   const [rows] = await pool.execute<ParentFeeSqlRow[]>(
     `SELECT sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
-       ft.name AS fee_name, ft.category,
+       COALESCE(sfa.fee_name_snapshot, ft.name) AS fee_name,
+       COALESCE(ofc.description_snapshot, ft.description, '') AS fee_description,
+       ft.category,
        st.student_reference, st.first_name, st.middle_name, st.last_name,
        pfsa.archived_at, pfsa.deleted_at,
        DATE_ADD(pfsa.deleted_at, INTERVAL 30 DAY) AS recoverable_until,
@@ -268,6 +272,7 @@ async function getParentFeeRows(parentUserId: number) {
      JOIN student_fee_assignments sfa ON sfa.student_id = st.id
      JOIN school_years sy ON sy.id = sfa.school_year_id AND sy.status = 'active'
      JOIN fee_types ft ON ft.id = sfa.fee_type_id
+     LEFT JOIN other_fee_charges ofc ON ofc.id = sfa.other_fee_charge_id
      LEFT JOIN parent_fee_summary_archives pfsa
        ON pfsa.parent_user_id = :parentUserId
       AND pfsa.student_fee_assignment_id = sfa.id
@@ -275,7 +280,7 @@ async function getParentFeeRows(parentUserId: number) {
      WHERE sg.parent_user_id = :parentUserId
        AND sfa.status <> 'cancelled'
      GROUP BY sfa.id, sfa.amount_due, sfa.amount_paid, sfa.due_date, sfa.status,
-        ft.name, ft.category, st.student_reference, st.first_name, st.middle_name, st.last_name,
+        fee_name, fee_description, ft.category, st.student_reference, st.first_name, st.middle_name, st.last_name,
         pfsa.archived_at, pfsa.deleted_at, recoverable_until, can_recover, recovery_days_remaining
      ORDER BY sfa.due_date IS NULL ASC, sfa.due_date ASC, st.last_name ASC, ft.name ASC`,
     { parentUserId },
@@ -406,6 +411,7 @@ type ParentFeeSqlRow = RowDataPacket & {
   due_date: Date | string | null;
   status: string;
   fee_name: string;
+  fee_description: string;
   category: FeeCategory;
   student_reference: string;
   first_name: string;
