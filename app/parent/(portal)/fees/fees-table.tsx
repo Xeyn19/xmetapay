@@ -467,7 +467,7 @@ export function ParentFeesTable({
       />
 
       {confirmation ? (
-        <div className="fixed inset-0 z-[220] grid place-items-center bg-black/45 px-4 py-6 backdrop-blur-sm">
+        <div className="portal-dialog-backdrop fixed inset-0 z-[220] grid place-items-center px-4 py-6">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmation(null)} aria-label="Close confirmation" />
           <section role="alertdialog" aria-modal="true" aria-labelledby="parent-fee-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl sm:p-6">
             <div className={cn(

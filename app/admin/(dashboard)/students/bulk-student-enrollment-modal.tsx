@@ -97,7 +97,7 @@ export function BulkStudentEnrollmentModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[210] grid place-items-center bg-[#050812]/75 backdrop-blur-sm sm:px-6 sm:py-6">
+    <div className="portal-dialog-backdrop fixed inset-0 z-[210] grid place-items-center sm:px-6 sm:py-6">
       <button type="button" aria-label="Close multiple student form" className="fixed inset-0 cursor-default" onClick={onClose} />
       <section role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative flex h-svh w-full max-w-6xl flex-col overflow-hidden bg-[#101522] text-[#f6f7fb] shadow-2xl sm:h-auto sm:max-h-[calc(100svh-48px)] sm:rounded-xl sm:border sm:border-[#30384c] sm:shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
         <div className="flex items-start justify-between gap-3 border-b border-[#293146] bg-[#121827] px-4 py-4 sm:px-5 sm:py-5">

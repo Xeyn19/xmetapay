@@ -357,6 +357,54 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     await expect(page.getByText("Current school type")).toBeVisible();
   });
 
+  test("portal dialogs use a dark subtle backdrop in both themes", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/admin/school-setup", { waitUntil: "networkidle" });
+      test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+
+      const switchToDark = page.getByRole("button", { name: "Switch to dark mode" });
+      if (await switchToDark.count()) await switchToDark.click();
+      const changeSchoolType = page.getByRole("button", { name: "Change school type" });
+      await changeSchoolType.click();
+      const backdrop = page.locator(".portal-dialog-backdrop");
+      await expect(backdrop).toBeVisible();
+      await expect(backdrop).toHaveCSS("background-color", "rgba(3, 6, 12, 0.64)");
+      await expect(backdrop).toHaveCSS("backdrop-filter", "blur(2px)");
+      await expectNoHorizontalOverflow(page);
+      await page.keyboard.press("Escape");
+      await expect(backdrop).toBeHidden();
+      await expect(changeSchoolType).toBeFocused();
+    }
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    const changeSchoolType = page.getByRole("button", { name: "Change school type" });
+    await changeSchoolType.click();
+    const backdrop = page.locator(".portal-dialog-backdrop");
+    await expect(backdrop).toBeVisible();
+    await expect(backdrop).toHaveCSS("background-color", "rgba(11, 15, 23, 0.52)");
+    await expect(backdrop).toHaveCSS("backdrop-filter", "blur(2px)");
+    await page.keyboard.press("Escape");
+
+    await page.goto("/admin/tuition", { waitUntil: "networkidle" });
+    const assessmentViewer = page.locator('button[aria-label^="View tuition assessment for"]').first();
+    if (await assessmentViewer.count()) {
+      await assessmentViewer.click();
+      await expect(page.getByRole("dialog", { name: "Tuition assessment" })).toBeVisible();
+      await expect(page.locator(".portal-dialog-backdrop")).toHaveCSS("background-color", "rgba(11, 15, 23, 0.52)");
+      await page.keyboard.press("Escape");
+    }
+
+    await page.goto("/admin/collections", { waitUntil: "networkidle" });
+    const archivePayment = page.locator('button[aria-label^="Archive payment"]').first();
+    if (await archivePayment.count()) {
+      await archivePayment.click();
+      await expect(page.getByRole("alertdialog")).toBeVisible();
+      await expect(page.locator(".portal-dialog-backdrop")).toHaveCSS("background-color", "rgba(11, 15, 23, 0.52)");
+      await page.getByRole("button", { name: "Cancel" }).click();
+    }
+  });
+
   test("tuition workspace switches between student balances and payment history responsively", async ({ page }) => {
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });

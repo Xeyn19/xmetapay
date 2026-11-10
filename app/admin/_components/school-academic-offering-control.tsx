@@ -130,7 +130,7 @@ export function SchoolAcademicOfferingControl({
       </div>
 
       {open ? (
-        <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-foreground/45 px-3 py-6 backdrop-blur-sm sm:px-6">
+        <div className="portal-dialog-backdrop fixed inset-0 z-[200] grid place-items-center overflow-y-auto px-3 py-6 sm:px-6">
           <button type="button" aria-label="Close school type dialog" className="fixed inset-0 cursor-default" onClick={() => setOpen(false)} />
           <section
             ref={dialogRef}
