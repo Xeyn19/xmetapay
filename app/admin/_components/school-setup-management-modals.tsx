@@ -151,7 +151,7 @@ function SetupModal({
       </AdminButton>
 
       {open ? (
-        <div className="fixed inset-0 z-[160] grid place-items-center overflow-y-auto bg-[#0f1117]/50 px-3 py-5 sm:px-5" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
+        <div className="portal-dialog-backdrop fixed inset-0 z-[160] grid place-items-center overflow-y-auto px-3 py-5 sm:px-5" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="w-full max-w-xl overflow-hidden rounded-lg border border-black/[0.08] bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-3 border-b border-black/[0.07] px-4 py-4 sm:px-5">
               <div className="min-w-0">

@@ -238,7 +238,7 @@ function TemplateEditor({
   const previewMessage = renderEmailTemplateText(draft.messageTemplate, sampleEmailTemplateValues);
 
   return (
-    <div className="fixed inset-0 z-[220] grid place-items-center overflow-y-auto bg-[#0f1117]/55 px-3 py-6 backdrop-blur-sm sm:px-6">
+    <div className="portal-dialog-backdrop fixed inset-0 z-[220] grid place-items-center overflow-y-auto px-3 py-6 sm:px-6">
       <button type="button" className="fixed inset-0 cursor-default" aria-label="Close email template editor" onClick={pending ? undefined : onClose} />
       <section role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative flex max-h-[calc(100svh-48px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-black/[0.08] px-4 py-3.5 sm:px-5">
@@ -308,7 +308,7 @@ function TemplateEditor({
 function TemplatePreview({ template, onClose }: { template: SchoolEmailTemplate; onClose: () => void }) {
   const titleId = useId();
   return (
-    <div className="fixed inset-0 z-[230] grid place-items-center overflow-y-auto bg-[#0f1117]/55 px-3 py-6 backdrop-blur-sm sm:px-6">
+    <div className="portal-dialog-backdrop fixed inset-0 z-[230] grid place-items-center overflow-y-auto px-3 py-6 sm:px-6">
       <button type="button" className="fixed inset-0 cursor-default" aria-label="Close email preview" onClick={onClose} />
       <section role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative w-full max-w-2xl overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-black/[0.08] px-4 py-3.5 sm:px-5">

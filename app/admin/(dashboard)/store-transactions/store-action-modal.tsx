@@ -58,7 +58,7 @@ export function StoreActionModal({
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-[#0f1117]/45 px-3 py-6 backdrop-blur-sm sm:px-6">
+        <div className="portal-dialog-backdrop fixed inset-0 z-[200] grid place-items-center overflow-y-auto px-3 py-6 sm:px-6">
           <button
             type="button"
             aria-label="Close store action"

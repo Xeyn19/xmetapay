@@ -397,7 +397,7 @@ export function ParentPaymentHistoryTable({
       />
 
       {confirmation ? (
-        <div className="fixed inset-0 z-[220] grid place-items-center bg-black/45 px-4 py-6 backdrop-blur-sm">
+        <div className="portal-dialog-backdrop fixed inset-0 z-[220] grid place-items-center px-4 py-6">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmation(null)} aria-label="Close confirmation" />
           <section role="alertdialog" aria-modal="true" aria-labelledby="parent-payment-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl sm:p-6">
             <div className={cn("mb-4 flex size-10 items-center justify-center rounded-lg", confirmation.operation === "delete" ? "bg-status-danger-bg text-status-danger-foreground" : "bg-primary/10 text-primary")}>

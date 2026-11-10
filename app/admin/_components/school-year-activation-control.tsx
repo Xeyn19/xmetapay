@@ -50,7 +50,7 @@ export function SchoolYearActivationControl({
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/45 px-4 py-6">
+        <div className="portal-dialog-backdrop fixed inset-0 z-50 grid place-items-center overflow-y-auto px-4 py-6">
           <div
             role="dialog"
             aria-modal="true"

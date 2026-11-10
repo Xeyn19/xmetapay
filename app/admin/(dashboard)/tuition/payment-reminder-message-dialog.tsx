@@ -65,7 +65,7 @@ export function PaymentReminderMessageDialog({ row, onClose }: {
 
   return (
     <div
-      className="fixed inset-0 z-[230] grid place-items-center overflow-y-auto bg-[#0f1117]/55 px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-8"
+      className="portal-dialog-backdrop fixed inset-0 z-[230] grid place-items-center overflow-y-auto px-3 py-4 sm:px-6 sm:py-8"
       onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
       <section

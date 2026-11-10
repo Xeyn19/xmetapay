@@ -111,7 +111,7 @@ export function StudentProfileEditModal({
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-[#0f1117]/60 px-3 py-5 backdrop-blur-sm sm:px-6">
+        <div className="portal-dialog-backdrop fixed inset-0 z-[200] grid place-items-center overflow-y-auto px-3 py-5 sm:px-6">
           <button
             type="button"
             aria-label="Close edit student dialog"

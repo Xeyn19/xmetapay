@@ -58,6 +58,7 @@
   --status-pending-foreground: #6a1b9a;
   --status-inactive-bg: #f1f3f5;
   --status-inactive-foreground: #5f6673;
+  --dialog-backdrop: rgb(11 15 23 / 0.52);
 }
 
 .dark {
@@ -114,6 +115,7 @@
   --status-pending-foreground: #d8a6e4;
   --status-inactive-bg: #22283a;
   --status-inactive-foreground: #b9c0cc;
+  --dialog-backdrop: rgb(3 6 12 / 0.64);
 }
 
 @theme inline {
@@ -186,6 +188,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.portal-dialog-backdrop {
+  background-color: var(--dialog-backdrop);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 
 .public-auth-shell {

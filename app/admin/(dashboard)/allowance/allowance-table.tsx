@@ -339,7 +339,7 @@ export function AllowanceTable({
       />
 
       {confirmationIds.length > 0 ? (
-        <div className="fixed inset-0 z-[220] grid place-items-center bg-foreground/45 px-4 py-6 backdrop-blur-sm">
+        <div className="portal-dialog-backdrop fixed inset-0 z-[220] grid place-items-center px-4 py-6">
           <button type="button" className="fixed inset-0 cursor-default" onClick={() => setConfirmationIds([])} aria-label="Close confirmation" />
           <section role="alertdialog" aria-modal="true" aria-labelledby="allowance-archive-title" className="relative w-full max-w-md rounded-xl border border-border bg-card p-5 text-card-foreground shadow-2xl sm:p-6">
             <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-status-warning-bg text-status-warning-foreground">

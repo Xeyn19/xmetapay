@@ -33,7 +33,7 @@ export function SingleStudentEnrollmentModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[210] grid place-items-center overflow-y-auto bg-[#0f1117]/45 px-3 py-6 backdrop-blur-sm sm:px-6">
+    <div className="portal-dialog-backdrop fixed inset-0 z-[210] grid place-items-center overflow-y-auto px-3 py-6 sm:px-6">
       <button type="button" aria-label="Close add one student dialog" className="fixed inset-0 cursor-default" onClick={onClose} />
       <section role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative flex max-h-[calc(100svh-48px)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-black/[0.07] bg-white shadow-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-black/[0.07] px-4 py-4 sm:px-5">
