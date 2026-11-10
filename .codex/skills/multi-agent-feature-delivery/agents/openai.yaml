@@ -1,0 +1,7 @@
+interface:
+  display_name: "Multi-Agent Feature Delivery"
+  short_description: "Coordinate parallel XMETA Pay feature delivery"
+  default_prompt: "Use $multi-agent-feature-delivery to coordinate and implement this substantial XMETA Pay feature with useful parallel subagents."
+
+policy:
+  allow_implicit_invocation: false
