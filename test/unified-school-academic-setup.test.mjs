@@ -6,15 +6,41 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 
 test("unified school setup exposes all Philippine academic offering choices", () => {
   const page = read("app/admin/(dashboard)/school-setup/page.tsx");
+  const offeringControl = read("app/admin/_components/school-academic-offering-control.tsx");
   const setup = read("lib/school/setup.ts");
-  assert.match(page, /Basic Education only \(K–12\)/);
-  assert.match(page, /Higher Education only \(College\)/);
-  assert.match(page, /Both K–12 and College/);
-  assert.match(page, /Basic Education \(K–12\)/);
-  assert.match(page, /Higher Education \(College\)/);
+  assert.match(offeringControl, /Basic Education only \(K–12\)/);
+  assert.match(offeringControl, /Higher Education only \(College\)/);
+  assert.match(offeringControl, /Both K–12 and College/);
+  assert.match(page, /Basic Education setup/);
+  assert.match(page, /Higher Education setup/);
   assert.match(setup, /educationScope: EducationScope/);
   assert.match(setup, /academicTracks: AcademicTrackReadiness/);
   assert.match(setup, /scope === "both"/);
+});
+
+test("school type is summarized first and changed through an accessible administrator dialog", () => {
+  const page = read("app/admin/(dashboard)/school-setup/page.tsx");
+  const control = read("app/admin/_components/school-academic-offering-control.tsx");
+  assert.match(page, /SchoolAcademicOfferingControl currentScope=\{overview\.educationScope\} canManage=\{canManageSetup\}/);
+  assert.match(control, /Current school type/);
+  assert.match(control, /Change school type/);
+  assert.match(control, /role="dialog"/);
+  assert.match(control, /aria-modal="true"/);
+  assert.match(control, /focus-visible:ring/);
+  assert.match(control, /disabled=\{unchanged \|\| pending\}/);
+  assert.match(control, /Only the school administrator can change this setting/);
+});
+
+test("academic setup separates everyday structure work from next-year preparation", () => {
+  const page = read("app/admin/(dashboard)/school-setup/page.tsx");
+  assert.match(page, /Academic setup for the active school year/);
+  assert.match(page, /Manage grades &amp; sections/);
+  assert.match(page, /Manage college academics/);
+  assert.match(page, /View grade and section summary/);
+  assert.match(page, /basicEnabled && upcomingYear/);
+  assert.match(page, /Prepare next school year/);
+  assert.match(page, /Add an upcoming school year first/);
+  assert.doesNotMatch(page, /Prepare K–12 rollover/);
 });
 
 test("scope changes preserve records and reject unsafe narrowing", () => {

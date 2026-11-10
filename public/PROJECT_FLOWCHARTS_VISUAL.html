@@ -469,7 +469,7 @@ flowchart TD
         </div>
 
         <h3>Guided Philippine School Setup</h3>
-        <p>Implemented: first-time onboarding is a resumable five-step wizard for School profile, School year, Basic Education, College, and Review. Basic Education uses independently expandable tasks that keep earlier work visible, level-group section templates, optional per-grade exceptions, and separate Grade 11/12 curriculum panels. The selected school offering controls required steps. Every later login and protected dashboard request checks the same active-year and track readiness, returning incomplete school administrators to the first unfinished step; ongoing management uses the School setup hub and focused academic editors.</p>
+        <p>Implemented: first-time onboarding is a resumable five-step wizard for School profile, School year, Basic Education, College, and Review. Basic Education uses independently expandable tasks that keep earlier work visible, level-group section templates, optional per-grade exceptions, and separate Grade 11/12 curriculum panels. The selected school offering controls required steps. Every later login and protected dashboard request checks the same active-year and track readiness, returning incomplete school administrators to the first unfinished step. Ongoing management summarizes the current school type, places changes in a focused administrator dialog, separates K–12 and College readiness, and presents next-year preparation only when an upcoming K–12 year exists.</p>
         <div class="diagram-card">
           <div class="diagram-actions">
             <button type="button" data-diagram-download="svg" data-file-name="manual-school-setup.svg">Download SVG</button>
@@ -494,10 +494,14 @@ flowchart TD
   M --> N
   N --> R["Finish and open dashboard"]
   R --> S["Admin opens School setup overview hub"]
-  S --> T["Edit school or year metadata in focused modals"]
-  T --> U["Open selected-year structure page"]
-  U --> V["Open dedicated rollover page if needed"]
-  V --> W["Activate upcoming year when ready"]
+  S --> T["Review school type and academic-track readiness"]
+  T --> U["Edit school or year metadata in focused dialogs"]
+  U --> V["Open selected-year structure page"]
+  V --> V2{"Upcoming K–12 year exists?"}
+  V2 -->|Yes| V3["Prepare next school year placements"]
+  V2 -->|No| V4["Add an upcoming school year first"]
+  V3 --> W["Activate upcoming year when ready"]
+  V4 --> W
   W --> X["Close previous active year"]
   X --> C
           </pre>

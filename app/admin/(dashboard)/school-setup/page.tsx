@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, CalendarDays, GraduationCap, Info, Mail, School } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarDays, ChevronDown, GraduationCap, Info, Mail, School } from "lucide-react";
 
 import { AlertBanner, AdminTable, DashboardCard, KpiCard, KpiGrid, StatusPill } from "@/app/admin/_components/admin-ui";
+import { SchoolAcademicOfferingControl } from "@/app/admin/_components/school-academic-offering-control";
 import { AddSchoolYearModal, EditSchoolDetailsModal, EditSchoolYearModal } from "@/app/admin/_components/school-setup-management-modals";
 import { SchoolYearActivationControl } from "@/app/admin/_components/school-year-activation-control";
 import { requireAdminPageAccess } from "@/lib/admin/access";
+import { canManageSchoolSetup } from "@/lib/admin/permissions";
 import { requireRole } from "@/lib/auth/session";
 import { getSchoolEmailTemplateLibrary } from "@/lib/email/templates";
 import { builtInPaymentReminderTemplates } from "@/lib/email/template-contract";
 import { getAdminSchoolContext, getAdminSchoolSetupOverview } from "@/lib/school/setup";
 import { EmailTemplateLibrary } from "./email-template-library";
-import { updateSchoolEducationScopeAction } from "@/app/admin/school-setup/actions";
 
 export default async function AdminSchoolSetupPage() {
   const session = await requireRole("admin");
@@ -26,6 +27,10 @@ export default async function AdminSchoolSetupPage() {
         warning: "Complete school setup before creating school-specific email templates.",
       };
   const duplicateYearNames = duplicateSchoolYearNames(overview.schoolYears);
+  const canManageSetup = canManageSchoolSetup(schoolContext.staffRole);
+  const basicEnabled = overview.educationScope !== "higher";
+  const upcomingYear = overview.schoolYears.find((year) => year.status === "upcoming") ?? null;
+  const activeBasicGrades = overview.activeYearGrades.filter((grade) => grade.sections.some(Boolean));
 
   return (
     <div className="grid gap-5">
@@ -51,32 +56,79 @@ export default async function AdminSchoolSetupPage() {
         </div>
         <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap">
           <EditSchoolDetailsModal schoolName={overview.schoolName} schoolCode={overview.schoolCode} />
-          <AddSchoolYearModal />
         </div>
       </section>
 
       <KpiGrid>{overview.kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} />)}</KpiGrid>
 
-      <DashboardCard title="Academic offerings" icon={School}>
-        <form action={updateSchoolEducationScopeAction} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)_auto] lg:items-end">
-          <div><h3 className="font-semibold text-foreground">What does this school offer?</h3><p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">Choose Basic Education for K–12, Higher Education for College, or Both for an integrated Philippine school. Existing academic records are never deleted.</p></div>
-          <label className="grid gap-1.5 text-sm font-semibold text-foreground"><span>School offering</span><select name="educationScope" defaultValue={overview.educationScope} className="min-h-12 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-3 focus:ring-ring/40"><option value="basic">Basic Education only (K–12)</option><option value="higher">Higher Education only (College)</option><option value="both">Both K–12 and College</option></select></label>
-          <button className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Save offering</button>
-        </form>
+      <DashboardCard title="School type" icon={School}>
+        <SchoolAcademicOfferingControl currentScope={overview.educationScope} canManage={canManageSetup} />
       </DashboardCard>
 
+      <section>
+        <h2 className="text-[15px] font-bold text-foreground">Academic setup for the active school year</h2>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">Manage only the academic tracks selected for this school. Each track has its own readiness status.</p>
+      </section>
+
       <div className="grid gap-5 xl:grid-cols-2">
-        {overview.educationScope !== "higher" ? <DashboardCard title="Basic Education (K–12)" icon={BookOpen}>
-          <TrackSummary ready={overview.academicTracks.basic.ready} description="Kindergarten, Elementary, Junior High School, and Senior High School use configurable grades and sections." counts={[`${overview.academicTracks.basic.gradeLevels} grade levels`,`${overview.academicTracks.basic.sections} sections`,`${overview.academicTracks.basic.enrollments} active enrollments`]} />
-          <div className="mt-4 flex flex-col gap-2 min-[420px]:flex-row"><Link href={overview.activeYear ? `/admin/school-setup/years/${overview.activeYear.id}` : "/admin/school-setup"} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"><ArrowRight className="size-4" />Manage K–12 structure</Link><Link href="/admin/school-setup/rollover" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground hover:bg-muted">Prepare K–12 rollover</Link></div>
+        {basicEnabled ? <DashboardCard title="Basic Education setup" icon={BookOpen}>
+          <TrackSummary
+            ready={overview.academicTracks.basic.ready}
+            readyMessage="K–12 grades and sections are ready for the active school year."
+            missingMessage={overview.activeYear ? "Add at least one grade and section to complete K–12 setup." : "Add and activate a school year before setting up grades and sections."}
+            metrics={[
+              { label: "Grades offered", value: overview.academicTracks.basic.gradeLevels },
+              { label: "Active-year sections", value: overview.academicTracks.basic.sections },
+              { label: "Currently enrolled", value: overview.academicTracks.basic.enrollments },
+            ]}
+          />
+          <div className="mt-4">
+            <Link href={overview.activeYear ? `/admin/school-setup/years/${overview.activeYear.id}` : "/admin/school-setup"} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 min-[420px]:w-auto"><ArrowRight className="size-4" />Manage grades &amp; sections</Link>
+          </div>
+          {activeBasicGrades.length > 0 ? (
+            <details className="group mt-4 rounded-lg border border-border bg-muted/30">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3.5 text-xs font-semibold text-foreground focus:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
+                View grade and section summary
+                <ChevronDown className="size-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+              </summary>
+              <div className="grid gap-2 border-t border-border p-3 sm:grid-cols-2">
+                {activeBasicGrades.map((grade) => (
+                  <div key={grade.name} className="rounded-lg border border-border bg-background p-3">
+                    <div className="text-xs font-bold text-foreground">{grade.name}</div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">{grade.sections.filter(Boolean).map((section) => <span key={`${grade.name}-${section}`} className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">{section}</span>)}</div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
         </DashboardCard> : null}
-        {overview.educationScope !== "basic" ? <DashboardCard title="Higher Education (College)" icon={GraduationCap}>
-          <TrackSummary ready={overview.academicTracks.higher.ready} description="Configure degree programs, year levels, semesters or trimesters, sections, and active-period student placement." counts={[`${overview.academicTracks.higher.programs} programs`,`${overview.academicTracks.higher.periods} periods`,`${overview.academicTracks.higher.sections} sections`,`${overview.academicTracks.higher.enrollments} active enrollments`]} />
-          <div className="mt-4"><Link href="/admin/school-setup/academics" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"><ArrowRight className="size-4" />Manage college academics</Link></div>
+        {overview.educationScope !== "basic" ? <DashboardCard title="Higher Education setup" icon={GraduationCap}>
+          <TrackSummary
+            ready={overview.academicTracks.higher.ready}
+            readyMessage="College programs, periods, and sections are ready for the active school year."
+            missingMessage={overview.activeYear ? "Add a program, academic period, and college section to complete College setup." : "Add and activate a school year before setting up College academics."}
+            metrics={[
+              { label: "Programs", value: overview.academicTracks.higher.programs },
+              { label: "Academic periods", value: overview.academicTracks.higher.periods },
+              { label: "College sections", value: overview.academicTracks.higher.sections },
+              { label: "Currently enrolled", value: overview.academicTracks.higher.enrollments },
+            ]}
+          />
+          <div className="mt-4"><Link href="/admin/school-setup/academics" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 min-[420px]:w-auto"><ArrowRight className="size-4" />Manage college academics</Link></div>
         </DashboardCard> : null}
       </div>
 
-      <DashboardCard title="School years" icon={CalendarDays} bodyClassName="p-0">
+      <DashboardCard
+        title="School years"
+        icon={CalendarDays}
+        bodyClassName="p-0"
+        action={canManageSetup ? (
+          <div className="grid w-full gap-2 min-[420px]:flex min-[420px]:w-auto min-[420px]:flex-wrap">
+            <AddSchoolYearModal triggerTone={basicEnabled && upcomingYear ? "outline" : "primary"} />
+            {basicEnabled && upcomingYear ? <Link href="/admin/school-setup/rollover" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-3.5 text-[12.5px] font-semibold text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"><ArrowRight className="size-4" />Prepare next school year</Link> : null}
+          </div>
+        ) : null}
+      >
         {duplicateYearNames.size > 0 ? (
           <div className="m-4 rounded-lg border border-status-warning-foreground/20 bg-status-warning-bg px-3 py-2.5 text-xs text-status-warning-foreground">
             Rename duplicate year labels before activation: {[...duplicateYearNames].join(", ")}.
@@ -114,20 +166,12 @@ export default async function AdminSchoolSetupPage() {
             </div>
           </>
         ) : <EmptyState title="No school years yet" detail="Add a school year, then create its grade and section structure." />}
-      </DashboardCard>
-
-      {overview.educationScope !== "higher" ? <DashboardCard title={`K–12 active year structure${overview.activeYear ? ` - ${overview.activeYear.name}` : ""}`} icon={BookOpen} action={overview.activeYear ? <Link href={`/admin/school-setup/years/${overview.activeYear.id}`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-[12px] font-semibold hover:bg-muted">Manage structure <ArrowRight className="size-4" /></Link> : null}>
-        {overview.activeYearGrades.some((grade) => grade.sections.some(Boolean)) ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {overview.activeYearGrades.filter((grade) => grade.sections.some(Boolean)).map((grade) => (
-              <div key={grade.name} className="rounded-lg border border-border bg-muted/40 p-3 text-foreground">
-                <div className="text-[12.5px] font-bold">{grade.name}</div>
-                <div className="mt-2 flex flex-wrap gap-1.5">{grade.sections.filter(Boolean).map((section) => <span key={`${grade.name}-${section}`} className="rounded-full bg-background px-2.5 py-1 text-[11px] font-semibold text-muted-foreground ring-1 ring-border">{section}</span>)}</div>
-              </div>
-            ))}
+        {basicEnabled && canManageSetup && !upcomingYear ? (
+          <div className="m-4 rounded-lg border border-status-info-foreground/20 bg-status-info-bg px-3.5 py-3 text-xs leading-5 text-status-info-foreground">
+            <span className="font-bold">Preparing for next year?</span> Add an upcoming school year first. You can then review current students and prepare their next grade and section without changing historical enrollment records.
           </div>
-        ) : <EmptyState title="No active-year structure yet" detail="Open the active school year and add its grades and sections." />}
-      </DashboardCard> : null}
+        ) : null}
+      </DashboardCard>
 
       <DashboardCard title="Email templates" icon={Mail}>
         <EmailTemplateLibrary library={emailTemplateLibrary} />
@@ -142,7 +186,7 @@ function YearActions({ year, activeYear, educationScope, duplicateName }: { year
 }
 
 function Count({ label, value }: { label: string; value: number }) { return <div className="rounded-lg bg-background px-2 py-2"><div className="text-sm font-bold text-foreground">{value}</div><div className="text-[10px] text-muted-foreground">{label}</div></div>; }
-function TrackSummary({ ready, description, counts }: { ready:boolean; description:string; counts:string[] }) { return <div><div className="flex flex-wrap items-center gap-2"><StatusPill tone={ready ? "active" : "pending"}>{ready ? "Ready" : "Setup needed"}</StatusPill>{counts.map(count=><span key={count} className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">{count}</span>)}</div><p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p></div>; }
+function TrackSummary({ ready, readyMessage, missingMessage, metrics }: { ready:boolean; readyMessage:string; missingMessage:string; metrics:Array<{label:string;value:number}> }) { return <div><div className="flex items-start gap-2"><StatusPill tone={ready ? "active" : "pending"}>{ready ? "Ready" : "Setup needed"}</StatusPill><p className="text-xs leading-5 text-muted-foreground">{ready ? readyMessage : missingMessage}</p></div><div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{metrics.map(metric=><div key={metric.label} className="rounded-lg border border-border bg-muted/40 px-3 py-2.5"><div className="text-base font-bold text-foreground">{metric.value}</div><div className="mt-0.5 text-[10.5px] leading-4 text-muted-foreground">{metric.label}</div></div>)}</div></div>; }
 function EmptyState({ title, detail }: { title: string; detail: string }) { return <div className="m-4 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center"><div className="text-[13px] font-bold text-foreground">{title}</div><div className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</div></div>; }
 function statusTone(status: "upcoming" | "active" | "closed"): "active" | "pending" | "inactive" { return status === "active" ? "active" : status === "upcoming" ? "pending" : "inactive"; }
 function statusLabel(status: "upcoming" | "active" | "closed") { return status[0].toUpperCase() + status.slice(1); }

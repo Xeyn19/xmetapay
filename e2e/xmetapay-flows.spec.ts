@@ -328,6 +328,35 @@ test.describe("XMETA EDU dashboard smoke tests", () => {
     }
   });
 
+  test("School setup separates school type, academic setup, and next-year preparation", async ({ page }) => {
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/admin/school-setup", { waitUntil: "domcontentloaded" });
+      test.skip(page.url().includes("/admin/onboarding/"), "Local E2E admin school setup is incomplete.");
+
+      await expect(page.getByRole("heading", { level: 2, name: "School type" })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 2, name: "Academic setup for the active school year" })).toBeVisible();
+      await expect(page.getByText("Current school type")).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+
+    await page.waitForLoadState("networkidle");
+    const changeSchoolType = page.getByRole("button", { name: "Change school type" });
+    await expect(changeSchoolType).toBeVisible();
+    await changeSchoolType.click();
+    const dialog = page.getByRole("dialog", { name: "Change school type" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("radio", { name: /Basic Education only|Higher Education only|Both K–12 and College/ }).first()).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Save school type" })).toBeDisabled();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(changeSchoolType).toBeFocused();
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(page.locator("html")).toHaveClass(/light/);
+    await expect(page.getByText("Current school type")).toBeVisible();
+  });
+
   test("tuition workspace switches between student balances and payment history responsively", async ({ page }) => {
     for (const width of [320, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });

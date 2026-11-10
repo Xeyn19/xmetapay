@@ -211,9 +211,10 @@ test("school setup uses an overview hub with focused management workflows", () =
   assert.match(page, /\{ label: "Actions" \}/);
   assert.match(page, /duplicateName=\{duplicateYearNames\.has\(year\.name\.toLowerCase\(\)\)\}/);
   assert.match(page, /@\/app\/admin\/_components\/school-year-activation-control/);
-  assert.match(page, /K–12 active year structure/);
-  assert.match(page, /Manage structure/);
-  assert.match(page, /Prepare K–12 rollover/);
+  assert.match(page, /Academic setup for the active school year/);
+  assert.match(page, /Manage grades &amp; sections/);
+  assert.match(page, /View grade and section summary/);
+  assert.match(page, /Prepare next school year/);
   assert.match(page, /EditSchoolDetailsModal/);
   assert.match(page, /AddSchoolYearModal/);
   assert.doesNotMatch(page, /ManualSchoolSetupForm/);

@@ -85,7 +85,7 @@ Ask a school administrator to complete school setup first.
 
 School setup is school-wide, not per staff account. After the school administrator saves setup, XMETA EDU links other unlinked `admin_profiles` with the same exact `school_name` to the same `schools.id`. New registrar and finance accounts also try to join the existing school context during registration. That means a registrar should not need to repeat setup when the school administrator already completed it for the same school name.
 
-The school administrator chooses one academic offering: **Basic Education only**, **Higher Education only**, or **Both**. Scope may be expanded at any time. Narrowing is rejected when it would hide an academic track that already owns grades, programs, periods, sections, enrollments, tuition packages, or assessments. No scope change deletes or rewrites historical records.
+The School setup hub summarizes the current school type as **Basic Education only**, **Higher Education only**, or **Both**. Only a school administrator receives **Change school type**, which opens the three choices in a focused confirmation dialog. Scope may be expanded at any time. Narrowing is rejected when it would hide an academic track that already owns grades, programs, periods, sections, enrollments, tuition packages, or assessments. No scope change deletes or rewrites historical records. Registrar and finance accounts can review the current type and track readiness but cannot change it.
 
 Readiness is track-specific. Basic Education requires an active school year with grades and K–12 sections. Higher Education requires an active school year with an active program/year structure, college period, and college section. A mixed school is ready only when both tracks are ready. College-only administrators are never forced to create K–12 grades or sections. On every protected Admin dashboard request—including the first request after login—the server checks this same readiness state. An incomplete school administrator is redirected to `/admin/onboarding/school-setup` and resumes the first incomplete step; the standard dashboard shell appears only after readiness is complete.
 
@@ -104,8 +104,8 @@ Only one school year is still the active/current year. For MVP safety, operation
 1. A school administrator registers first.
 2. The account stays pending until the company super admin approves it.
 3. The approved school administrator signs in and completes setup-only onboarding.
-4. The school administrator reviews and edits all school years from `School setup`.
-5. The school administrator can prepare a manual rollover by explicitly selecting one or many source-year students, reviewing each target placement, and saving only checked students.
+4. The school administrator reviews academic-track readiness and edits all school years from `School setup`.
+5. After an upcoming K–12 year exists, **Prepare next school year** appears beside the School years controls. The administrator explicitly selects one or many source-year students, reviews each target placement, and saves only checked students.
 6. When the next year is ready, the school administrator activates it; XMETA EDU closes the previous active year.
 7. Admin staff use the school-year selector to view the active, upcoming, or closed year data.
 8. New operational history rows are stamped with the active school year where supported.
