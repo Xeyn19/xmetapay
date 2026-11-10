@@ -21,7 +21,7 @@ Date: __________  Supervisor: __________  Tester: __________  Build/commit: ____
 
 ## College walkthrough
 
-1. Open **School setup** and choose **Higher Education only** or **Both K–12 and College** under **Academic offerings**.
+1. Open **School setup**, review **School type**, and use **Change school type** to choose **Higher Education only** or **Both K–12 and College** when needed.
 2. Confirm the College track card reports its independent readiness, then open **Manage college academics**.
 3. Use the school-year selector. Confirm an upcoming year allows period/section preparation, while a closed year is read-only.
 4. Confirm `QA-BSIT`, four year levels, and `QA-First Semester`; only activate the period when its school year is active.

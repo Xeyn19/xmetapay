@@ -96,7 +96,7 @@ Done when: the full schema can be imported locally or into a new empty cPanel da
 - [x] Link admin profiles to a real school record.
 - [x] Share the completed school context with same-school registrar and finance staff accounts.
 - [x] Support one or many school years with exactly one active school year.
-- [x] Add an overview-first School setup hub with school health, all-year counts, compact active-year structure, and focused quick actions.
+- [x] Add an overview-first School setup hub with school health, a compact school-type summary, independent academic-track readiness, a disclosed active-year structure summary, and focused quick actions.
 - [x] Move selected-year grade/section management to `/admin/school-setup/years/[yearId]` and reviewed rollover to `/admin/school-setup/rollover`.
 - [x] Use focused modals for ongoing school identity and school-year management while replacing first-time setup with a resumable five-step wizard.
 - [x] Save onboarding progress per step and resume at the first incomplete scope-aware requirement.
@@ -115,6 +115,7 @@ Done when: the full schema can be imported locally or into a new empty cPanel da
 - [x] Restrict school setup to `school_administrator`.
 - [x] Let administrators choose Basic Education, Higher Education, or Both without deleting academic history.
 - [x] Show independent K–12 and College readiness cards in the School setup hub.
+- [x] Keep school-type changes behind an administrator-only dialog and show next-year preparation with School years only when an upcoming K–12 year exists.
 - [x] Move college program, period, section, and placement management into School setup with active/upcoming/closed year behavior.
 - [x] Make school-year activation validate the selected academic offering: K–12, College, or both structures.
 - [x] Redirect school administrators to setup-only onboarding on every login and protected dashboard request until the active year and every selected academic track are ready.

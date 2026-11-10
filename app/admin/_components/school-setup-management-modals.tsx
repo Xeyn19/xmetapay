@@ -37,14 +37,14 @@ export function EditSchoolDetailsModal({ schoolName, schoolCode }: { schoolName:
   );
 }
 
-export function AddSchoolYearModal() {
+export function AddSchoolYearModal({ triggerTone = "primary" }: { triggerTone?: "primary" | "outline" }) {
   return (
     <SetupModal
       title="Add school year"
       description="Create the year first, then add its grades and sections."
       triggerLabel="Add school year"
       triggerIcon="calendar"
-      triggerTone="primary"
+      triggerTone={triggerTone}
     >
       <SchoolYearForm action={createSchoolYearAction} submitLabel="Add school year" />
     </SetupModal>

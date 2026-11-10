@@ -41,20 +41,23 @@ Implemented:
 
 ```mermaid
 flowchart TD
-  A[School administrator opens School setup] --> B{Academic offering}
-  B -->|Basic| C[Manage K–12 grades and sections]
-  B -->|Higher| D[Manage college programs periods and sections]
-  B -->|Both| C
-  B -->|Both| D
-  C --> E{Required track ready?}
+  A[School administrator opens School setup] --> B[Review current school type]
+  B --> C{Change school type?}
+  C -->|Yes| D[Choose Basic Higher or Both in a focused dialog]
+  C -->|No| E[Review academic setup cards]
   D --> E
-  E -->|No| F[Show actionable setup needed status]
-  E -->|Yes| G[Allow scope-aware school-year activation]
-  H[Upcoming college year] --> I[Prepare periods and sections]
-  J[Closed college year] --> K[Historical read-only view]
+  E -->|Basic or Both| F[Manage K–12 grades and sections]
+  E -->|Higher or Both| G[Manage college programs periods and sections]
+  F --> H{Required track ready?}
+  G --> H
+  H -->|No| I[Show actionable setup needed status]
+  H -->|Yes| J[Allow scope-aware school-year activation]
+  K[Upcoming K–12 year] --> L[Prepare next school year placements]
+  M[Upcoming college year] --> N[Prepare periods and sections]
+  O[Closed year] --> P[Historical read-only view]
 ```
 
-Changing the offering never deletes records. Expansion is allowed; narrowing is rejected when the removed track still has academic, enrollment, tuition, or assessment records.
+The hub shows the current school type as a summary and reveals its choices only through **Change school type**. Changing it never deletes records. Expansion is allowed; narrowing is rejected when the removed track still has academic, enrollment, tuition, or assessment records. Everyday grade/section and college setup stay in their track cards, while K–12 rollover appears with School years only after an upcoming year exists.
 - Admin/school staff role permissions for `school_administrator`, `registrar`, and `finance_officer`.
 - Company super admin approval for new school admin registrations.
 - Company super admin monitoring for school admin accounts.
